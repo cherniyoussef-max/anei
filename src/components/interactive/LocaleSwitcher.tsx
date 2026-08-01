@@ -16,7 +16,7 @@ export function LocaleSwitcher({ locale }: { locale: Locale }) {
   }
 
   return (
-    <button className="locale-switcher" onClick={switchLocale} type="button" aria-label="Changer de langue">
+    <button className="locale-switcher" onClick={switchLocale} type="button" aria-label={locale === "fr" ? "Afficher le site en arabe" : "عرض الموقع بالفرنسية"}>
       <Icon name="globe" size={17} />
       <span>{locale === "fr" ? "العربية" : "Français"}</span>
     </button>

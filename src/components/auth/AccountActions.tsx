@@ -10,7 +10,7 @@ export function AccountActions({ locale }: { locale: Locale }) {
   const { data, isPending } = useSession();
   const router = useRouter();
   const ar = locale === "ar";
-  if (isPending) return <span className="session-skeleton" aria-hidden="true"/>;
+  if (isPending) return <><Link className="btn btn-ghost btn-sm desktop-action" href={`/${locale}/login`}>{ar ? "تسجيل الدخول" : "Se connecter"}</Link><Link className="btn btn-primary btn-sm desktop-action" href={`/${locale}/register`}>{ar ? "إنشاء حساب" : "Créer un compte"}</Link></>;
   if (!data?.user) return <><Link className="btn btn-ghost btn-sm desktop-action" href={`/${locale}/login`}>{ar ? "تسجيل الدخول" : "Se connecter"}</Link><Link className="btn btn-primary btn-sm desktop-action" href={`/${locale}/register`}>{ar ? "إنشاء حساب" : "Créer un compte"}</Link></>;
 
   const initial = data.user.name?.trim().charAt(0).toUpperCase() || "U";

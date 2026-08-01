@@ -11,10 +11,6 @@ export function SiteFooter({ locale }: { locale: Locale }) {
   const ar = locale === "ar";
   return (
     <footer className="site-footer">
-      <div className="container footer-intro">
-        <div><span className="footer-kicker">ANEI</span><h2>{ar ? "معرفة أوضح، ممارسة أفضل، دمج أكثر واقعية." : "Mieux comprendre, mieux agir, mieux inclure."}</h2></div>
-        <Link className="btn btn-light" href={`/${locale}/formations`}>{ar ? "استكشف الدورات" : "Explorer les formations"}<Icon name="arrow" size={17}/></Link>
-      </div>
       <div className="container footer-grid">
         <div className="footer-brand">
           <Logo locale={locale} />
