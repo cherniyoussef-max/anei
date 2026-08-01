@@ -1,0 +1,11 @@
+import Link from "next/link";
+import { and, eq } from "drizzle-orm";
+import { notFound } from "next/navigation";
+import { isLocale,formatMillimes } from "@/lib/i18n";
+import { getSession } from "@/server/auth/session";
+import { db } from "@/server/db";
+import { orders,payments } from "@/server/db/schema";
+import { Icon } from "@/components/ui/Icon";
+import { PaymentStatusVerifier } from "@/components/commerce/PaymentStatusVerifier";
+export const dynamic="force-dynamic";
+export default async function PaymentSuccessPage({params,searchParams}:{params:Promise<{locale:string}>;searchParams:Promise<{order?:string}>}){const{locale}=await params;if(!isLocale(locale))notFound();const{order:orderId}=await searchParams;const session=await getSession();const ar=locale==="ar";if(!session||!orderId)return <section className="status-page"><div className="status-card"><Icon name="shield" size={34}/><h1>{ar?"تسجيل الدخول مطلوب":"Connexion requise"}</h1><Link className="btn btn-primary" href={`/${locale}/login`}>{ar?"تسجيل الدخول":"Se connecter"}</Link></div></section>;const [row]=await db.select({order:orders,payment:payments}).from(orders).leftJoin(payments,eq(payments.orderId,orders.id)).where(and(eq(orders.id,orderId),eq(orders.userId,session.user.id))).limit(1);if(!row)notFound();const paid=row.order.status==="paid";return <section className="status-page">{!paid && row.payment?.provider === "flouci" ? <PaymentStatusVerifier orderId={row.order.id}/> : null}<div className={`status-card ${paid?"success":"pending"}`}><span className="status-icon"><Icon name={paid?"check":"clock"} size={34}/></span><span className="eyebrow">{paid?(ar?"تم الدفع":"Paiement confirmé"):(ar?"جارٍ التحقق":"Vérification en cours")}</span><h1>{paid?(ar?"تم تفعيل وصولك":"Votre accès est activé"):(ar?"لم يتم تأكيد العملية بعد":"La transaction n’est pas encore confirmée")}</h1><p>{row.order.itemLabel}</p><strong>{formatMillimes(row.order.amountMillimes,locale)}</strong><div className="status-actions"><Link className="btn btn-primary" href={`/${locale}/dashboard`}>{ar?"الذهاب إلى مساحتي":"Ouvrir mon espace"}</Link><Link className="btn btn-soft" href={`/${locale}/formations`}>{ar?"العودة للكتالوج":"Retour au catalogue"}</Link></div></div></section>}

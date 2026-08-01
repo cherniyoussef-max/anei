@@ -1,0 +1,20 @@
+node_modules
+.next
+out
+.env
+.env.local
+.DS_Store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+coverage
+playwright-report
+test-results
+sbom.cdx.json
+
+# Generated archives
+*.zip
+
+# TypeScript build cache
+*.tsbuildinfo

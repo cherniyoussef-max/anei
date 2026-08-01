@@ -1,0 +1,144 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  APP_URL: https://anei-ci.example
+  BETTER_AUTH_URL: https://anei-ci.example
+  BETTER_AUTH_SECRET: ci-only-secret-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  TRUSTED_ORIGINS: https://anei-ci.example
+  AUTH_REQUIRE_EMAIL_VERIFICATION: "true"
+  DATABASE_URL: postgresql://ci_user:ci_password@127.0.0.1:5432/anei_ci
+  TEST_DATABASE_URL: postgresql://ci_user:ci_password@127.0.0.1:5432/anei_ci
+  REDIS_URL: redis://127.0.0.1:6379
+  ENABLE_FLOUCI: "true"
+  FLOUCI_PUBLIC_KEY: ci-public-placeholder
+  FLOUCI_PRIVATE_KEY: ci-private-placeholder
+  PAYMENT_DEFAULT_PROVIDER: flouci
+  PAYMENT_ALLOW_MOCK: "false"
+  STORAGE_PROVIDER: s3-compatible
+  STORAGE_BUCKET: ci-private-bucket
+  STORAGE_REGION: us-east-1
+  STORAGE_ACCESS_KEY_ID: ci-access-placeholder
+  STORAGE_SECRET_ACCESS_KEY: ci-secret-placeholder
+  SMTP_HOST: smtp.ci.invalid
+  SMTP_PORT: "587"
+  SMTP_SECURE: "false"
+  SMTP_FROM: ANEI CI <no-reply@anei-ci.example>
+  CONTACT_EMAIL: contact@anei-ci.example
+  CONTACT_ADDRESS: CI Test Address
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: anei_ci
+          POSTGRES_USER: ci_user
+          POSTGRES_PASSWORD: ci_password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U ci_user -d anei_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:8-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Require lockfile
+        run: test -f package-lock.json || (echo "Commit package-lock.json before enabling CI" && exit 1)
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run db:migrate
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test
+      - run: npm run test:integration
+      - run: npm run security:audit
+      - run: npm audit --omit=dev --audit-level=high
+      - name: Generate CycloneDX SBOM
+        run: npm run security:sbom
+      - uses: actions/upload-artifact@v7
+        with:
+          name: sbom-cyclonedx
+          path: sbom.cdx.json
+          retention-days: 30
+      - run: npm run build
+      - run: npm run verify
+
+  e2e:
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: anei_ci
+          POSTGRES_USER: ci_user
+          POSTGRES_PASSWORD: ci_password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U ci_user -d anei_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:8-alpine
+        ports: ["6379:6379"]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Require lockfile
+        run: test -f package-lock.json || (echo "Commit package-lock.json before enabling CI" && exit 1)
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run db:migrate
+      - name: Seed test content
+        run: npm run db:seed
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Start production build
+        run: npm run start > /tmp/anei-next.log 2>&1 &
+      - name: Wait for liveness
+        run: |
+          for i in {1..40}; do
+            curl -fsS http://127.0.0.1:3000/api/live && exit 0
+            sleep 1
+          done
+          cat /tmp/anei-next.log
+          exit 1
+      - run: npm run test:e2e
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

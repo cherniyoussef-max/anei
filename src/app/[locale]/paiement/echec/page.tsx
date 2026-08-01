@@ -1,0 +1,5 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { isLocale } from "@/lib/i18n";
+import { Icon } from "@/components/ui/Icon";
+export default async function PaymentFailurePage({params}:{params:Promise<{locale:string}>}){const{locale}=await params;if(!isLocale(locale))notFound();const ar=locale==="ar";return <section className="status-page"><div className="status-card failure"><span className="status-icon"><Icon name="close" size={34}/></span><span className="eyebrow">{ar?"عملية غير مكتملة":"Paiement non finalisé"}</span><h1>{ar?"لم يتم خصم أو تفعيل الوصول من هذه الصفحة":"L’accès n’a pas été activé"}</h1><p>{ar?"يمكنك إعادة المحاولة. إذا تم الخصم فعليًا، لا تدفع مرة ثانية واتصل بالدعم مع مرجع العملية.":"Vous pouvez réessayer. Si votre compte a réellement été débité, ne payez pas une seconde fois et contactez le support avec la référence de transaction."}</p><div className="status-actions"><Link className="btn btn-primary" href={`/${locale}/dashboard`}>{ar?"مساحتي":"Mon espace"}</Link><Link className="btn btn-soft" href={`/${locale}/contact`}>{ar?"الدعم":"Contacter le support"}</Link></div></div></section>}

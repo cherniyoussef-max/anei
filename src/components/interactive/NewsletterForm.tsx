@@ -1,0 +1,5 @@
+"use client";
+import { FormEvent,useState } from "react";
+import type { Locale } from "@/types";
+import { Icon } from "@/components/ui/Icon";
+export function NewsletterForm({locale}:{locale:Locale}){const[state,setState]=useState<"idle"|"loading"|"done"|"error">("idle");async function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();setState("loading");const email=String(new FormData(e.currentTarget).get("email")??"");const r=await fetch("/api/newsletter",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,locale})});setState(r.ok?"done":"error")}if(state==="done")return <small className="newsletter-success">{locale==="ar"?"تم التسجيل ✓":"Inscription confirmée ✓"}</small>;return <form className="newsletter-box" onSubmit={submit}><input name="email" aria-label="Email" placeholder="Email" type="email" required/><button type="submit" disabled={state==="loading"} aria-label={locale==="ar"?"اشتراك":"S'abonner"}><Icon name="arrow" size={18}/></button>{state==="error"?<span className="newsletter-error" role="alert">{locale==="ar"?"تعذر الاشتراك":"Inscription impossible"}</span>:null}</form>}

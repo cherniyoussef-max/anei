@@ -1,0 +1,7 @@
+import { notFound } from "next/navigation";
+import { isLocale } from "@/lib/i18n";
+
+export default async function TermsPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params; if (!isLocale(locale)) notFound(); const ar = locale === "ar";
+  return <section className="section"><article className="container article-shell"><span className="eyebrow">ANEI</span><h1>{ar ? "شروط الاستخدام" : "Conditions d’utilisation"}</h1><p className="article-lead">{ar ? "تحدد هذه الصفحة القواعد العامة لاستخدام منصة التكوين." : "Cette page définit les règles générales d’utilisation de la plateforme de formation."}</p><h2>{ar ? "الحساب والوصول" : "Compte et accès"}</h2><p>{ar ? "المستخدم مسؤول عن حماية حسابه. الوصول إلى المحتويات المدفوعة أو الخاصة مرتبط بصلاحيات الحساب المسجلة على الخادم." : "L’utilisateur protège son compte. L’accès aux contenus payants ou privés dépend des droits enregistrés côté serveur."}</p><h2>{ar ? "المحتوى والشهادات" : "Contenus et certificats"}</h2><p>{ar ? "لا يجوز إعادة توزيع الموارد المحمية دون إذن. قواعد منح الشهادات تعتمد على شروط إتمام الدورة المحددة من الأكاديمية." : "Les ressources protégées ne doivent pas être redistribuées sans autorisation. Les certificats dépendent des règles d’achèvement définies par l’Académie."}</p><p className="small-muted">{ar ? "هذه صيغة تشغيلية أولية وتحتاج إلى مراجعة قانونية قبل الإطلاق التجاري." : "Ce texte est un socle opérationnel et nécessite une validation juridique avant lancement commercial."}</p></article></section>;
+}

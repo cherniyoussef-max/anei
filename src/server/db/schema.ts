@@ -1,0 +1,526 @@
+import {
+  bigint,
+  boolean,
+  check,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+
+const now = () => new Date();
+const id = () => crypto.randomUUID();
+
+// -----------------------------------------------------------------------------
+// Better Auth core tables + ANEI-safe user fields.
+// Field names intentionally match Better Auth's public schema contract.
+// -----------------------------------------------------------------------------
+export const user = pgTable(
+  "user",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    name: text("name").notNull(),
+    email: text("email").notNull(),
+    emailVerified: boolean("email_verified").notNull().default(false),
+    image: text("image"),
+    role: text("role").notNull().default("USER"),
+    locale: text("locale").notNull().default("fr"),
+    profileType: text("profile_type").notNull().default("learner"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("user_email_unique").on(table.email),
+    index("user_role_idx").on(table.role),
+    check("user_role_check", sql`${table.role} in ('USER','ADMIN','SUPER_ADMIN')`),
+    check("user_locale_check", sql`${table.locale} in ('fr','ar')`),
+    check("user_profile_type_check", sql`${table.profileType} in ('learner','teacher','avs','parent','specialist','institution')`),
+  ],
+);
+
+export const session = pgTable(
+  "session",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    token: text("token").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+  },
+  (table) => [
+    uniqueIndex("session_token_unique").on(table.token),
+    index("session_user_idx").on(table.userId),
+    index("session_expires_idx").on(table.expiresAt),
+  ],
+);
+
+export const account = pgTable(
+  "account",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    accountId: text("account_id").notNull(),
+    providerId: text("provider_id").notNull(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    idToken: text("id_token"),
+    accessTokenExpiresAt: timestamp("access_token_expires_at", { withTimezone: true }),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", { withTimezone: true }),
+    scope: text("scope"),
+    password: text("password"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("account_user_idx").on(table.userId),
+    uniqueIndex("account_provider_unique").on(table.providerId, table.accountId),
+  ],
+);
+
+export const verification = pgTable(
+  "verification",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    identifier: text("identifier").notNull(),
+    value: text("value").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [index("verification_identifier_idx").on(table.identifier)],
+);
+
+export const rateLimit = pgTable(
+  "rateLimit",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    key: text("key").notNull(),
+    count: integer("count").notNull(),
+    lastRequest: bigint("last_request", { mode: "number" }).notNull(),
+  },
+  (table) => [uniqueIndex("rate_limit_key_unique").on(table.key)],
+);
+
+// -----------------------------------------------------------------------------
+// Domain tables.
+// Monetary values are stored as millimes to avoid floating-point errors.
+// -----------------------------------------------------------------------------
+export const courses = pgTable(
+  "courses",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    slug: text("slug").notNull(),
+    titleFr: text("title_fr").notNull(),
+    titleAr: text("title_ar").notNull(),
+    summaryFr: text("summary_fr").notNull(),
+    summaryAr: text("summary_ar").notNull(),
+    descriptionFr: text("description_fr").notNull(),
+    descriptionAr: text("description_ar").notNull(),
+    category: text("category").notNull(),
+    level: text("level").notNull().default("beginner"),
+    mode: text("mode").notNull().default("online"),
+    trainerName: text("trainer_name").notNull(),
+    durationMinutes: integer("duration_minutes").notNull(),
+    priceMillimes: integer("price_millimes").notNull().default(0),
+    startAt: timestamp("start_at", { withTimezone: true }),
+    coverImage: text("cover_image"),
+    published: boolean("published").notNull().default(false),
+    featured: boolean("featured").notNull().default(false),
+    objectives: jsonb("objectives").$type<{ fr: string[]; ar: string[] }>().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("courses_slug_unique").on(table.slug),
+    index("courses_category_idx").on(table.category),
+    index("courses_published_idx").on(table.published),
+    index("courses_published_created_idx").on(table.published, table.createdAt),
+    index("courses_published_price_idx").on(table.published, table.priceMillimes),
+    check("courses_duration_positive", sql`${table.durationMinutes} > 0`),
+    check("courses_price_nonnegative", sql`${table.priceMillimes} >= 0`),
+    check("courses_level_check", sql`${table.level} in ('beginner','intermediate','advanced')`),
+    check("courses_mode_check", sql`${table.mode} in ('online','hybrid','onsite')`),
+  ],
+);
+
+export const courseModules = pgTable(
+  "course_modules",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    courseId: text("course_id")
+      .notNull()
+      .references(() => courses.id, { onDelete: "cascade" }),
+    position: integer("position").notNull(),
+    titleFr: text("title_fr").notNull(),
+    titleAr: text("title_ar").notNull(),
+    descriptionFr: text("description_fr").notNull().default(""),
+    descriptionAr: text("description_ar").notNull().default(""),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("course_modules_course_position_unique").on(table.courseId, table.position),
+    index("course_modules_course_idx").on(table.courseId),
+    check("course_modules_position_positive", sql`${table.position} > 0`),
+  ],
+);
+
+export const lessons = pgTable(
+  "lessons",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    courseId: text("course_id")
+      .notNull()
+      .references(() => courses.id, { onDelete: "cascade" }),
+    moduleId: text("module_id").references(() => courseModules.id, { onDelete: "set null" }),
+    position: integer("position").notNull(),
+    titleFr: text("title_fr").notNull(),
+    titleAr: text("title_ar").notNull(),
+    descriptionFr: text("description_fr").notNull().default(""),
+    descriptionAr: text("description_ar").notNull().default(""),
+    durationSeconds: integer("duration_seconds").notNull().default(0),
+    videoUrl: text("video_url"),
+    documentUrl: text("document_url"),
+    preview: boolean("preview").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("lessons_course_position_unique").on(table.courseId, table.position),
+    index("lessons_course_idx").on(table.courseId),
+    index("lessons_module_idx").on(table.moduleId),
+    check("lessons_position_positive", sql`${table.position} > 0`),
+    check("lessons_duration_nonnegative", sql`${table.durationSeconds} >= 0`),
+  ],
+);
+
+export const enrollments = pgTable(
+  "enrollments",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    courseId: text("course_id")
+      .notNull()
+      .references(() => courses.id, { onDelete: "cascade" }),
+    status: text("status").notNull().default("active"),
+    progressPercent: integer("progress_percent").notNull().default(0),
+    enrolledAt: timestamp("enrolled_at", { withTimezone: true }).notNull().$defaultFn(now),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex("enrollment_user_course_unique").on(table.userId, table.courseId),
+    index("enrollment_user_idx").on(table.userId),
+    check("enrollment_progress_range", sql`${table.progressPercent} between 0 and 100`),
+    check("enrollment_status_check", sql`${table.status} in ('active','completed','cancelled')`),
+  ],
+);
+
+export const lessonProgress = pgTable(
+  "lesson_progress",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    enrollmentId: text("enrollment_id")
+      .notNull()
+      .references(() => enrollments.id, { onDelete: "cascade" }),
+    lessonId: text("lesson_id")
+      .notNull()
+      .references(() => lessons.id, { onDelete: "cascade" }),
+    watchedSeconds: integer("watched_seconds").notNull().default(0),
+    completed: boolean("completed").notNull().default(false),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("lesson_progress_unique").on(table.enrollmentId, table.lessonId),
+    check("lesson_progress_watched_nonnegative", sql`${table.watchedSeconds} >= 0`),
+  ],
+);
+
+export const resources = pgTable(
+  "resources",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    slug: text("slug").notNull(),
+    titleFr: text("title_fr").notNull(),
+    titleAr: text("title_ar").notNull(),
+    descriptionFr: text("description_fr").notNull(),
+    descriptionAr: text("description_ar").notNull(),
+    audienceFr: text("audience_fr").notNull(),
+    audienceAr: text("audience_ar").notNull(),
+    type: text("type").notNull(),
+    priceMillimes: integer("price_millimes").notNull(),
+    coverImage: text("cover_image"),
+    downloadUrl: text("download_url"),
+    published: boolean("published").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("resources_slug_unique").on(table.slug),
+    index("resources_published_created_idx").on(table.published, table.createdAt),
+    index("resources_published_type_idx").on(table.published, table.type),
+    check("resources_price_nonnegative", sql`${table.priceMillimes} >= 0`),
+  ],
+);
+
+export const orders = pgTable(
+  "orders",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    itemType: text("item_type").notNull(),
+    itemId: text("item_id").notNull(),
+    itemLabel: text("item_label").notNull(),
+    amountMillimes: integer("amount_millimes").notNull(),
+    currency: text("currency").notNull().default("TND"),
+    status: text("status").notNull().default("pending"),
+    provider: text("provider").notNull().default("mock"),
+    idempotencyKey: text("idempotency_key").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("orders_user_idempotency_unique").on(table.userId, table.idempotencyKey),
+    index("orders_user_idx").on(table.userId),
+    index("orders_status_idx").on(table.status),
+    index("orders_status_created_idx").on(table.status, table.createdAt),
+    index("orders_user_created_idx").on(table.userId, table.createdAt),
+    check("orders_amount_nonnegative", sql`${table.amountMillimes} >= 0`),
+    check("orders_currency_check", sql`${table.currency} in ('TND')`),
+    check("orders_status_check", sql`${table.status} in ('pending','paid','failed','expired','cancelled')`),
+    check("orders_provider_check", sql`${table.provider} in ('mock','flouci','clicktopay','free')`),
+    check("orders_item_type_check", sql`${table.itemType} in ('course','resource')`),
+  ],
+);
+
+export const payments = pgTable(
+  "payments",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    orderId: text("order_id")
+      .notNull()
+      .references(() => orders.id, { onDelete: "cascade" }),
+    provider: text("provider").notNull(),
+    externalPaymentId: text("external_payment_id"),
+    status: text("status").notNull().default("pending"),
+    amountMillimes: integer("amount_millimes").notNull(),
+    checkoutUrl: text("checkout_url"),
+    raw: jsonb("raw").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("payments_order_idx").on(table.orderId),
+    uniqueIndex("payments_provider_external_unique").on(table.provider, table.externalPaymentId),
+    check("payments_amount_nonnegative", sql`${table.amountMillimes} >= 0`),
+    check("payments_status_check", sql`${table.status} in ('pending','paid','failed','expired','cancelled')`),
+    check("payments_provider_check", sql`${table.provider} in ('mock','flouci','clicktopay')`),
+  ],
+);
+
+export const purchases = pgTable(
+  "purchases",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    orderId: text("order_id")
+      .notNull()
+      .references(() => orders.id, { onDelete: "restrict" }),
+    resourceId: text("resource_id")
+      .notNull()
+      .references(() => resources.id, { onDelete: "cascade" }),
+    grantedAt: timestamp("granted_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("purchases_order_unique").on(table.orderId),
+    uniqueIndex("purchases_user_resource_unique").on(table.userId, table.resourceId),
+    index("purchases_user_idx").on(table.userId),
+  ],
+);
+
+export const webinars = pgTable(
+  "webinars",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    slug: text("slug").notNull(),
+    titleFr: text("title_fr").notNull(),
+    titleAr: text("title_ar").notNull(),
+    descriptionFr: text("description_fr").notNull(),
+    descriptionAr: text("description_ar").notNull(),
+    trainerName: text("trainer_name").notNull(),
+    startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+    durationMinutes: integer("duration_minutes").notNull().default(60),
+    meetingUrl: text("meeting_url"),
+    replayUrl: text("replay_url"),
+    published: boolean("published").notNull().default(true),
+  },
+  (table) => [
+    uniqueIndex("webinars_slug_unique").on(table.slug),
+    index("webinars_published_starts_idx").on(table.published, table.startsAt),
+    check("webinars_duration_positive", sql`${table.durationMinutes} > 0`),
+  ],
+);
+
+export const webinarRegistrations = pgTable(
+  "webinar_registrations",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    webinarId: text("webinar_id")
+      .notNull()
+      .references(() => webinars.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    registeredAt: timestamp("registered_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [uniqueIndex("webinar_registration_unique").on(table.webinarId, table.userId)],
+);
+
+export const avsProfiles = pgTable(
+  "avs_profiles",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
+    displayName: text("display_name").notNull(),
+    cityFr: text("city_fr").notNull(),
+    cityAr: text("city_ar").notNull(),
+    specialtyFr: text("specialty_fr").notNull(),
+    specialtyAr: text("specialty_ar").notNull(),
+    availabilityFr: text("availability_fr").notNull(),
+    availabilityAr: text("availability_ar").notNull(),
+    bioFr: text("bio_fr").notNull().default(""),
+    bioAr: text("bio_ar").notNull().default(""),
+    certified: boolean("certified").notNull().default(false),
+    visible: boolean("visible").notNull().default(true),
+    image: text("image"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("avs_city_idx").on(table.cityFr),
+    index("avs_certified_idx").on(table.certified),
+    index("avs_visible_certified_idx").on(table.visible, table.certified),
+  ],
+);
+
+export const certificates = pgTable(
+  "certificates",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    courseId: text("course_id")
+      .notNull()
+      .references(() => courses.id, { onDelete: "cascade" }),
+    code: text("code").notNull(),
+    fileUrl: text("file_url"),
+    issuedAt: timestamp("issued_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("certificate_code_unique").on(table.code),
+    uniqueIndex("certificate_user_course_unique").on(table.userId, table.courseId),
+  ],
+);
+
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    href: text("href"),
+    read: boolean("read").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [index("notifications_user_read_idx").on(table.userId, table.read)],
+);
+
+export const newsPosts = pgTable(
+  "news_posts",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    slug: text("slug").notNull(),
+    tagFr: text("tag_fr").notNull(),
+    tagAr: text("tag_ar").notNull(),
+    titleFr: text("title_fr").notNull(),
+    titleAr: text("title_ar").notNull(),
+    excerptFr: text("excerpt_fr").notNull(),
+    excerptAr: text("excerpt_ar").notNull(),
+    contentFr: text("content_fr").notNull(),
+    contentAr: text("content_ar").notNull(),
+    published: boolean("published").notNull().default(false),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("news_posts_slug_unique").on(table.slug),
+    index("news_posts_published_idx").on(table.published, table.publishedAt),
+  ],
+);
+
+export const contactMessages = pgTable(
+  "contact_messages",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    name: text("name").notNull(),
+    email: text("email").notNull(),
+    subject: text("subject").notNull(),
+    message: text("message").notNull(),
+    status: text("status").notNull().default("new"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("contact_status_idx").on(table.status),
+    check("contact_status_check", sql`${table.status} in ('new','read','closed')`),
+  ],
+);
+
+export const newsletterSubscriptions = pgTable(
+  "newsletter_subscriptions",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    email: text("email").notNull(),
+    locale: text("locale").notNull().default("fr"),
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [uniqueIndex("newsletter_email_unique").on(table.email)],
+);
+
+export const auditLogs = pgTable(
+  "audit_logs",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    actorUserId: text("actor_user_id").references(() => user.id, { onDelete: "set null" }),
+    action: text("action").notNull(),
+    entityType: text("entity_type").notNull(),
+    entityId: text("entity_id"),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [index("audit_actor_idx").on(table.actorUserId)],
+);
+
+export type DbUser = typeof user.$inferSelect;
+export type CourseRow = typeof courses.$inferSelect;
+export type ResourceRow = typeof resources.$inferSelect;
+export type WebinarRow = typeof webinars.$inferSelect;
+export type NewsPostRow = typeof newsPosts.$inferSelect;

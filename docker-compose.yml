@@ -1,0 +1,46 @@
+# Development-only infrastructure. Production should use managed/private services.
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: anei-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-anei}
+      POSTGRES_USER: ${POSTGRES_USER:-anei}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-anei}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - anei_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-anei} -d ${POSTGRES_DB:-anei}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:8-alpine
+    container_name: anei-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - anei_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: anei-mailpit
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+
+volumes:
+  anei_postgres_data:
+  anei_redis_data:
