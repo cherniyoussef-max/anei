@@ -115,6 +115,9 @@ if (env.NODE_ENV === "production" && !isBuildPhase && !isLocalProductionSmoke) {
   if (env.SMTP_HOST === "localhost" || env.SMTP_HOST === "127.0.0.1") {
     throw new Error("Production email verification requires a real SMTP/provider host, not localhost.");
   }
+  if (!env.SMTP_USER || !env.SMTP_PASS) {
+    throw new Error("Production email verification requires SMTP_USER and SMTP_PASS.");
+  }
   if (!process.env.SMTP_FROM || /@[^>\s]*\.local(?:>|\s|$)/i.test(env.SMTP_FROM)) {
     throw new Error("SMTP_FROM must be an explicit production sender on a real domain.");
   }

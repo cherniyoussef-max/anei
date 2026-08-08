@@ -5,6 +5,7 @@ import { requireAdminPermission } from "@/server/auth/session";
 import { getAdminUserDetail } from "@/modules/admin/queries/admin-users";
 import { AdminPageHeader } from "@/modules/admin/components/AdminPageHeader";
 import { AdminUserRole } from "@/components/admin/AdminUserRole";
+import { AdminUserCrmActions } from "@/modules/admin/components/AdminUserCrmActions";
 
 export const dynamic = "force-dynamic";
 export default async function AdminUserDetail({ params, searchParams }: {
@@ -27,11 +28,30 @@ export default async function AdminUserDetail({ params, searchParams }: {
       <article><span>{ar?"الشهادات":"Certificats"}</span><strong>{data.user.certificates}</strong></article>
       <article><span>{ar?"المدفوع":"Total payé"}</span><strong>{formatMillimes(data.user.paid_millimes,locale)}</strong></article>
     </section>
+    
+    {String(session.user.role) === "SUPER_ADMIN" && (
+      <AdminUserCrmActions userEmail={data.user.email} userName={data.user.name} locale={locale} />
+    )}
+
     <nav className="admin-tabs" aria-label={ar ? "أقسام ملف المستخدم" : "Sections de la fiche utilisateur"}>{tabs.map(([key,label])=><a key={key} className={tab===key?"active":""} href={`?tab=${key}`}>{label}</a>)}</nav>
     <section className="admin-surface admin-detail-panel">
-      {tab === "learning" || tab === "overview" ? <div><h2>{ar?"مسار التعلّم":"Parcours d’apprentissage"}</h2><div className="admin-list">{data.enrollments.map((row) => {
+      {tab === "learning" || tab === "overview" ? <div><h2>{ar?"مسار التعلّم (الدورات)":"Parcours d’apprentissage (Formations)"}</h2><div className="admin-list">{data.enrollments.map((row) => {
         const item=row as Record<string,unknown>; return <article key={String(item.id)}><div><strong>{String(ar?item.title_ar:item.title_fr)}</strong><small>{formatDate(item.enrolled_at as Date,locale)} · {String(item.status)}</small></div><b>{String(item.progress_percent)}%</b></article>;
-      })}{!data.enrollments.length?<p className="admin-empty">{ar?"لا توجد تسجيلات.":"Aucune inscription."}</p>:null}</div></div>:null}
+      })}{!data.enrollments.length?<p className="admin-empty">{ar?"لا توجد تسجيلات.":"Aucune inscription."}</p>:null}</div>
+      
+      <h2 style={{ marginTop: 32 }}>{ar?"التقدم في الفيديوهات":"Progression vidéo"}</h2>
+      <div className="admin-list">{data.videoProgress.map((row) => {
+        const item=row as Record<string,unknown>;
+        const duration = Number(item.duration_seconds) || 0;
+        const watched = Number(item.watched_seconds) || 0;
+        const pct = duration > 0 ? Math.min(100, Math.round((watched / duration) * 100)) : (item.completed ? 100 : 0);
+        return <article key={String(item.id)}><div><strong>{String(ar?item.title_ar:item.title_fr)}</strong><small>{String(ar?item.course_ar:item.course_fr)}</small></div><div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 100, height: 6, borderRadius: 3, background: "#e2e5ea", overflow: "hidden" }}><div style={{ height: "100%", width: `${pct}%`, background: pct >= 100 ? "#16a34a" : "#3d5a80", borderRadius: 3 }} /></div>
+          <b style={{ minWidth: 40, textAlign: "right" }}>{pct}%</b>
+        </div></article>;
+      })}{!data.videoProgress.length?<p className="admin-empty">{ar?"لا توجد مقاطع فيديو تمت مشاهدتها.":"Aucune vidéo visionnée."}</p>:null}</div>
+      
+      </div>:null}
       {tab === "certificates" ? <div><h2>{ar?"الشهادات":"Certificats"}</h2><div className="admin-list">{data.certificates.map((row) => {const item=row as Record<string,unknown>;return <article key={String(item.id)}><div><strong>{String(ar?item.title_ar:item.title_fr)}</strong><small>{String(item.code)}</small></div><b>{formatDate(item.issued_at as Date,locale)}</b></article>})}</div></div>:null}
       {tab === "sessions" ? <div><h2>{ar?"جلسات الحساب":"Sessions du compte"}</h2><div className="admin-list">{data.sessions.map((row) => {const item=row as Record<string,unknown>;return <article key={String(item.id)}><div><strong>{String(item.user_agent ?? (ar?"جهاز غير معروف":"Appareil inconnu"))}</strong><small>{item.ip_address?String(item.ip_address):"—"}</small></div><b>{formatDate(item.updated_at as Date,locale)}</b></article>})}</div><p className="admin-help">{ar?"إبطال جلسة طرف ثالث غير متاح بأمان في واجهة الخادم الحالية لـ Better Auth؛ لم تتم محاكاته يدويًا.":"La révocation administrative d’une session tierce n’est pas exposée de façon sûre par l’intégration Better Auth actuelle ; elle n’a pas été réinventée."}</p></div>:null}
       {tab === "audit" ? <p className="admin-empty">{ar?"استخدم سجل التدقيق مع معرّف المستخدم لتتبع العمليات.":"Utilisez le journal d’audit avec l’identifiant utilisateur pour retracer les opérations."}</p>:null}

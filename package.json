@@ -17,6 +17,7 @@
     "db:seed": "tsx scripts/seed.ts",
     "db:reset": "tsx scripts/reset-db.ts",
     "test:smoke": "tsx scripts/smoke.ts",
+    "smtp:verify": "tsx scripts/verify-smtp.ts",
     "check": "npm run typecheck && npm run lint && npm run test && npm run security:audit && npm run build",
     "db:baseline": "tsx scripts/baseline-migrations.ts",
     "db:bootstrap-admin": "tsx scripts/create-super-admin.ts",

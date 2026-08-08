@@ -93,10 +93,11 @@ export async function getAdminUserDetail(id: string) {
     from "user" u where u.id=${id} limit 1
   `);
   if (!result.rows[0]) return null;
-  const [enrollments, sessions, certificates] = await Promise.all([
+  const [enrollments, sessions, certificates, videoProgress] = await Promise.all([
     db.execute(sql`select e.id,e.status,e.progress_percent,e.enrolled_at,e.completed_at,c.id course_id,c.title_fr,c.title_ar from enrollments e join courses c on c.id=e.course_id where e.user_id=${id} order by e.enrolled_at desc limit 100`),
     db.execute(sql`select id,created_at,updated_at,expires_at,ip_address,user_agent from session where user_id=${id} order by updated_at desc limit 50`),
     db.execute(sql`select c.id,c.code,c.issued_at,co.title_fr,co.title_ar from certificates c join courses co on co.id=c.course_id where c.user_id=${id} order by c.issued_at desc limit 100`),
+    db.execute(sql`select lp.id, lp.watched_seconds, lp.completed, lp.updated_at, l.title_fr, l.title_ar, coalesce(l.duration_seconds, 0) as duration_seconds, c.title_fr as course_fr, c.title_ar as course_ar from lesson_progress lp join lessons l on l.id = lp.lesson_id join enrollments e on e.id = lp.enrollment_id join courses c on c.id = l.course_id where e.user_id=${id} order by lp.updated_at desc limit 100`),
   ]);
-  return { user: result.rows[0], enrollments: enrollments.rows, sessions: sessions.rows, certificates: certificates.rows };
+  return { user: result.rows[0], enrollments: enrollments.rows, sessions: sessions.rows, certificates: certificates.rows, videoProgress: videoProgress.rows };
 }
