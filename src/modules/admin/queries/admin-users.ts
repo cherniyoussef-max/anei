@@ -1,6 +1,7 @@
 import "server-only";
 import { sql, type SQL } from "drizzle-orm";
 import { db } from "@/server/db";
+import { getRedis } from "@/server/cache/redis";
 
 export const userSortFields = ["joined", "name", "email", "role", "activity"] as const;
 export type UserSort = (typeof userSortFields)[number];
@@ -38,6 +39,21 @@ type UserListRow = {
 
 export async function getAdminUsers(input: AdminUserFilters = {}) {
   const filter = normalize(input);
+  const cacheKey = `admin:users:list:${JSON.stringify(filter)}`;
+  const redis = await getRedis();
+  
+  if (redis) {
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      parsed.items.forEach((item: any) => {
+        if (item.joined_at) item.joined_at = new Date(item.joined_at);
+        if (item.last_activity) item.last_activity = new Date(item.last_activity);
+      });
+      return parsed as { items: UserListRow[]; total: number; page: number; pageSize: number; totalPages: number; filters: ReturnType<typeof normalize> };
+    }
+  }
+
   const search = filter.q ? `%${filter.q}%` : null;
   const order = sortColumns[filter.sort];
   const direction = filter.direction === "asc" ? sql`asc` : sql`desc`;
@@ -74,12 +90,46 @@ export async function getAdminUsers(input: AdminUserFilters = {}) {
     limit ${filter.pageSize} offset ${offset}
   `);
   const total = result.rows[0]?.total_count ?? 0;
-  return { items: result.rows, total, page: filter.page, pageSize: filter.pageSize,
+  const payload = { items: result.rows, total, page: filter.page, pageSize: filter.pageSize,
     totalPages: Math.max(1, Math.ceil(total / filter.pageSize)), filters: filter };
+    
+  if (redis) {
+    await redis.set(cacheKey, JSON.stringify(payload), { EX: 60 });
+  }
+  
+  return payload;
 }
 
 type DetailRow = UserListRow & { profile_type: string; locale: string; email_verified: boolean; certificates: number; webinars: number; paid_millimes: number };
 export async function getAdminUserDetail(id: string) {
+  const cacheKey = `admin:users:detail:${id}`;
+  const redis = await getRedis();
+  
+  if (redis) {
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (parsed.user?.joined_at) parsed.user.joined_at = new Date(parsed.user.joined_at);
+      if (parsed.user?.last_activity) parsed.user.last_activity = new Date(parsed.user.last_activity);
+      parsed.enrollments.forEach((e: any) => {
+        if (e.enrolled_at) e.enrolled_at = new Date(e.enrolled_at);
+        if (e.completed_at) e.completed_at = new Date(e.completed_at);
+      });
+      parsed.sessions.forEach((s: any) => {
+        if (s.created_at) s.created_at = new Date(s.created_at);
+        if (s.updated_at) s.updated_at = new Date(s.updated_at);
+        if (s.expires_at) s.expires_at = new Date(s.expires_at);
+      });
+      parsed.certificates.forEach((c: any) => {
+        if (c.issued_at) c.issued_at = new Date(c.issued_at);
+      });
+      parsed.videoProgress.forEach((v: any) => {
+        if (v.updated_at) v.updated_at = new Date(v.updated_at);
+      });
+      return parsed as { user: DetailRow; enrollments: Record<string, unknown>[]; sessions: Record<string, unknown>[]; certificates: Record<string, unknown>[]; videoProgress: Record<string, unknown>[] };
+    }
+  }
+
   const result = await db.execute<DetailRow>(sql`
     select u.id,u.name,u.email,u.image,u.role,u.created_at joined_at,u.profile_type,u.locale,u.email_verified,
       coalesce((select case when bool_or(provider_id='google') then 'google' else 'credential' end from account where user_id=u.id),'credential') provider,
@@ -99,5 +149,11 @@ export async function getAdminUserDetail(id: string) {
     db.execute(sql`select c.id,c.code,c.issued_at,co.title_fr,co.title_ar from certificates c join courses co on co.id=c.course_id where c.user_id=${id} order by c.issued_at desc limit 100`),
     db.execute(sql`select lp.id, lp.watched_seconds, lp.completed, lp.updated_at, l.title_fr, l.title_ar, coalesce(l.duration_seconds, 0) as duration_seconds, c.title_fr as course_fr, c.title_ar as course_ar from lesson_progress lp join lessons l on l.id = lp.lesson_id join enrollments e on e.id = lp.enrollment_id join courses c on c.id = l.course_id where e.user_id=${id} order by lp.updated_at desc limit 100`),
   ]);
-  return { user: result.rows[0], enrollments: enrollments.rows, sessions: sessions.rows, certificates: certificates.rows, videoProgress: videoProgress.rows };
+  const payload = { user: result.rows[0], enrollments: enrollments.rows, sessions: sessions.rows, certificates: certificates.rows, videoProgress: videoProgress.rows };
+  
+  if (redis) {
+    await redis.set(cacheKey, JSON.stringify(payload), { EX: 60 });
+  }
+  
+  return payload;
 }
