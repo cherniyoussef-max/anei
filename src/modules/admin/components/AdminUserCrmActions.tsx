@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { authClient } from "@/lib/auth-client";
 
 interface AdminUserCrmActionsProps {
+  userId: string;
   userEmail: string;
   userName: string;
   locale: string;
 }
 
-export function AdminUserCrmActions({ userEmail, userName, locale }: AdminUserCrmActionsProps) {
+export function AdminUserCrmActions({ userId, userEmail, userName, locale }: AdminUserCrmActionsProps) {
   const [resetting, setResetting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -17,11 +17,12 @@ export function AdminUserCrmActions({ userEmail, userName, locale }: AdminUserCr
     setResetting(true);
     setMessage(null);
     try {
-      const res = await authClient.requestPasswordReset({
-        email: userEmail,
-        redirectTo: `/${locale}/reset-password`,
+      const res = await fetch(`/api/admin/users/${userId}/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locale }),
       });
-      if (res.error) {
+      if (!res.ok) {
         setMessage(locale === "ar" ? "فشل إرسال الرابط." : "Échec de l'envoi.");
       } else {
         setMessage(

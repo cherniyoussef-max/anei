@@ -30,7 +30,7 @@ export default async function AdminUserDetail({ params, searchParams }: {
     </section>
     
     {String(session.user.role) === "SUPER_ADMIN" && (
-      <AdminUserCrmActions userEmail={data.user.email} userName={data.user.name} locale={locale} />
+      <AdminUserCrmActions userId={id} userEmail={data.user.email} userName={data.user.name} locale={locale} />
     )}
 
     <nav className="admin-tabs" aria-label={ar ? "أقسام ملف المستخدم" : "Sections de la fiche utilisateur"}>{tabs.map(([key,label])=><a key={key} className={tab===key?"active":""} href={`?tab=${key}`}>{label}</a>)}</nav>
