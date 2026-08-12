@@ -65,7 +65,7 @@ jobs:
           persist-credentials: false
       - name: Require lockfile
         run: test -f package-lock.json || (echo "Commit package-lock.json before enabling CI" && exit 1)
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -113,7 +113,7 @@ jobs:
           persist-credentials: false
       - name: Require lockfile
         run: test -f package-lock.json || (echo "Commit package-lock.json before enabling CI" && exit 1)
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
