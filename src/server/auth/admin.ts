@@ -1,19 +1,23 @@
-import { getSession } from "@/server/auth/session";
+import { getFreshSession } from "@/server/auth/session";
 import { consumeRateLimit } from "@/server/security/rate-limit";
 import { hasAdminPermission, type AdminPermission } from "@/modules/admin/domain/permissions";
 
+// Admin authorization always reads a fresh, DB-backed session (see
+// getFreshSession) rather than a cookie-cached one, so a demoted user loses
+// elevated access on their very next admin request.
+
 export async function getAdminSession() {
-  const session = await getSession();
+  const session = await getFreshSession();
   return session && ["ADMIN", "SUPER_ADMIN"].includes(String(session.user.role)) ? session : null;
 }
 
 export async function getSuperAdminSession() {
-  const session = await getSession();
+  const session = await getFreshSession();
   return session && String(session.user.role) === "SUPER_ADMIN" ? session : null;
 }
 
 export async function getAdminSessionFor(permission: AdminPermission) {
-  const session = await getSession();
+  const session = await getFreshSession();
   return session && hasAdminPermission(String(session.user.role), permission) ? session : null;
 }
 

@@ -2,8 +2,10 @@ import { count, eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { adminMutationRateLimit, getSuperAdminSession } from "@/server/auth/admin";
+import { revokeUserSessions } from "@/server/auth/session";
 import { db } from "@/server/db";
 import { auditLogs, user } from "@/server/db/schema";
+import { logger } from "@/server/security/logger";
 import { isTrustedMutation } from "@/server/security/origin";
 import { readLimitedJson } from "@/server/security/request-body";
 
@@ -33,10 +35,23 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
     const [updated] = await tx.update(user).set({ role: parsed.data.role, updatedAt: new Date() }).where(eq(user.id, id.data)).returning({ id: user.id, role: user.role });
     await tx.insert(auditLogs).values({ actorUserId: session.user.id, action: "user.role.update", entityType: "user", entityId: id.data, metadata: { from: target.role, to: parsed.data.role } });
-    return { kind: "ok" as const, updated };
+    return { kind: "ok" as const, updated, roleChanged: target.role !== parsed.data.role };
   });
 
   if (result.kind === "not_found") return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
   if (result.kind === "last_super_admin") return NextResponse.json({ error: "LAST_SUPER_ADMIN" }, { status: 409 });
+
+  // The role change is already committed and authoritative; a stale existing
+  // session must not keep authorizing on the old role. Revocation is best-effort:
+  // it never rolls back the already-committed role update, it only forces the
+  // affected user to re-authenticate so their next session reflects the new role.
+  if (result.roleChanged) {
+    try {
+      await revokeUserSessions(id.data);
+    } catch (error) {
+      logger.error("admin.role_session_revocation_failed", { userId: id.data, error: String(error) });
+    }
+  }
+
   return NextResponse.json({ user: result.updated });
 }
