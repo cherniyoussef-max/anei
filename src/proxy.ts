@@ -10,12 +10,15 @@ export function proxy(request: NextRequest) {
   const isDev = process.env.NODE_ENV === "development";
   const connectSources = ["'self'"];
   const frameSources = ["'none'"];
+  const styleSources = ["'self'", `'nonce-${nonce}'`];
+  const scriptSources = ["'self'", `'nonce-${nonce}'`, "'strict-dynamic'"];
   const googleAuthConfigured = process.env.ENABLE_GOOGLE_AUTH === "true"
     && Boolean(process.env.GOOGLE_CLIENT_ID?.trim())
     && Boolean(process.env.GOOGLE_CLIENT_SECRET?.trim());
   if (googleAuthConfigured) {
     connectSources.push("https://accounts.google.com");
     frameSources.splice(0, 1, "https://accounts.google.com");
+    styleSources.push("https://accounts.google.com/gsi/style");
   }
   if (process.env.STORAGE_PROVIDER === "s3-compatible") {
     try {
@@ -29,10 +32,15 @@ export function proxy(request: NextRequest) {
     }
   }
 
+  if (isDev) {
+    scriptSources.push("'unsafe-eval'");
+    styleSources.push("'unsafe-inline'");
+  }
+
   const csp = [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
-    `style-src 'self' 'nonce-${nonce}'${isDev ? " 'unsafe-inline'" : ""}`,
+    `script-src ${scriptSources.join(" ")}`,
+    `style-src ${styleSources.join(" ")}`,
     "style-src-attr 'unsafe-inline'",
     "img-src 'self' blob: data: https:",
     "media-src 'self' blob: https:",
