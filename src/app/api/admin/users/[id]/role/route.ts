@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { adminMutationRateLimit, getSuperAdminSession } from "@/server/auth/admin";
 import { revokeUserSessions } from "@/server/auth/session";
+import { invalidateAdminUserCaches } from "@/server/cache/admin-users";
 import { db } from "@/server/db";
 import { auditLogs, user } from "@/server/db/schema";
 import { logger } from "@/server/security/logger";
@@ -51,6 +52,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     } catch (error) {
       logger.error("admin.role_session_revocation_failed", { userId: id.data, error: String(error) });
     }
+    // Independent of session revocation: the admin list/detail cache also
+    // shows role, so it must not keep serving the pre-update role for the
+    // rest of its 60s TTL. See src/server/cache/admin-users.ts.
+    await invalidateAdminUserCaches(id.data);
   }
 
   return NextResponse.json({ user: result.updated });
