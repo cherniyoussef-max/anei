@@ -18,3 +18,9 @@ sbom.cdx.json
 
 # TypeScript build cache
 *.tsbuildinfo
+
+# Local AI development artifacts
+graphify-out/
+.serena/
+*.before-ai-stack.bak
+docs/archive/CLAUDE_LEGACY_*.md
