@@ -211,6 +211,11 @@ async function applyVerification(paymentId: string, orderId: string, result: Ver
     const [order] = await tx.select().from(orders).where(eq(orders.id, orderId)).limit(1);
     if (!order) throw new Error("ORDER_NOT_FOUND");
 
+    // Paid is a terminal, authoritative state. A later re-verification (retry,
+    // stale provider read, replay) must never downgrade an order that has
+    // already been confirmed paid, even if the provider now reports pending/failed.
+    if (order.status === "paid") return;
+
     // A payment provider can only confirm the server-side amount that was recorded
     // when the order was created. Client totals never participate in this decision.
     const amountMatches = result.amountMillimes === undefined || result.amountMillimes === order.amountMillimes;
