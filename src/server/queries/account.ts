@@ -60,3 +60,14 @@ export async function getLearningCourse(userId: string, slug: string) {
     : courseLessons;
   return { ...row, lessons: resolvedLessons, modules, progress };
 }
+
+/** Entitlement check for the private resource-download flow: only the purchasing user's own resource. */
+export async function getPurchasedResourceForDownload(userId: string, resourceId: string) {
+  const [row] = await db
+    .select({ resource: resources })
+    .from(purchases)
+    .innerJoin(resources, eq(purchases.resourceId, resources.id))
+    .where(and(eq(purchases.userId, userId), eq(resources.id, resourceId)))
+    .limit(1);
+  return row?.resource;
+}

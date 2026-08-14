@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
-import { and, eq } from "drizzle-orm";
 import { getSession } from "@/server/auth/session";
-import { db } from "@/server/db";
-import { purchases, resources } from "@/server/db/schema";
 import { env } from "@/server/env";
+import { getPurchasedResourceForDownload } from "@/server/queries/account";
 import { signedDownloadUrl } from "@/server/storage";
 import { z } from "zod";
 
@@ -18,20 +16,15 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   const entityId = id.data;
 
   // Authorization is performed before any storage location is revealed.
-  const [row] = await db
-    .select({ resource: resources })
-    .from(purchases)
-    .innerJoin(resources, eq(purchases.resourceId, resources.id))
-    .where(and(eq(purchases.userId, session.user.id), eq(resources.id, entityId)))
-    .limit(1);
+  const resource = await getPurchasedResourceForDownload(session.user.id, entityId);
 
-  if (!row) return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
+  if (!resource) return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
 
   if (env.STORAGE_PROVIDER === "s3-compatible") {
-    if (!row.resource.downloadUrl) return NextResponse.json({ error: "FILE_NOT_AVAILABLE" }, { status: 404 });
+    if (!resource.downloadUrl) return NextResponse.json({ error: "FILE_NOT_AVAILABLE" }, { status: 404 });
     try {
-      const filename = `${row.resource.slug}.${row.resource.type.toLowerCase().includes("pdf") ? "pdf" : "bin"}`;
-      const url = await signedDownloadUrl(row.resource.downloadUrl, filename);
+      const filename = `${resource.slug}.${resource.type.toLowerCase().includes("pdf") ? "pdf" : "bin"}`;
+      const url = await signedDownloadUrl(resource.downloadUrl, filename);
       return NextResponse.redirect(url, 307);
     } catch {
       return NextResponse.json({ error: "FILE_NOT_AVAILABLE" }, { status: 404 });
@@ -40,11 +33,11 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
 
   // Development-only deterministic resource so the entitlement flow can be
   // exercised without requiring external object storage credentials.
-  const body = `# ${row.resource.titleFr}\n\nRessource de démonstration ANEI\n\n${row.resource.descriptionFr}\n\nPublic : ${row.resource.audienceFr}\n`;
+  const body = `# ${resource.titleFr}\n\nRessource de démonstration ANEI\n\n${resource.descriptionFr}\n\nPublic : ${resource.audienceFr}\n`;
   return new NextResponse(body, {
     headers: {
       "Content-Type": "text/markdown; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${row.resource.slug}.md"`,
+      "Content-Disposition": `attachment; filename="${resource.slug}.md"`,
       "Cache-Control": "private, no-store",
       "X-Content-Type-Options": "nosniff",
     },
