@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { auth } from "@/server/auth";
 import type { Locale } from "@/types";
 import { hasAdminPermission, type AdminPermission } from "@/modules/admin/domain/permissions";
+import type { Persona } from "@/modules/personas/domain/permissions";
+import { getUserPersonas } from "@/server/queries/personas";
 
 export async function getSession() {
   return auth.api.getSession({ headers: await headers() });
@@ -58,5 +60,21 @@ export async function requireAdminPermission(locale: Locale, permission: AdminPe
   const current = await getFreshSession();
   if (!current) redirect(`/${locale}/login?next=/${locale}/dashboard`);
   if (!hasAdminPermission(String(current.user.role), permission)) redirect(`/${locale}/dashboard`);
+  return current;
+}
+
+/**
+ * Server-side portal gate: verifies the authenticated user genuinely holds
+ * the given persona with ACTIVE status, straight from the DB (never trusts
+ * client state, nav visibility, or URL naming). Missing persona → dashboard;
+ * present but not yet ACTIVE (PENDING_REVIEW/SUSPENDED/REJECTED) →
+ * pending-review page, never the portal itself.
+ */
+export async function requireActivePersona(locale: Locale, persona: Persona) {
+  const current = await requireUser(locale);
+  const memberships = await getUserPersonas(current.user.id);
+  const membership = memberships.find((row) => row.persona === persona);
+  if (!membership) redirect(`/${locale}/dashboard`);
+  if (membership.status !== "ACTIVE") redirect(`/${locale}/pending-review`);
   return current;
 }

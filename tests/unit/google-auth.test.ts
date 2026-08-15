@@ -27,6 +27,18 @@ test("Google account creation uses safe learner defaults", () => {
   );
 });
 
+test("registration with an explicit, valid profileType passes it through unchanged", () => {
+  for (const profileType of ["learner", "teacher", "avs", "parent", "specialist", "institution"]) {
+    assert.equal(enforceNewUserDefaults({ email: "new@example.com", profileType }).profileType, profileType);
+  }
+});
+
+test("registration with a malformed/unsupported/empty profileType is rejected (throws) before any user row is created — never silently mapped to STUDENT", () => {
+  for (const profileType of ["hacker", "", "ADMIN", "TEACHER", "teacher ", "teacher; DROP TABLE", 0, null, {}, ["teacher"]]) {
+    assert.throws(() => enforceNewUserDefaults({ email: "new@example.com", profileType }), `expected "${JSON.stringify(profileType)}" to be rejected`);
+  }
+});
+
 test("French and Arabic Google callbacks remain locale scoped", () => {
   assert.equal(safeAppRedirect(undefined, "fr"), "/fr/dashboard");
   assert.equal(safeAppRedirect(undefined, "ar"), "/ar/dashboard");

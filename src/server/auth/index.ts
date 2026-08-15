@@ -6,6 +6,7 @@ import { account, rateLimit, session, user, verification } from "@/server/db/sch
 import { env, googleAuthConfigured, isLocalProductionSmoke } from "@/server/env";
 import { enforceNewUserDefaults } from "@/server/auth/policy";
 import { sendResetEmail, sendVerificationEmail } from "@/server/services/mailer";
+import { ensurePrimaryPersonaMembership } from "@/server/services/personas";
 
 export const auth = betterAuth({
   appName: "Académie Nationale de l’Éducation Inclusive",
@@ -20,6 +21,10 @@ export const auth = betterAuth({
     user: {
       create: {
         before: async (data) => ({ data: enforceNewUserDefaults(data) }),
+        after: async (created) => {
+          const profileType = typeof created.profileType === "string" ? created.profileType : "learner";
+          await ensurePrimaryPersonaMembership(created.id, profileType);
+        },
       },
     },
   },

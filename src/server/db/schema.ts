@@ -415,6 +415,44 @@ export const avsProfiles = pgTable(
   ],
 );
 
+// Persona membership: a user's product-facing role(s) (TEACHER/AVS/PARENT/
+// SPECIALIST/ORGANIZATION/STUDENT), separate from the Better Auth security
+// role (`user.role`). Multiple personas per user are supported; exactly one
+// is primary (drives default portal routing). `user.profileType` remains the
+// legacy single-value source (kept for backward compatibility) and is
+// backfilled 1:1 into this table; this table is authoritative going forward.
+export const personaMembership = pgTable(
+  "persona_membership",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    persona: text("persona").notNull(),
+    status: text("status").notNull().default("ACTIVE"),
+    isPrimary: boolean("is_primary").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("persona_membership_user_persona_unique").on(table.userId, table.persona),
+    uniqueIndex("persona_membership_user_primary_unique")
+      .on(table.userId)
+      .where(sql`${table.isPrimary} = true`),
+    index("persona_membership_user_idx").on(table.userId),
+    index("persona_membership_persona_idx").on(table.persona),
+    index("persona_membership_status_idx").on(table.status),
+    check(
+      "persona_membership_persona_check",
+      sql`${table.persona} in ('TEACHER','AVS','PARENT','SPECIALIST','ORGANIZATION','STUDENT')`,
+    ),
+    check(
+      "persona_membership_status_check",
+      sql`${table.status} in ('PENDING_REVIEW','ACTIVE','SUSPENDED','REJECTED')`,
+    ),
+  ],
+);
+
 export const certificates = pgTable(
   "certificates",
   {
@@ -520,6 +558,7 @@ export const auditLogs = pgTable(
 );
 
 export type DbUser = typeof user.$inferSelect;
+export type PersonaMembershipRow = typeof personaMembership.$inferSelect;
 export type CourseRow = typeof courses.$inferSelect;
 export type ResourceRow = typeof resources.$inferSelect;
 export type WebinarRow = typeof webinars.$inferSelect;

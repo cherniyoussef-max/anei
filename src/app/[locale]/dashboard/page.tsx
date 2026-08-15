@@ -1,10 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { formatDate, isLocale } from "@/lib/i18n";
 import { Icon } from "@/components/ui/Icon";
 import { requireUser } from "@/server/auth/session";
 import { getDashboardData } from "@/server/queries/account";
+import { getUserPersonas } from "@/server/queries/personas";
+import { personaPortalPath, type Persona } from "@/modules/personas/domain/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +14,22 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const session = await requireUser(locale);
+  const isAdmin = ["ADMIN", "SUPER_ADMIN"].includes(String(session.user.role));
+
+  // Route by ACTIVE primary persona. STUDENT (and admins) render the
+  // dashboard below as usual. A non-STUDENT primary persona redirects to its
+  // own portal when ACTIVE, or to the pending-review page otherwise —
+  // client-selected/registration-time persona is never trusted here, only
+  // the DB-authoritative persona_membership row.
+  if (!isAdmin) {
+    const memberships = await getUserPersonas(session.user.id);
+    const primary = memberships.find((row) => row.isPrimary);
+    if (primary && primary.persona !== "STUDENT") {
+      if (primary.status === "ACTIVE") redirect(`/${locale}${personaPortalPath[primary.persona as Persona]}`);
+      redirect(`/${locale}/pending-review`);
+    }
+  }
+
   const ar = locale === "ar";
   const data = await getDashboardData(session.user.id);
   const avg = data.enrollmentRows.length ? Math.round(data.enrollmentRows.reduce((sum, row) => sum + row.enrollment.progressPercent, 0) / data.enrollmentRows.length) : 0;
