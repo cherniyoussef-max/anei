@@ -7,6 +7,7 @@ import { getContactActivity, getContactNotes, getContactTags, getCrmContact, lis
 import { AdminPageHeader } from "@/modules/admin/components/AdminPageHeader";
 import { AdminCrmContactActions } from "@/components/admin/AdminCrmContactActions";
 import { AdminWhatsAppContactSection } from "@/components/admin/AdminWhatsAppContactSection";
+import { AdminInvitationSection } from "@/components/admin/AdminInvitationSection";
 
 export const dynamic = "force-dynamic";
 
@@ -57,6 +58,8 @@ export default async function AdminCrmContactDetailPage({ params }: { params: Pr
     </section>
 
     <AdminWhatsAppContactSection organizationId={orgId} contactId={contactId} locale={locale} />
+
+    <AdminInvitationSection organizationId={orgId} contactId={contactId} locale={locale} />
 
     <section className="admin-surface">
       <h3>{ar ? "الملاحظات" : "Notes"}</h3>

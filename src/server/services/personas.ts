@@ -27,6 +27,22 @@ export async function ensurePrimaryPersonaMembership(userId: string, profileType
     .onConflictDoNothing();
 }
 
+/**
+ * Idempotent persona assurance for the Phase 6 invitation claim: a claimed
+ * account is granted the invitation's intended persona (STUDENT) WITHOUT
+ * becoming primary, so an existing primary persona (e.g. a teacher who was
+ * invited as a student) is never overwritten or duplicated. `onConflictDoNothing`
+ * absorbs both the (userId, persona) unique and the partial
+ * (userId) WHERE isPrimary unique. Status uses defaultStatusFor (ACTIVE for
+ * STUDENT); the claim flow never sets admin roles or PENDING_REVIEW personas.
+ */
+export async function ensureClaimedPersonaMembership(userId: string, persona: Persona): Promise<void> {
+  await db
+    .insert(personaMembership)
+    .values({ userId, persona, status: defaultStatusFor(persona), isPrimary: false })
+    .onConflictDoNothing();
+}
+
 type PersonaMutationResult =
   | { kind: "ok"; from: PersonaStatus | null }
   | { kind: "not_found" };

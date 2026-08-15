@@ -34,6 +34,15 @@ export type WhatsAppMutationResult =
   | { kind: "not_configured" }
   | { kind: "provider_error"; code?: string | null; providerErrorCode?: string | null; providerErrorMessage?: string | null };
 
+/**
+ * Who is initiating a WhatsApp send. `null` means a system-initiated send
+ * (e.g. the Phase 6 invitation/OTP flow) that has ALREADY been authorized and
+ * rate-limited by its own boundary — the whatsapp service gate is skipped and
+ * the message row records no human actor. A present actor is a human admin
+ * and the standard organization-role gate applies.
+ */
+export type WhatsAppSendActor = { userId: string; role: OrganizationRole } | null;
+
 const MAX_BODY_PARAMETERS = 32;
 const MAX_PARAMETER_TEXT_LENGTH = 4_096;
 
@@ -204,6 +213,11 @@ function validateBodyParameters(parameters: unknown[], parameterCount: number): 
  * contact id, template id, language and a bounded list of body parameter
  * strings. Raw Meta payload injection is impossible by construction.
  *
+ * This is the human-admin path: it requires an actor and applies the
+ * organization-role gate (`canManageWhatsappMessages`). The Phase 6
+ * invitation/OTP flow uses the same underlying `sendWhatsAppTemplateCore`
+ * with a system actor (`null`) and its own authorization/rate-limit boundary.
+ *
  * External-side-effect consistency: the local message row (status QUEUED) is
  * persisted BEFORE the Meta call, keyed by a unique `localRequestId`, then the
  * provider result is written back in a second transaction (SENT with the
@@ -225,7 +239,30 @@ export async function sendWhatsAppTemplate(
     requestId?: string;
   },
 ): Promise<WhatsAppMutationResult> {
-  if (!canManageWhatsappMessages(actorRole)) return { kind: "forbidden" };
+  return sendWhatsAppTemplateCore(organizationId, data, { userId: actorUserId, role: actorRole });
+}
+
+/**
+ * Shared outbound-send pipeline used by the human-admin path
+ * (`sendWhatsAppTemplate`) and by system-initiated sends such as the Phase 6
+ * invitation/OTP flow. `destinationPhone` is a SERVER-RESOLVED snapshot
+ * override (e.g. the invitation's normalized destination) — it is never
+ * accepted from a client schema; when absent the destination is read from the
+ * contact's current phone, preserving the Phase 5 behavior exactly.
+ */
+export async function sendWhatsAppTemplateCore(
+  organizationId: string,
+  data: {
+    contactId: string;
+    templateId: string;
+    language: string;
+    parameters?: string[];
+    requestId?: string;
+    destinationPhone?: string | null;
+  },
+  actor: WhatsAppSendActor,
+): Promise<WhatsAppMutationResult> {
+  if (actor && !canManageWhatsappMessages(actor.role)) return { kind: "forbidden" };
 
   const account = await getWhatsAppAccountForOrg(organizationId);
   if (!account || !isActiveMetaAccount(account)) return { kind: "no_account" };
@@ -259,7 +296,7 @@ export async function sendWhatsAppTemplate(
         .limit(1);
       if (!template || template.status !== "APPROVED") throw new SendValidation("invalid_template");
 
-      const normalized = normalizeWhatsAppPhone(contact.phone);
+      const normalized = normalizeWhatsAppPhone(data.destinationPhone ?? contact.phone);
       if (!normalized) throw new SendValidation("no_phone");
 
       const parameters = validateBodyParameters(data.parameters ?? [], template.parameterCount);
@@ -297,7 +334,7 @@ export async function sendWhatsAppTemplate(
               toPhone: normalized,
               templateName: template.name,
               templateLanguage: data.language,
-              createdByUserId: actorUserId,
+              createdByUserId: actor?.userId ?? null,
             })
             .returning();
           messageId = row.id;
@@ -353,16 +390,16 @@ export async function sendWhatsAppTemplate(
       providerErrorCode = error.providerErrorCode;
       providerErrorMessage = error.providerErrorMessage;
     }
-    await recordOutboundFailure(actorUserId, organizationId, messageId, providerErrorCode, providerErrorMessage);
+    await recordOutboundFailure(actor?.userId ?? null, organizationId, messageId, providerErrorCode, providerErrorMessage);
     return { kind: "provider_error", code, providerErrorCode, providerErrorMessage };
   }
 
-  await recordOutboundSent(actorUserId, organizationId, messageId, providerMessageId);
+  await recordOutboundSent(actor?.userId ?? null, organizationId, messageId, providerMessageId);
   return { kind: "ok", id: messageId };
 }
 
 async function recordOutboundSent(
-  actorUserId: string,
+  actorUserId: string | null,
   organizationId: string,
   messageId: string,
   providerMessageId: string,
@@ -398,7 +435,7 @@ async function recordOutboundSent(
 }
 
 async function recordOutboundFailure(
-  actorUserId: string,
+  actorUserId: string | null,
   organizationId: string,
   messageId: string,
   providerErrorCode: string | null | undefined,

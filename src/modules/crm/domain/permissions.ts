@@ -35,6 +35,11 @@ export const crmContactActivityTypes = [
   "WHATSAPP_TEMPLATE_SENT",
   "WHATSAPP_MESSAGE_RECEIVED",
   "WHATSAPP_FAILED",
+  // Phase 6: account invitation / phone verification / user linking events.
+  "ACCOUNT_INVITATION_SENT",
+  "PHONE_VERIFIED",
+  "ACCOUNT_LINKED",
+  "ACCOUNT_INVITATION_REVOKED",
 ] as const;
 export type CrmContactActivityType = (typeof crmContactActivityTypes)[number];
 
