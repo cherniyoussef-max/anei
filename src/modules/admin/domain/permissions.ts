@@ -25,6 +25,8 @@ export const adminPermissions = [
   "payments.reconcile",
   "contacts.read",
   "contacts.manage",
+  "crm.read",
+  "crm.manage",
   "audit.read",
   "system.read",
 ] as const;
@@ -37,7 +39,7 @@ const adminCapabilities = new Set<AdminPermission>([
   "courses.update", "courses.publish", "enrollments.read", "learning.read",
   "certificates.read", "webinars.read", "webinars.manage", "resources.read",
   "resources.manage", "news.read", "news.manage", "orders.read", "payments.read",
-  "payments.reconcile", "contacts.read", "contacts.manage", "audit.read", "system.read",
+  "payments.reconcile", "contacts.read", "contacts.manage", "crm.read", "crm.manage", "audit.read", "system.read",
 ]);
 
 export function hasAdminPermission(role: string | null | undefined, permission: AdminPermission) {

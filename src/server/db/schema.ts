@@ -2,10 +2,12 @@ import {
   bigint,
   boolean,
   check,
+  foreignKey,
   index,
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -614,6 +616,176 @@ export const specialistStudentAssignment = pgTable(
   ],
 );
 
+// -----------------------------------------------------------------------------
+// Phase 3: CRM foundation. Deliberately namespaced `crm*`/`crm_*` and kept
+// separate from `contactMessages` (the public website contact-form
+// submissions table) and from `/admin/contacts` — a CRM contact is a
+// lead/person the organization is tracking, not a website form submission.
+// See docs/premium/ROADMAP.md Phase 3 and docs/premium/DATA_MODEL.md §5.
+//
+// A CRM contact is explicitly NOT a user account: `linkedUserId` is always
+// optional, no credentials/session fields exist here, and no account is ever
+// created as a side effect of CRM mutations (see SECURITY_MODEL.md-style
+// reasoning: authorization for CRM data comes from organization membership,
+// never from the CRM contact record itself).
+// -----------------------------------------------------------------------------
+
+export const crmPipeline = pgTable(
+  "crm_pipeline",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("crm_pipeline_org_name_unique").on(table.organizationId, table.name),
+    index("crm_pipeline_org_idx").on(table.organizationId),
+  ],
+);
+
+// `organizationId` is denormalized from the parent pipeline so that
+// `crmContact.currentStageId` can carry a composite FK
+// (currentStageId, organizationId) -> (id, organizationId) — this makes a
+// contact referencing a stage from a foreign organization/pipeline a DB-level
+// impossibility, not just an application-level check.
+export const crmPipelineStage = pgTable(
+  "crm_pipeline_stage",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    pipelineId: text("pipeline_id")
+      .notNull()
+      .references(() => crmPipeline.id, { onDelete: "cascade" }),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    position: integer("position").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("crm_pipeline_stage_id_org_unique").on(table.id, table.organizationId),
+    uniqueIndex("crm_pipeline_stage_pipeline_position_unique").on(table.pipelineId, table.position),
+    index("crm_pipeline_stage_pipeline_idx").on(table.pipelineId),
+  ],
+);
+
+export const crmContact = pgTable(
+  "crm_contact",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    linkedUserId: text("linked_user_id").references(() => user.id, { onDelete: "set null" }),
+    firstName: text("first_name").notNull(),
+    lastName: text("last_name").notNull(),
+    email: text("email"),
+    phone: text("phone"),
+    status: text("status").notNull().default("ACTIVE"),
+    currentStageId: text("current_stage_id"),
+    assignedToUserId: text("assigned_to_user_id").references(() => user.id, { onDelete: "set null" }),
+    createdByUserId: text("created_by_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+  },
+  (table) => [
+    foreignKey({
+      name: "crm_contact_stage_org_fk",
+      columns: [table.currentStageId, table.organizationId],
+      foreignColumns: [crmPipelineStage.id, crmPipelineStage.organizationId],
+    }),
+    index("crm_contact_org_idx").on(table.organizationId, table.status),
+    index("crm_contact_stage_idx").on(table.currentStageId),
+    index("crm_contact_assignee_idx").on(table.assignedToUserId),
+    // A user may be linked from at most one CRM contact per organization —
+    // prevents nonsensical duplicate links (docs/premium/ROADMAP.md Phase 3 §D).
+    uniqueIndex("crm_contact_org_linked_user_unique")
+      .on(table.organizationId, table.linkedUserId)
+      .where(sql`${table.linkedUserId} is not null`),
+    index("crm_contact_created_idx").on(table.organizationId, table.createdAt),
+    check("crm_contact_status_check", sql`${table.status} in ('ACTIVE','ARCHIVED')`),
+  ],
+);
+
+export const crmTag = pgTable(
+  "crm_tag",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("crm_tag_org_name_unique").on(table.organizationId, table.name),
+    index("crm_tag_org_idx").on(table.organizationId),
+  ],
+);
+
+export const crmContactTag = pgTable(
+  "crm_contact_tag",
+  {
+    contactId: text("contact_id")
+      .notNull()
+      .references(() => crmContact.id, { onDelete: "cascade" }),
+    tagId: text("tag_id")
+      .notNull()
+      .references(() => crmTag.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    primaryKey({ columns: [table.contactId, table.tagId] }),
+    index("crm_contact_tag_tag_idx").on(table.tagId),
+  ],
+);
+
+export const crmContactNote = pgTable(
+  "crm_contact_note",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    contactId: text("contact_id")
+      .notNull()
+      .references(() => crmContact.id, { onDelete: "cascade" }),
+    authorUserId: text("author_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [index("crm_contact_note_contact_idx").on(table.contactId, table.createdAt)],
+);
+
+export const crmContactActivity = pgTable(
+  "crm_contact_activity",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    contactId: text("contact_id")
+      .notNull()
+      .references(() => crmContact.id, { onDelete: "cascade" }),
+    actorUserId: text("actor_user_id").references(() => user.id, { onDelete: "set null" }),
+    type: text("type").notNull(),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("crm_contact_activity_contact_idx").on(table.contactId, table.createdAt),
+    check(
+      "crm_contact_activity_type_check",
+      sql`${table.type} in ('CONTACT_CREATED','CONTACT_UPDATED','CONTACT_ARCHIVED','CONTACT_RESTORED','USER_LINKED','USER_UNLINKED','ASSIGNEE_CHANGED','TAG_ATTACHED','TAG_DETACHED','NOTE_ADDED','STAGE_CHANGED')`,
+    ),
+  ],
+);
+
 export const certificates = pgTable(
   "certificates",
   {
@@ -725,6 +897,12 @@ export type OrganizationMembershipRow = typeof organizationMembership.$inferSele
 export type ParentStudentLinkRow = typeof parentStudentLink.$inferSelect;
 export type AvsStudentAssignmentRow = typeof avsStudentAssignment.$inferSelect;
 export type SpecialistStudentAssignmentRow = typeof specialistStudentAssignment.$inferSelect;
+export type CrmPipelineRow = typeof crmPipeline.$inferSelect;
+export type CrmPipelineStageRow = typeof crmPipelineStage.$inferSelect;
+export type CrmContactRow = typeof crmContact.$inferSelect;
+export type CrmTagRow = typeof crmTag.$inferSelect;
+export type CrmContactNoteRow = typeof crmContactNote.$inferSelect;
+export type CrmContactActivityRow = typeof crmContactActivity.$inferSelect;
 export type CourseRow = typeof courses.$inferSelect;
 export type ResourceRow = typeof resources.$inferSelect;
 export type WebinarRow = typeof webinars.$inferSelect;
