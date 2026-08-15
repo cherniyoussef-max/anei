@@ -21,6 +21,15 @@ export const crmContactActivityTypes = [
   "TAG_DETACHED",
   "NOTE_ADDED",
   "STAGE_CHANGED",
+  // Phase 4: admission funnel activity (appointments, assessments, decisions).
+  "APPOINTMENT_CREATED",
+  "APPOINTMENT_RESCHEDULED",
+  "APPOINTMENT_CANCELLED",
+  "APPOINTMENT_COMPLETED",
+  "ASSESSMENT_CREATED",
+  "ASSESSMENT_COMPLETED",
+  "ADMISSION_ACCEPTED",
+  "ADMISSION_REJECTED",
 ] as const;
 export type CrmContactActivityType = (typeof crmContactActivityTypes)[number];
 

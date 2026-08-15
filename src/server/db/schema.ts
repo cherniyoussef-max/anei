@@ -702,6 +702,10 @@ export const crmContact = pgTable(
       columns: [table.currentStageId, table.organizationId],
       foreignColumns: [crmPipelineStage.id, crmPipelineStage.organizationId],
     }),
+    // (id, organizationId) unique enables the composite FK that keeps Phase 4
+    // appointment/assessment/admission contact references organization-scoped
+    // (a row in org A can never point at a contact in org B at the DB level).
+    uniqueIndex("crm_contact_id_org_unique").on(table.id, table.organizationId),
     index("crm_contact_org_idx").on(table.organizationId, table.status),
     index("crm_contact_stage_idx").on(table.currentStageId),
     index("crm_contact_assignee_idx").on(table.assignedToUserId),
@@ -781,8 +785,149 @@ export const crmContactActivity = pgTable(
     index("crm_contact_activity_contact_idx").on(table.contactId, table.createdAt),
     check(
       "crm_contact_activity_type_check",
-      sql`${table.type} in ('CONTACT_CREATED','CONTACT_UPDATED','CONTACT_ARCHIVED','CONTACT_RESTORED','USER_LINKED','USER_UNLINKED','ASSIGNEE_CHANGED','TAG_ATTACHED','TAG_DETACHED','NOTE_ADDED','STAGE_CHANGED')`,
+      sql`${table.type} in ('CONTACT_CREATED','CONTACT_UPDATED','CONTACT_ARCHIVED','CONTACT_RESTORED','USER_LINKED','USER_UNLINKED','ASSIGNEE_CHANGED','TAG_ATTACHED','TAG_DETACHED','NOTE_ADDED','STAGE_CHANGED','APPOINTMENT_CREATED','APPOINTMENT_RESCHEDULED','APPOINTMENT_CANCELLED','APPOINTMENT_COMPLETED','ASSESSMENT_CREATED','ASSESSMENT_COMPLETED','ADMISSION_ACCEPTED','ADMISSION_REJECTED')`,
     ),
+  ],
+);
+
+export const appointment = pgTable(
+  "appointment",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    contactId: text("contact_id").notNull(),
+    assignedToUserId: text("assigned_to_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    createdByUserId: text("created_by_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    type: text("type").notNull().default("ASSESSMENT"),
+    startAt: timestamp("start_at", { withTimezone: true }).notNull(),
+    endAt: timestamp("end_at", { withTimezone: true }).notNull(),
+    status: text("status").notNull().default("SCHEDULED"),
+    note: text("note"),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    // Composite FK keeps the appointment's contact within the same organization
+    // (a row in org A can never reference a contact in org B at the DB level).
+    foreignKey({
+      name: "appointment_contact_org_fk",
+      columns: [table.contactId, table.organizationId],
+      foreignColumns: [crmContact.id, crmContact.organizationId],
+    }),
+    // (id, organizationId) unique enables the composite assessment FK below.
+    uniqueIndex("appointment_id_org_unique").on(table.id, table.organizationId),
+    index("appointment_org_start_idx").on(table.organizationId, table.startAt),
+    index("appointment_assignee_start_idx").on(table.assignedToUserId, table.startAt),
+    index("appointment_contact_idx").on(table.contactId),
+    check("appointment_status_check", sql`${table.status} in ('SCHEDULED','CONFIRMED','COMPLETED','CANCELLED','NO_SHOW')`),
+    check("appointment_type_check", sql`${table.type} in ('ASSESSMENT','INFO_MEETING','FOLLOW_UP','OTHER')`),
+    check("appointment_time_range_check", sql`${table.endAt} > ${table.startAt}`),
+  ],
+);
+
+export const appointmentEvent = pgTable(
+  "appointment_event",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    appointmentId: text("appointment_id")
+      .notNull()
+      .references(() => appointment.id, { onDelete: "cascade" }),
+    actorUserId: text("actor_user_id").references(() => user.id, { onDelete: "set null" }),
+    eventType: text("event_type").notNull(),
+    previousStatus: text("previous_status"),
+    newStatus: text("new_status"),
+    previousStartAt: timestamp("previous_start_at", { withTimezone: true }),
+    newStartAt: timestamp("new_start_at", { withTimezone: true }),
+    previousEndAt: timestamp("previous_end_at", { withTimezone: true }),
+    newEndAt: timestamp("new_end_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("appointment_event_appointment_idx").on(table.appointmentId, table.createdAt),
+    check(
+      "appointment_event_type_check",
+      sql`${table.eventType} in ('CREATED','RESCHEDULED','CONFIRMED','COMPLETED','CANCELLED','NO_SHOW')`,
+    ),
+  ],
+);
+
+export const assessment = pgTable(
+  "assessment",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    contactId: text("contact_id").notNull(),
+    appointmentId: text("appointment_id"),
+    assessorUserId: text("assessor_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    status: text("status").notNull().default("DRAFT"),
+    score: integer("score"),
+    maxScore: integer("max_score"),
+    summary: text("summary"),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    foreignKey({
+      name: "assessment_contact_org_fk",
+      columns: [table.contactId, table.organizationId],
+      foreignColumns: [crmContact.id, crmContact.organizationId],
+    }),
+    foreignKey({
+      name: "assessment_appointment_org_fk",
+      columns: [table.appointmentId, table.organizationId],
+      foreignColumns: [appointment.id, appointment.organizationId],
+    }),
+    // (id, organizationId) unique enables the composite admission FK below.
+    uniqueIndex("assessment_id_org_unique").on(table.id, table.organizationId),
+    index("assessment_org_contact_idx").on(table.organizationId, table.contactId),
+    index("assessment_appointment_idx").on(table.appointmentId),
+    check("assessment_status_check", sql`${table.status} in ('DRAFT','COMPLETED')`),
+  ],
+);
+
+export const admission = pgTable(
+  "admission",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    contactId: text("contact_id").notNull(),
+    assessmentId: text("assessment_id"),
+    decision: text("decision").notNull().default("PENDING"),
+    decidedByUserId: text("decided_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    reason: text("reason"),
+    decidedAt: timestamp("decided_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    foreignKey({
+      name: "admission_contact_org_fk",
+      columns: [table.contactId, table.organizationId],
+      foreignColumns: [crmContact.id, crmContact.organizationId],
+    }),
+    foreignKey({
+      name: "admission_assessment_org_fk",
+      columns: [table.assessmentId, table.organizationId],
+      foreignColumns: [assessment.id, assessment.organizationId],
+    }),
+    index("admission_org_decision_idx").on(table.organizationId, table.decision),
+    index("admission_contact_idx").on(table.contactId),
+    check("admission_decision_check", sql`${table.decision} in ('PENDING','ACCEPTED','REJECTED')`),
   ],
 );
 
@@ -903,6 +1048,10 @@ export type CrmContactRow = typeof crmContact.$inferSelect;
 export type CrmTagRow = typeof crmTag.$inferSelect;
 export type CrmContactNoteRow = typeof crmContactNote.$inferSelect;
 export type CrmContactActivityRow = typeof crmContactActivity.$inferSelect;
+export type AppointmentRow = typeof appointment.$inferSelect;
+export type AppointmentEventRow = typeof appointmentEvent.$inferSelect;
+export type AssessmentRow = typeof assessment.$inferSelect;
+export type AdmissionRow = typeof admission.$inferSelect;
 export type CourseRow = typeof courses.$inferSelect;
 export type ResourceRow = typeof resources.$inferSelect;
 export type WebinarRow = typeof webinars.$inferSelect;

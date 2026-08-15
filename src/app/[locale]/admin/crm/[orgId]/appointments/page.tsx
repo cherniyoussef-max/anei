@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
-import { isLocale } from "@/lib/i18n";
+import { formatDate, isLocale } from "@/lib/i18n";
 import { requireAdminPermission } from "@/server/auth/session";
 import { listOrganizations } from "@/server/queries/organizations";
-import { searchCrmContacts, getTagsForContacts } from "@/server/queries/crm";
+import { getOrgMembersForAssignment, searchAppointments } from "@/server/queries/admission";
 import { AdminPageHeader } from "@/modules/admin/components/AdminPageHeader";
-import { AdminCrmContactCreateForm } from "@/components/admin/AdminCrmContactCreateForm";
+import { AdminAppointmentCreateForm } from "@/components/admin/AdminAppointmentCreateForm";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +14,7 @@ function value(query: Record<string, string | string[] | undefined>, key: string
   return typeof query[key] === "string" ? (query[key] as string) : undefined;
 }
 
-export default async function AdminCrmContactsPage({ params, searchParams }: {
+export default async function AdminCrmAppointmentsPage({ params, searchParams }: {
   params: Promise<{ locale: string; orgId: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
@@ -28,13 +28,13 @@ export default async function AdminCrmContactsPage({ params, searchParams }: {
   if (!organization) notFound();
 
   const query = await searchParams;
-  const data = await searchCrmContacts({
+  const data = await searchAppointments({
     organizationId: orgId,
     q: value(query, "q"),
     status: value(query, "status"),
     page: Number(value(query, "page")) || undefined,
   });
-  const tagsByContact = await getTagsForContacts(data.items.map((c) => c.id));
+  const members = await getOrgMembersForAssignment(orgId);
 
   const href = (page: number) => {
     const next = new URLSearchParams();
@@ -43,29 +43,31 @@ export default async function AdminCrmContactsPage({ params, searchParams }: {
       if (item) next.set(key, item);
     }
     next.set("page", String(page));
-    return `/${locale}/admin/crm/${orgId}?${next}`;
+    return `/${locale}/admin/crm/${orgId}/appointments?${next}`;
   };
 
   return <>
-    <AdminPageHeader locale={locale} eyebrow={ar ? "إدارة العملاء" : "CRM"}
-      title={organization.name}
-      description={ar ? `${data.total} جهة اتصال` : `${data.total} contacts`}
+    <AdminPageHeader locale={locale} eyebrow={organization.name}
+      title={ar ? "المواعيد" : "Rendez-vous"}
+      description={ar ? `${data.total} موعد` : `${data.total} rendez-vous`}
       actions={<>
-        <Link className="admin-row-link" href={`/${locale}/admin/crm/${orgId}/appointments`}>{ar ? "المواعيد" : "Rendez-vous"}</Link>
+        <Link className="admin-row-link" href={`/${locale}/admin/crm/${orgId}`}>{ar ? "العملاء" : "Contacts"}</Link>
         <Link className="admin-row-link" href={`/${locale}/admin/crm/${orgId}/assessments`}>{ar ? "التقييمات" : "Évaluations"}</Link>
         <Link className="admin-row-link" href={`/${locale}/admin/crm/${orgId}/admissions`}>{ar ? "القبول" : "Admissions"}</Link>
-        <Link className="admin-row-link" href={`/${locale}/admin/crm/${orgId}/pipelines`}>{ar ? "المسارات" : "Pipelines"}</Link>
       </>} />
 
-    <AdminCrmContactCreateForm organizationId={orgId} locale={locale} />
+    <AdminAppointmentCreateForm organizationId={orgId} members={members} locale={locale} />
 
     <form className="admin-filter-panel" method="get" role="search">
-      <label><span>{ar ? "البحث" : "Recherche"}</span><input name="q" defaultValue={value(query, "q")} placeholder={ar ? "الاسم أو البريد أو الهاتف" : "Nom, e-mail ou téléphone"} /></label>
+      <label><span>{ar ? "البحث" : "Recherche"}</span><input name="q" defaultValue={value(query, "q")} placeholder={ar ? "اسم جهة الاتصال" : "Nom du contact"} /></label>
       <label><span>{ar ? "الحالة" : "Statut"}</span>
         <select name="status" defaultValue={value(query, "status") ?? ""}>
           <option value="">{ar ? "الكل" : "Tous"}</option>
-          <option value="ACTIVE">{ar ? "نشط" : "Actif"}</option>
-          <option value="ARCHIVED">{ar ? "مؤرشف" : "Archivé"}</option>
+          <option value="SCHEDULED">{ar ? "مجدول" : "Planifié"}</option>
+          <option value="CONFIRMED">{ar ? "مؤكد" : "Confirmé"}</option>
+          <option value="COMPLETED">{ar ? "مكتمل" : "Terminé"}</option>
+          <option value="CANCELLED">{ar ? "ملغى" : "Annulé"}</option>
+          <option value="NO_SHOW">{ar ? "عدم حضور" : "Absent"}</option>
         </select>
       </label>
       <button className="admin-primary-button">{ar ? "تطبيق" : "Appliquer"}</button>
@@ -76,26 +78,29 @@ export default async function AdminCrmContactsPage({ params, searchParams }: {
         <table className="admin-data-table">
           <thead>
             <tr>
-              <th>{ar ? "الاسم" : "Nom"}</th><th>Email</th><th>{ar ? "الهاتف" : "Téléphone"}</th>
-              <th>{ar ? "الحالة" : "Statut"}</th><th>{ar ? "الوسوم" : "Tags"}</th><th><span className="sr-only">{ar ? "إجراءات" : "Actions"}</span></th>
+              <th>{ar ? "جهة الاتصال" : "Contact"}</th><th>{ar ? "النوع" : "Type"}</th>
+              <th>{ar ? "البداية" : "Début"}</th><th>{ar ? "النهاية" : "Fin"}</th>
+              <th>{ar ? "الحالة" : "Statut"}</th><th>{ar ? "المسؤول" : "Assigné"}</th>
+              <th><span className="sr-only">{ar ? "إجراءات" : "Actions"}</span></th>
             </tr>
           </thead>
           <tbody>
-            {data.items.map((contact) => (
-              <tr key={contact.id}>
-                <td><Link className="admin-user-cell" href={`/${locale}/admin/crm/${orgId}/contacts/${contact.id}`}><strong>{contact.firstName} {contact.lastName}</strong></Link></td>
-                <td>{contact.email ?? "—"}</td>
-                <td>{contact.phone ?? "—"}</td>
-                <td>{contact.status}</td>
-                <td>{(tagsByContact.get(contact.id) ?? []).map((t) => t.name).join(", ") || "—"}</td>
-                <td><Link className="admin-row-link" href={`/${locale}/admin/crm/${orgId}/contacts/${contact.id}`}>{ar ? "فتح" : "Ouvrir"}</Link></td>
+            {data.items.map((item) => (
+              <tr key={item.id}>
+                <td><strong>{item.contactFirstName ?? "—"} {item.contactLastName ?? ""}</strong></td>
+                <td>{item.type}</td>
+                <td>{formatDate(item.startAt, locale)}</td>
+                <td>{formatDate(item.endAt, locale)}</td>
+                <td>{item.status}</td>
+                <td>{item.assigneeName ?? "—"}</td>
+                <td><Link className="admin-row-link" href={`/${locale}/admin/crm/${orgId}/appointments/${item.id}`}>{ar ? "فتح" : "Ouvrir"}</Link></td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
       {!data.items.length ? (
-        <div className="admin-empty-state"><strong>{ar ? "لا توجد نتائج" : "Aucun résultat"}</strong></div>
+        <div className="admin-empty-state"><strong>{ar ? "لا توجد مواعيد" : "Aucun rendez-vous"}</strong></div>
       ) : null}
       <nav className="admin-pagination" aria-label={ar ? "ترقيم الصفحات" : "Pagination"}>
         <Link aria-disabled={data.page <= 1} tabIndex={data.page <= 1 ? -1 : undefined} href={href(Math.max(1, data.page - 1))}>{ar ? "السابق" : "Précédent"}</Link>
