@@ -785,7 +785,7 @@ export const crmContactActivity = pgTable(
     index("crm_contact_activity_contact_idx").on(table.contactId, table.createdAt),
     check(
       "crm_contact_activity_type_check",
-      sql`${table.type} in ('CONTACT_CREATED','CONTACT_UPDATED','CONTACT_ARCHIVED','CONTACT_RESTORED','USER_LINKED','USER_UNLINKED','ASSIGNEE_CHANGED','TAG_ATTACHED','TAG_DETACHED','NOTE_ADDED','STAGE_CHANGED','APPOINTMENT_CREATED','APPOINTMENT_RESCHEDULED','APPOINTMENT_CANCELLED','APPOINTMENT_COMPLETED','ASSESSMENT_CREATED','ASSESSMENT_COMPLETED','ADMISSION_ACCEPTED','ADMISSION_REJECTED')`,
+      sql`${table.type} in ('CONTACT_CREATED','CONTACT_UPDATED','CONTACT_ARCHIVED','CONTACT_RESTORED','USER_LINKED','USER_UNLINKED','ASSIGNEE_CHANGED','TAG_ATTACHED','TAG_DETACHED','NOTE_ADDED','STAGE_CHANGED','APPOINTMENT_CREATED','APPOINTMENT_RESCHEDULED','APPOINTMENT_CANCELLED','APPOINTMENT_COMPLETED','ASSESSMENT_CREATED','ASSESSMENT_COMPLETED','ADMISSION_ACCEPTED','ADMISSION_REJECTED','WHATSAPP_TEMPLATE_SENT','WHATSAPP_MESSAGE_RECEIVED','WHATSAPP_FAILED')`,
     ),
   ],
 );
@@ -930,6 +930,151 @@ export const admission = pgTable(
     check("admission_decision_check", sql`${table.decision} in ('PENDING','ACCEPTED','REJECTED')`),
   ],
 );
+
+// -----------------------------------------------------------------------------
+// Phase 5: WhatsApp Cloud API foundation. WhatsApp is a COMMUNICATION CHANNEL —
+// never the CRM contact itself, never an ANEI account, never authentication,
+// authorization, admission or enrollment. Records associate primarily with CRM
+// contacts and organization scope; `linkedUserId` is never required. A single
+// deployment-level Meta credential (env-only, never stored here) serves every
+// organization; `whatsappAccount` maps a configured Meta phone number to an
+// organization. Message rows are business communication history: they are never
+// cascade-deleted when a contact is archived or an admission/linked user
+// changes (contact_id uses ON DELETE SET NULL so history survives contact
+// removal). See docs/premium/ROADMAP.md Phase 5.
+// -----------------------------------------------------------------------------
+
+export const whatsappAccount = pgTable(
+  "whatsapp_account",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    provider: text("provider").notNull().default("meta"),
+    phoneNumberId: text("phone_number_id").notNull(),
+    businessAccountId: text("business_account_id").notNull(),
+    displayPhoneNumber: text("display_phone_number"),
+    status: text("status").notNull().default("ACTIVE"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    // A given Meta phone number belongs to exactly one deployment, so a single
+    // global unique is safe and prevents two organizations from ever claiming
+    // the same provider number.
+    uniqueIndex("whatsapp_account_phone_number_unique").on(table.phoneNumberId),
+    index("whatsapp_account_org_idx").on(table.organizationId),
+    check("whatsapp_account_provider_check", sql`${table.provider} in ('meta')`),
+    check("whatsapp_account_status_check", sql`${table.status} in ('ACTIVE','DISABLED')`),
+  ],
+);
+
+export const whatsappTemplate = pgTable(
+  "whatsapp_template",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    language: text("language").notNull(),
+    category: text("category").notNull(),
+    status: text("status").notNull().default("PENDING"),
+    parameterCount: integer("parameter_count").notNull().default(0),
+    lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("whatsapp_template_org_name_language_unique").on(table.organizationId, table.name, table.language),
+    index("whatsapp_template_org_idx").on(table.organizationId),
+    check(
+      "whatsapp_template_status_check",
+      sql`${table.status} in ('PENDING','APPROVED','REJECTED','PAUSED','DISABLED')`,
+    ),
+    check("whatsapp_template_parameter_count_nonnegative", sql`${table.parameterCount} >= 0`),
+  ],
+);
+
+export const whatsappMessage = pgTable(
+  "whatsapp_message",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    accountId: text("account_id").references(() => whatsappAccount.id, { onDelete: "set null" }),
+    // Nullable until an inbound message can be deterministically resolved to a
+    // CRM contact — an unresolved inbound message is stored, never dropped.
+    contactId: text("contact_id").references(() => crmContact.id, { onDelete: "set null" }),
+    direction: text("direction").notNull(),
+    messageType: text("message_type").notNull(),
+    status: text("status").notNull().default("QUEUED"),
+    providerMessageId: text("provider_message_id"),
+    localRequestId: text("local_request_id"),
+    fromPhone: text("from_phone"),
+    toPhone: text("to_phone"),
+    templateName: text("template_name"),
+    templateLanguage: text("template_language"),
+    textPreview: text("text_preview"),
+    providerErrorCode: text("provider_error_code"),
+    providerErrorMessage: text("provider_error_message"),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+    readAt: timestamp("read_at", { withTimezone: true }),
+    failedAt: timestamp("failed_at", { withTimezone: true }),
+    createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("whatsapp_message_provider_id_unique")
+      .on(table.providerMessageId)
+      .where(sql`${table.providerMessageId} is not null`),
+    uniqueIndex("whatsapp_message_local_request_unique")
+      .on(table.organizationId, table.localRequestId)
+      .where(sql`${table.localRequestId} is not null`),
+    index("whatsapp_message_org_created_idx").on(table.organizationId, table.createdAt),
+    index("whatsapp_message_contact_created_idx").on(table.contactId, table.createdAt),
+    index("whatsapp_message_account_idx").on(table.accountId),
+    index("whatsapp_message_direction_status_idx").on(table.direction, table.status),
+    check("whatsapp_message_direction_check", sql`${table.direction} in ('INBOUND','OUTBOUND')`),
+    check("whatsapp_message_type_check", sql`${table.messageType} in ('TEMPLATE','TEXT')`),
+    check(
+      "whatsapp_message_status_check",
+      sql`${table.status} in ('QUEUED','SENT','DELIVERED','READ','FAILED')`,
+    ),
+  ],
+);
+
+export const whatsappWebhookEvent = pgTable(
+  "whatsapp_webhook_event",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    // Stable, provider-derived idempotency key (e.g. `message:<wamid>` /
+    // `status:<wamid>:<status>`). Unique so a Meta retry/replay of the same
+    // event is a no-op at the DB level.
+    stableKey: text("stable_key").notNull(),
+    eventType: text("event_type").notNull(),
+    organizationId: text("organization_id").references(() => organization.id, { onDelete: "cascade" }),
+    receivedAt: timestamp("received_at", { withTimezone: true }).notNull().$defaultFn(now),
+    processedAt: timestamp("processed_at", { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex("whatsapp_webhook_event_stable_key_unique").on(table.stableKey),
+    index("whatsapp_webhook_event_org_received_idx").on(table.organizationId, table.receivedAt),
+    check(
+      "whatsapp_webhook_event_type_check",
+      sql`${table.eventType} in ('INBOUND_MESSAGE','STATUS_UPDATE')`,
+    ),
+  ],
+);
+
+export type WhatsappAccountRow = typeof whatsappAccount.$inferSelect;
+export type WhatsappTemplateRow = typeof whatsappTemplate.$inferSelect;
+export type WhatsappMessageRow = typeof whatsappMessage.$inferSelect;
+export type WhatsappWebhookEventRow = typeof whatsappWebhookEvent.$inferSelect;
 
 export const certificates = pgTable(
   "certificates",

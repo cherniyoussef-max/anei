@@ -19,6 +19,7 @@ const schema = z.object({
   ENABLE_FLOUCI: boolString,
   ENABLE_CLICTOPAY: boolString,
   ENABLE_AI: boolString,
+  ENABLE_WHATSAPP: boolString,
   ENABLE_ADMIN_MFA: boolString,
   DATABASE_URL: z.string().min(1).default("postgresql://anei:anei@localhost:5432/anei"),
   DB_POOL_MAX: z.coerce.number().int().min(1).max(100).default(20),
@@ -57,6 +58,11 @@ const schema = z.object({
   STORAGE_MEDIA_URL_TTL_SECONDS: z.coerce.number().int().min(300).max(14400).default(7200),
   STORAGE_ACCESS_KEY_ID: optionalTrimmed,
   STORAGE_SECRET_ACCESS_KEY: optionalTrimmed,
+  WHATSAPP_ACCESS_TOKEN: optionalTrimmed,
+  WHATSAPP_APP_SECRET: optionalTrimmed,
+  WHATSAPP_VERIFY_TOKEN: optionalTrimmed,
+  WHATSAPP_API_VERSION: z.string().regex(/^v\d+\.\d+$/).default("v22.0"),
+  WHATSAPP_API_BASE_URL: z.string().url().default("https://graph.facebook.com"),
 });
 
 const parsed = schema.parse(process.env);
@@ -157,6 +163,9 @@ if (env.NODE_ENV === "production" && !isBuildPhase && !isLocalProductionSmoke) {
   if (env.STORAGE_PROVIDER === "s3-compatible" && (!env.STORAGE_BUCKET || !env.STORAGE_REGION || !env.STORAGE_ACCESS_KEY_ID || !env.STORAGE_SECRET_ACCESS_KEY)) {
     throw new Error("S3-compatible storage is selected but required storage configuration is incomplete.");
   }
+  if (env.ENABLE_WHATSAPP && (!env.WHATSAPP_ACCESS_TOKEN || !env.WHATSAPP_APP_SECRET || !env.WHATSAPP_VERIFY_TOKEN)) {
+    throw new Error("WhatsApp is enabled but WHATSAPP_ACCESS_TOKEN/WHATSAPP_APP_SECRET/WHATSAPP_VERIFY_TOKEN are missing.");
+  }
 }
 
 export const googleAuthConfigured = isGoogleAuthConfigured({
@@ -167,4 +176,7 @@ export const googleAuthConfigured = isGoogleAuthConfigured({
 export const flouciConfigured = Boolean(env.ENABLE_FLOUCI && env.FLOUCI_PUBLIC_KEY && env.FLOUCI_PRIVATE_KEY);
 export const clickToPayConfigured = Boolean(
   env.ENABLE_CLICTOPAY && env.CLICKTOPAY_MERCHANT_ID && env.CLICKTOPAY_API_URL && env.CLICKTOPAY_API_KEY,
+);
+export const whatsappConfigured = Boolean(
+  env.ENABLE_WHATSAPP && env.WHATSAPP_ACCESS_TOKEN && env.WHATSAPP_APP_SECRET && env.WHATSAPP_VERIFY_TOKEN,
 );

@@ -54,6 +54,7 @@ export default async function AdminCrmContactsPage({ params, searchParams }: {
         <Link className="admin-row-link" href={`/${locale}/admin/crm/${orgId}/appointments`}>{ar ? "المواعيد" : "Rendez-vous"}</Link>
         <Link className="admin-row-link" href={`/${locale}/admin/crm/${orgId}/assessments`}>{ar ? "التقييمات" : "Évaluations"}</Link>
         <Link className="admin-row-link" href={`/${locale}/admin/crm/${orgId}/admissions`}>{ar ? "القبول" : "Admissions"}</Link>
+        <Link className="admin-row-link" href={`/${locale}/admin/crm/${orgId}/whatsapp`}>{ar ? "واتساب" : "WhatsApp"}</Link>
         <Link className="admin-row-link" href={`/${locale}/admin/crm/${orgId}/pipelines`}>{ar ? "المسارات" : "Pipelines"}</Link>
       </>} />
 

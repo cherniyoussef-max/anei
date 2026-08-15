@@ -30,6 +30,11 @@ export const crmContactActivityTypes = [
   "ASSESSMENT_COMPLETED",
   "ADMISSION_ACCEPTED",
   "ADMISSION_REJECTED",
+  // Phase 5: WhatsApp communication timeline events (bounded — delivery/read
+  // stay in message history only to avoid timeline noise).
+  "WHATSAPP_TEMPLATE_SENT",
+  "WHATSAPP_MESSAGE_RECEIVED",
+  "WHATSAPP_FAILED",
 ] as const;
 export type CrmContactActivityType = (typeof crmContactActivityTypes)[number];
 
