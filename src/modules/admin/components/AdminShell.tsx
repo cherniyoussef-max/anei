@@ -28,6 +28,8 @@ export function AdminShell({ children, locale, user }: {
       { href: `${base}/webinars`, icon: "calendar", fr: "Webinaires", ar: "الندوات" },
       { href: `${base}/resources`, icon: "download", fr: "Bibliothèque", ar: "المكتبة" },
       { href: `${base}/news`, icon: "spark", fr: "Actualités", ar: "الأخبار" },
+      { href: `${base}/organizations`, icon: "map", fr: "Organisations", ar: "المؤسسات" },
+      { href: `${base}/relationships`, icon: "users", fr: "Relations", ar: "العلاقات" },
     ]},
     { fr: "Commerce", ar: "التجارة", items: [
       { href: `${base}/orders`, icon: "book", fr: "Commandes", ar: "الطلبات" },

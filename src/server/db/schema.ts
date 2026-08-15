@@ -453,6 +453,167 @@ export const personaMembership = pgTable(
   ],
 );
 
+// Phase 2: multi-tenant organizations. Kept minimal — no billing/branding/
+// subscription fields, per docs/premium/ROADMAP.md Phase 2 scope.
+export const organization = pgTable(
+  "organization",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    name: text("name").notNull(),
+    slug: text("slug").notNull(),
+    status: text("status").notNull().default("ACTIVE"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("organization_slug_unique").on(table.slug),
+    check("organization_status_check", sql`${table.status} in ('ACTIVE','SUSPENDED')`),
+  ],
+);
+
+// Organization membership: a user's role within an organization
+// (OWNER/MANAGER/STAFF/VIEWER), distinct from both the platform security
+// role (`user.role`) and product-facing personas. Authorization is always
+// DB-authoritative — never trust a client-supplied role. A partial unique
+// index (below) prevents duplicate *active* memberships for the same
+// user/organization pair while still allowing a REVOKED row to be
+// superseded by a new ACTIVE one.
+export const organizationMembership = pgTable(
+  "organization_membership",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    role: text("role").notNull(),
+    status: text("status").notNull().default("ACTIVE"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("organization_membership_active_unique")
+      .on(table.organizationId, table.userId)
+      .where(sql`${table.status} = 'ACTIVE'`),
+    index("organization_membership_org_idx").on(table.organizationId),
+    index("organization_membership_user_idx").on(table.userId),
+    check("organization_membership_role_check", sql`${table.role} in ('OWNER','MANAGER','STAFF','VIEWER')`),
+    check("organization_membership_status_check", sql`${table.status} in ('ACTIVE','REVOKED')`),
+  ],
+);
+
+// Parent <-> student relationship. Admin-managed only in Phase 2 (no
+// self-invitation/OTP/WhatsApp flow yet) — see docs/premium/SECURITY_MODEL.md
+// §2: a subject can never create their own relationship row. A PARENT
+// persona alone grants no data access; only an ACTIVE row here does.
+// parentUserId/studentUserId use ON DELETE restrict (not cascade), matching
+// createdBy: this row is relationship history, never destructively removed
+// as a side effect of deleting either party's account.
+export const parentStudentLink = pgTable(
+  "parent_student_link",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    parentUserId: text("parent_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    studentUserId: text("student_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    relationshipType: text("relationship_type").notNull(),
+    status: text("status").notNull().default("PENDING"),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("parent_student_link_unique").on(table.parentUserId, table.studentUserId),
+    index("parent_student_link_parent_idx").on(table.parentUserId),
+    index("parent_student_link_student_idx").on(table.studentUserId),
+    check("parent_student_link_self_check", sql`${table.parentUserId} != ${table.studentUserId}`),
+    check(
+      "parent_student_link_relationship_type_check",
+      sql`${table.relationshipType} in ('MOTHER','FATHER','GUARDIAN','OTHER')`,
+    ),
+    check("parent_student_link_status_check", sql`${table.status} in ('PENDING','ACTIVE','REVOKED')`),
+  ],
+);
+
+// AVS <-> student assignment. Deliberately a separate table from
+// `avsProfiles` (the existing public directory/profile model) — see
+// docs/premium/ROADMAP.md Phase 2 §E. Supports assignment history: a
+// student can have multiple historical (ENDED) assignments, but the
+// partial unique index below allows at most one ACTIVE assignment per
+// avs/student pair at a time. An AVS persona alone grants no data access;
+// only an ACTIVE row here does. avsUserId/studentUserId use ON DELETE
+// restrict, matching createdBy, so history is never destructively removed
+// as a side effect of deleting either party's account.
+export const avsStudentAssignment = pgTable(
+  "avs_student_assignment",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    avsUserId: text("avs_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    studentUserId: text("student_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    status: text("status").notNull().default("ACTIVE"),
+    startDate: timestamp("start_date", { withTimezone: true }).notNull().$defaultFn(now),
+    endDate: timestamp("end_date", { withTimezone: true }),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("avs_student_assignment_active_unique")
+      .on(table.avsUserId, table.studentUserId)
+      .where(sql`${table.status} = 'ACTIVE'`),
+    index("avs_student_assignment_avs_idx").on(table.avsUserId, table.status),
+    index("avs_student_assignment_student_idx").on(table.studentUserId),
+    check("avs_student_assignment_self_check", sql`${table.avsUserId} != ${table.studentUserId}`),
+    check("avs_student_assignment_status_check", sql`${table.status} in ('ACTIVE','ENDED')`),
+  ],
+);
+
+// Specialist <-> student assignment. Same shape/semantics as
+// avsStudentAssignment (kept as a separate table since AVS and SPECIALIST
+// are distinct personas with independent assignment histories).
+export const specialistStudentAssignment = pgTable(
+  "specialist_student_assignment",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    specialistUserId: text("specialist_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    studentUserId: text("student_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    status: text("status").notNull().default("ACTIVE"),
+    startDate: timestamp("start_date", { withTimezone: true }).notNull().$defaultFn(now),
+    endDate: timestamp("end_date", { withTimezone: true }),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("specialist_student_assignment_active_unique")
+      .on(table.specialistUserId, table.studentUserId)
+      .where(sql`${table.status} = 'ACTIVE'`),
+    index("specialist_student_assignment_specialist_idx").on(table.specialistUserId, table.status),
+    index("specialist_student_assignment_student_idx").on(table.studentUserId),
+    check("specialist_student_assignment_self_check", sql`${table.specialistUserId} != ${table.studentUserId}`),
+    check("specialist_student_assignment_status_check", sql`${table.status} in ('ACTIVE','ENDED')`),
+  ],
+);
+
 export const certificates = pgTable(
   "certificates",
   {
@@ -559,6 +720,11 @@ export const auditLogs = pgTable(
 
 export type DbUser = typeof user.$inferSelect;
 export type PersonaMembershipRow = typeof personaMembership.$inferSelect;
+export type OrganizationRow = typeof organization.$inferSelect;
+export type OrganizationMembershipRow = typeof organizationMembership.$inferSelect;
+export type ParentStudentLinkRow = typeof parentStudentLink.$inferSelect;
+export type AvsStudentAssignmentRow = typeof avsStudentAssignment.$inferSelect;
+export type SpecialistStudentAssignmentRow = typeof specialistStudentAssignment.$inferSelect;
 export type CourseRow = typeof courses.$inferSelect;
 export type ResourceRow = typeof resources.$inferSelect;
 export type WebinarRow = typeof webinars.$inferSelect;
