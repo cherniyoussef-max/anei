@@ -7,6 +7,9 @@ import { getContactActivity, getContactNotes, getContactTags, getCrmContact, lis
 import { AdminPageHeader } from "@/modules/admin/components/AdminPageHeader";
 import { AdminCrmContactActions } from "@/components/admin/AdminCrmContactActions";
 import { AdminWhatsAppContactSection } from "@/components/admin/AdminWhatsAppContactSection";
+import { AdminAccountInvitationSection } from "@/components/admin/AdminAccountInvitationSection";
+import { getAccountInvitationForContact } from "@/server/queries/account-invitations";
+import { evaluateInvitationEligibility } from "@/server/services/account-invitations";
 
 export const dynamic = "force-dynamic";
 
@@ -23,13 +26,15 @@ export default async function AdminCrmContactDetailPage({ params }: { params: Pr
   const contact = await getCrmContact(orgId, contactId);
   if (!contact) notFound();
 
-  const [contactTags, allTags, notes, activity, members, pipelines] = await Promise.all([
+  const [contactTags, allTags, notes, activity, members, pipelines, invitation, eligibility] = await Promise.all([
     getContactTags(contactId),
     listCrmTags(orgId),
     getContactNotes(contactId),
     getContactActivity(contactId),
     getOrganizationMembers(orgId),
     listCrmPipelines(orgId),
+    getAccountInvitationForContact(orgId, contactId),
+    evaluateInvitationEligibility(orgId, contactId),
   ]);
   const stageLists = await Promise.all(pipelines.map((p) => listCrmPipelineStages(p.id)));
   const stages = stageLists.flat().map((s) => ({ id: s.id, name: s.name }));
@@ -57,6 +62,25 @@ export default async function AdminCrmContactDetailPage({ params }: { params: Pr
     </section>
 
     <AdminWhatsAppContactSection organizationId={orgId} contactId={contactId} locale={locale} />
+
+    <AdminAccountInvitationSection
+      organizationId={orgId}
+      contactId={contactId}
+      locale={locale}
+      eligible={eligibility.kind === "eligible"}
+      invitation={
+        invitation
+          ? {
+              status: invitation.status,
+              destinationPhone: invitation.destinationPhone,
+              sentAt: invitation.sentAt?.toISOString() ?? null,
+              phoneVerifiedAt: invitation.phoneVerifiedAt?.toISOString() ?? null,
+              consumedAt: invitation.consumedAt?.toISOString() ?? null,
+              revokedAt: invitation.revokedAt?.toISOString() ?? null,
+            }
+          : null
+      }
+    />
 
     <section className="admin-surface">
       <h3>{ar ? "الملاحظات" : "Notes"}</h3>

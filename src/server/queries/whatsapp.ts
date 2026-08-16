@@ -29,6 +29,27 @@ export async function listWhatsAppTemplates(organizationId: string): Promise<Arr
     .orderBy(desc(whatsappTemplate.updatedAt));
 }
 
+/**
+ * Resolves the organization's APPROVED template by name for Phase 6
+ * system-initiated sends (invitation / OTP delivery), preferring
+ * `preferredLanguage` when more than one approved language variant exists.
+ * Returns undefined when no APPROVED template with that name is configured
+ * for the organization -- callers must treat this as a controlled
+ * NOT_CONFIGURED domain result, never an internal error.
+ */
+export async function getApprovedWhatsAppTemplateByName(
+  organizationId: string,
+  name: string,
+  preferredLanguage: string,
+): Promise<typeof whatsappTemplate.$inferSelect | undefined> {
+  const rows = await db
+    .select()
+    .from(whatsappTemplate)
+    .where(and(eq(whatsappTemplate.organizationId, organizationId), eq(whatsappTemplate.name, name), eq(whatsappTemplate.status, "APPROVED")));
+  if (!rows.length) return undefined;
+  return rows.find((row) => row.language === preferredLanguage) ?? rows[0];
+}
+
 export type WhatsappMessagesFilter = {
   organizationId: string;
   contactId?: string;

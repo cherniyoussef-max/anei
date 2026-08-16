@@ -226,7 +226,45 @@ export async function sendWhatsAppTemplate(
   },
 ): Promise<WhatsAppMutationResult> {
   if (!canManageWhatsappMessages(actorRole)) return { kind: "forbidden" };
+  return sendApprovedTemplateMessage(actorUserId, organizationId, data);
+}
 
+/**
+ * System-initiated variant of `sendWhatsAppTemplate` for Phase 6 invitation/
+ * OTP delivery, where the sender is not an authenticated organization-role
+ * actor but the server itself, acting on a validated invitation record (see
+ * src/server/services/account-invitations.ts). Deliberately NOT wired into
+ * any HTTP route directly — callers must have already performed their own
+ * invitation-scoped eligibility/rate-limit checks before reaching this
+ * function. Reuses the exact same idempotency, transaction-boundary and
+ * provider-call mechanics as the admin-triggered path above; only the
+ * organization-role authorization gate is skipped (there is no client-
+ * supplied role to gate here).
+ */
+export async function sendSystemWhatsAppTemplate(
+  organizationId: string,
+  data: {
+    contactId: string;
+    templateId: string;
+    language: string;
+    parameters?: string[];
+    requestId?: string;
+  },
+): Promise<WhatsAppMutationResult> {
+  return sendApprovedTemplateMessage(null, organizationId, data);
+}
+
+async function sendApprovedTemplateMessage(
+  actorUserId: string | null,
+  organizationId: string,
+  data: {
+    contactId: string;
+    templateId: string;
+    language: string;
+    parameters?: string[];
+    requestId?: string;
+  },
+): Promise<WhatsAppMutationResult> {
   const account = await getWhatsAppAccountForOrg(organizationId);
   if (!account || !isActiveMetaAccount(account)) return { kind: "no_account" };
 
@@ -362,7 +400,7 @@ export async function sendWhatsAppTemplate(
 }
 
 async function recordOutboundSent(
-  actorUserId: string,
+  actorUserId: string | null,
   organizationId: string,
   messageId: string,
   providerMessageId: string,
@@ -398,7 +436,7 @@ async function recordOutboundSent(
 }
 
 async function recordOutboundFailure(
-  actorUserId: string,
+  actorUserId: string | null,
   organizationId: string,
   messageId: string,
   providerErrorCode: string | null | undefined,

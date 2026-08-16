@@ -785,7 +785,7 @@ export const crmContactActivity = pgTable(
     index("crm_contact_activity_contact_idx").on(table.contactId, table.createdAt),
     check(
       "crm_contact_activity_type_check",
-      sql`${table.type} in ('CONTACT_CREATED','CONTACT_UPDATED','CONTACT_ARCHIVED','CONTACT_RESTORED','USER_LINKED','USER_UNLINKED','ASSIGNEE_CHANGED','TAG_ATTACHED','TAG_DETACHED','NOTE_ADDED','STAGE_CHANGED','APPOINTMENT_CREATED','APPOINTMENT_RESCHEDULED','APPOINTMENT_CANCELLED','APPOINTMENT_COMPLETED','ASSESSMENT_CREATED','ASSESSMENT_COMPLETED','ADMISSION_ACCEPTED','ADMISSION_REJECTED','WHATSAPP_TEMPLATE_SENT','WHATSAPP_MESSAGE_RECEIVED','WHATSAPP_FAILED')`,
+      sql`${table.type} in ('CONTACT_CREATED','CONTACT_UPDATED','CONTACT_ARCHIVED','CONTACT_RESTORED','USER_LINKED','USER_UNLINKED','ASSIGNEE_CHANGED','TAG_ATTACHED','TAG_DETACHED','NOTE_ADDED','STAGE_CHANGED','APPOINTMENT_CREATED','APPOINTMENT_RESCHEDULED','APPOINTMENT_CANCELLED','APPOINTMENT_COMPLETED','ASSESSMENT_CREATED','ASSESSMENT_COMPLETED','ADMISSION_ACCEPTED','ADMISSION_REJECTED','WHATSAPP_TEMPLATE_SENT','WHATSAPP_MESSAGE_RECEIVED','WHATSAPP_FAILED','ACCOUNT_INVITATION_SENT','PHONE_VERIFIED','ACCOUNT_LINKED','ACCOUNT_INVITATION_REVOKED')`,
     ),
   ],
 );
@@ -925,6 +925,8 @@ export const admission = pgTable(
       columns: [table.assessmentId, table.organizationId],
       foreignColumns: [assessment.id, assessment.organizationId],
     }),
+    // (id, organizationId) unique enables the Phase 6 composite invitation FK below.
+    uniqueIndex("admission_id_org_unique").on(table.id, table.organizationId),
     index("admission_org_decision_idx").on(table.organizationId, table.decision),
     index("admission_contact_idx").on(table.contactId),
     check("admission_decision_check", sql`${table.decision} in ('PENDING','ACCEPTED','REJECTED')`),
@@ -1075,6 +1077,134 @@ export type WhatsappAccountRow = typeof whatsappAccount.$inferSelect;
 export type WhatsappTemplateRow = typeof whatsappTemplate.$inferSelect;
 export type WhatsappMessageRow = typeof whatsappMessage.$inferSelect;
 export type WhatsappWebhookEventRow = typeof whatsappWebhookEvent.$inferSelect;
+
+// -----------------------------------------------------------------------------
+// Phase 6: account invitation + phone verification + CRM contact -> ANEI user
+// linking. An invitation is a durable, revocable, one-time-consumable
+// credential — never an account, never a session, never authentication by
+// itself. Phone verification (OTP) proves control of the invited phone at
+// that moment; it never authenticates a Better Auth user, never selects an
+// existing account by phone, and the actual account provisioning/login
+// remains entirely owned by Better Auth (see docs/premium/SECURITY_MODEL.md
+// and docs/premium/ROADMAP.md Phase 6). `admission_id_org_unique` below
+// mirrors the same composite-FK pattern Phase 3/4 already established for
+// crm_contact/appointment/assessment, so an invitation can never reference an
+// admission from a foreign organization at the DB level.
+// -----------------------------------------------------------------------------
+
+export const accountInvitation = pgTable(
+  "account_invitation",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    contactId: text("contact_id").notNull(),
+    admissionId: text("admission_id").notNull(),
+    intendedPersona: text("intended_persona").notNull().default("STUDENT"),
+    status: text("status").notNull().default("PENDING_SEND"),
+    // Snapshot of the normalized destination phone at invitation-creation
+    // time. A later CRM phone edit never silently redirects an existing
+    // invitation's OTP destination — see docs/premium/ROADMAP.md Phase 6 §D.
+    destinationPhone: text("destination_phone").notNull(),
+    tokenHash: text("token_hash").notNull(),
+    tokenVersion: integer("token_version").notNull().default(1),
+    tokenExpiresAt: timestamp("token_expires_at", { withTimezone: true }).notNull(),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    phoneVerifiedAt: timestamp("phone_verified_at", { withTimezone: true }),
+    consumedAt: timestamp("consumed_at", { withTimezone: true }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    createdByUserId: text("created_by_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    foreignKey({
+      name: "account_invitation_contact_org_fk",
+      columns: [table.contactId, table.organizationId],
+      foreignColumns: [crmContact.id, crmContact.organizationId],
+    }),
+    foreignKey({
+      name: "account_invitation_admission_org_fk",
+      columns: [table.admissionId, table.organizationId],
+      foreignColumns: [admission.id, admission.organizationId],
+    }),
+    uniqueIndex("account_invitation_token_hash_unique").on(table.tokenHash),
+    // At most one non-terminal (PENDING_SEND/SENT/VERIFIED) invitation per
+    // contact at a time — resend rotates the existing row's token instead of
+    // creating a new one; a REVOKED/EXPIRED/CONSUMED row never blocks a
+    // fresh invitation later.
+    uniqueIndex("account_invitation_contact_active_unique")
+      .on(table.contactId)
+      .where(sql`${table.status} in ('PENDING_SEND','SENT','VERIFIED')`),
+    index("account_invitation_org_created_idx").on(table.organizationId, table.createdAt),
+    index("account_invitation_contact_status_idx").on(table.contactId, table.status),
+    index("account_invitation_admission_idx").on(table.admissionId),
+    check(
+      "account_invitation_status_check",
+      sql`${table.status} in ('PENDING_SEND','SENT','SEND_FAILED','VERIFIED','CONSUMED','REVOKED','EXPIRED')`,
+    ),
+    check("account_invitation_persona_check", sql`${table.intendedPersona} in ('STUDENT')`),
+  ],
+);
+
+export const accountVerificationChallenge = pgTable(
+  "account_verification_challenge",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    invitationId: text("invitation_id")
+      .notNull()
+      .references(() => accountInvitation.id, { onDelete: "cascade" }),
+    codeHash: text("code_hash").notNull(),
+    status: text("status").notNull().default("ACTIVE"),
+    attemptCount: integer("attempt_count").notNull().default(0),
+    maxAttempts: integer("max_attempts").notNull().default(5),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    // At most one ACTIVE challenge per invitation — DB-authoritative, not
+    // relied on purely in application memory.
+    uniqueIndex("account_verification_challenge_active_unique")
+      .on(table.invitationId)
+      .where(sql`${table.status} = 'ACTIVE'`),
+    index("account_verification_challenge_invitation_idx").on(table.invitationId, table.status),
+    check(
+      "account_verification_challenge_status_check",
+      sql`${table.status} in ('ACTIVE','VERIFIED','LOCKED','SUPERSEDED','EXPIRED')`,
+    ),
+    check("account_verification_challenge_attempt_nonnegative", sql`${table.attemptCount} >= 0`),
+    check("account_verification_challenge_max_attempts_positive", sql`${table.maxAttempts} > 0`),
+  ],
+);
+
+export const accountInvitationEvent = pgTable(
+  "account_invitation_event",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    invitationId: text("invitation_id")
+      .notNull()
+      .references(() => accountInvitation.id, { onDelete: "cascade" }),
+    actorUserId: text("actor_user_id").references(() => user.id, { onDelete: "set null" }),
+    eventType: text("event_type").notNull(),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("account_invitation_event_invitation_idx").on(table.invitationId, table.createdAt),
+    check(
+      "account_invitation_event_type_check",
+      sql`${table.eventType} in ('INVITATION_CREATED','INVITATION_SENT','INVITATION_RESENT','INVITATION_SEND_FAILED','OTP_SENT','PHONE_VERIFIED','INVITATION_REVOKED','INVITATION_CONSUMED')`,
+    ),
+  ],
+);
+
+export type AccountInvitationRow = typeof accountInvitation.$inferSelect;
+export type AccountVerificationChallengeRow = typeof accountVerificationChallenge.$inferSelect;
+export type AccountInvitationEventRow = typeof accountInvitationEvent.$inferSelect;
 
 export const certificates = pgTable(
   "certificates",

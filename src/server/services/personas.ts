@@ -27,6 +27,44 @@ export async function ensurePrimaryPersonaMembership(userId: string, profileType
     .onConflictDoNothing();
 }
 
+type DbClient = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/**
+ * Phase 6: idempotently ensures a user holds an ACTIVE STUDENT persona
+ * membership, for use inside the account-invitation claim transaction
+ * (src/server/services/account-invitations.ts). Never removes/suspends any
+ * other persona and never overwrites an existing different primary persona:
+ * STUDENT is only ever marked primary when the user currently has none.
+ * Idempotent under concurrency the same way `ensurePrimaryPersonaMembership`
+ * is — `onConflictDoNothing` on the (userId, persona) unique constraint
+ * means a duplicate call (or a losing race against the primary-partial-
+ * unique-index) is always a safe no-op, never an error.
+ */
+export async function ensureStudentPersonaMembership(tx: DbClient, userId: string): Promise<void> {
+  const [existingPrimary] = await tx
+    .select({ id: personaMembership.id })
+    .from(personaMembership)
+    .where(and(eq(personaMembership.userId, userId), eq(personaMembership.isPrimary, true)))
+    .limit(1);
+
+  try {
+    await tx
+      .insert(personaMembership)
+      .values({ userId, persona: "STUDENT", status: "ACTIVE", isPrimary: !existingPrimary })
+      .onConflictDoNothing({ target: [personaMembership.userId, personaMembership.persona] });
+  } catch {
+    // Lost a race against a concurrent primary-persona grant for this user
+    // (the partial unique index on isPrimary=true rejected this insert).
+    // Retrying as non-primary is always safe: STUDENT membership itself is
+    // still granted, just not as the (already-claimed-by-the-other-write)
+    // primary persona.
+    await tx
+      .insert(personaMembership)
+      .values({ userId, persona: "STUDENT", status: "ACTIVE", isPrimary: false })
+      .onConflictDoNothing({ target: [personaMembership.userId, personaMembership.persona] });
+  }
+}
+
 type PersonaMutationResult =
   | { kind: "ok"; from: PersonaStatus | null }
   | { kind: "not_found" };
