@@ -4,6 +4,8 @@ import { isLocale } from "@/lib/i18n";
 import { requireUser } from "@/server/auth/session";
 import { getLearningCourse } from "@/server/queries/account";
 import { VideoLessonPlayer } from "@/components/learning/VideoLessonPlayer";
+import { YoutubeLessonPlayer } from "@/components/learning/YoutubeLessonPlayer";
+import { StreamLessonPlayer } from "@/components/learning/StreamLessonPlayer";
 import { Icon } from "@/components/ui/Icon";
 
 export const dynamic = "force-dynamic";
@@ -71,7 +73,10 @@ export default async function LearnPage({ params }: { params: Promise<{ locale: 
               const next = lessonIndex < data.lessons.length - 1 ? data.lessons[lessonIndex + 1] : null;
               return <article id={`lesson-${lesson.id}`} className="lesson-section" key={lesson.id}>
                 <div className="lesson-title"><span>{itemProgress?.completed ? <Icon name="check" size={14}/> : lesson.position}</span><div><small>{ar ? "درس" : "Leçon"} {lesson.position}</small><h2>{ar ? lesson.titleAr : lesson.titleFr}</h2><p>{ar ? lesson.descriptionAr : lesson.descriptionFr}</p></div></div>
-                {lesson.videoUrl ? <VideoLessonPlayer lessonId={lesson.id} videoUrl={lesson.videoUrl} title={ar ? lesson.titleAr : lesson.titleFr} initialSeconds={itemProgress?.watchedSeconds ?? 0} initiallyCompleted={itemProgress?.completed ?? false} locale={locale}/> : <div className="lesson-placeholder"><Icon name="book" size={26}/><span>{ar ? "درس نصي / وثيقة" : "Leçon documentaire"}</span></div>}
+                {lesson.mediaProvider === "youtube" && lesson.mediaRef ? <YoutubeLessonPlayer videoId={lesson.mediaRef} title={ar ? lesson.titleAr : lesson.titleFr} locale={locale}/>
+                  : lesson.mediaProvider === "cloudflare_stream" && lesson.mediaRef ? <StreamLessonPlayer lessonId={lesson.id} title={ar ? lesson.titleAr : lesson.titleFr} locale={locale}/>
+                  : lesson.videoUrl ? <VideoLessonPlayer lessonId={lesson.id} videoUrl={lesson.videoUrl} title={ar ? lesson.titleAr : lesson.titleFr} initialSeconds={itemProgress?.watchedSeconds ?? 0} initiallyCompleted={itemProgress?.completed ?? false} locale={locale}/>
+                  : <div className="lesson-placeholder"><Icon name="book" size={26}/><span>{ar ? "درس نصي / وثيقة" : "Leçon documentaire"}</span></div>}
                 {lesson.documentUrl ? <a className="btn btn-soft btn-sm" href={lesson.documentUrl} target="_blank" rel="noreferrer"><Icon name="download" size={16}/>{ar ? "الوثيقة المرفقة" : "Document associé"}</a> : null}
                 <nav className="lesson-step-nav" aria-label={ar ? "التنقل بين الدروس" : "Navigation entre les leçons"}>
                   {previous ? <a href={`#lesson-${previous.id}`}><Icon name="arrow" size={15}/>{ar ? "السابق" : "Précédent"}</a> : <span/>}

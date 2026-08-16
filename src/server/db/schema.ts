@@ -194,6 +194,14 @@ export const lessons = pgTable(
     videoUrl: text("video_url"),
     documentUrl: text("document_url"),
     preview: boolean("preview").notNull().default(false),
+    // Phase 8: media provider abstraction. 'internal' (default) preserves the
+    // existing videoUrl/signedMediaUrl() path unchanged. 'youtube' is for
+    // public/preview lessons (embed by canonical video id, no signing).
+    // 'cloudflare_stream' is for protected paid video (mediaRef is the Stream
+    // video UID; a short-lived playback token is requested server-side only
+    // after the same enrollment/entitlement check getLearningCourse() uses).
+    mediaProvider: text("media_provider").notNull().default("internal"),
+    mediaRef: text("media_ref"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
   },
   (table) => [
@@ -202,6 +210,7 @@ export const lessons = pgTable(
     index("lessons_module_idx").on(table.moduleId),
     check("lessons_position_positive", sql`${table.position} > 0`),
     check("lessons_duration_nonnegative", sql`${table.durationSeconds} >= 0`),
+    check("lessons_media_provider_check", sql`${table.mediaProvider} in ('internal','youtube','cloudflare_stream')`),
   ],
 );
 

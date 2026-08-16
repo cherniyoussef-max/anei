@@ -63,6 +63,10 @@ const schema = z.object({
   WHATSAPP_VERIFY_TOKEN: optionalTrimmed,
   WHATSAPP_API_VERSION: z.string().regex(/^v\d+\.\d+$/).default("v22.0"),
   WHATSAPP_API_BASE_URL: z.string().url().default("https://graph.facebook.com"),
+  ENABLE_CLOUDFLARE_STREAM: boolString,
+  CLOUDFLARE_ACCOUNT_ID: optionalTrimmed,
+  CLOUDFLARE_STREAM_API_TOKEN: optionalTrimmed,
+  CLOUDFLARE_STREAM_CUSTOMER_CODE: optionalTrimmed,
 });
 
 const parsed = schema.parse(process.env);
@@ -166,6 +170,9 @@ if (env.NODE_ENV === "production" && !isBuildPhase && !isLocalProductionSmoke) {
   if (env.ENABLE_WHATSAPP && (!env.WHATSAPP_ACCESS_TOKEN || !env.WHATSAPP_APP_SECRET || !env.WHATSAPP_VERIFY_TOKEN)) {
     throw new Error("WhatsApp is enabled but WHATSAPP_ACCESS_TOKEN/WHATSAPP_APP_SECRET/WHATSAPP_VERIFY_TOKEN are missing.");
   }
+  if (env.ENABLE_CLOUDFLARE_STREAM && (!env.CLOUDFLARE_ACCOUNT_ID || !env.CLOUDFLARE_STREAM_API_TOKEN || !env.CLOUDFLARE_STREAM_CUSTOMER_CODE)) {
+    throw new Error("Cloudflare Stream is enabled but CLOUDFLARE_ACCOUNT_ID/CLOUDFLARE_STREAM_API_TOKEN/CLOUDFLARE_STREAM_CUSTOMER_CODE are missing.");
+  }
 }
 
 export const googleAuthConfigured = isGoogleAuthConfigured({
@@ -179,4 +186,7 @@ export const clickToPayConfigured = Boolean(
 );
 export const whatsappConfigured = Boolean(
   env.ENABLE_WHATSAPP && env.WHATSAPP_ACCESS_TOKEN && env.WHATSAPP_APP_SECRET && env.WHATSAPP_VERIFY_TOKEN,
+);
+export const cloudflareStreamConfigured = Boolean(
+  env.ENABLE_CLOUDFLARE_STREAM && env.CLOUDFLARE_ACCOUNT_ID && env.CLOUDFLARE_STREAM_API_TOKEN && env.CLOUDFLARE_STREAM_CUSTOMER_CODE,
 );

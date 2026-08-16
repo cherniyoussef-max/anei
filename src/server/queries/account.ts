@@ -61,6 +61,32 @@ export async function getLearningCourse(userId: string, slug: string) {
   return { ...row, lessons: resolvedLessons, modules, progress };
 }
 
+/**
+ * Entitlement check for the private lesson-playback flow (Phase 8): resolves
+ * course/enrollment from the lessonId alone, mirroring getLearningCourse's
+ * enrollment join, so a caller can never substitute a courseId/organizationId
+ * to bypass authorization. A preview lesson is entitled for any caller
+ * (including an anonymous one, userId null) without an enrollment row.
+ */
+export async function getLessonForPlayback(userId: string | null, lessonId: string) {
+  const [row] = await db
+    .select({ lesson: lessons, courseId: courses.id })
+    .from(lessons)
+    .innerJoin(courses, eq(lessons.courseId, courses.id))
+    .where(eq(lessons.id, lessonId))
+    .limit(1);
+  if (!row) return null;
+  if (row.lesson.preview) return { lesson: row.lesson, entitled: true };
+  if (!userId) return { lesson: row.lesson, entitled: false };
+
+  const [enrollment] = await db
+    .select({ id: enrollments.id })
+    .from(enrollments)
+    .where(and(eq(enrollments.userId, userId), eq(enrollments.courseId, row.courseId)))
+    .limit(1);
+  return { lesson: row.lesson, entitled: Boolean(enrollment) };
+}
+
 /** Entitlement check for the private resource-download flow: only the purchasing user's own resource. */
 export async function getPurchasedResourceForDownload(userId: string, resourceId: string) {
   const [row] = await db

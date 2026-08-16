@@ -7,6 +7,7 @@ import { and, eq } from "drizzle-orm";
 import { isTrustedMutation } from "@/server/security/origin";
 import { env } from "@/server/env";
 import { readLimitedJson } from "@/server/security/request-body";
+import { mediaProviderSchema, resolveMediaRef, InvalidLessonMediaError } from "@/server/services/lesson-media";
 
 const mediaReference = z.string().min(1).max(2048).refine((value) => {
   const localOrHttps = value.startsWith("/") || /^https:\/\//i.test(value);
@@ -26,6 +27,8 @@ const schema = z.object({
   videoUrl: mediaReference.nullable().optional(),
   documentUrl: mediaReference.nullable().optional(),
   preview: z.boolean().default(false),
+  mediaProvider: mediaProviderSchema.default("internal"),
+  mediaRef: z.string().min(1).max(2048).nullable().optional(),
 });
 
 export async function POST(request: Request) {
@@ -42,8 +45,14 @@ export async function POST(request: Request) {
     const [module] = await db.select({ id: courseModules.id }).from(courseModules).where(and(eq(courseModules.id, parsed.data.moduleId), eq(courseModules.courseId, parsed.data.courseId))).limit(1);
     if (!module) return NextResponse.json({ error: "MODULE_NOT_FOUND" }, { status: 404 });
   }
+  let mediaRef: string | null;
   try {
-    const [lesson] = await db.insert(lessons).values(parsed.data).returning();
+    mediaRef = resolveMediaRef(parsed.data.mediaProvider, parsed.data.mediaRef, parsed.data.preview);
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof InvalidLessonMediaError ? error.message : "INVALID_MEDIA" }, { status: 400 });
+  }
+  try {
+    const [lesson] = await db.insert(lessons).values({ ...parsed.data, mediaRef }).returning();
     await db.insert(auditLogs).values({ actorUserId: session.user.id, action: "lesson.create", entityType: "lesson", entityId: lesson.id, metadata: { courseId: lesson.courseId } });
     return NextResponse.json({ lesson }, { status: 201 });
   } catch {
