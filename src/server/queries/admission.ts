@@ -294,7 +294,7 @@ export async function getAdmission(organizationId: string, admissionId: string) 
   if (!row) return undefined;
   const [contact, decider] = await Promise.all([
     db
-      .select({ id: crmContact.id, firstName: crmContact.firstName, lastName: crmContact.lastName })
+      .select({ id: crmContact.id, firstName: crmContact.firstName, lastName: crmContact.lastName, linkedUserId: crmContact.linkedUserId })
       .from(crmContact)
       .where(eq(crmContact.id, row.contactId))
       .limit(1),

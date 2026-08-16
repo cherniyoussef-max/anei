@@ -50,6 +50,7 @@ export default async function AdminCrmAdmissionsPage({ params, searchParams }: {
         <Link className="admin-row-link" href={`/${locale}/admin/crm/${orgId}`}>{ar ? "العملاء" : "Contacts"}</Link>
         <Link className="admin-row-link" href={`/${locale}/admin/crm/${orgId}/appointments`}>{ar ? "المواعيد" : "Rendez-vous"}</Link>
         <Link className="admin-row-link" href={`/${locale}/admin/crm/${orgId}/assessments`}>{ar ? "التقييمات" : "Évaluations"}</Link>
+        <Link className="admin-row-link" href={`/${locale}/admin/crm/${orgId}/cohorts`}>{ar ? "المجموعات" : "Cohortes"}</Link>
       </>} />
 
     <AdminAdmissionCreateForm organizationId={orgId} locale={locale} />

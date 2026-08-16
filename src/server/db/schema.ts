@@ -217,14 +217,24 @@ export const enrollments = pgTable(
       .references(() => courses.id, { onDelete: "cascade" }),
     status: text("status").notNull().default("active"),
     progressPercent: integer("progress_percent").notNull().default(0),
+    // Phase 7: descriptive metadata only, never a second entitlement path —
+    // every existing entitlement check (hasEntitlement, getLearningCourse)
+    // continues to check only for the presence of an enrollments row, not
+    // its source. See docs/premium/ROADMAP.md Phase 7, DATA_MODEL.md §8.
+    source: text("source").notNull().default("PAYMENT"),
     enrolledAt: timestamp("enrolled_at", { withTimezone: true }).notNull().$defaultFn(now),
     completedAt: timestamp("completed_at", { withTimezone: true }),
   },
   (table) => [
     uniqueIndex("enrollment_user_course_unique").on(table.userId, table.courseId),
     index("enrollment_user_idx").on(table.userId),
+    index("enrollment_course_idx").on(table.courseId),
     check("enrollment_progress_range", sql`${table.progressPercent} between 0 and 100`),
     check("enrollment_status_check", sql`${table.status} in ('active','completed','cancelled')`),
+    check(
+      "enrollment_source_check",
+      sql`${table.source} in ('PAYMENT','TEST_PASS','ORGANIZATION','ADMIN','MANUAL')`,
+    ),
   ],
 );
 
@@ -245,6 +255,61 @@ export const lessonProgress = pgTable(
   (table) => [
     uniqueIndex("lesson_progress_unique").on(table.enrollmentId, table.lessonId),
     check("lesson_progress_watched_nonnegative", sql`${table.watchedSeconds} >= 0`),
+  ],
+);
+
+// Phase 7: minimal organization-scoped cohort. A cohort belongs to one
+// organization (nullable — ANEI-direct courses may run cohort-free) and one
+// course. Cohort membership references an enrollment rather than
+// duplicating student/course truth: `cohortMembership.enrollmentId` is the
+// single source of "who is in this cohort," and the partial UNIQUE below
+// guarantees at most one cohort per enrollment. See docs/premium/
+// DATA_MODEL.md §4, ROADMAP.md Phase 7.
+export const cohort = pgTable(
+  "cohort",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    courseId: text("course_id")
+      .notNull()
+      .references(() => courses.id, { onDelete: "cascade" }),
+    organizationId: text("organization_id").references(() => organization.id, { onDelete: "set null" }),
+    name: text("name").notNull(),
+    status: text("status").notNull().default("DRAFT"),
+    startsAt: timestamp("starts_at", { withTimezone: true }),
+    endsAt: timestamp("ends_at", { withTimezone: true }),
+    capacity: integer("capacity"),
+    createdByUserId: text("created_by_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("cohort_org_course_idx").on(table.organizationId, table.courseId),
+    index("cohort_course_idx").on(table.courseId),
+    check("cohort_status_check", sql`${table.status} in ('DRAFT','ACTIVE','CLOSED','ARCHIVED')`),
+    check("cohort_capacity_positive", sql`${table.capacity} is null or ${table.capacity} > 0`),
+  ],
+);
+
+export const cohortMembership = pgTable(
+  "cohort_membership",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    cohortId: text("cohort_id")
+      .notNull()
+      .references(() => cohort.id, { onDelete: "cascade" }),
+    enrollmentId: text("enrollment_id")
+      .notNull()
+      .references(() => enrollments.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("cohort_membership_cohort_enrollment_unique").on(table.cohortId, table.enrollmentId),
+    // One cohort per enrollment — prevents a single enrollment being
+    // double-counted in two cohorts' rosters/capacity.
+    uniqueIndex("cohort_membership_enrollment_unique").on(table.enrollmentId),
+    index("cohort_membership_cohort_idx").on(table.cohortId),
   ],
 );
 
@@ -616,6 +681,41 @@ export const specialistStudentAssignment = pgTable(
   ],
 );
 
+// Teacher <-> course assignment. Same shape/semantics as
+// avsStudentAssignment/specialistStudentAssignment: admin/org-manager-only,
+// history-preserving (ON DELETE restrict), at most one ACTIVE assignment per
+// teacher/course pair. A TEACHER persona alone grants no course access; only
+// an ACTIVE row here does, and it grants a teaching-view scope limited to
+// this one course — never platform course-edit rights and never every
+// course. See docs/premium/ROADMAP.md Phase 7 §K/§L.
+export const teacherCourseAssignment = pgTable(
+  "teacher_course_assignment",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    teacherUserId: text("teacher_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    courseId: text("course_id")
+      .notNull()
+      .references(() => courses.id, { onDelete: "restrict" }),
+    organizationId: text("organization_id").references(() => organization.id, { onDelete: "set null" }),
+    status: text("status").notNull().default("ACTIVE"),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("teacher_course_assignment_active_unique")
+      .on(table.teacherUserId, table.courseId)
+      .where(sql`${table.status} = 'ACTIVE'`),
+    index("teacher_course_assignment_teacher_idx").on(table.teacherUserId, table.status),
+    index("teacher_course_assignment_course_idx").on(table.courseId),
+    check("teacher_course_assignment_status_check", sql`${table.status} in ('ACTIVE','ENDED')`),
+  ],
+);
+
 // -----------------------------------------------------------------------------
 // Phase 3: CRM foundation. Deliberately namespaced `crm*`/`crm_*` and kept
 // separate from `contactMessages` (the public website contact-form
@@ -785,7 +885,7 @@ export const crmContactActivity = pgTable(
     index("crm_contact_activity_contact_idx").on(table.contactId, table.createdAt),
     check(
       "crm_contact_activity_type_check",
-      sql`${table.type} in ('CONTACT_CREATED','CONTACT_UPDATED','CONTACT_ARCHIVED','CONTACT_RESTORED','USER_LINKED','USER_UNLINKED','ASSIGNEE_CHANGED','TAG_ATTACHED','TAG_DETACHED','NOTE_ADDED','STAGE_CHANGED','APPOINTMENT_CREATED','APPOINTMENT_RESCHEDULED','APPOINTMENT_CANCELLED','APPOINTMENT_COMPLETED','ASSESSMENT_CREATED','ASSESSMENT_COMPLETED','ADMISSION_ACCEPTED','ADMISSION_REJECTED','WHATSAPP_TEMPLATE_SENT','WHATSAPP_MESSAGE_RECEIVED','WHATSAPP_FAILED','ACCOUNT_INVITATION_SENT','PHONE_VERIFIED','ACCOUNT_LINKED','ACCOUNT_INVITATION_REVOKED')`,
+      sql`${table.type} in ('CONTACT_CREATED','CONTACT_UPDATED','CONTACT_ARCHIVED','CONTACT_RESTORED','USER_LINKED','USER_UNLINKED','ASSIGNEE_CHANGED','TAG_ATTACHED','TAG_DETACHED','NOTE_ADDED','STAGE_CHANGED','APPOINTMENT_CREATED','APPOINTMENT_RESCHEDULED','APPOINTMENT_CANCELLED','APPOINTMENT_COMPLETED','ASSESSMENT_CREATED','ASSESSMENT_COMPLETED','ADMISSION_ACCEPTED','ADMISSION_REJECTED','WHATSAPP_TEMPLATE_SENT','WHATSAPP_MESSAGE_RECEIVED','WHATSAPP_FAILED','ACCOUNT_INVITATION_SENT','PHONE_VERIFIED','ACCOUNT_LINKED','ACCOUNT_INVITATION_REVOKED','COURSE_ENROLLED')`,
     ),
   ],
 );
@@ -1317,6 +1417,9 @@ export type OrganizationMembershipRow = typeof organizationMembership.$inferSele
 export type ParentStudentLinkRow = typeof parentStudentLink.$inferSelect;
 export type AvsStudentAssignmentRow = typeof avsStudentAssignment.$inferSelect;
 export type SpecialistStudentAssignmentRow = typeof specialistStudentAssignment.$inferSelect;
+export type TeacherCourseAssignmentRow = typeof teacherCourseAssignment.$inferSelect;
+export type CohortRow = typeof cohort.$inferSelect;
+export type CohortMembershipRow = typeof cohortMembership.$inferSelect;
 export type CrmPipelineRow = typeof crmPipeline.$inferSelect;
 export type CrmPipelineStageRow = typeof crmPipelineStage.$inferSelect;
 export type CrmContactRow = typeof crmContact.$inferSelect;

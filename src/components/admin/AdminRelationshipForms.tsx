@@ -80,3 +80,25 @@ export function AdminSpecialistAssignmentForm({ locale }: { locale: string }) {
     {error ? <span className="admin-error">{ar ? "فشلت العملية." : "Échec de l’opération."}</span> : null}
   </form>;
 }
+
+/** Requires the target to hold an ACTIVE TEACHER persona — enforced server-side, never by this form. `organizationId` is optional (ANEI-direct courses have none). */
+export function AdminTeacherAssignmentForm({ locale }: { locale: string }) {
+  const ar = locale === "ar";
+  const { submit, saving, error } = useSubmit("/api/admin/relationships/teacher-assignments");
+  const [teacherUserId, setTeacherUserId] = useState("");
+  const [courseId, setCourseId] = useState("");
+  const [organizationId, setOrganizationId] = useState("");
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (await submit({ teacherUserId, courseId, organizationId })) { setTeacherUserId(""); setCourseId(""); setOrganizationId(""); }
+  }
+
+  return <form onSubmit={onSubmit} style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end" }}>
+    <label>{ar ? "معرف المكوّن" : "ID formateur"}<input required value={teacherUserId} onChange={(e) => setTeacherUserId(e.target.value)} /></label>
+    <label>{ar ? "معرف الدورة" : "ID formation"}<input required value={courseId} onChange={(e) => setCourseId(e.target.value)} /></label>
+    <label>{ar ? "معرف المؤسسة" : "ID organisation"}<input required value={organizationId} onChange={(e) => setOrganizationId(e.target.value)} /></label>
+    <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>{ar ? "تعيين" : "Assigner"}</button>
+    {error ? <span className="admin-error">{ar ? "فشلت العملية." : "Échec de l’opération."}</span> : null}
+  </form>;
+}

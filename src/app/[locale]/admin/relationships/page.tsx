@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { isLocale } from "@/lib/i18n";
 import { requireAdminPermission } from "@/server/auth/session";
 import { AdminPageHeader } from "@/modules/admin/components/AdminPageHeader";
-import { AdminAvsAssignmentForm, AdminParentLinkForm, AdminSpecialistAssignmentForm } from "@/components/admin/AdminRelationshipForms";
+import { AdminAvsAssignmentForm, AdminParentLinkForm, AdminSpecialistAssignmentForm, AdminTeacherAssignmentForm } from "@/components/admin/AdminRelationshipForms";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +29,10 @@ export default async function AdminRelationshipsPage({ params }: { params: Promi
     <section className="admin-surface">
       <h2>{ar ? "تعيينات الأخصائي" : "Assignations spécialiste"}</h2>
       <AdminSpecialistAssignmentForm locale={locale} />
+    </section>
+    <section className="admin-surface">
+      <h2>{ar ? "تعيينات المكوّنين" : "Assignations formateur"}</h2>
+      <AdminTeacherAssignmentForm locale={locale} />
     </section>
   </>;
 }
