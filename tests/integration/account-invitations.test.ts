@@ -12,6 +12,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import { Client } from "pg";
+import { drainOutboxForOrg } from "./helpers/outbox";
 
 const url = process.env.TEST_DATABASE_URL ?? (process.env.NODE_ENV !== "production" ? "postgresql://anei:anei@127.0.0.1:5432/anei" : undefined);
 
@@ -86,6 +87,7 @@ async function seedFullyEligibleInvitationContext(client: Client, phone = "21620
 }
 
 async function cleanup(client: Client, orgIds: string[], userIds: string[]) {
+  await client.query("delete from outbox_event where organization_id = any($1)", [orgIds]);
   await client.query("delete from account_invitation_event where invitation_id in (select id from account_invitation where organization_id = any($1))", [orgIds]);
   await client.query("delete from account_verification_challenge where invitation_id in (select id from account_invitation where organization_id = any($1))", [orgIds]);
   await client.query("delete from account_invitation where organization_id = any($1)", [orgIds]);
@@ -269,6 +271,9 @@ async function createInvitationAndCaptureToken(ctx: { adminId: string; orgId: st
     const created = await createAccountInvitation(ctx.adminId, "OWNER", ctx.orgId, ctx.contactId);
     assert.ok(created.kind === "ok" && created.sent);
     invitationId = created.id;
+    // Phase 9: the Meta call happens in the worker, not during the create —
+    // run the worker inside the capture window so the token is observable.
+    await drainOutboxForOrg(ctx.orgId);
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -281,7 +286,7 @@ async function createInvitationAndCaptureToken(ctx: { adminId: string; orgId: st
   return { invitationId, rawToken };
 }
 
-async function captureOtp(action: () => Promise<unknown>): Promise<string> {
+async function captureOtp(organizationId: string, action: () => Promise<unknown>): Promise<string> {
   let captured = "";
   const originalFetch = globalThis.fetch;
   globalThis.fetch = (async (_input: unknown, init?: RequestInit) => {
@@ -298,6 +303,9 @@ async function captureOtp(action: () => Promise<unknown>): Promise<string> {
   }) as typeof fetch;
   try {
     await action();
+    // Phase 9: the OTP template send happens in the worker — run it inside
+    // the capture window so the decrypted OTP is observable.
+    await drainOutboxForOrg(organizationId);
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -311,7 +319,7 @@ test("OTP lifecycle: wrong code rejected, correct code verifies once, replay is 
     const ctx = await seedFullyEligibleInvitationContext(client);
     const { rawToken } = await createInvitationAndCaptureToken(ctx);
 
-    const otp = await captureOtp(async () => {
+    const otp = await captureOtp(ctx.orgId, async () => {
       const result = await requestInvitationOtp(rawToken);
       assert.equal(result.kind, "ok");
     });
@@ -348,9 +356,9 @@ test("OTP lifecycle: max attempts locks the challenge; a fresh request supersede
     process.env.TEST_DATABASE_URL = url;
     const { requestInvitationOtp, verifyInvitationOtp } = await import("../../src/server/services/account-invitations");
     const ctx = await seedFullyEligibleInvitationContext(client);
-    const { rawToken } = await createInvitationAndCaptureToken(ctx);
+    const { rawToken, invitationId } = await createInvitationAndCaptureToken(ctx);
 
-    await captureOtp(async () => requestInvitationOtp(rawToken));
+    await captureOtp(ctx.orgId, async () => requestInvitationOtp(rawToken));
 
     for (let i = 0; i < 5; i += 1) {
       const result = await verifyInvitationOtp(rawToken, "999999");
@@ -358,7 +366,7 @@ test("OTP lifecycle: max attempts locks the challenge; a fresh request supersede
       else assert.equal(result.kind, "attempts_exhausted");
     }
 
-    const active = await client.query(`select count(*)::int as n from account_verification_challenge where status = 'ACTIVE'`);
+    const active = await client.query(`select count(*)::int as n from account_verification_challenge where invitation_id = $1 and status = 'ACTIVE'`, [invitationId]);
     assert.equal(active.rows[0].n, 0);
 
     // A fresh request is still governed by the resend cooldown right after a
@@ -400,7 +408,7 @@ test("claim: requires an authenticated claimant, links the contact, ensures STUD
     const ctx = await seedFullyEligibleInvitationContext(client);
     const { rawToken } = await createInvitationAndCaptureToken(ctx);
 
-    const otp = await captureOtp(async () => requestInvitationOtp(rawToken));
+    const otp = await captureOtp(ctx.orgId, async () => requestInvitationOtp(rawToken));
     assert.equal((await verifyInvitationOtp(rawToken, otp)).kind, "ok");
 
     const claimant = await seedUser(client, "claimant");
@@ -432,7 +440,7 @@ test("claim: a contact already linked to a different user is a conflict; ADMIN/S
     const ctx = await seedFullyEligibleInvitationContext(client);
     const { rawToken } = await createInvitationAndCaptureToken(ctx);
 
-    const otp = await captureOtp(async () => requestInvitationOtp(rawToken));
+    const otp = await captureOtp(ctx.orgId, async () => requestInvitationOtp(rawToken));
     assert.equal((await verifyInvitationOtp(rawToken, otp)).kind, "ok");
 
     const alreadyLinkedUser = await seedUser(client, "already");
@@ -456,7 +464,7 @@ test("claim: concurrent claims by two different users never both succeed", { ski
     const ctx = await seedFullyEligibleInvitationContext(client);
     const { rawToken } = await createInvitationAndCaptureToken(ctx);
 
-    const otp = await captureOtp(async () => requestInvitationOtp(rawToken));
+    const otp = await captureOtp(ctx.orgId, async () => requestInvitationOtp(rawToken));
     assert.equal((await verifyInvitationOtp(rawToken, otp)).kind, "ok");
 
     const userA = await seedUser(client, "a");

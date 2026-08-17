@@ -27,6 +27,7 @@
     "security:audit": "tsx scripts/security-audit.ts",
     "verify": "tsx scripts/verify.ts",
     "test:integration": "tsx --conditions=react-server --test tests/integration/**/*.test.ts",
+    "worker:outbox": "tsx --conditions=react-server scripts/worker.ts",
     "test:e2e": "playwright test",
     "test:load": "k6 run tests/load/k6-smoke.js",
     "security:sbom": "npm sbom --sbom-format=cyclonedx > sbom.cdx.json",

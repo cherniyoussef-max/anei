@@ -18,7 +18,7 @@ import { ensureStudentPersonaMembership } from "@/server/services/personas";
 import { getWhatsAppAccountForOrg, getApprovedWhatsAppTemplateByName } from "@/server/queries/whatsapp";
 import { getAdmissionForContact } from "@/server/queries/admission";
 import { normalizeWhatsAppPhone } from "@/server/whatsapp/phone";
-import { sendSystemWhatsAppTemplate } from "@/server/services/whatsapp";
+import { enqueueSystemWhatsAppTemplateWithSecretParameters } from "@/server/services/whatsapp";
 import { env } from "@/server/env";
 import {
   digestsEqual,
@@ -281,14 +281,16 @@ export async function revokeAccountInvitation(
 }
 
 /**
- * WhatsApp delivery of the invitation link, outside any DB transaction (see
- * docs/premium/ROADMAP.md Phase 6 §AJ — the provider call cannot be part of
- * a PostgreSQL transaction). Uses `sendSystemWhatsAppTemplate` (Phase 5's
- * idempotent send mechanics) keyed by a deterministic requestId derived from
- * the invitation id + token version, so an HTTP retry of the same logical
- * send attempt never re-sends the message. The raw token appears only in the
- * outbound message body parameter sent to Meta — it is never persisted or
- * logged locally.
+ * WhatsApp delivery of the invitation link. Phase 9 model: the invitation
+ * status mutation (SENT / SEND_FAILED) and the outbox dispatch intent
+ * (`WHATSAPP_TEMPLATE_SEND`) commit in ONE transaction (see
+ * docs/premium/PHASE9_HANDOFF.md — the provider call itself never runs here;
+ * it happens later in the worker). Keyed by a deterministic requestId derived
+ * from the invitation id + token version, so an HTTP retry of the same logical
+ * send attempt never re-enqueues a second job. The raw token appears only
+ * inside the invitation URL, which is AES-256-GCM encrypted at rest in the
+ * message's `bodyParametersEncrypted` (never plaintext, never in the outbox
+ * payload, never logged).
  */
 async function attemptDelivery(
   actorUserId: string,
@@ -310,20 +312,25 @@ async function attemptDelivery(
   const invitationUrl = `${env.APP_URL}/${DEFAULT_LOCALE}/invitation/${encodeURIComponent(rawToken)}`;
 
   let sent = false;
-  if (template) {
-    const result = await sendSystemWhatsAppTemplate(organizationId, {
-      contactId: invitation.contactId,
-      templateId: template.id,
-      language: template.language,
-      parameters: [org?.name ?? "ANEI", invitationUrl],
-      requestId: `account-invitation:${invitationId}:v${invitation.tokenVersion}`,
-    });
-    sent = result.kind === "ok";
-  }
-
   await db.transaction(async (tx) => {
     const [current] = await tx.select({ status: accountInvitation.status }).from(accountInvitation).where(eq(accountInvitation.id, invitationId)).limit(1);
     if (!current || current.status === "VERIFIED" || current.status === "CONSUMED" || current.status === "REVOKED") return;
+
+    if (template) {
+      const result = await enqueueSystemWhatsAppTemplateWithSecretParameters(
+        organizationId,
+        {
+          contactId: invitation.contactId,
+          templateId: template.id,
+          language: template.language,
+          parameters: [org?.name ?? "ANEI", invitationUrl],
+          requestId: `account-invitation:${invitationId}:v${invitation.tokenVersion}`,
+        },
+        tx,
+      );
+      sent = result.kind === "ok";
+    }
+
     await tx.update(accountInvitation).set({ status: sent ? "SENT" : "SEND_FAILED", sentAt: sent ? new Date() : undefined, updatedAt: new Date() }).where(eq(accountInvitation.id, invitationId));
     await logEvent(tx, invitationId, actorUserId, sent ? sentEvent : failedEvent, { organizationId });
     if (sent) await logContactActivity(tx, invitation.contactId, actorUserId, "ACCOUNT_INVITATION_SENT");
@@ -360,10 +367,8 @@ export async function requestInvitationOtp(rawToken: string): Promise<OtpRequest
   const template = await getApprovedWhatsAppTemplateByName(invitation.organizationId, OTP_TEMPLATE_NAME, DEFAULT_LOCALE);
   if (!template) return { kind: "not_configured" };
 
-  let otp: string;
-  let challengeId: string;
   try {
-    ({ otp, challengeId } = await db.transaction(async (tx) => {
+    await db.transaction(async (tx) => {
       await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${invitation.id}))`);
 
       const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -400,21 +405,30 @@ export async function requestInvitationOtp(rawToken: string): Promise<OtpRequest
         .where(eq(accountVerificationChallenge.id, challenge.id));
 
       await logEvent(tx, invitation.id, null, "OTP_SENT", { organizationId: invitation.organizationId });
-      return { otp: generatedOtp, challengeId: challenge.id };
-    }));
+
+      // Phase 9: the challenge mutation and the durable outbox dispatch intent
+      // commit in ONE transaction (docs/premium/PHASE9_HANDOFF.md). The OTP is
+      // never persisted raw — it is AES-256-GCM encrypted at rest in the
+      // message's bodyParametersEncrypted and the worker decrypts it only when
+      // it performs the provider call.
+      await enqueueSystemWhatsAppTemplateWithSecretParameters(
+        invitation.organizationId,
+        {
+          contactId: invitation.contactId,
+          templateId: template.id,
+          language: template.language,
+          parameters: [generatedOtp],
+          requestId: `account-invitation-otp:${challenge.id}`,
+        },
+        tx,
+      );
+    });
   } catch (error) {
     if (error instanceof SendLimit) return { kind: "send_limit" };
     if (error instanceof SendCooldown) return { kind: "send_cooldown" };
     throw error;
   }
 
-  await sendSystemWhatsAppTemplate(invitation.organizationId, {
-    contactId: invitation.contactId,
-    templateId: template.id,
-    language: template.language,
-    parameters: [otp],
-    requestId: `account-invitation-otp:${challengeId}`,
-  });
   return { kind: "ok" };
 }
 

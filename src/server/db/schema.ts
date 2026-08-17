@@ -1131,6 +1131,16 @@ export const whatsappMessage = pgTable(
     textPreview: text("text_preview"),
     providerErrorCode: text("provider_error_code"),
     providerErrorMessage: text("provider_error_message"),
+    // Phase 9: template body parameters, needed by the worker at send time
+    // (moved out of the request path). Non-secret parameters (e.g. an
+    // invitation URL) are stored in the clear in `bodyParameters`. Secret
+    // parameters (the OTP digit string) are NEVER stored here in plaintext —
+    // they go through `bodyParametersEncrypted` (AES-256-GCM ciphertext, see
+    // src/server/security/outbox-crypto.ts) and are scrubbed back to null
+    // once the worker has attempted delivery (success or terminal failure).
+    // At most one of the two is populated for a given message.
+    bodyParameters: jsonb("body_parameters").$type<string[]>(),
+    bodyParametersEncrypted: jsonb("body_parameters_encrypted").$type<{ ciphertext: string; nonce: string }>(),
     sentAt: timestamp("sent_at", { withTimezone: true }),
     deliveredAt: timestamp("delivered_at", { withTimezone: true }),
     readAt: timestamp("read_at", { withTimezone: true }),
@@ -1186,6 +1196,64 @@ export type WhatsappAccountRow = typeof whatsappAccount.$inferSelect;
 export type WhatsappTemplateRow = typeof whatsappTemplate.$inferSelect;
 export type WhatsappMessageRow = typeof whatsappMessage.$inferSelect;
 export type WhatsappWebhookEventRow = typeof whatsappWebhookEvent.$inferSelect;
+
+// -----------------------------------------------------------------------------
+// Phase 9: transactional outbox. A business-mutation transaction inserts an
+// outbox_event row in the SAME transaction as the domain change it represents
+// (see src/server/queue/outbox.ts's enqueueOutboxEvent) so "mutation
+// committed but the intent to notify an external system was lost" cannot
+// happen locally. A separate worker process (scripts/worker.ts) claims rows
+// with `SELECT ... FOR UPDATE SKIP LOCKED`, releases the DB lock immediately,
+// then performs the external call outside any transaction. This guarantees
+// durable LOCAL intent and at-least-once WORKER execution — it does NOT by
+// itself guarantee exactly-once PROVIDER delivery (see
+// docs/premium/PHASE9_HANDOFF.md for the residual ambiguous-outcome window).
+// `eventType` is an allowlisted, versioned-payload registry
+// (src/server/queue/event-types.ts) — never an arbitrary stored handler name.
+// -----------------------------------------------------------------------------
+
+export const outboxEvent = pgTable(
+  "outbox_event",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    // Nullable: not every event is organization-scoped (kept loose/non-FK,
+    // matching aggregateType/aggregateId, since this table intentionally
+    // references rows across many aggregate tables).
+    organizationId: text("organization_id"),
+    aggregateType: text("aggregate_type").notNull(),
+    aggregateId: text("aggregate_id").notNull(),
+    eventType: text("event_type").notNull(),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+    payloadVersion: integer("payload_version").notNull().default(1),
+    status: text("status").notNull().default("PENDING"),
+    attempts: integer("attempts").notNull().default(0),
+    maxAttempts: integer("max_attempts").notNull().default(8),
+    availableAt: timestamp("available_at", { withTimezone: true }).notNull().$defaultFn(now),
+    lockedAt: timestamp("locked_at", { withTimezone: true }),
+    lockedBy: text("locked_by"),
+    processedAt: timestamp("processed_at", { withTimezone: true }),
+    lastErrorCode: text("last_error_code"),
+    lastErrorMessage: text("last_error_message"),
+    idempotencyKey: text("idempotency_key").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("outbox_event_idempotency_key_unique").on(table.idempotencyKey),
+    // Worker claim query: PENDING rows ready to run, oldest first.
+    index("outbox_event_claim_idx").on(table.status, table.availableAt),
+    // Stale-lease recovery scan.
+    index("outbox_event_processing_idx").on(table.status, table.lockedAt),
+    index("outbox_event_org_created_idx").on(table.organizationId, table.createdAt),
+    check("outbox_event_status_check", sql`${table.status} in ('PENDING','PROCESSING','SUCCEEDED','FAILED')`),
+    check("outbox_event_event_type_check", sql`${table.eventType} in ('WHATSAPP_TEMPLATE_SEND')`),
+    check("outbox_event_attempts_nonnegative", sql`${table.attempts} >= 0`),
+    check("outbox_event_max_attempts_positive", sql`${table.maxAttempts} > 0`),
+    check("outbox_event_payload_version_positive", sql`${table.payloadVersion} > 0`),
+  ],
+);
+
+export type OutboxEventRow = typeof outboxEvent.$inferSelect;
 
 // -----------------------------------------------------------------------------
 // Phase 6: account invitation + phone verification + CRM contact -> ANEI user

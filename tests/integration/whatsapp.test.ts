@@ -20,6 +20,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import { Client } from "pg";
+import { drainOutboxForOrg } from "./helpers/outbox";
 
 const url = process.env.TEST_DATABASE_URL ?? (process.env.NODE_ENV !== "production" ? "postgresql://anei:anei@127.0.0.1:5432/anei" : undefined);
 
@@ -88,6 +89,7 @@ async function seedContact(adminId: string, orgId: string, phone: string) {
 }
 
 async function cleanup(client: Client, orgIds: string[], userIds: string[]) {
+  await client.query("delete from outbox_event where organization_id = any($1)", [orgIds]);
   await client.query("delete from whatsapp_webhook_event where organization_id = any($1)", [orgIds]);
   await client.query("delete from whatsapp_message where organization_id = any($1)", [orgIds]);
   await client.query("delete from whatsapp_template where organization_id = any($1)", [orgIds]);
@@ -162,7 +164,7 @@ test("upsertWhatsAppAccount: org role below MANAGER is forbidden", { skip: !url 
   });
 });
 
-test("sendWhatsAppTemplate: a successful send writes QUEUED → SENT, the provider id, an activity, and an audit row", { skip: !url }, async () => {
+test("sendWhatsAppTemplate: enqueues a QUEUED message + outbox job; the worker drives QUEUED → SENT, the provider id, an activity, and an audit row", { skip: !url }, async () => {
   await withClient(async (client) => {
     process.env.TEST_DATABASE_URL = url;
     const { sendWhatsAppTemplate } = await import("../../src/server/services/whatsapp");
@@ -182,12 +184,25 @@ test("sendWhatsAppTemplate: a successful send writes QUEUED → SENT, the provid
       assert.equal(result.kind, "ok");
       assert.ok(result.kind === "ok");
 
+      // Delivery is durable but async: the message is QUEUED with a matching
+      // outbox job, and NO provider call has happened yet.
+      const queued = await client.query("select status from whatsapp_message where id = $1", [result.id]);
+      assert.equal(queued.rows[0].status, "QUEUED");
+      const jobs = await client.query("select count(*)::int as n from outbox_event where organization_id = $1 and event_type = 'WHATSAPP_TEMPLATE_SEND'", [org.id]);
+      assert.equal(jobs.rows[0].n, 1);
+
+      // The worker performs the Meta call and writes SENT.
+      await drainOutboxForOrg(org.id);
+
       const message = await getWhatsappMessageByProviderId("wamid.HBgLSUVDT1JJTkdEQVRF");
       assert.equal(message?.status, "SENT");
       assert.equal(message?.direction, "OUTBOUND");
       assert.equal(message?.toPhone, "21620123456");
       assert.equal(message?.contactId, contact.id);
       assert.ok(message?.sentAt);
+
+      const outbox = await client.query("select status, last_error_code from outbox_event where organization_id = $1", [org.id]);
+      assert.equal(outbox.rows[0].status, "SUCCEEDED");
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -222,7 +237,7 @@ test("sendWhatsAppTemplate: an org below MANAGER cannot send; a send with no org
   });
 });
 
-test("sendWhatsAppTemplate: provider rejection writes a FAILED message + WHATSAPP_FAILED activity, no audit for the failed attempt", { skip: !url }, async () => {
+test("sendWhatsAppTemplate: a provider rejection leaves the message QUEUED, then the worker terminally FAILs it + WHATSAPP_FAILED activity, no audit for the failed attempt", { skip: !url }, async () => {
   await withClient(async (client) => {
     process.env.TEST_DATABASE_URL = url;
     const { sendWhatsAppTemplate } = await import("../../src/server/services/whatsapp");
@@ -238,7 +253,12 @@ test("sendWhatsAppTemplate: provider rejection writes a FAILED message + WHATSAP
     globalThis.fetch = (async () => providerSendError()) as typeof fetch;
     try {
       const result = await sendWhatsAppTemplate(adminId, "STAFF", org.id, { contactId: contact.id, templateId, language: "fr" });
-      assert.equal(result.kind, "provider_error");
+      assert.equal(result.kind, "ok", "Phase 9: enqueue never waits on the provider");
+
+      const queued = await client.query("select status from whatsapp_message where id = $1", [result.id]);
+      assert.equal(queued.rows[0].status, "QUEUED");
+
+      await drainOutboxForOrg(org.id);
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -247,6 +267,9 @@ test("sendWhatsAppTemplate: provider rejection writes a FAILED message + WHATSAP
     assert.equal(rows.rows[0].status, "FAILED");
     assert.equal(rows.rows[0].provider_error_code, "132000");
 
+    const outbox = await client.query("select status, last_error_code from outbox_event where organization_id = $1", [org.id]);
+    assert.equal(outbox.rows[0].status, "FAILED");
+
     const activity = await client.query("select type from crm_contact_activity where contact_id = $1", [contact.id]);
     assert.ok(activity.rows.some((r) => r.type === "WHATSAPP_FAILED"));
 
@@ -254,7 +277,7 @@ test("sendWhatsAppTemplate: provider rejection writes a FAILED message + WHATSAP
   });
 });
 
-test("sendWhatsAppTemplate: same requestId never re-sends an already-finalized message", { skip: !url }, async () => {
+test("sendWhatsAppTemplate: same requestId never creates a second outbox job / re-sends an already-finalized message", { skip: !url }, async () => {
   await withClient(async (client) => {
     process.env.TEST_DATABASE_URL = url;
     const { sendWhatsAppTemplate } = await import("../../src/server/services/whatsapp");
@@ -279,6 +302,11 @@ test("sendWhatsAppTemplate: same requestId never re-sends an already-finalized m
       assert.equal(first.kind, "ok");
       const retry = await sendWhatsAppTemplate(adminId, "STAFF", org.id, { contactId: contact.id, templateId, language: "fr", requestId });
       assert.equal(retry.kind, "ok");
+
+      const jobs = await client.query("select count(*)::int as n from outbox_event where organization_id = $1", [org.id]);
+      assert.equal(jobs.rows[0].n, 1, "a retry with the same requestId must not enqueue a second outbox job");
+
+      await drainOutboxForOrg(org.id);
       assert.equal(fetchCalls, 1, "a retry with the same requestId must not re-send");
     } finally {
       globalThis.fetch = originalFetch;
@@ -324,6 +352,9 @@ test("sendWhatsAppTemplate: requestId idempotency is scoped per-organization", {
       const sendB = await sendWhatsAppTemplate(adminId, "STAFF", orgB.id, { contactId: contactB.id, templateId: b.templateId, language: "fr", requestId });
       assert.equal(sendB.kind, "ok", "the same requestId in another org must be an independent send");
       assert.notEqual(sendA.id, sendB.id);
+
+      await drainOutboxForOrg(orgA.id);
+      await drainOutboxForOrg(orgB.id);
 
       const rowsA = await client.query("select provider_message_id from whatsapp_message where organization_id = $1", [orgA.id]);
       const rowsB = await client.query("select provider_message_id from whatsapp_message where organization_id = $1", [orgB.id]);
@@ -468,6 +499,7 @@ test("ingestWebhookEvents: status callbacks advance monotonically and replayed/o
     try {
       const sent = await sendWhatsAppTemplate(adminId, "STAFF", org.id, { contactId: contact.id, templateId, language: "fr" });
       assert.equal(sent.kind, "ok");
+      await drainOutboxForOrg(org.id);
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -534,6 +566,7 @@ test("whatsapp_message: ON DELETE SET NULL keeps history when the contact is del
     try {
       const sent = await sendWhatsAppTemplate(adminId, "STAFF", org.id, { contactId: contact.id, templateId, language: "fr" });
       assert.equal(sent.kind, "ok");
+      await drainOutboxForOrg(org.id);
     } finally {
       globalThis.fetch = originalFetch;
     }

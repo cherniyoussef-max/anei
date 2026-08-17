@@ -19,6 +19,8 @@ import { WhatsAppNotConfiguredError, WhatsAppProviderError } from "@/server/what
 import { metaWhatsAppCloudProvider } from "@/server/whatsapp/meta";
 import { normalizeWhatsAppPhone } from "@/server/whatsapp/phone";
 import { getWhatsAppAccountForOrg } from "@/server/queries/whatsapp";
+import { enqueueOutboxEvent } from "@/server/queue/outbox";
+import { encryptSecretParameters } from "@/server/security/outbox-crypto";
 
 type DbClient = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -204,14 +206,17 @@ function validateBodyParameters(parameters: unknown[], parameterCount: number): 
  * contact id, template id, language and a bounded list of body parameter
  * strings. Raw Meta payload injection is impossible by construction.
  *
- * External-side-effect consistency: the local message row (status QUEUED) is
- * persisted BEFORE the Meta call, keyed by a unique `localRequestId`, then the
- * provider result is written back in a second transaction (SENT with the
- * provider message id, or FAILED with sanitized error details). A retry that
- * reuses the same request id never re-sends an already-finalized message.
- * The unavoidable limitation of a direct synchronous external call (a success
- * followed by a failed local write-back leaves the row QUEUED without a
- * provider id) is documented in the Phase 5 report.
+ * Phase 9 delivery model: the local message row (status QUEUED) and its
+ * outbox dispatch intent (`WHATSAPP_TEMPLATE_SEND`, keyed by the message id)
+ * are persisted together in ONE transaction, keyed by a unique
+ * `localRequestId` so a caller retry never creates a second logical job. The
+ * actual Meta API call happens later, in the worker
+ * (src/server/queue/handlers/whatsapp-template-send.ts) — this function
+ * returns as soon as delivery is durably QUEUED, never after the provider
+ * call. This is an at-least-once WORKER execution guarantee, not an
+ * exactly-once PROVIDER delivery guarantee: see
+ * docs/premium/PHASE9_HANDOFF.md for the residual ambiguous-outcome window
+ * (provider accepts the send, the worker crashes before recording success).
  */
 export async function sendWhatsAppTemplate(
   actorUserId: string,
@@ -229,31 +234,6 @@ export async function sendWhatsAppTemplate(
   return sendApprovedTemplateMessage(actorUserId, organizationId, data);
 }
 
-/**
- * System-initiated variant of `sendWhatsAppTemplate` for Phase 6 invitation/
- * OTP delivery, where the sender is not an authenticated organization-role
- * actor but the server itself, acting on a validated invitation record (see
- * src/server/services/account-invitations.ts). Deliberately NOT wired into
- * any HTTP route directly — callers must have already performed their own
- * invitation-scoped eligibility/rate-limit checks before reaching this
- * function. Reuses the exact same idempotency, transaction-boundary and
- * provider-call mechanics as the admin-triggered path above; only the
- * organization-role authorization gate is skipped (there is no client-
- * supplied role to gate here).
- */
-export async function sendSystemWhatsAppTemplate(
-  organizationId: string,
-  data: {
-    contactId: string;
-    templateId: string;
-    language: string;
-    parameters?: string[];
-    requestId?: string;
-  },
-): Promise<WhatsAppMutationResult> {
-  return sendApprovedTemplateMessage(null, organizationId, data);
-}
-
 async function sendApprovedTemplateMessage(
   actorUserId: string | null,
   organizationId: string,
@@ -265,90 +245,169 @@ async function sendApprovedTemplateMessage(
     requestId?: string;
   },
 ): Promise<WhatsAppMutationResult> {
-  const account = await getWhatsAppAccountForOrg(organizationId);
+  return enqueueTemplateMessage(actorUserId, organizationId, {
+    contactId: data.contactId,
+    templateId: data.templateId,
+    language: data.language,
+    requestId: data.requestId,
+    resolveParameters: (parameterCount) => validateBodyParameters(data.parameters ?? [], parameterCount),
+    bodyParameters: (parameters) => ({ bodyParameters: parameters, bodyParametersEncrypted: null }),
+  });
+}
+
+/**
+ * System-initiated variant carrying SECRET template parameters (the OTP digit
+ * string; the invitation URL which embeds the raw invitation token). The whole
+ * parameter array is AES-256-GCM encrypted
+ * (src/server/security/outbox-crypto.ts) before it is ever written to the
+ * database — the raw values are held only in the caller's local variables and
+ * are never persisted, logged, or placed in the outbox payload, preserving
+ * Phase 6's "raw OTP/token is never stored" invariant across the async
+ * boundary. The template must declare exactly `parameters.length` body
+ * parameters. Pass `withinTx` to enqueue within the caller's own business
+ * transaction (the mutation + this outbox insert then commit or roll back
+ * together — see docs/premium/PHASE9_HANDOFF.md).
+ */
+export async function enqueueSystemWhatsAppTemplateWithSecretParameters(
+  organizationId: string,
+  data: { contactId: string; templateId: string; language: string; parameters: string[]; requestId: string },
+  withinTx?: DbClient,
+): Promise<WhatsAppMutationResult> {
+  return enqueueTemplateMessage(
+    null,
+    organizationId,
+    {
+      contactId: data.contactId,
+      templateId: data.templateId,
+      language: data.language,
+      requestId: data.requestId,
+      resolveParameters: (parameterCount) => (parameterCount === data.parameters.length ? data.parameters : null),
+      bodyParameters: (parameters) => ({ bodyParameters: null, bodyParametersEncrypted: encryptSecretParameters(parameters) }),
+    },
+    withinTx,
+  );
+}
+
+/**
+ * Shared transactional-enqueue core for every WhatsApp template send
+ * (admin-triggered, system invitation-link, system OTP). Creates/reuses the
+ * QUEUED `whatsapp_message` row and its `WHATSAPP_TEMPLATE_SEND` outbox
+ * dispatch intent in ONE transaction, then returns — the Meta API call is
+ * never made here (see src/server/queue/handlers/whatsapp-template-send.ts).
+ * When `withinTx` is provided, the whole body runs inside the caller's
+ * transaction (no nested transaction is opened); otherwise a fresh transaction
+ * is used. `bodyParameters` decides how the validated parameters are persisted
+ * (plaintext column vs. AES-256-GCM ciphertext column); callers never see each
+ * other's storage choice.
+ */
+async function enqueueTemplateMessage(
+  actorUserId: string | null,
+  organizationId: string,
+  data: {
+    contactId: string;
+    templateId: string;
+    language: string;
+    requestId?: string;
+    resolveParameters: (parameterCount: number) => string[] | null;
+    bodyParameters: (parameters: string[]) => { bodyParameters: string[] | null; bodyParametersEncrypted: { ciphertext: string; nonce: string } | null };
+  },
+  withinTx?: DbClient,
+): Promise<WhatsAppMutationResult> {
+  const account = withinTx
+    ? (await withinTx.select().from(whatsappAccount).where(eq(whatsappAccount.organizationId, organizationId)).limit(1))[0]
+    : await getWhatsAppAccountForOrg(organizationId);
   if (!account || !isActiveMetaAccount(account)) return { kind: "no_account" };
 
-  // --- Load + validate the org-scoped send inputs (inside one transaction) ----
   let messageId: string | null = null;
-  let existingStatus: string | null = null;
-  let contactPhone: string | null = null;
-  let templateName: string | null = null;
-  let templateLanguage: string | null = null;
-  let validatedParameters: string[] | null = null;
+
+  const body = async (tx: DbClient) => {
+    const [contact] = await tx
+      .select({ id: crmContact.id, phone: crmContact.phone })
+      .from(crmContact)
+      .where(and(eq(crmContact.id, data.contactId), eq(crmContact.organizationId, organizationId)))
+      .limit(1);
+    if (!contact) throw new SendValidation("invalid_contact");
+
+    const [template] = await tx
+      .select()
+      .from(whatsappTemplate)
+      .where(and(eq(whatsappTemplate.id, data.templateId), eq(whatsappTemplate.organizationId, organizationId)))
+      .limit(1);
+    if (!template || template.status !== "APPROVED") throw new SendValidation("invalid_template");
+
+    const normalized = normalizeWhatsAppPhone(contact.phone);
+    if (!normalized) throw new SendValidation("no_phone");
+
+    const parameters = data.resolveParameters(template.parameterCount);
+    if (!parameters) throw new SendValidation("invalid_parameters");
+
+    const requestId = data.requestId?.trim() || crypto.randomUUID();
+    const localRequestId = requestId.slice(0, 128);
+
+    const [existing] = await tx
+      .select({ id: whatsappMessage.id, status: whatsappMessage.status })
+      .from(whatsappMessage)
+      .where(and(eq(whatsappMessage.localRequestId, localRequestId), eq(whatsappMessage.organizationId, organizationId)))
+      .limit(1);
+    if (existing && existing.status !== "QUEUED") {
+      messageId = existing.id;
+      return;
+    }
+
+    const storedParameters = data.bodyParameters(parameters);
+
+    if (existing) {
+      // A prior attempt was interrupted before an outbox event was durably
+      // enqueued — safe to re-attempt (still QUEUED, no dispatch recorded).
+      messageId = existing.id;
+      await tx
+        .update(whatsappMessage)
+        .set({ bodyParameters: storedParameters.bodyParameters, bodyParametersEncrypted: storedParameters.bodyParametersEncrypted, updatedAt: new Date() })
+        .where(eq(whatsappMessage.id, existing.id));
+    } else {
+      try {
+        const [row] = await tx
+          .insert(whatsappMessage)
+          .values({
+            organizationId,
+            accountId: account.id,
+            contactId: contact.id,
+            direction: "OUTBOUND",
+            messageType: "TEMPLATE",
+            status: "QUEUED",
+            localRequestId,
+            toPhone: normalized,
+            templateName: template.name,
+            templateLanguage: data.language,
+            bodyParameters: storedParameters.bodyParameters,
+            bodyParametersEncrypted: storedParameters.bodyParametersEncrypted,
+            createdByUserId: actorUserId,
+          })
+          .returning();
+        messageId = row.id;
+      } catch {
+        throw new SendDuplicate();
+      }
+    }
+
+    await enqueueOutboxEvent(tx, {
+      organizationId,
+      aggregateType: "whatsappMessage",
+      aggregateId: messageId!,
+      eventType: "WHATSAPP_TEMPLATE_SEND",
+      payload: { messageId },
+      // One durable dispatch job per message, regardless of how many times
+      // the caller retries the enqueue call with the same requestId.
+      idempotencyKey: `whatsapp-message:${messageId}`,
+    });
+  };
 
   try {
-    await db.transaction(async (tx) => {
-      const [contact] = await tx
-        .select({ id: crmContact.id, phone: crmContact.phone })
-        .from(crmContact)
-        .where(and(eq(crmContact.id, data.contactId), eq(crmContact.organizationId, organizationId)))
-        .limit(1);
-      if (!contact) throw new SendValidation("invalid_contact");
-
-      const [template] = await tx
-        .select()
-        .from(whatsappTemplate)
-        .where(
-          and(
-            eq(whatsappTemplate.id, data.templateId),
-            eq(whatsappTemplate.organizationId, organizationId),
-          ),
-        )
-        .limit(1);
-      if (!template || template.status !== "APPROVED") throw new SendValidation("invalid_template");
-
-      const normalized = normalizeWhatsAppPhone(contact.phone);
-      if (!normalized) throw new SendValidation("no_phone");
-
-      const parameters = validateBodyParameters(data.parameters ?? [], template.parameterCount);
-      if (!parameters) throw new SendValidation("invalid_parameters");
-
-      const requestId = data.requestId?.trim() || crypto.randomUUID();
-      const localRequestId = requestId.slice(0, 128);
-
-      const [existing] = await tx
-        .select({ id: whatsappMessage.id, status: whatsappMessage.status })
-        .from(whatsappMessage)
-        .where(and(eq(whatsappMessage.localRequestId, localRequestId), eq(whatsappMessage.organizationId, organizationId)))
-        .limit(1);
-      if (existing && existing.status !== "QUEUED") {
-        existingStatus = existing.status;
-        messageId = existing.id;
-        return;
-      }
-      if (existing) {
-        // A prior attempt was interrupted before the provider result was
-        // written back — safe to re-attempt the send (no provider id stored).
-        messageId = existing.id;
-      } else {
-        try {
-          const [row] = await tx
-            .insert(whatsappMessage)
-            .values({
-              organizationId,
-              accountId: account.id,
-              contactId: contact.id,
-              direction: "OUTBOUND",
-              messageType: "TEMPLATE",
-              status: "QUEUED",
-              localRequestId,
-              toPhone: normalized,
-              templateName: template.name,
-              templateLanguage: data.language,
-              createdByUserId: actorUserId,
-            })
-            .returning();
-          messageId = row.id;
-        } catch {
-          throw new SendDuplicate();
-        }
-      }
-
-      contactPhone = normalized;
-      templateName = template.name;
-      templateLanguage = data.language;
-      validatedParameters = parameters;
-    });
+    if (withinTx) {
+      await body(withinTx);
+    } else {
+      await db.transaction(body);
+    }
   } catch (error) {
     if (error instanceof SendValidation) {
       const map = {
@@ -364,42 +423,14 @@ async function sendApprovedTemplateMessage(
   }
 
   if (!messageId) throw new Error("WHATSAPP_SEND_NO_MESSAGE");
-
-  if (existingStatus) {
-    // Idempotent retry of an already-finalized logical send — no re-send.
-    return { kind: "ok", id: messageId };
-  }
-
-  // --- External provider call (never inside a DB transaction) ----------------
-  let providerMessageId: string;
-  try {
-    const result = await metaWhatsAppCloudProvider.sendTemplateMessage({
-      phoneNumberId: account.phoneNumberId,
-      to: contactPhone!,
-      templateName: templateName!,
-      language: templateLanguage!,
-      bodyParameters: (validatedParameters ?? []).map((text) => ({ type: "text", text })),
-    });
-    providerMessageId = result.providerMessageId;
-  } catch (error) {
-    if (error instanceof WhatsAppNotConfiguredError) return { kind: "not_configured" };
-    let code: string | undefined;
-    let providerErrorCode: string | null | undefined;
-    let providerErrorMessage: string | null | undefined;
-    if (error instanceof WhatsAppProviderError) {
-      code = error.code;
-      providerErrorCode = error.providerErrorCode;
-      providerErrorMessage = error.providerErrorMessage;
-    }
-    await recordOutboundFailure(actorUserId, organizationId, messageId, providerErrorCode, providerErrorMessage);
-    return { kind: "provider_error", code, providerErrorCode, providerErrorMessage };
-  }
-
-  await recordOutboundSent(actorUserId, organizationId, messageId, providerMessageId);
+  // Either a fresh QUEUED message + outbox dispatch just committed, or a
+  // prior attempt already reached a terminal state — both are "ok" from the
+  // caller's perspective (idempotent retry never re-enqueues).
   return { kind: "ok", id: messageId };
 }
 
-async function recordOutboundSent(
+/** Exported for src/server/queue/handlers/whatsapp-template-send.ts — the worker's success write-back. Only advances a still-QUEUED row (a racing status callback that already moved it forward wins). */
+export async function recordOutboundSent(
   actorUserId: string | null,
   organizationId: string,
   messageId: string,
@@ -415,7 +446,16 @@ async function recordOutboundSent(
     if (row.status !== "QUEUED") return; // a racing status callback already moved it forward
     await tx
       .update(whatsappMessage)
-      .set({ providerMessageId, status: "SENT", sentAt: new Date(), updatedAt: new Date() })
+      .set({
+        providerMessageId,
+        status: "SENT",
+        sentAt: new Date(),
+        // Ciphertext/parameters are no longer needed once delivery has been
+        // attempted — scrub them rather than retain secret/PII material.
+        bodyParameters: null,
+        bodyParametersEncrypted: null,
+        updatedAt: new Date(),
+      })
       .where(eq(whatsappMessage.id, messageId));
     if (row.contactId) {
       await tx.insert(crmContactActivity).values({
@@ -435,7 +475,8 @@ async function recordOutboundSent(
   });
 }
 
-async function recordOutboundFailure(
+/** Exported for src/server/queue/handlers/whatsapp-template-send.ts — the worker's terminal-failure write-back. */
+export async function recordOutboundFailure(
   actorUserId: string | null,
   organizationId: string,
   messageId: string,
@@ -457,6 +498,8 @@ async function recordOutboundFailure(
         failedAt: new Date(),
         providerErrorCode: providerErrorCode ? String(providerErrorCode).slice(0, 64) : null,
         providerErrorMessage: providerErrorMessage ? providerErrorMessage.slice(0, 500) : null,
+        bodyParameters: null,
+        bodyParametersEncrypted: null,
         updatedAt: new Date(),
       })
       .where(eq(whatsappMessage.id, messageId));
