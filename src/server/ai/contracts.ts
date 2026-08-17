@@ -1,5 +1,5 @@
-export type AiRole = "system" | "user" | "assistant";
-export type AiMessage = { role: AiRole; content: string };
+export type AiRole = "system" | "user" | "assistant" | "tool";
+export type AiMessage = { role: AiRole; content: string; metadata?: Record<string, unknown> };
 export type AiLocale = "fr" | "ar";
 
 export type ChatInput = {
@@ -51,9 +51,11 @@ export interface Retriever {
 export interface ConversationRepository {
   append(input: { conversationId: string; userId: string; message: AiMessage }): Promise<void>;
   list(input: { conversationId: string; userId: string; limit?: number }): Promise<AiMessage[]>;
+  createConversation(userId: string, organizationId?: string | null, title?: string): Promise<string>;
+  getConversation(conversationId: string, userId: string): Promise<{ id: string; userId: string; organizationId: string | null; title: string | null; status: string } | undefined>;
 }
 
-export type AiToolContext = { userId: string; locale: AiLocale; requestId: string };
+export type AiToolContext = { userId: string; locale: AiLocale; requestId: string; organizationId?: string | null };
 export type AiTool = {
   name: string;
   description: string;
@@ -63,6 +65,19 @@ export type AiTool = {
 /** The registry is an allowlist. Every tool must authorize independently of the LLM. */
 export interface ToolRegistry {
   getAllowedTools(context: AiToolContext): Promise<AiTool[]>;
+  proposeTool(
+    toolName: string,
+    context: AiToolContext,
+    input: unknown,
+    conversationId: string
+  ): Promise<{ executionId: string; requiresConfirmation: boolean; preview: Record<string, unknown> }>;
+  confirmAndExecuteTool(
+    toolName: string,
+    context: AiToolContext,
+    executionId: string,
+    input: unknown
+  ): Promise<{ success: boolean; data?: unknown; error?: string }>;
+  rejectTool(context: AiToolContext, executionId: string): Promise<void>;
 }
 
 export interface AIUsageMeter {

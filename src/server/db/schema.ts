@@ -11,6 +11,7 @@ import {
   text,
   timestamp,
   uniqueIndex,
+  vector,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -1444,6 +1445,138 @@ export const newsPosts = pgTable(
   ],
 );
 
+// -----------------------------------------------------------------------------
+// Phase 10A/10B: AI Core + RAG + Controlled Tool Registry
+// -----------------------------------------------------------------------------
+
+export const knowledgeDocument = pgTable(
+  "knowledge_document",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    organizationId: text("organization_id").references(() => organization.id, { onDelete: "set null" }),
+    sourceType: text("source_type").notNull(),
+    sourceId: text("source_id"),
+    title: text("title").notNull(),
+    visibility: text("visibility").notNull().default("PRIVATE"),
+    contentHash: text("content_hash").notNull(),
+    status: text("status").notNull().default("PENDING"),
+    metadata: jsonb("metadata"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("knowledge_document_org_idx").on(table.organizationId),
+    index("knowledge_document_source_idx").on(table.sourceType, table.sourceId),
+    index("knowledge_document_visibility_idx").on(table.visibility),
+    check("knowledge_document_visibility_check", sql`${table.visibility} in ('PUBLIC','PLATFORM','ORGANIZATION','PRIVATE')`),
+    check("knowledge_document_status_check", sql`${table.status} in ('PENDING','INDEXED','FAILED','ARCHIVED')`),
+  ],
+);
+
+export const knowledgeChunk = pgTable(
+  "knowledge_chunk",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    documentId: text("document_id")
+      .notNull()
+      .references(() => knowledgeDocument.id, { onDelete: "cascade" }),
+    chunkIndex: integer("chunk_index").notNull(),
+    text: text("text").notNull(),
+    embedding: vector("embedding", { dimensions: 1536 }).notNull(),
+    metadata: jsonb("metadata"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("knowledge_chunk_document_idx").on(table.documentId, table.chunkIndex),
+    index("knowledge_chunk_embedding_idx").using("hnsw", table.embedding.op("vector_cosine_ops")),
+  ],
+);
+
+export const aiConversation = pgTable(
+  "ai_conversation",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    organizationId: text("organization_id").references(() => organization.id, { onDelete: "set null" }),
+    title: text("title"),
+    status: text("status").notNull().default("ACTIVE"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("ai_conversation_user_idx").on(table.userId, table.createdAt),
+    index("ai_conversation_org_idx").on(table.organizationId, table.createdAt),
+    check("ai_conversation_status_check", sql`${table.status} in ('ACTIVE','ARCHIVED')`),
+  ],
+);
+
+export const aiMessage = pgTable(
+  "ai_message",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    conversationId: text("conversation_id")
+      .notNull()
+      .references(() => aiConversation.id, { onDelete: "cascade" }),
+    role: text("role").notNull(),
+    content: text("content").notNull(),
+    metadata: jsonb("metadata"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("ai_message_conversation_idx").on(table.conversationId, table.createdAt),
+    check("ai_message_role_check", sql`${table.role} in ('USER','ASSISTANT','TOOL','SYSTEM')`),
+  ],
+);
+
+export const aiToolExecution = pgTable(
+  "ai_tool_execution",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    conversationId: text("conversation_id")
+      .notNull()
+      .references(() => aiConversation.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    toolName: text("tool_name").notNull(),
+    riskLevel: text("risk_level").notNull(),
+    inputHash: text("input_hash").notNull(),
+    safeInputPreview: jsonb("safe_input_preview"),
+    status: text("status").notNull().default("PROPOSED"),
+    requestedAt: timestamp("requested_at", { withTimezone: true }).notNull().$defaultFn(now),
+    confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+    executedAt: timestamp("executed_at", { withTimezone: true }),
+    resultCode: text("result_code"),
+    errorMessage: text("error_message"),
+  },
+  (table) => [
+    index("ai_tool_execution_conversation_idx").on(table.conversationId, table.requestedAt),
+    index("ai_tool_execution_user_status_idx").on(table.userId, table.status),
+    check("ai_tool_execution_risk_check", sql`${table.riskLevel} in ('READ','LOW_RISK_WRITE','BUSINESS_WRITE','SENSITIVE')`),
+    check("ai_tool_execution_status_check", sql`${table.status} in ('PROPOSED','CONFIRMED','EXECUTED','REJECTED','FAILED','EXPIRED')`),
+  ],
+);
+
+export const aiUsageLog = pgTable(
+  "ai_usage_log",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    provider: text("provider").notNull(),
+    model: text("model"),
+    inputTokens: integer("input_tokens").notNull(),
+    outputTokens: integer("output_tokens").notNull(),
+    durationMs: integer("duration_ms").notNull(),
+    success: boolean("success").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [index("ai_usage_log_user_idx").on(table.userId, table.createdAt)],
+);
+
 export const contactMessages = pgTable(
   "contact_messages",
   {
@@ -1511,3 +1644,9 @@ export type CourseRow = typeof courses.$inferSelect;
 export type ResourceRow = typeof resources.$inferSelect;
 export type WebinarRow = typeof webinars.$inferSelect;
 export type NewsPostRow = typeof newsPosts.$inferSelect;
+export type KnowledgeDocumentRow = typeof knowledgeDocument.$inferSelect;
+export type KnowledgeChunkRow = typeof knowledgeChunk.$inferSelect;
+export type AiConversationRow = typeof aiConversation.$inferSelect;
+export type AiMessageRow = typeof aiMessage.$inferSelect;
+export type AiToolExecutionRow = typeof aiToolExecution.$inferSelect;
+export type AiUsageLogRow = typeof aiUsageLog.$inferSelect;

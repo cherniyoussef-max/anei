@@ -67,6 +67,11 @@ const schema = z.object({
   CLOUDFLARE_ACCOUNT_ID: optionalTrimmed,
   CLOUDFLARE_STREAM_API_TOKEN: optionalTrimmed,
   CLOUDFLARE_STREAM_CUSTOMER_CODE: optionalTrimmed,
+  OPENAI_API_KEY: optionalTrimmed,
+  OPENAI_API_BASE_URL: optionalTrimmed,
+  OPENAI_MODEL: z.string().default("gpt-4o-mini"),
+  AI_EMBEDDING_MODEL: z.string().default("text-embedding-3-small"),
+  AI_EMBEDDING_DIMENSIONS: z.coerce.number().int().positive().default(1536),
 });
 
 const parsed = schema.parse(process.env);

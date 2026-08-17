@@ -30,6 +30,7 @@ export const adminPermissions = [
   "crm.manage",
   "audit.read",
   "system.read",
+  "ai.knowledge.manage",
 ] as const;
 
 export type AdminPermission = (typeof adminPermissions)[number];

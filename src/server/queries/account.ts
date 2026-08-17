@@ -61,6 +61,27 @@ export async function getLearningCourse(userId: string, slug: string) {
   return { ...row, lessons: resolvedLessons, modules, progress };
 }
 
+export async function getLearningCourses(userId: string) {
+  const rows = await db
+    .select({ enrollment: enrollments, course: courses })
+    .from(enrollments)
+    .innerJoin(courses, eq(enrollments.courseId, courses.id))
+    .where(eq(enrollments.userId, userId))
+    .orderBy(desc(enrollments.enrolledAt));
+
+  return rows.map((row) => {
+    const progress = row.enrollment.progressPercent ?? 0;
+    return {
+      id: row.course.id,
+      slug: row.course.slug,
+      titleFr: row.course.titleFr,
+      titleAr: row.course.titleAr,
+      progressPercent: progress,
+      status: row.enrollment.status,
+    };
+  });
+}
+
 /**
  * Entitlement check for the private lesson-playback flow (Phase 8): resolves
  * course/enrollment from the lessonId alone, mirroring getLearningCourse's
