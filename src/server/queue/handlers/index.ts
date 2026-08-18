@@ -1,5 +1,6 @@
 import type { OutboxEventType } from "@/server/queue/event-types";
 import { whatsappTemplateSendHandler } from "@/server/queue/handlers/whatsapp-template-send";
+import { automationTriggerHandler } from "@/server/queue/handlers/automation-trigger";
 
 /**
  * Fixed handler registry. The worker only ever dispatches through this map —
@@ -9,4 +10,5 @@ import { whatsappTemplateSendHandler } from "@/server/queue/handlers/whatsapp-te
  */
 export const outboxHandlers = {
   WHATSAPP_TEMPLATE_SEND: whatsappTemplateSendHandler,
+  AUTOMATION_TRIGGER: automationTriggerHandler,
 } as const satisfies Record<OutboxEventType, unknown>;

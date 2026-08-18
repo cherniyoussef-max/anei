@@ -1,0 +1,212 @@
+{
+  "name": "ANEI Onboarding Follow-up",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "automation.onboarding_followup",
+        "responseMode": "onReceived",
+        "responseData": "firstEntryJson",
+        "authentication": "headerAuth"
+      },
+      "id": "anei-wf-onb-webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "anei-onboarding-followup",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_DISPATCH_HEADER_AUTH_CREDENTIAL",
+          "name": "ANEI Dispatch Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ANEI_INTERNAL_BASE_URL}}/api/internal/automation/executions/claim",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{$env.N8N_ANEI_SERVICE_TOKEN}}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ automationExecutionId: $json.automationExecutionId }) }}"
+      },
+      "id": "anei-wf-onb-claim",
+      "name": "Claim Execution",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 0]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "leftValue": "={{ String($json.claimed) }}",
+              "rightValue": "true",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "anei-wf-onb-if-claimed",
+      "name": "If Claim Won",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [480, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ANEI_INTERNAL_BASE_URL}}/api/internal/automation/executions/detail",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "=Bearer {{$env.N8N_ANEI_SERVICE_TOKEN}}" }]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ automationExecutionId: $('Webhook').item.json.automationExecutionId }) }}"
+      },
+      "id": "anei-wf-onb-detail",
+      "name": "Load Execution",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [720, -120]
+    },
+    {
+      "parameters": { "amount": 1, "unit": "days", "maxRecursion": 0 },
+      "id": "anei-wf-onb-wait",
+      "name": "Wait",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [960, -120]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ANEI_INTERNAL_BASE_URL}}/api/internal/automation/onboarding/candidates",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "=Bearer {{$env.N8N_ANEI_SERVICE_TOKEN}}" }]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ sinceDays: 30 }) }}"
+      },
+      "id": "anei-wf-onb-candidates",
+      "name": "Reload Candidates",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1200, -120]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "leftValue": "={{ String(Array.isArray($json.candidates) && $json.candidates.some((c) => c.userId === $('Load Execution').item.json.referenceId)) }}",
+              "rightValue": "true",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "anei-wf-onb-if-eligible",
+      "name": "If Still Eligible",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1440, -120]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ANEI_INTERNAL_BASE_URL}}/api/internal/automation/notifications/request",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{$env.N8N_ANEI_SERVICE_TOKEN}}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ contactId: $('Load Execution').item.json.referenceId, templateId: $env.ONBOARDING_FOLLOWUP_TEMPLATE_ID, language: 'fr', parameters: [], requestId: 'automation:onboarding-followup:' + $('Webhook').item.json.automationExecutionId }) }}"
+      },
+      "id": "anei-wf-onb-notify",
+      "name": "Send Follow-up",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1680, -200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ANEI_INTERNAL_BASE_URL}}/api/internal/automation/executions/status",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "=Bearer {{$env.N8N_ANEI_SERVICE_TOKEN}}" }]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ automationExecutionId: $('Webhook').item.json.automationExecutionId, status: 'SUCCEEDED', resultCode: 'COMPLETED' }) }}"
+      },
+      "id": "anei-wf-onb-status-success",
+      "name": "Report Success",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1920, -200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ANEI_INTERNAL_BASE_URL}}/api/internal/automation/executions/status",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "=Bearer {{$env.N8N_ANEI_SERVICE_TOKEN}}" }]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ automationExecutionId: $('Webhook').item.json.automationExecutionId, status: 'SUCCEEDED', resultCode: 'SKIPPED_NOT_ELIGIBLE' }) }}"
+      },
+      "id": "anei-wf-onb-status-skipped",
+      "name": "Report Skipped",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1680, -40]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Claim Execution", "type": "main", "index": 0 }]] },
+    "Claim Execution": { "main": [[{ "node": "If Claim Won", "type": "main", "index": 0 }]] },
+    "If Claim Won": {
+      "main": [
+        [{ "node": "Load Execution", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Load Execution": { "main": [[{ "node": "Wait", "type": "main", "index": 0 }]] },
+    "Wait": { "main": [[{ "node": "Reload Candidates", "type": "main", "index": 0 }]] },
+    "Reload Candidates": { "main": [[{ "node": "If Still Eligible", "type": "main", "index": 0 }]] },
+    "If Still Eligible": {
+      "main": [
+        [{ "node": "Send Follow-up", "type": "main", "index": 0 }],
+        [{ "node": "Report Skipped", "type": "main", "index": 0 }]
+      ]
+    },
+    "Send Follow-up": { "main": [[{ "node": "Report Success", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "meta": { "templateCredsSetupCompleted": false }
+}

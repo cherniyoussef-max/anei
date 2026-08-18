@@ -213,3 +213,19 @@ export async function executeReadTool(
     return { success: false, error: message };
   }
 }
+
+/**
+ * Executes an auto-authorized LOW_RISK_WRITE tool after a fresh
+ * authorization pass (same boundary as executeReadTool). Author/actor always
+ * comes from the server-provided context — never from model-supplied input.
+ */
+export async function executeLowRiskWriteTool(
+  tool: AnyToolDefinition,
+  context: ToolContext,
+  input: unknown
+): Promise<{ success: boolean; data?: unknown; error?: string }> {
+  if (tool.riskLevel !== "LOW_RISK_WRITE") {
+    throw new Error(`Tool ${tool.name} is not a LOW_RISK_WRITE tool`);
+  }
+  return executeReadTool(tool, context, input);
+}

@@ -12,7 +12,14 @@ import {
   rescheduleAppointmentTool,
   sendWhatsAppTemplateTool,
 } from "./definitions/business-tools";
-import { authorizeAndPropose, executeReadTool, confirmAndExecute, rejectExecution } from "./execution";
+import {
+  getMyEnrollmentsTool,
+  getStudentProgressTool,
+  getCohortInformationTool,
+} from "./definitions/read-expansion";
+import { createCrmNoteTool, addCrmTagTool } from "./definitions/low-risk-tools";
+import { enrollStudentTool } from "./definitions/business-expansion";
+import { authorizeAndPropose, executeReadTool, executeLowRiskWriteTool, confirmAndExecute, rejectExecution } from "./execution";
 import { db } from "@/server/db";
 import { organizationMembership, personaMembership } from "@/server/db/schema";
 import { and, eq } from "drizzle-orm";
@@ -22,9 +29,15 @@ const ALL_TOOLS: AnyToolDefinition[] = [
   getMyCoursesTool,
   listMyAppointmentsTool,
   getCourseDetailsTool,
+  getMyEnrollmentsTool,
+  getStudentProgressTool,
+  getCohortInformationTool,
+  createCrmNoteTool,
+  addCrmTagTool,
   createAppointmentTool,
   rescheduleAppointmentTool,
   sendWhatsAppTemplateTool,
+  enrollStudentTool,
 ];
 
 const TOOL_MAP = new Map(ALL_TOOLS.map((t) => [t.name, t]));
@@ -51,7 +64,7 @@ function mapOrganizationRole(role: string | null): "OWNER" | "MANAGER" | "STAFF"
   return undefined;
 }
 
-async function buildToolContext(aiContext: AiToolContext): Promise<{
+export async function buildToolContext(aiContext: AiToolContext): Promise<{
   userId: string;
   locale: "fr" | "ar";
   requestId: string;
@@ -114,14 +127,32 @@ export class ControlledToolRegistry implements ToolRegistry {
     for (const toolDef of ALL_TOOLS) {
       if (toolDef.riskLevel === "SENSITIVE") continue;
 
-      const authResult = await toolDef.authorize(toolContext, toolDef.inputSchema.parse({}));
-      if (authResult.allowed) {
-        allowedTools.push({
+      if (toolDef.canList) {
+        const capability = await toolDef.canList(toolContext);
+        if (!capability.allowed) continue;
+      } else {
+        // No context-only capability gate: try authorizing against an empty
+        // input. Tools with required input fields cannot be parsed here — the
+        // parse fails and the tool is listed, with the hard authorization
+        // enforced at execution time by `authorize`.
+        const parsed = toolDef.inputSchema.safeParse({});
+        if (parsed.success) {
+          const authResult = await toolDef.authorize(toolContext, parsed.data);
+          if (!authResult.allowed) continue;
+        }
+      }
+
+      allowedTools.push({
           name: toolDef.name,
           description: toolDef.description,
           execute: async (input: unknown) => {
             if (toolDef.riskLevel === "READ") {
               const result = await executeReadTool(toolDef, toolContext, input);
+              if (!result.success) throw new Error(result.error);
+              return result.data;
+            }
+            if (toolDef.riskLevel === "LOW_RISK_WRITE") {
+              const result = await executeLowRiskWriteTool(toolDef, toolContext, input);
               if (!result.success) throw new Error(result.error);
               return result.data;
             }
@@ -132,7 +163,6 @@ export class ControlledToolRegistry implements ToolRegistry {
             return { success: true };
           },
         });
-      }
     }
 
     return allowedTools;

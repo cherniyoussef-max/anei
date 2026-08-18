@@ -1,0 +1,148 @@
+{
+  "name": "ANEI Knowledge Sync",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "automation.knowledge_sync",
+        "responseMode": "responseNode",
+        "authentication": "headerAuth"
+      },
+      "id": "anei-wf-ks-webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "anei-knowledge-sync",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_DISPATCH_HEADER_AUTH_CREDENTIAL",
+          "name": "ANEI Dispatch Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ANEI_INTERNAL_BASE_URL}}/api/internal/automation/executions/claim",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{$env.N8N_ANEI_SERVICE_TOKEN}}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ automationExecutionId: $json.automationExecutionId }) }}"
+      },
+      "id": "anei-wf-ks-claim",
+      "name": "Claim Execution",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 0]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "leftValue": "={{ String($json.claimed) }}",
+              "rightValue": "true",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "anei-wf-ks-if-claimed",
+      "name": "If Claim Won",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [480, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ANEI_INTERNAL_BASE_URL}}/api/internal/automation/executions/detail",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "=Bearer {{$env.N8N_ANEI_SERVICE_TOKEN}}" }]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ automationExecutionId: $('Webhook').item.json.automationExecutionId }) }}"
+      },
+      "id": "anei-wf-ks-detail",
+      "name": "Load Execution",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [720, -120]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ANEI_INTERNAL_BASE_URL}}/api/internal/automation/knowledge/ingest",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{$env.N8N_ANEI_SERVICE_TOKEN}}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ sourceType: 'automation-sync', sourceId: $('Webhook').item.json.automationExecutionId, title: $json.referenceId ?? 'automation-sync', content: $json.referenceId ?? 'No content provided' }) }}"
+      },
+      "id": "anei-wf-ks-ingest",
+      "name": "Ingest Knowledge",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, -120]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ANEI_INTERNAL_BASE_URL}}/api/internal/automation/executions/status",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "=Bearer {{$env.N8N_ANEI_SERVICE_TOKEN}}" }]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ automationExecutionId: $('Webhook').item.json.automationExecutionId, status: 'SUCCEEDED', resultCode: 'COMPLETED' }) }}"
+      },
+      "id": "anei-wf-ks-status",
+      "name": "Report Success",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1200, -120]
+    },
+    {
+      "parameters": {},
+      "id": "anei-wf-ks-respond",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.2,
+      "position": [1440, 0]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Claim Execution", "type": "main", "index": 0 }]] },
+    "Claim Execution": { "main": [[{ "node": "If Claim Won", "type": "main", "index": 0 }]] },
+    "If Claim Won": {
+      "main": [
+        [{ "node": "Load Execution", "type": "main", "index": 0 }],
+        [{ "node": "Respond to Webhook", "type": "main", "index": 0 }]
+      ]
+    },
+    "Load Execution": { "main": [[{ "node": "Ingest Knowledge", "type": "main", "index": 0 }]] },
+    "Ingest Knowledge": { "main": [[{ "node": "Report Success", "type": "main", "index": 0 }]] },
+    "Report Success": { "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "meta": { "templateCredsSetupCompleted": false }
+}

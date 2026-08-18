@@ -2,6 +2,7 @@ import "dotenv/config";
 import { runOutboxCycle, OUTBOX_BATCH_SIZE } from "../src/server/queue/worker-engine";
 import { pool } from "../src/server/db";
 import { env } from "../src/server/env";
+import { N8NAutomationClient, setN8NClient } from "../src/server/automation/contracts";
 
 /**
  * Phase 9 outbox worker — a separate process from the Next.js web server.
@@ -26,6 +27,16 @@ function parseBoundedInt(name: string, fallback: number, min: number, max: numbe
 async function main() {
   const batchSize = parseBoundedInt("OUTBOX_BATCH_SIZE", OUTBOX_BATCH_SIZE, 1, 50);
   const pollInterval = parseBoundedInt("OUTBOX_POLL_INTERVAL_MS", POLL_INTERVAL_MS, 100, 60_000);
+
+  // Wire the n8n automation client when configured. AUTOMATION_TRIGGER outbox
+  // events are classified NON_RETRYABLE/NOT_CONFIGURED when no client exists,
+  // so an operator that enables automation must set both N8N_WEBHOOK_BASE_URL
+  // and ANEI_N8N_DISPATCH_TOKEN (see docs/premium/N8N_SETUP.md). ANEI_N8N_DISPATCH_TOKEN
+  // is the ANEI -> n8n dispatch secret, distinct from the n8n -> ANEI service
+  // credential provisioned through the automation service-credential API.
+  if (env.N8N_WEBHOOK_BASE_URL && env.ANEI_N8N_DISPATCH_TOKEN) {
+    setN8NClient(new N8NAutomationClient(env.N8N_WEBHOOK_BASE_URL, env.ANEI_N8N_DISPATCH_TOKEN, env.N8N_TIMEOUT_MS));
+  }
 
   let shuttingDown = false;
   let inFlight = false;

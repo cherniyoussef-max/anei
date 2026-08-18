@@ -1577,6 +1577,83 @@ export const aiUsageLog = pgTable(
   (table) => [index("ai_usage_log_user_idx").on(table.userId, table.createdAt)],
 );
 
+// -----------------------------------------------------------------------------
+// Phase 10C/10D/10E: automation + MCP foundation.
+//
+// automation_service_credential: machine/service identities for trusted
+// first-party automation (n8n). Only a strong keyed hash of the raw token is
+// ever stored; the raw token is returned exactly once at creation and lives
+// in n8n's encrypted credential store. Scopes are a bounded capability list;
+// an endpoint's organization/entity checks always remain the final gate.
+// See docs/premium/PHASE10_AUTOMATION_MCP_HANDOFF.md.
+// -----------------------------------------------------------------------------
+export const automationServiceCredential = pgTable(
+  "automation_service_credential",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    name: text("name").notNull(),
+    tokenHash: text("token_hash").notNull(),
+    organizationId: text("organization_id"),
+    scopes: jsonb("scopes").$type<string[]>().notNull(),
+    status: text("status").notNull().default("ACTIVE"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex("automation_service_credential_token_hash_unique").on(table.tokenHash),
+    index("automation_service_credential_org_idx").on(table.organizationId, table.status),
+    check("automation_service_credential_status_check", sql`${table.status} in ('ACTIVE','REVOKED')`),
+  ],
+);
+
+export type AutomationServiceCredentialRow = typeof automationServiceCredential.$inferSelect;
+
+/**
+ * automation_execution: business-level automation executions. Distinct from
+ * outbox_event — the outbox is delivery/retry infrastructure; this table
+ * records the logical automation request (allowlisted workflow name,
+ * idempotency key, status). The AUTOMATION_TRIGGER outbox payload carries only
+ * { automationExecutionId }; every other fact is reloaded authoritatively.
+ */
+export const automationExecution = pgTable(
+  "automation_execution",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    organizationId: text("organization_id"),
+    workflowName: text("workflow_name").notNull(),
+    workflowVersion: integer("workflow_version").notNull().default(1),
+    status: text("status").notNull().default("PENDING"),
+    idempotencyKey: text("idempotency_key").notNull(),
+    requestedByUserId: text("requested_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    referenceId: text("reference_id"),
+    attemptCount: integer("attempt_count").notNull().default(0),
+    requestedAt: timestamp("requested_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+    dispatchedAt: timestamp("dispatched_at", { withTimezone: true }),
+    externalExecutionId: text("external_execution_id"),
+    resultCode: text("result_code"),
+    safeError: text("safe_error"),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    claimedBy: text("claimed_by"),
+  },
+  (table) => [
+    uniqueIndex("automation_execution_idempotency_key_unique").on(table.idempotencyKey),
+    index("automation_execution_org_created_idx").on(table.organizationId, table.requestedAt),
+    index("automation_execution_status_idx").on(table.status),
+    check(
+      "automation_execution_status_check",
+      sql`${table.status} in ('PENDING','DISPATCHED','RUNNING','SUCCEEDED','FAILED','FAILED_TO_DISPATCH','WORKFLOW_FAILED')`,
+    ),
+    check("automation_execution_attempt_nonnegative", sql`${table.attemptCount} >= 0`),
+    check("automation_execution_workflow_version_positive", sql`${table.workflowVersion} > 0`),
+  ],
+);
+
+export type AutomationExecutionRow = typeof automationExecution.$inferSelect;
+
 export const contactMessages = pgTable(
   "contact_messages",
   {

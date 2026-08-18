@@ -4,7 +4,7 @@ import crypto from "node:crypto";
 import { db } from "@/server/db";
 import { outboxEvent, type OutboxEventRow } from "@/server/db/schema";
 import { outboxHandlers } from "@/server/queue/handlers";
-import type { HandlerOutcome } from "@/server/queue/handler-types";
+import type { HandlerOutcome, OutboxHandler } from "@/server/queue/handler-types";
 import type { OutboxEventType } from "@/server/queue/event-types";
 
 /**
@@ -104,7 +104,7 @@ export async function runOutboxCycle(options?: {
 type ProcessOutcome = "succeeded" | "retried" | "terminal" | "skipped";
 
 async function processClaimedEvent(event: OutboxEventRow, workerId: string): Promise<ProcessOutcome> {
-  const handler = outboxHandlers[event.eventType as OutboxEventType];
+  const handler = outboxHandlers[event.eventType as OutboxEventType] as OutboxHandler<Record<string, unknown>> | undefined;
   if (!handler) {
     await writeBack(event.id, workerId, {
       status: "FAILED",
@@ -183,7 +183,7 @@ async function onTerminal(
   workerId: string,
   payload: unknown,
   error: { code: string; message: string },
-  handler: (typeof outboxHandlers)[OutboxEventType],
+  handler: OutboxHandler<Record<string, unknown>>,
 ): Promise<ProcessOutcome> {
   try {
     await handler.onTerminalFailure(event, payload as never, error);

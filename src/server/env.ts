@@ -21,6 +21,12 @@ const schema = z.object({
   ENABLE_AI: boolString,
   ENABLE_WHATSAPP: boolString,
   ENABLE_ADMIN_MFA: boolString,
+  ENABLE_MCP: boolString,
+  N8N_WEBHOOK_BASE_URL: optionalTrimmed,
+  ANEI_N8N_DISPATCH_TOKEN: optionalTrimmed,
+  N8N_ANEI_SERVICE_TOKEN: optionalTrimmed,
+  N8N_TIMEOUT_MS: z.coerce.number().int().positive().default(8000),
+  N8N_ENCRYPTION_KEY: optionalTrimmed,
   DATABASE_URL: z.string().min(1).default("postgresql://anei:anei@localhost:5432/anei"),
   DB_POOL_MAX: z.coerce.number().int().min(1).max(100).default(20),
   GOOGLE_CLIENT_ID: optionalTrimmed,
@@ -80,6 +86,14 @@ export const isLocalProductionSmoke = process.env.ANEI_LOCAL_PRODUCTION === "1";
 const origins = Array.from(new Set([parsed.APP_URL, ...parsed.TRUSTED_ORIGINS]));
 
 export const env = { ...parsed, TRUSTED_ORIGINS: origins };
+
+if (
+  env.ANEI_N8N_DISPATCH_TOKEN
+  && env.N8N_ANEI_SERVICE_TOKEN
+  && env.ANEI_N8N_DISPATCH_TOKEN === env.N8N_ANEI_SERVICE_TOKEN
+) {
+  throw new Error("ANEI_N8N_DISPATCH_TOKEN and N8N_ANEI_SERVICE_TOKEN must be distinct secrets.");
+}
 
 function isLocalUrl(value: string) {
   const host = new URL(value).hostname.toLowerCase();

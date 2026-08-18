@@ -1,0 +1,193 @@
+{
+  "name": "ANEI Appointment Reminder",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "automation.appointment_reminder",
+        "responseMode": "responseNode",
+        "authentication": "headerAuth"
+      },
+      "id": "anei-wf-appt-webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "anei-appointment-reminder",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_DISPATCH_HEADER_AUTH_CREDENTIAL",
+          "name": "ANEI Dispatch Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ANEI_INTERNAL_BASE_URL}}/api/internal/automation/executions/claim",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{$env.N8N_ANEI_SERVICE_TOKEN}}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ automationExecutionId: $json.automationExecutionId }) }}"
+      },
+      "id": "anei-wf-appt-claim",
+      "name": "Claim Execution",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 0]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "leftValue": "={{ String($json.claimed) }}",
+              "rightValue": "true",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "anei-wf-appt-if-claimed",
+      "name": "If Claim Won",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [480, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ANEI_INTERNAL_BASE_URL}}/api/internal/automation/executions/detail",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "=Bearer {{$env.N8N_ANEI_SERVICE_TOKEN}}" }]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ automationExecutionId: $('Webhook').item.json.automationExecutionId }) }}"
+      },
+      "id": "anei-wf-appt-detail",
+      "name": "Load Execution",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [720, -120]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ANEI_INTERNAL_BASE_URL}}/api/internal/automation/appointments/state",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "=Bearer {{$env.N8N_ANEI_SERVICE_TOKEN}}" }]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ appointmentId: $json.referenceId }) }}"
+      },
+      "id": "anei-wf-appt-state",
+      "name": "Appointment State",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, -120]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "leftValue": "={{$json.status}}",
+              "rightValue": "SCHEDULED",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "anei-wf-appt-if",
+      "name": "If Scheduled",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1200, -120]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ANEI_INTERNAL_BASE_URL}}/api/internal/automation/notifications/request",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{$env.N8N_ANEI_SERVICE_TOKEN}}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ contactId: $('Appointment State').item.json.contactId, templateId: $env.APPOINTMENT_REMINDER_TEMPLATE_ID, language: 'fr', parameters: [$('Appointment State').item.json.startAt], requestId: 'automation:appointment-reminder:' + $('Webhook').item.json.automationExecutionId }) }}"
+      },
+      "id": "anei-wf-appt-notify",
+      "name": "Send Reminder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1440, -200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.ANEI_INTERNAL_BASE_URL}}/api/internal/automation/executions/status",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "=Bearer {{$env.N8N_ANEI_SERVICE_TOKEN}}" }]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ automationExecutionId: $('Webhook').item.json.automationExecutionId, status: 'SUCCEEDED', resultCode: 'COMPLETED' }) }}"
+      },
+      "id": "anei-wf-appt-status",
+      "name": "Report Success",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1680, -120]
+    },
+    {
+      "parameters": {},
+      "id": "anei-wf-appt-respond",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.2,
+      "position": [1920, 0]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Claim Execution", "type": "main", "index": 0 }]] },
+    "Claim Execution": { "main": [[{ "node": "If Claim Won", "type": "main", "index": 0 }]] },
+    "If Claim Won": {
+      "main": [
+        [{ "node": "Load Execution", "type": "main", "index": 0 }],
+        [{ "node": "Respond to Webhook", "type": "main", "index": 0 }]
+      ]
+    },
+    "Load Execution": { "main": [[{ "node": "Appointment State", "type": "main", "index": 0 }]] },
+    "Appointment State": { "main": [[{ "node": "If Scheduled", "type": "main", "index": 0 }]] },
+    "If Scheduled": {
+      "main": [
+        [{ "node": "Send Reminder", "type": "main", "index": 0 }],
+        [{ "node": "Report Success", "type": "main", "index": 0 }]
+      ]
+    },
+    "Send Reminder": { "main": [[{ "node": "Report Success", "type": "main", "index": 0 }]] },
+    "Report Success": { "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "meta": { "templateCredsSetupCompleted": false }
+}

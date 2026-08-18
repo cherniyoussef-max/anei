@@ -21,6 +21,13 @@ export interface ToolDefinition<TInput extends z.ZodType, TOutput extends z.ZodT
   requiresConfirmation: boolean;
   authorize: (context: ToolContext, input: z.infer<TInput>) => Promise<{ allowed: boolean; reason?: string }>;
   execute: (context: ToolContext, input: z.infer<TInput>) => Promise<z.infer<TOutput>>;
+  /**
+   * Optional context-only capability check used when listing available tools,
+   * before any concrete input exists (input schemas with required fields
+   * cannot be authorized at list time). When absent, the tool is listed and
+   * authorization is enforced at execution time by `authorize`.
+   */
+  canList?: (context: ToolContext) => Promise<{ allowed: boolean }>;
 }
 
 export type AnyToolDefinition = ToolDefinition<z.ZodType, z.ZodType>;

@@ -7,7 +7,7 @@ import { z } from "zod";
  * name in the database — the worker only ever dispatches through this fixed
  * registry (src/server/queue/worker-engine.ts).
  */
-export const outboxEventTypes = ["WHATSAPP_TEMPLATE_SEND"] as const;
+export const outboxEventTypes = ["WHATSAPP_TEMPLATE_SEND", "AUTOMATION_TRIGGER"] as const;
 export type OutboxEventType = (typeof outboxEventTypes)[number];
 
 export function isOutboxEventType(value: string): value is OutboxEventType {
@@ -26,13 +26,20 @@ export function isOutboxEventType(value: string): value is OutboxEventType {
 export const whatsappTemplateSendPayloadSchema = z.object({ messageId: z.string().uuid() }).strict();
 export type WhatsAppTemplateSendPayload = z.infer<typeof whatsappTemplateSendPayloadSchema>;
 
-const payloadSchemas = {
-  WHATSAPP_TEMPLATE_SEND: whatsappTemplateSendPayloadSchema,
-} satisfies Record<OutboxEventType, z.ZodType>;
+export const automationTriggerPayloadSchema = z.object({ automationExecutionId: z.string() }).strict();
+export type AutomationTriggerPayload = z.infer<typeof automationTriggerPayloadSchema>;
+
+type OutboxPayloadMap = {
+  WHATSAPP_TEMPLATE_SEND: WhatsAppTemplateSendPayload;
+  AUTOMATION_TRIGGER: AutomationTriggerPayload;
+};
 
 /** Parses/validates a raw JSONB payload against its event type's versioned schema. Returns null on any mismatch (malformed/version-drifted payloads fail safe, never throw into the worker loop). */
-export function parseOutboxPayload<T extends OutboxEventType>(eventType: T, raw: unknown): z.infer<(typeof payloadSchemas)[T]> | null {
-  const schema = payloadSchemas[eventType];
-  const parsed = schema.safeParse(raw);
-  return parsed.success ? parsed.data : null;
+export function parseOutboxPayload<T extends OutboxEventType>(eventType: T, raw: unknown): OutboxPayloadMap[T] | null {
+  if (eventType === "WHATSAPP_TEMPLATE_SEND") {
+    const parsed = whatsappTemplateSendPayloadSchema.safeParse(raw);
+    return (parsed.success ? parsed.data : null) as OutboxPayloadMap[T] | null;
+  }
+  const parsed = automationTriggerPayloadSchema.safeParse(raw);
+  return (parsed.success ? parsed.data : null) as OutboxPayloadMap[T] | null;
 }
