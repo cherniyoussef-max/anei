@@ -1,12 +1,43 @@
 import type { Locale } from "@/types";
 
-export const locales: Locale[] = ["fr", "ar"];
+export const locales: Locale[] = ["en", "ar", "fr"];
 
 export function isLocale(value: string): value is Locale {
   return locales.includes(value as Locale);
 }
 
 export const copy = {
+  en: {
+    academy: "National Academy for Inclusive Education",
+    academyShort: "ANEI",
+    arabicName: "الأكاديمية الوطنية للتربية الدامجة",
+    slogan: "Learn, support, include.",
+    nav: {
+      home: "Home",
+      about: "About",
+      courses: "Courses",
+      webinars: "Webinars",
+      library: "Resources",
+      avs: "Find an AVS",
+      news: "News",
+      contact: "Contact"
+    },
+    actions: {
+      login: "Sign in",
+      register: "Create account",
+      discover: "Explore courses",
+      details: "View course",
+      enroll: "Enroll",
+      buy: "Buy",
+      download: "Download",
+      contact: "Contact",
+      browse: "View all",
+      replay: "Watch replay",
+      dashboard: "My learning space",
+      admin: "Administration",
+      learnMore: "Learn more"
+    }
+  },
   fr: {
     academy: "Académie Nationale de l’Éducation Inclusive",
     academyShort: "ANEI",
@@ -76,7 +107,7 @@ export function t(locale: Locale) {
 }
 
 export function formatPrice(value: number, locale: Locale) {
-  return new Intl.NumberFormat(locale === "fr" ? "fr-FR" : "ar-TN", {
+  return new Intl.NumberFormat(locale === "ar" ? "ar-TN" : locale === "fr" ? "fr-FR" : "en-TN", {
     style: "currency",
     currency: "TND",
     maximumFractionDigits: 0
@@ -84,7 +115,7 @@ export function formatPrice(value: number, locale: Locale) {
 }
 
 export function formatMillimes(value: number, locale: Locale) {
-  return new Intl.NumberFormat(locale === "fr" ? "fr-FR" : "ar-TN", {
+  return new Intl.NumberFormat(locale === "ar" ? "ar-TN" : locale === "fr" ? "fr-FR" : "en-TN", {
     style: "currency",
     currency: "TND",
     minimumFractionDigits: 0,
@@ -93,7 +124,7 @@ export function formatMillimes(value: number, locale: Locale) {
 }
 
 export function formatDate(value: string | Date, locale: Locale) {
-  return new Intl.DateTimeFormat(locale === "fr" ? "fr-FR" : "ar-TN", {
+  return new Intl.DateTimeFormat(locale === "ar" ? "ar-TN" : locale === "fr" ? "fr-FR" : "en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric"

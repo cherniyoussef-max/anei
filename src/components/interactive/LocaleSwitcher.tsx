@@ -1,24 +1,29 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { Locale } from "@/types";
 import { Icon } from "@/components/ui/Icon";
 
-export function LocaleSwitcher({ locale }: { locale: Locale }) {
-  const router = useRouter();
-  const pathname = usePathname();
+const LOCALE_ORDER: Locale[] = ["fr", "en", "ar"];
+const LOCALE_LABEL: Record<Locale, string> = { fr: "Français", en: "English", ar: "العربية" };
+const ACCESSIBLE_LABEL: Record<Locale, string> = {
+  fr: "Afficher le site en français",
+  en: "View the site in English",
+  ar: "عرض الموقع بالعربية",
+};
 
-  function switchLocale() {
-    const nextLocale = locale === "fr" ? "ar" : "fr";
-    const parts = pathname.split("/");
-    parts[1] = nextLocale;
-    router.push(parts.join("/") || `/${nextLocale}`);
-  }
+export function LocaleSwitcher({ locale }: { locale: Locale }) {
+  const pathname = usePathname();
+  const nextLocale = LOCALE_ORDER[(LOCALE_ORDER.indexOf(locale) + 1) % LOCALE_ORDER.length];
+  const parts = pathname.split("/");
+  parts[1] = nextLocale;
+  const target = parts.join("/") || `/${nextLocale}`;
 
   return (
-    <button className="locale-switcher" onClick={switchLocale} type="button" aria-label={locale === "fr" ? "Afficher le site en arabe" : "عرض الموقع بالفرنسية"}>
+    <Link className="locale-switcher" href={target} aria-label={ACCESSIBLE_LABEL[nextLocale]} lang={nextLocale}>
       <Icon name="globe" size={17} />
-      <span>{locale === "fr" ? "العربية" : "Français"}</span>
-    </button>
+      <span>{LOCALE_LABEL[nextLocale]}</span>
+    </Link>
   );
 }

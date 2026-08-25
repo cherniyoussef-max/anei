@@ -15,7 +15,9 @@ const schema = z.object({
   audienceFr: z.string().min(2).max(240),
   audienceAr: z.string().min(2).max(240),
   type: z.string().min(2).max(80),
+  level: z.enum(["beginner", "intermediate", "advanced"]).default("beginner"),
   priceMillimes: z.number().int().nonnegative().max(100000000),
+  coverImageObjectKey: z.string().min(3).max(1024).regex(/^[a-zA-Z0-9._\/-]+$/).nullable().optional(),
   downloadObjectKey: z.string().min(3).max(1024).regex(/^[a-zA-Z0-9._\/-]+$/).nullable().optional(),
   published: z.boolean().default(true),
 });
@@ -29,8 +31,8 @@ export async function POST(request: Request) {
   const parsed = schema.safeParse(await readLimitedJson(request).catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "INVALID_INPUT", issues: parsed.error.flatten() }, { status: 400 });
   try {
-    const { downloadObjectKey, ...input } = parsed.data;
-    const [resource] = await db.insert(resources).values({ ...input, downloadUrl: downloadObjectKey || null }).returning();
+    const { downloadObjectKey, coverImageObjectKey, ...input } = parsed.data;
+    const [resource] = await db.insert(resources).values({ ...input, downloadUrl: downloadObjectKey || null, coverImage: coverImageObjectKey || null }).returning();
     await db.insert(auditLogs).values({ actorUserId: session.user.id, action: "resource.create", entityType: "resource", entityId: resource.id });
     return NextResponse.json({ resource }, { status: 201 });
   } catch {

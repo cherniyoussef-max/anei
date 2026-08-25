@@ -35,15 +35,15 @@ test("every admin authorization path reads the fresh (non-cached) session", asyn
   }
 });
 
-test("normal learner session lookup keeps using Better Auth's cookieCache", async () => {
+test("normal learner session lookup keeps using Better Auth's cookieCache and assurance gate", async () => {
   const source = await readFile("src/server/auth/session.ts", "utf8");
   const getSessionStart = source.indexOf("export async function getSession()");
   const getSessionBody = source.slice(getSessionStart, getSessionStart + 150);
   assert.equal(getSessionBody.includes("disableCookieCache"), false);
 
   const requireUserStart = source.indexOf("export async function requireUser");
-  const requireUserBody = source.slice(requireUserStart, requireUserStart + 200);
-  assert.equal(requireUserBody.includes("getSession()"), true, "requireUser (plain login check) may keep using the cached getSession()");
+  const requireUserBody = source.slice(requireUserStart, requireUserStart + 260);
+  assert.equal(requireUserBody.includes("getSessionWithAssurance()"), true, "requireUser must enforce session assurance for protected access");
 });
 
 test("session revocation is documented as defense-in-depth, not required for authorization correctness", async () => {

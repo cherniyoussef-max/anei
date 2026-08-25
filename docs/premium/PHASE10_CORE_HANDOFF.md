@@ -55,9 +55,9 @@ Indexes: vector HNSW on embeddings, tenant-filtered retrieval paths
 
 ## MCP / n8n Foundation
 
-- `src/server/mcp/registry.ts` — maps MCP tools to controlled tools, confirmation-aware
+- `src/server/mcp/server.ts` — the single MCP adapter; delegates authorization and execution to the canonical ToolRegistry
 - `src/server/automation/contracts.ts` — typed workflow interfaces, no runtime yet
-- Both layers reuse `src/server/tools/registry.ts` — no duplicated business logic
+- Chat and MCP both reuse `src/server/tools/registry.ts` — no parallel MCP business registry
 
 ## Migration
 

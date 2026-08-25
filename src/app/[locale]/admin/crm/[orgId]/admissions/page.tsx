@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { formatDate, isLocale } from "@/lib/i18n";
 import { requireAdminPermission } from "@/server/auth/session";
-import { listOrganizations } from "@/server/queries/organizations";
+import { getOrganizationById } from "@/server/queries/organizations";
 import { searchAdmissions } from "@/server/queries/admission";
 import { AdminPageHeader } from "@/modules/admin/components/AdminPageHeader";
 import { AdminAdmissionCreateForm } from "@/components/admin/AdminAdmissionCreateForm";
@@ -23,8 +23,7 @@ export default async function AdminCrmAdmissionsPage({ params, searchParams }: {
   await requireAdminPermission(locale, "crm.read");
   const ar = locale === "ar";
 
-  const organizations = await listOrganizations();
-  const organization = organizations.find((org) => org.id === orgId);
+  const organization = await getOrganizationById(orgId);
   if (!organization) notFound();
 
   const query = await searchParams;

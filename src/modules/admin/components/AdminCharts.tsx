@@ -10,10 +10,10 @@ export function TrendChart({ points, locale }: { points: { date: Date; users: nu
   </div>;
 }
 
-export function Distribution({ rows, locale, empty }: { rows: { label: string; value: number }[]; locale: Locale; empty: string }) {
+export function Distribution({ rows, locale, empty }: { rows: { label: string; value: number; id?: string }[]; locale: Locale; empty: string }) {
   const max = Math.max(1, ...rows.map((row) => row.value));
   if (!rows.length) return <p className="admin-empty">{empty}</p>;
-  return <div className="admin-distribution">{rows.map((row) => <div key={row.label}>
+  return <div className="admin-distribution">{rows.map((row, index) => <div key={row.id ?? `${row.label}-${index}`}>
     <div><span>{row.label}</span><strong>{new Intl.NumberFormat(locale === "ar" ? "ar-TN" : "fr-FR").format(row.value)}</strong></div>
     <span className="distribution-track"><i style={{ inlineSize: `${row.value / max * 100}%` }}/></span>
   </div>)}</div>;

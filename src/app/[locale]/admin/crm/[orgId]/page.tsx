@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { isLocale } from "@/lib/i18n";
 import { requireAdminPermission } from "@/server/auth/session";
-import { listOrganizations } from "@/server/queries/organizations";
+import { getOrganizationById } from "@/server/queries/organizations";
 import { searchCrmContacts, getTagsForContacts } from "@/server/queries/crm";
 import { AdminPageHeader } from "@/modules/admin/components/AdminPageHeader";
 import { AdminCrmContactCreateForm } from "@/components/admin/AdminCrmContactCreateForm";
@@ -23,8 +23,7 @@ export default async function AdminCrmContactsPage({ params, searchParams }: {
   await requireAdminPermission(locale, "crm.read");
   const ar = locale === "ar";
 
-  const organizations = await listOrganizations();
-  const organization = organizations.find((org) => org.id === orgId);
+  const organization = await getOrganizationById(orgId);
   if (!organization) notFound();
 
   const query = await searchParams;

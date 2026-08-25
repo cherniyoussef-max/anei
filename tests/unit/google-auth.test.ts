@@ -61,10 +61,10 @@ test("OAuth errors are localized without exposing raw provider details", () => {
   assert.equal(googleAuthErrorMessage("fr", null), null);
 });
 
-test("Google provider, One Tap, and account-linking policies are conditional", async () => {
+test("Google provider and account-linking policies are conditional", async () => {
   const source = await readFile("src/server/auth/index.ts", "utf8");
   assert.match(source, /socialProviders: googleAuthConfigured/);
-  assert.match(source, /plugins: googleAuthConfigured \? \[oneTap\(\)\] : \[\]/);
+  assert.match(source, /plugins: \[\]/);
   assert.match(source, /allowDifferentEmails: false/);
   assert.match(source, /requireLocalEmailVerified: true/);
   assert.match(source, /encryptOAuthTokens: true/);

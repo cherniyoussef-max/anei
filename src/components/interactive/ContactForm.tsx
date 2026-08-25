@@ -6,6 +6,8 @@ import { Icon } from "@/components/ui/Icon";
 
 export function ContactForm({ locale }: { locale: Locale }) {
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const ar = locale === "ar";
+  const en = locale === "en";
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -22,15 +24,15 @@ export function ContactForm({ locale }: { locale: Locale }) {
     setState(response?.ok ? "sent" : "error");
   }
 
-  if (state === "sent") return <div className="form-success"><Icon name="check" size={24}/><strong>{locale === "fr" ? "Message envoyé" : "تم إرسال الرسالة"}</strong><p>{locale === "fr" ? "Merci. Notre équipe vous répondra via les coordonnées fournies." : "شكرًا. سيتواصل معك فريقنا عبر البيانات المقدمة."}</p></div>;
+  if (state === "sent") return <div className="form-success"><Icon name="check" size={24}/><strong>{ar ? "تم إرسال الرسالة" : en ? "Message sent" : "Message envoyé"}</strong><p>{ar ? "شكرًا. سيتواصل معك فريقنا عبر البيانات المقدمة." : en ? "Thank you. Our team will reply using the contact details provided." : "Merci. Notre équipe vous répondra via les coordonnées fournies."}</p></div>;
 
   return (
     <form className="contact-form" onSubmit={submit}>
-      <div className="field-row"><label><span>{locale === "fr" ? "Nom complet" : "الاسم الكامل"}</span><input name="name" required placeholder={locale === "fr" ? "Votre nom" : "اسمك"}/></label><label><span>Email</span><input name="email" type="email" required placeholder="vous@exemple.com"/></label></div>
-      <label><span>{locale === "fr" ? "Sujet" : "الموضوع"}</span><input name="subject" required placeholder={locale === "fr" ? "Comment pouvons-nous vous aider ?" : "كيف يمكننا مساعدتك؟"}/></label>
-      <label><span>{locale === "fr" ? "Message" : "الرسالة"}</span><textarea name="message" required rows={6} placeholder={locale === "fr" ? "Décrivez votre demande..." : "اكتب طلبك..."}/></label>
-      {state === "error" ? <small style={{ color: "#b42318" }}>{locale === "fr" ? "Envoi impossible. Réessayez." : "تعذر الإرسال. حاول مجددًا."}</small> : null}
-      <button className="btn btn-primary" disabled={state === "sending"} type="submit">{state === "sending" ? (locale === "fr" ? "Envoi..." : "جارٍ الإرسال...") : (locale === "fr" ? "Envoyer le message" : "إرسال الرسالة")}<Icon name="arrow" size={18}/></button>
+      <div className="field-row"><label><span>{ar ? "الاسم الكامل" : en ? "Full name" : "Nom complet"}</span><input name="name" required placeholder={ar ? "اسمك" : en ? "Your name" : "Votre nom"}/></label><label><span>Email</span><input name="email" type="email" autoComplete="email" required placeholder="name@example.com"/></label></div>
+      <label><span>{ar ? "الموضوع" : en ? "Subject" : "Sujet"}</span><input name="subject" required placeholder={ar ? "كيف يمكننا مساعدتك؟" : en ? "How can we help?" : "Comment pouvons-nous vous aider ?"}/></label>
+      <label><span>{ar ? "الرسالة" : en ? "Message" : "Message"}</span><textarea name="message" required rows={6} placeholder={ar ? "اكتب طلبك..." : en ? "Describe your request..." : "Décrivez votre demande..."}/></label>
+      {state === "error" ? <small className="form-error" role="alert">{ar ? "تعذر الإرسال. حاول مجددًا." : en ? "Unable to send. Please try again." : "Envoi impossible. Réessayez."}</small> : null}
+      <button className="btn btn-primary" disabled={state === "sending"} type="submit">{state === "sending" ? (ar ? "جارٍ الإرسال..." : en ? "Sending..." : "Envoi...") : (ar ? "إرسال الرسالة" : en ? "Send message" : "Envoyer le message")}<Icon name="arrow" size={18}/></button>
     </form>
   );
 }

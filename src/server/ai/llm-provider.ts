@@ -25,6 +25,19 @@ interface OpenAIChatResponse {
   };
 }
 
+function parseStructuredToolCalls(message: OpenAIChatMessage): ChatOutput["toolCalls"] {
+  if (!message.tool_calls) return undefined;
+  return message.tool_calls.flatMap((call) => {
+    try {
+      const args = JSON.parse(call.function.arguments) as unknown;
+      if (!args || typeof args !== "object" || Array.isArray(args)) return [];
+      return [{ id: call.id, name: call.function.name, arguments: args }];
+    } catch {
+      return [];
+    }
+  });
+}
+
 const MAX_INPUT_TOKENS = 128_000;
 const MAX_OUTPUT_TOKENS = 4_096;
 
@@ -32,9 +45,13 @@ function buildOpenAIMessages(input: ChatInput): OpenAIChatMessage[] {
   const messages: OpenAIChatMessage[] = [];
   for (const msg of input.messages) {
     if (msg.role === "system" || msg.role === "user" || msg.role === "assistant") {
-      messages.push({ role: msg.role, content: msg.content });
+      const structuredCalls = msg.role === "assistant" && Array.isArray(msg.metadata?.toolCalls)
+        ? msg.metadata.toolCalls as OpenAIChatMessage["tool_calls"]
+        : undefined;
+      messages.push({ role: msg.role, content: msg.content, tool_calls: structuredCalls });
     } else if (msg.role === "tool") {
-      messages.push({ role: "tool", content: msg.content, tool_call_id: "unknown" });
+      const toolCallId = typeof msg.metadata?.toolCallId === "string" ? msg.metadata.toolCallId : "compatibility-call";
+      messages.push({ role: "tool", content: msg.content, tool_call_id: toolCallId });
     }
   }
   return messages;
@@ -46,10 +63,10 @@ export class OpenAILLMProvider implements LLMProvider {
   private baseUrl: string;
   private model: string;
 
-  constructor() {
-    this.apiKey = env.OPENAI_API_KEY ?? "";
-    this.baseUrl = env.OPENAI_API_BASE_URL ?? "https://api.openai.com/v1";
-    this.model = env.OPENAI_MODEL ?? "gpt-4o-mini";
+  constructor(config?: { apiKey?: string; baseUrl?: string; model?: string }) {
+    this.apiKey = config?.apiKey ?? env.OPENAI_API_KEY ?? "";
+    this.baseUrl = config?.baseUrl ?? env.OPENAI_API_BASE_URL ?? "https://api.openai.com/v1";
+    this.model = config?.model ?? env.OPENAI_MODEL ?? "gpt-4o-mini";
   }
 
   async chat(input: ChatInput): Promise<ChatOutput> {
@@ -76,6 +93,16 @@ export class OpenAILLMProvider implements LLMProvider {
         body: JSON.stringify({
           model: this.model,
           messages,
+          tools: input.tools?.map((tool) => ({
+            type: "function",
+            function: {
+              name: tool.name,
+              description: tool.description,
+              parameters: tool.inputSchema,
+              strict: true,
+            },
+          })),
+          tool_choice: input.tools?.length ? "auto" : undefined,
           max_tokens: MAX_OUTPUT_TOKENS,
           temperature: 0.3,
         }),
@@ -97,6 +124,7 @@ export class OpenAILLMProvider implements LLMProvider {
 
       return {
         text: choice.message.content ?? "",
+        toolCalls: parseStructuredToolCalls(choice.message),
         usage: {
           inputTokens: data.usage.prompt_tokens,
           outputTokens: data.usage.completion_tokens,

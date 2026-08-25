@@ -18,7 +18,7 @@ import {
 import { WhatsAppNotConfiguredError, WhatsAppProviderError } from "@/server/whatsapp/contracts";
 import { metaWhatsAppCloudProvider } from "@/server/whatsapp/meta";
 import { normalizeWhatsAppPhone } from "@/server/whatsapp/phone";
-import { getWhatsAppAccountForOrg } from "@/server/queries/whatsapp";
+import { getApprovedWhatsAppTemplateByName, getWhatsAppAccountForOrg } from "@/server/queries/whatsapp";
 import { enqueueOutboxEvent } from "@/server/queue/outbox";
 import { encryptSecretParameters } from "@/server/security/outbox-crypto";
 
@@ -38,6 +38,7 @@ export type WhatsAppMutationResult =
 
 const MAX_BODY_PARAMETERS = 32;
 const MAX_PARAMETER_TEXT_LENGTH = 4_096;
+const AUTH_OTP_TEMPLATE_NAME = "otp_verification";
 
 function isActiveMetaAccount(account: WhatsappAccountRow | undefined): boolean {
   return Boolean(account && account.provider === "meta" && account.status === "ACTIVE");
@@ -286,6 +287,149 @@ export async function enqueueSystemWhatsAppTemplateWithSecretParameters(
     },
     withinTx,
   );
+}
+
+/**
+ * System-initiated welcome send, fired once when a learner completes their
+ * profile (src/server/auth/profile.ts). Non-secret (the only parameter is
+ * the learner's own first name), so it reuses the plaintext
+ * `bodyParameters` column via the shared `enqueueTemplateMessage` core —
+ * same durability/idempotency guarantees as every other template send.
+ * Resolves the template by name because the caller only knows a stable
+ * business name (`WHATSAPP_WELCOME_TEMPLATE_NAME`), never a DB id. Returns a
+ * controlled `no_account`/`invalid_template` result (never throws) when
+ * WhatsApp isn't configured yet or the template isn't APPROVED — the caller
+ * treats this as best-effort and must never let it block registration.
+ */
+export async function enqueueSystemWelcomeWhatsAppMessage(
+  organizationId: string,
+  data: { contactId: string; templateName: string; language: string; firstName: string; requestId: string },
+  withinTx?: DbClient,
+): Promise<WhatsAppMutationResult> {
+  const account = withinTx
+    ? (await withinTx.select().from(whatsappAccount).where(eq(whatsappAccount.organizationId, organizationId)).limit(1))[0]
+    : await getWhatsAppAccountForOrg(organizationId);
+  if (!account || !isActiveMetaAccount(account)) return { kind: "no_account" };
+
+  const templateLookup = withinTx
+    ? await withinTx
+        .select()
+        .from(whatsappTemplate)
+        .where(and(eq(whatsappTemplate.organizationId, organizationId), eq(whatsappTemplate.name, data.templateName), eq(whatsappTemplate.status, "APPROVED")))
+    : [];
+  const template = withinTx
+    ? templateLookup.find((row) => row.language === data.language) ?? templateLookup[0]
+    : await getApprovedWhatsAppTemplateByName(organizationId, data.templateName, data.language);
+  if (!template) return { kind: "invalid_template" };
+
+  return enqueueTemplateMessage(
+    null,
+    organizationId,
+    {
+      contactId: data.contactId,
+      templateId: template.id,
+      language: template.language,
+      requestId: data.requestId,
+      resolveParameters: (parameterCount) => {
+        if (parameterCount === 0) return [];
+        if (parameterCount === 1) return [data.firstName];
+        return null;
+      },
+      bodyParameters: (parameters) => ({ bodyParameters: parameters, bodyParametersEncrypted: null }),
+    },
+    withinTx,
+  );
+}
+
+/**
+ * Phase 11 auth OTP sender: same outbox + worker path as every other WhatsApp
+ * send, but targets a verified phone destination directly (no CRM contact
+ * requirement). Never sends provider calls in-route.
+ */
+export async function enqueueSystemWhatsAppAuthOtp(input: {
+  organizationId: string;
+  destinationPhone: string;
+  requestId: string;
+  code: string;
+  locale: "fr" | "ar";
+}): Promise<WhatsAppMutationResult> {
+  const account = await getWhatsAppAccountForOrg(input.organizationId);
+  if (!account || !isActiveMetaAccount(account)) return { kind: "no_account" };
+
+  const template = await getApprovedWhatsAppTemplateByName(input.organizationId, AUTH_OTP_TEMPLATE_NAME, input.locale);
+  if (!template) return { kind: "invalid_template" };
+
+  const normalized = normalizeWhatsAppPhone(input.destinationPhone);
+  if (!normalized) return { kind: "no_phone" };
+
+  if (template.parameterCount !== 1) return { kind: "invalid_parameters" };
+
+  try {
+    await db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select({ id: whatsappMessage.id })
+        .from(whatsappMessage)
+        .where(and(eq(whatsappMessage.organizationId, input.organizationId), eq(whatsappMessage.localRequestId, input.requestId)))
+        .limit(1);
+
+      const encrypted = encryptSecretParameters([input.code]);
+
+      let messageId = existing?.id;
+      if (messageId) {
+        await tx
+          .update(whatsappMessage)
+          .set({
+            accountId: account.id,
+            contactId: null,
+            direction: "OUTBOUND",
+            messageType: "TEMPLATE",
+            status: "QUEUED",
+            toPhone: normalized,
+            templateName: template.name,
+            templateLanguage: template.language,
+            bodyParameters: null,
+            bodyParametersEncrypted: encrypted,
+            updatedAt: new Date(),
+          })
+          .where(eq(whatsappMessage.id, messageId));
+      } else {
+        const [created] = await tx
+          .insert(whatsappMessage)
+          .values({
+            organizationId: input.organizationId,
+            accountId: account.id,
+            contactId: null,
+            direction: "OUTBOUND",
+            messageType: "TEMPLATE",
+            status: "QUEUED",
+            localRequestId: input.requestId,
+            toPhone: normalized,
+            templateName: template.name,
+            templateLanguage: template.language,
+            bodyParameters: null,
+            bodyParametersEncrypted: encrypted,
+          })
+          .returning({ id: whatsappMessage.id });
+        messageId = created.id;
+      }
+
+      await enqueueOutboxEvent(
+        tx,
+        {
+          organizationId: input.organizationId,
+          aggregateType: "whatsapp_message",
+          aggregateId: messageId,
+          eventType: "WHATSAPP_TEMPLATE_SEND",
+          payload: { messageId },
+          idempotencyKey: `whatsapp:template-send:${messageId}`,
+        },
+      );
+    });
+
+    return { kind: "ok", id: input.requestId };
+  } catch {
+    return { kind: "provider_error", code: "QUEUE_FAILED" };
+  }
 }
 
 /**

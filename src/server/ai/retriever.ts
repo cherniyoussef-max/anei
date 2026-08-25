@@ -1,7 +1,7 @@
 import "server-only";
 import { db } from "@/server/db";
 import { knowledgeChunk, knowledgeDocument, organizationMembership, user } from "@/server/db/schema";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, or, sql } from "drizzle-orm";
 import { getEmbeddingProvider } from "./embedding-provider";
 import { getVectorStore } from "./vector-store";
 import type { Retriever, RetrievalResult } from "./contracts";
@@ -23,10 +23,11 @@ export class PgVectorRetriever implements Retriever {
     query: string;
     locale: "fr" | "ar";
     userId: string;
+    organizationId?: string | null;
     courseId?: string;
     limit?: number;
   }): Promise<RetrievalResult[]> {
-    const { query, locale, userId, courseId, limit = DEFAULT_LIMIT } = input;
+    const { query, locale, userId, organizationId, courseId, limit = DEFAULT_LIMIT } = input;
     const safeLimit = Math.min(Math.max(1, limit), MAX_LIMIT);
 
     const embeddingProvider = getEmbeddingProvider();
@@ -34,11 +35,13 @@ export class PgVectorRetriever implements Retriever {
 
     const vectorStore = getVectorStore();
 
-    const userOrgId = await this.getUserOrganizationId(userId);
+    const authorizedOrganizationId = organizationId && await this.hasActiveMembership(userId, organizationId)
+      ? organizationId
+      : null;
 
     const allowedDocumentIds = await this.getAllowedDocumentIds({
       userId,
-      organizationId: userOrgId,
+      organizationId: authorizedOrganizationId,
       courseId,
       locale,
     });
@@ -67,19 +70,20 @@ export class PgVectorRetriever implements Retriever {
     }));
   }
 
-  private async getUserOrganizationId(userId: string): Promise<string | null> {
+  private async hasActiveMembership(userId: string, organizationId: string): Promise<boolean> {
     const membership = await db
       .select({ organizationId: organizationMembership.organizationId })
       .from(organizationMembership)
       .where(
         and(
           eq(organizationMembership.userId, userId),
+          eq(organizationMembership.organizationId, organizationId),
           eq(organizationMembership.status, "ACTIVE")
         )
       )
       .limit(1);
 
-    return membership[0]?.organizationId ?? null;
+    return Boolean(membership[0]);
   }
 
   private async getAllowedDocumentIds(filters: SearchFilters): Promise<string[]> {
@@ -87,12 +91,16 @@ export class PgVectorRetriever implements Retriever {
 
     const conditions = [
       eq(knowledgeDocument.status, "INDEXED"),
-      sql`${knowledgeDocument.visibility} in ('PUBLIC', 'PLATFORM')`,
+      organizationId
+        ? or(
+            sql`${knowledgeDocument.visibility} in ('PUBLIC', 'PLATFORM')`,
+            and(
+              eq(knowledgeDocument.visibility, "ORGANIZATION"),
+              eq(knowledgeDocument.organizationId, organizationId)
+            )
+          )!
+        : sql`${knowledgeDocument.visibility} in ('PUBLIC', 'PLATFORM')`,
     ];
-
-    if (organizationId) {
-      conditions.push(eq(knowledgeDocument.organizationId, organizationId));
-    }
 
     if (courseId) {
       conditions.push(
@@ -137,6 +145,7 @@ export class TestRetriever implements Retriever {
     query: string;
     locale: "fr" | "ar";
     userId: string;
+    organizationId?: string | null;
     courseId?: string;
     limit?: number;
   }): Promise<RetrievalResult[]> {

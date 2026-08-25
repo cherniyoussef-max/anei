@@ -1,9 +1,18 @@
 import { z } from "zod";
 import { canonicalYoutubeId } from "@/server/media/youtube";
 import { isValidStreamUid } from "@/server/media/cloudflare-stream";
+import { env } from "@/server/env";
 
 export const mediaProviderSchema = z.enum(["internal", "youtube", "cloudflare_stream"]);
 export type MediaProvider = z.infer<typeof mediaProviderSchema>;
+
+/** Private storage reference for a lesson's own video/document file — a private object key in production S3-compatible storage, or a local/HTTPS path in development. Shared by lesson create and update so both accept the same shape. */
+export const lessonMediaReferenceSchema = z.string().min(1).max(2048).refine((value) => {
+  const localOrHttps = value.startsWith("/") || /^https:\/\//i.test(value);
+  const privateObjectKey = /^[a-zA-Z0-9._\/-]+$/.test(value) && !value.startsWith("/") && !value.includes("..");
+  if (env.NODE_ENV === "production" && env.STORAGE_PROVIDER === "s3-compatible") return privateObjectKey;
+  return localOrHttps || privateObjectKey;
+}, "Use a private object key in production, or a local/HTTPS path in development");
 
 export class InvalidLessonMediaError extends Error {}
 

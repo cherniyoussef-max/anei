@@ -1,6 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/server/db";
 import { certificates, enrollments, lessonProgress, lessons } from "@/server/db/schema";
+import { grantPoints, POINT_VALUES } from "@/server/services/points";
 
 /**
  * The browser reports a playback position, never a "completed" flag. Completion
@@ -38,6 +39,10 @@ export async function updateLessonProgress(input: { userId: string; lessonId: st
         set: { watchedSeconds, completed: lessonCompleted, updatedAt: new Date() },
       });
 
+    if (lessonCompleted && !previous?.completed) {
+      await grantPoints(tx, { userId: input.userId, reason: "LESSON_COMPLETE", delta: POINT_VALUES.LESSON_COMPLETE, referenceType: "lesson", referenceId: input.lessonId });
+    }
+
     const [{ total }] = await tx.select({ total: sql<number>`count(*)::int` }).from(lessons).where(eq(lessons.courseId, owned.lesson.courseId));
     const [{ done }] = await tx
       .select({ done: sql<number>`count(*)::int` })
@@ -58,6 +63,7 @@ export async function updateLessonProgress(input: { userId: string; lessonId: st
         .insert(certificates)
         .values({ userId: input.userId, courseId: owned.lesson.courseId, code })
         .onConflictDoNothing({ target: [certificates.userId, certificates.courseId] });
+      await grantPoints(tx, { userId: input.userId, reason: "COURSE_COMPLETE", delta: POINT_VALUES.COURSE_COMPLETE, referenceType: "course", referenceId: owned.lesson.courseId });
     }
 
     return { percent, lessonCompleted, courseCompleted };

@@ -8,10 +8,16 @@ export type ChatInput = {
   messages: AiMessage[];
   courseId?: string;
   requestId?: string;
+  tools?: Array<{
+    name: string;
+    description: string;
+    inputSchema: Record<string, unknown>;
+  }>;
 };
 
 export type ChatOutput = {
   text: string;
+  toolCalls?: Array<{ id?: string; name: string; arguments: unknown }>;
   citations?: Array<{ label: string; href?: string; sourceId?: string }>;
   usage?: { inputTokens: number; outputTokens: number; estimatedCostMinor?: number };
 };
@@ -43,6 +49,7 @@ export interface Retriever {
     query: string;
     locale: AiLocale;
     userId: string;
+    organizationId?: string | null;
     courseId?: string;
     limit?: number;
   }): Promise<RetrievalResult[]>;
@@ -59,6 +66,8 @@ export type AiToolContext = { userId: string; locale: AiLocale; requestId: strin
 export type AiTool = {
   name: string;
   description: string;
+  riskLevel?: "READ" | "LOW_RISK_WRITE" | "BUSINESS_WRITE" | "SENSITIVE";
+  inputSchema?: Record<string, unknown>;
   execute(input: unknown, context: AiToolContext): Promise<unknown>;
 };
 

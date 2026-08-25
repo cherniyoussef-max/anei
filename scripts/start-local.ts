@@ -12,7 +12,8 @@ async function main() {
   }
 
   const host = "127.0.0.1";
-  const origin = `http://${host}:${port}`;
+  const origin = `http://localhost:${port}`;
+  const loopbackOrigin = `http://${host}:${port}`;
   const serverPath = path.resolve(".next/standalone/server.js");
 
   try {
@@ -28,10 +29,10 @@ async function main() {
     PORT: port,
     APP_URL: origin,
     BETTER_AUTH_URL: origin,
-    TRUSTED_ORIGINS: origin,
+    TRUSTED_ORIGINS: `${origin},${loopbackOrigin}`,
   });
 
-  console.log(`Starting ANEI local production smoke server at ${origin}`);
+  console.log(`Starting ANEI local production smoke server at ${origin} (bound to and also trusted: ${loopbackOrigin})`);
   await import(pathToFileURL(serverPath).href);
 }
 

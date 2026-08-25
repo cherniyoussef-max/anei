@@ -1,12 +1,35 @@
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/server/db";
-import { auditLogs, personaMembership } from "@/server/db/schema";
+import { auditLogs, personaMembership, referralCode, referralConversion } from "@/server/db/schema";
 import {
   defaultStatusFor,
   legacyPersonaFromProfileType,
   type Persona,
   type PersonaStatus,
 } from "@/modules/personas/domain/permissions";
+import { grantPoints, POINT_VALUES } from "@/server/services/points";
+
+type DbClient = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/**
+ * Grants the referrer's bonus once a referred user's persona becomes ACTIVE
+ * (either immediately for auto-active personas like STUDENT/PARENT, or later
+ * via admin approval of a professional persona). Idempotent: a PENDING
+ * conversion is only ever flipped to REWARDED once (guarded by the WHERE
+ * clause on this UPDATE, executed inside the caller's transaction), and
+ * `grantPoints` itself is idempotent on (userId, reason, referenceId).
+ */
+async function maybeRewardReferral(tx: DbClient, referredUserId: string) {
+  const [conversion] = await tx
+    .update(referralConversion)
+    .set({ status: "REWARDED", rewardedAt: new Date() })
+    .where(and(eq(referralConversion.referredUserId, referredUserId), eq(referralConversion.status, "PENDING")))
+    .returning({ id: referralConversion.id, referralCodeId: referralConversion.referralCodeId });
+  if (!conversion) return;
+  const [owner] = await tx.select({ userId: referralCode.userId }).from(referralCode).where(eq(referralCode.id, conversion.referralCodeId)).limit(1);
+  if (!owner) return;
+  await grantPoints(tx, { userId: owner.userId, reason: "REFERRAL_BONUS", delta: POINT_VALUES.REFERRAL_BONUS, referenceType: "referral_conversion", referenceId: conversion.id });
+}
 
 /**
  * Called from the Better Auth `user.create.after` hook, once the row already
@@ -21,13 +44,15 @@ import {
  */
 export async function ensurePrimaryPersonaMembership(userId: string, profileType: string): Promise<void> {
   const persona = legacyPersonaFromProfileType(profileType);
-  await db
-    .insert(personaMembership)
-    .values({ userId, persona, status: defaultStatusFor(persona), isPrimary: true })
-    .onConflictDoNothing();
+  const status = defaultStatusFor(persona);
+  await db.transaction(async (tx) => {
+    await tx
+      .insert(personaMembership)
+      .values({ userId, persona, status, isPrimary: true })
+      .onConflictDoNothing();
+    if (status === "ACTIVE") await maybeRewardReferral(tx, userId);
+  });
 }
-
-type DbClient = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /**
  * Phase 6: idempotently ensures a user holds an ACTIVE STUDENT persona
@@ -91,6 +116,8 @@ export async function adminSetPersonaStatus(
         .set({ status, updatedAt: new Date() })
         .where(and(eq(personaMembership.userId, targetUserId), eq(personaMembership.persona, persona)));
     }
+
+    if (status === "ACTIVE" && existing?.status !== "ACTIVE") await maybeRewardReferral(tx, targetUserId);
 
     await tx.insert(auditLogs).values({
       actorUserId,

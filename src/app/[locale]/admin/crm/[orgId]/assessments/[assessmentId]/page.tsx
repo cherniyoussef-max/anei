@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { formatDate, isLocale } from "@/lib/i18n";
 import { requireAdminPermission } from "@/server/auth/session";
-import { listOrganizations } from "@/server/queries/organizations";
+import { getOrganizationById } from "@/server/queries/organizations";
 import { getAssessment } from "@/server/queries/admission";
 import { AdminPageHeader } from "@/modules/admin/components/AdminPageHeader";
 import { AdminAssessmentActions } from "@/components/admin/AdminAssessmentActions";
@@ -15,8 +15,7 @@ export default async function AdminCrmAssessmentDetailPage({ params }: { params:
   await requireAdminPermission(locale, "crm.read");
   const ar = locale === "ar";
 
-  const organizations = await listOrganizations();
-  const organization = organizations.find((org) => org.id === orgId);
+  const organization = await getOrganizationById(orgId);
   if (!organization) notFound();
 
   const detail = await getAssessment(orgId, assessmentId);

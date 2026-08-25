@@ -1,0 +1,1 @@
+export default function LoadingResources() { return <div className="learner-page-skeleton" aria-busy="true" aria-label="Chargement des ressources"><span className="student-skeleton learner-skeleton-title" /><span className="student-skeleton learner-skeleton-filter" /><span className="student-skeleton learner-skeleton-list" /></div>; }

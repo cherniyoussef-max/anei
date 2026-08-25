@@ -17,6 +17,7 @@ type PlaybackState =
  */
 export function StreamLessonPlayer({ lessonId, title, locale }: { lessonId: string; title: string; locale: Locale }) {
   const ar = locale === "ar";
+  const en = locale === "en";
   const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState<PlaybackState>({ status: "loading" });
 
@@ -36,15 +37,15 @@ export function StreamLessonPlayer({ lessonId, title, locale }: { lessonId: stri
   }, [lessonId, attempt]);
 
   if (state.status === "loading") {
-    return <div className="lesson-player lesson-player-loading">{ar ? "تحميل الفيديو..." : "Chargement de la vidéo..."}</div>;
+    return <div className="lesson-player lesson-player-loading">{ar ? "تحميل الفيديو..." : en ? "Loading video..." : "Chargement de la vidéo..."}</div>;
   }
   if (state.status === "unauthorized") {
-    return <div className="lesson-player lesson-player-error">{ar ? "غير مصرح لك بمشاهدة هذا الدرس." : "Vous n'êtes pas autorisé à visionner cette leçon."}</div>;
+    return <div className="lesson-player lesson-player-error">{ar ? "غير مصرح لك بمشاهدة هذا الدرس." : en ? "You are not authorized to view this lesson." : "Vous n'êtes pas autorisé à visionner cette leçon."}</div>;
   }
   if (state.status === "unavailable") {
     return <div className="lesson-player lesson-player-error">
-      <p>{ar ? "تعذر تحميل الفيديو حاليًا." : "La vidéo est temporairement indisponible."}</p>
-      <button type="button" className="btn btn-soft btn-sm" onClick={() => setAttempt((value) => value + 1)}>{ar ? "إعادة المحاولة" : "Réessayer"}</button>
+      <p>{ar ? "تعذر تحميل الفيديو حاليًا." : en ? "The video is temporarily unavailable." : "La vidéo est temporairement indisponible."}</p>
+      <button type="button" className="btn btn-soft btn-sm" onClick={() => setAttempt((value) => value + 1)}>{ar ? "إعادة المحاولة" : en ? "Try again" : "Réessayer"}</button>
     </div>;
   }
 

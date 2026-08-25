@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ilike, inArray, or, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, ilike, inArray, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/server/db";
 import {
   crmContact,
@@ -8,8 +8,50 @@ import {
   crmPipeline,
   crmPipelineStage,
   crmTag,
+  organization,
+  userProfile,
   type CrmContactRow,
 } from "@/server/db/schema";
+
+export async function searchGlobalCrmContacts(rawQuery: string, rawPage?: number) {
+  const { page, pageSize, offset } = crmPageBounds(rawPage, 25);
+  const q = rawQuery.trim().slice(0, 100);
+  if (!q) return { items: [], total: 0, page, pageSize, totalPages: 1 };
+  const phoneQuery = q.replace(/\D/g, "");
+  const search = or(
+    ilike(crmContact.firstName, `%${q}%`),
+    ilike(crmContact.lastName, `%${q}%`),
+    ilike(sql<string>`concat(${crmContact.firstName}, ' ', ${crmContact.lastName})`, `%${q}%`),
+    ilike(crmContact.email, `%${q}%`),
+    ilike(crmContact.id, `%${q}%`),
+    ilike(organization.name, `%${q}%`),
+    ilike(userProfile.requestedPersona, `%${q}%`),
+    ...(phoneQuery ? [ilike(sql<string>`regexp_replace(coalesce(${crmContact.phone}, ''), '[^0-9]', '', 'g')`, `%${phoneQuery}%`)] : []),
+  )!;
+  const base = db.select({
+    id: crmContact.id,
+    organizationId: crmContact.organizationId,
+    organizationName: organization.name,
+    firstName: crmContact.firstName,
+    lastName: crmContact.lastName,
+    email: crmContact.email,
+    phone: crmContact.phone,
+    status: crmContact.status,
+    persona: userProfile.requestedPersona,
+    updatedAt: crmContact.updatedAt,
+  }).from(crmContact)
+    .innerJoin(organization, eq(crmContact.organizationId, organization.id))
+    .leftJoin(userProfile, eq(crmContact.linkedUserId, userProfile.userId));
+  const [countRows, items] = await Promise.all([
+    db.select({ value: count() }).from(crmContact)
+      .innerJoin(organization, eq(crmContact.organizationId, organization.id))
+      .leftJoin(userProfile, eq(crmContact.linkedUserId, userProfile.userId))
+      .where(search),
+    base.where(search).orderBy(desc(crmContact.updatedAt)).limit(pageSize).offset(offset),
+  ]);
+  const total = countRows[0]?.value ?? 0;
+  return { items, total, page, pageSize, totalPages: Math.max(1, Math.ceil(total / pageSize)) };
+}
 
 function crmPageBounds(page?: number, pageSize = 25) {
   const safePage = Number.isSafeInteger(page) && (page ?? 0) > 0 ? page! : 1;
@@ -128,6 +170,12 @@ export async function listCrmPipelines(organizationId: string) {
 
 export async function listCrmPipelineStages(pipelineId: string) {
   return db.select().from(crmPipelineStage).where(eq(crmPipelineStage.pipelineId, pipelineId)).orderBy(crmPipelineStage.position);
+}
+
+/** Batched pipeline->stages lookup for a page listing multiple pipelines — avoids N+1 queries. */
+export async function getStagesForPipelines(pipelineIds: string[]) {
+  if (!pipelineIds.length) return [];
+  return db.select().from(crmPipelineStage).where(inArray(crmPipelineStage.pipelineId, pipelineIds)).orderBy(crmPipelineStage.position);
 }
 
 /** Scoped stage lookup — the sole authorization primitive for stage-scoped writes. */

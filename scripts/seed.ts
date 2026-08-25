@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { auth } from "../src/server/auth";
 import { db, pool } from "../src/server/db";
 import { avsProfiles as avsSeed, courses as courseSeed, newsItems as newsSeed, resources as resourceSeed, webinars as webinarSeed } from "../src/lib/data";
-import { avsProfiles, certificates, courseModules, courses, enrollments, lessonProgress, lessons, newsPosts, notifications, orders, purchases, resources, user, webinarRegistrations, webinars } from "../src/server/db/schema";
+import { account, avsProfiles, certificates, courseModules, courses, enrollments, lessonProgress, lessons, newsPosts, notifications, orders, purchases, resources, user, userProfile, webinarRegistrations, webinars } from "../src/server/db/schema";
 
 if (process.env.NODE_ENV === "production") {
   throw new Error("Refusing demo seed in production. Use scripts/create-super-admin.ts for initial privileged access.");
@@ -23,17 +23,43 @@ async function upsertUser(input:{name:string;email:string;password:string;role:"
     [existing]=await db.select().from(user).where(eq(user.email,input.email)).limit(1);
   }
   if(!existing)throw new Error(`Could not create ${input.email}`);
+  const [credentialAccount] = await db.select({ id: account.id }).from(account).where(and(eq(account.userId, existing.id), eq(account.providerId, "credential"))).limit(1);
+  if (credentialAccount) {
+    const context = await auth.$context;
+    const passwordHash = await context.password.hash(input.password);
+    await context.internalAdapter.updatePassword(existing.id, passwordHash);
+  }
   const [updated]=await db.update(user).set({role:input.role,emailVerified:true,profileType:input.profileType,updatedAt:new Date()}).where(eq(user.id,existing.id)).returning();
   return updated;
 }
 
 async function main(){
   console.log("Seeding ANEI...");
-  const admin=await upsertUser({name:"Admin ANEI",email:"admin@anei.local",password:"DemoAdmin!2026",role:"SUPER_ADMIN",profileType:"institution"});
+  const admin=await upsertUser({name:"Admin ANEI",email:"admin@anei.local",password:"DemoAdmin!!2026",role:"SUPER_ADMIN",profileType:"institution"});
   const learner=await upsertUser({name:"Amal Mansouri",email:"learner@anei.local",password:"DemoLearner!2026",role:"USER",profileType:"teacher"});
+  const profileNow = new Date();
+  for (const profile of [
+    { userId: admin.id, firstName: "Admin", lastName: "ANEI", phoneNumber: "+21620000001", requestedPersona: "ORGANIZATION" },
+    { userId: learner.id, firstName: "Amal", lastName: "Mansouri", phoneNumber: "+21620000002", requestedPersona: "STUDENT" },
+  ] as const) {
+    await db.insert(userProfile).values({
+      ...profile,
+      birthYear: 1990,
+      country: "Tunisie",
+      governorate: "Tunis",
+      city: "Tunis",
+      preferredLocale: "fr",
+      educationLevel: "Formation professionnelle",
+      institutionName: "ANEI",
+      onboardingCompletedAt: profileNow,
+      termsAcceptedAt: profileNow,
+      privacyAcceptedAt: profileNow,
+      updatedAt: profileNow,
+    }).onConflictDoUpdate({ target: userProfile.userId, set: { onboardingCompletedAt: profileNow, updatedAt: profileNow } });
+  }
 
   const courseRows=[];
-  for(const [index,item] of courseSeed.entries()){
+  for(const [index,item] of courseSeed.slice(0, 2).entries()){
     const values={slug:item.slug,titleFr:item.title.fr,titleAr:item.title.ar,summaryFr:item.description.fr,summaryAr:item.description.ar,descriptionFr:`${item.description.fr} Ce parcours combine apports structurés, démonstrations vidéo, activités pratiques et ressources téléchargeables.`,descriptionAr:`${item.description.ar} يجمع هذا المسار بين محتوى منظم وفيديوهات تطبيقية وأنشطة وموارد.`,category:item.category,level:item.level,mode:item.mode,trainerName:item.trainer,durationMinutes:durationMinutes(item.duration),priceMillimes:tndToMillimes(item.price),startAt:new Date(`${item.startDate}T09:00:00+01:00`),published:true,featured:index<2,objectives:item.objectives};
     const [row]=await db.insert(courses).values(values).onConflictDoUpdate({target:courses.slug,set:{...values,updatedAt:new Date()}}).returning();courseRows.push(row);
     const moduleData=[
@@ -52,7 +78,7 @@ async function main(){
   }
 
   const resourceRows=[];
-  for(const [index,item] of resourceSeed.entries()){
+  for(const [index,item] of resourceSeed.slice(0, 2).entries()){
     const slug=["guide-pratique-avs","grille-observation-classe","kit-ecole-inclusive","cooperation-famille-ecole"][index];
     const values={slug,titleFr:item.title.fr,titleAr:item.title.ar,descriptionFr:item.description.fr,descriptionAr:item.description.ar,audienceFr:item.audience.fr,audienceAr:item.audience.ar,type:item.type,priceMillimes:tndToMillimes(item.price),published:true};
     const [row]=await db.insert(resources).values(values).onConflictDoUpdate({target:resources.slug,set:values}).returning();resourceRows.push(row);

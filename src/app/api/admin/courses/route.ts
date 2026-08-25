@@ -22,6 +22,7 @@ const schema = z.object({
   mode: z.enum(["online", "hybrid", "onsite"]),
   published: z.boolean().default(false),
   featured: z.boolean().default(false),
+  coverImageObjectKey: z.string().min(3).max(1024).regex(/^[a-zA-Z0-9._\/-]+$/).nullable().optional(),
   objectives: z.object({
     fr: z.array(z.string().trim().min(1).max(300)).min(1).max(30),
     ar: z.array(z.string().trim().min(1).max(300)).min(1).max(30),
@@ -38,7 +39,8 @@ export async function POST(request: Request) {
   const parsed = schema.safeParse(await readLimitedJson(request).catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "INVALID_INPUT", issues: parsed.error.flatten() }, { status: 400 });
   try {
-    const [course] = await db.insert(courses).values(parsed.data).returning();
+    const { coverImageObjectKey, ...input } = parsed.data;
+    const [course] = await db.insert(courses).values({ ...input, coverImage: coverImageObjectKey || null }).returning();
     await db.insert(auditLogs).values({ actorUserId: session.user.id, action: "course.create", entityType: "course", entityId: course.id });
     return NextResponse.json({ course }, { status: 201 });
   } catch {

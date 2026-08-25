@@ -33,12 +33,14 @@ export const user = pgTable(
     role: text("role").notNull().default("USER"),
     locale: text("locale").notNull().default("fr"),
     profileType: text("profile_type").notNull().default("learner"),
+    referredByCode: text("referred_by_code"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
   },
   (table) => [
     uniqueIndex("user_email_unique").on(table.email),
     index("user_role_idx").on(table.role),
+    index("user_created_at_idx").on(table.createdAt),
     check("user_role_check", sql`${table.role} in ('USER','ADMIN','SUPER_ADMIN')`),
     check("user_locale_check", sql`${table.locale} in ('fr','ar')`),
     check("user_profile_type_check", sql`${table.profileType} in ('learner','teacher','avs','parent','specialist','institution')`),
@@ -102,6 +104,166 @@ export const verification = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
   },
   (table) => [index("verification_identifier_idx").on(table.identifier)],
+);
+
+export const userProfile = pgTable(
+  "user_profile",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    firstName: text("first_name").notNull(),
+    lastName: text("last_name").notNull(),
+    birthDate: timestamp("birth_date", { withTimezone: true }),
+    birthYear: integer("birth_year"),
+    phoneNumber: text("phone_number"),
+    phoneVerifiedAt: timestamp("phone_verified_at", { withTimezone: true }),
+    country: text("country"),
+    governorate: text("governorate"),
+    city: text("city"),
+    preferredLocale: text("preferred_locale").notNull().default("fr"),
+    requestedPersona: text("requested_persona"),
+    educationLevel: text("education_level"),
+    institutionName: text("institution_name"),
+    onboardingCompletedAt: timestamp("onboarding_completed_at", { withTimezone: true }),
+    termsAcceptedAt: timestamp("terms_accepted_at", { withTimezone: true }),
+    privacyAcceptedAt: timestamp("privacy_accepted_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("user_profile_user_unique").on(table.userId),
+    index("user_profile_phone_idx").on(table.phoneNumber),
+    check("user_profile_locale_check", sql`${table.preferredLocale} in ('fr','ar')`),
+    check(
+      "user_profile_requested_persona_check",
+      sql`${table.requestedPersona} is null or ${table.requestedPersona} in ('STUDENT','AVS','PARENT','TEACHER','SPECIALIST','ORGANIZATION')`,
+    ),
+    check(
+      "user_profile_birth_year_bounds_check",
+      sql`${table.birthYear} is null or (${table.birthYear} >= 1900 and ${table.birthYear} <= 2100)`,
+    ),
+  ],
+);
+
+export const authSessionAssurance = pgTable(
+  "auth_session_assurance",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    sessionId: text("session_id")
+      .notNull()
+      .references(() => session.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    method: text("method").notNull(),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }).notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("auth_session_assurance_session_unique").on(table.sessionId),
+    index("auth_session_assurance_user_idx").on(table.userId),
+    index("auth_session_assurance_expires_idx").on(table.expiresAt),
+    check("auth_session_assurance_method_check", sql`${table.method} in ('EMAIL','WHATSAPP')`),
+  ],
+);
+
+export const authVerificationChallenge = pgTable(
+  "auth_verification_challenge",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    sessionId: text("session_id").references(() => session.id, { onDelete: "cascade" }),
+    purpose: text("purpose").notNull(),
+    channel: text("channel").notNull(),
+    destination: text("destination").notNull(),
+    destinationMasked: text("destination_masked").notNull(),
+    codeHash: text("code_hash").notNull(),
+    status: text("status").notNull().default("ACTIVE"),
+    attemptCount: integer("attempt_count").notNull().default(0),
+    maxAttempts: integer("max_attempts").notNull().default(3),
+    resendAvailableAt: timestamp("resend_available_at", { withTimezone: true }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    supersededAt: timestamp("superseded_at", { withTimezone: true }),
+    deliveryVersion: integer("delivery_version").notNull().default(1),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("auth_verification_challenge_user_idx").on(table.userId, table.status, table.createdAt),
+    index("auth_verification_challenge_session_idx").on(table.sessionId, table.purpose, table.status),
+    index("auth_verification_challenge_destination_idx").on(table.destination, table.createdAt),
+    check(
+      "auth_verification_challenge_purpose_check",
+      sql`${table.purpose} in ('LOGIN','PASSWORD_RESET','ACCOUNT_RECOVERY','VERIFY_EMAIL','VERIFY_PHONE','CHANGE_EMAIL','CHANGE_PHONE','SENSITIVE_ACTION')`,
+    ),
+    check("auth_verification_challenge_channel_check", sql`${table.channel} in ('EMAIL','WHATSAPP')`),
+    check(
+      "auth_verification_challenge_status_check",
+      sql`${table.status} in ('ACTIVE','VERIFIED','LOCKED','SUPERSEDED','EXPIRED','CANCELLED')`,
+    ),
+    check("auth_verification_challenge_attempt_nonnegative", sql`${table.attemptCount} >= 0`),
+    check("auth_verification_challenge_max_attempt_positive", sql`${table.maxAttempts} > 0`),
+    check("auth_verification_challenge_delivery_version_positive", sql`${table.deliveryVersion} > 0`),
+  ],
+);
+
+export const authResetAuthorization = pgTable(
+  "auth_reset_authorization",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    challengeId: text("challenge_id")
+      .notNull()
+      .references(() => authVerificationChallenge.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull(),
+    status: text("status").notNull().default("ACTIVE"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    consumedAt: timestamp("consumed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("auth_reset_authorization_token_hash_unique").on(table.tokenHash),
+    uniqueIndex("auth_reset_authorization_active_user_unique")
+      .on(table.userId)
+      .where(sql`${table.status} = 'ACTIVE'`),
+    check("auth_reset_authorization_status_check", sql`${table.status} in ('ACTIVE','CONSUMED','EXPIRED','REVOKED')`),
+  ],
+);
+
+export const authEvent = pgTable(
+  "auth_event",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    requestId: text("request_id").notNull(),
+    userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
+    provider: text("provider"),
+    channel: text("channel"),
+    purpose: text("purpose"),
+    eventType: text("event_type").notNull(),
+    safeReasonCode: text("safe_reason_code"),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("auth_event_created_idx").on(table.createdAt),
+    index("auth_event_user_created_idx").on(table.userId, table.createdAt),
+    check("auth_event_channel_check", sql`${table.channel} is null or ${table.channel} in ('EMAIL','WHATSAPP')`),
+    check(
+      "auth_event_purpose_check",
+      sql`${table.purpose} is null or ${table.purpose} in ('LOGIN','PASSWORD_RESET','ACCOUNT_RECOVERY','VERIFY_EMAIL','VERIFY_PHONE','CHANGE_EMAIL','CHANGE_PHONE','SENSITIVE_ACTION')`,
+    ),
+  ],
 );
 
 export const rateLimit = pgTable(
@@ -239,6 +401,7 @@ export const enrollments = pgTable(
     uniqueIndex("enrollment_user_course_unique").on(table.userId, table.courseId),
     index("enrollment_user_idx").on(table.userId),
     index("enrollment_course_idx").on(table.courseId),
+    index("enrollment_status_idx").on(table.status),
     check("enrollment_progress_range", sql`${table.progressPercent} between 0 and 100`),
     check("enrollment_status_check", sql`${table.status} in ('active','completed','cancelled')`),
     check(
@@ -265,6 +428,268 @@ export const lessonProgress = pgTable(
   (table) => [
     uniqueIndex("lesson_progress_unique").on(table.enrollmentId, table.lessonId),
     check("lesson_progress_watched_nonnegative", sql`${table.watchedSeconds} >= 0`),
+  ],
+);
+
+export const courseDiscussionPosts = pgTable(
+  "course_discussion_posts",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    courseId: text("course_id")
+      .notNull()
+      .references(() => courses.id, { onDelete: "cascade" }),
+    authorUserId: text("author_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    parentId: text("parent_id"),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    foreignKey({ columns: [table.parentId], foreignColumns: [table.id] }).onDelete("cascade"),
+    index("course_discussion_course_created_idx").on(table.courseId, table.createdAt),
+    index("course_discussion_parent_idx").on(table.parentId),
+    index("course_discussion_author_idx").on(table.authorUserId, table.createdAt),
+    check("course_discussion_body_length_check", sql`char_length(btrim(${table.body})) between 2 and 2000`),
+  ],
+);
+
+// LMS assessments are intentionally separate from the organization-scoped
+// `assessment` table below, which represents a CRM/admission evaluation.
+export const learningAssessment = pgTable(
+  "learning_assessment",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    courseId: text("course_id").notNull().references(() => courses.id, { onDelete: "cascade" }),
+    moduleId: text("module_id").references(() => courseModules.id, { onDelete: "cascade" }),
+    titleFr: text("title_fr").notNull(),
+    titleAr: text("title_ar").notNull(),
+    instructionsFr: text("instructions_fr").notNull().default(""),
+    instructionsAr: text("instructions_ar").notNull().default(""),
+    timeLimitSeconds: integer("time_limit_seconds").notNull().default(900),
+    passingScore: integer("passing_score").notNull().default(70),
+    maxAttempts: integer("max_attempts").notNull().default(3),
+    published: boolean("published").notNull().default(false),
+    revealAnswersAfterPass: boolean("reveal_answers_after_pass").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("learning_assessment_course_idx").on(table.courseId, table.published),
+    index("learning_assessment_module_idx").on(table.moduleId),
+    check("learning_assessment_time_limit_check", sql`${table.timeLimitSeconds} between 60 and 14400`),
+    check("learning_assessment_passing_score_check", sql`${table.passingScore} between 0 and 100`),
+    check("learning_assessment_max_attempts_check", sql`${table.maxAttempts} between 1 and 10`),
+  ],
+);
+
+export const learningQuestion = pgTable(
+  "learning_question",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    assessmentId: text("assessment_id").notNull().references(() => learningAssessment.id, { onDelete: "cascade" }),
+    promptFr: text("prompt_fr").notNull(),
+    promptAr: text("prompt_ar").notNull(),
+    type: text("type").notNull(),
+    position: integer("position").notNull(),
+    points: integer("points").notNull(),
+    explanationFr: text("explanation_fr"),
+    explanationAr: text("explanation_ar"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("learning_question_assessment_position_unique").on(table.assessmentId, table.position),
+    index("learning_question_assessment_idx").on(table.assessmentId),
+    check("learning_question_type_check", sql`${table.type} in ('SINGLE_CHOICE','MULTIPLE_CHOICE','TRUE_FALSE')`),
+    check("learning_question_position_check", sql`${table.position} between 1 and 1000`),
+    check("learning_question_points_check", sql`${table.points} between 1 and 100`),
+  ],
+);
+
+export const learningQuestionOption = pgTable(
+  "learning_question_option",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    questionId: text("question_id").notNull().references(() => learningQuestion.id, { onDelete: "cascade" }),
+    textFr: text("text_fr").notNull(),
+    textAr: text("text_ar").notNull(),
+    position: integer("position").notNull(),
+    isCorrect: boolean("is_correct").notNull().default(false),
+  },
+  (table) => [
+    uniqueIndex("learning_question_option_position_unique").on(table.questionId, table.position),
+    index("learning_question_option_question_idx").on(table.questionId),
+    check("learning_question_option_position_check", sql`${table.position} between 1 and 20`),
+  ],
+);
+
+export const learningAttempt = pgTable(
+  "learning_attempt",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    assessmentId: text("assessment_id").notNull().references(() => learningAssessment.id, { onDelete: "cascade" }),
+    enrollmentId: text("enrollment_id").notNull().references(() => enrollments.id, { onDelete: "cascade" }),
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    attemptNumber: integer("attempt_number").notNull(),
+    status: text("status").notNull().default("IN_PROGRESS"),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull().$defaultFn(now),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    submittedAt: timestamp("submitted_at", { withTimezone: true }),
+    rawPoints: integer("raw_points"),
+    maxPoints: integer("max_points"),
+    percentage: integer("percentage"),
+    passed: boolean("passed"),
+  },
+  (table) => [
+    uniqueIndex("learning_attempt_user_number_unique").on(table.assessmentId, table.userId, table.attemptNumber),
+    uniqueIndex("learning_attempt_one_active_unique").on(table.assessmentId, table.userId).where(sql`${table.status} = 'IN_PROGRESS'`),
+    index("learning_attempt_assessment_submitted_idx").on(table.assessmentId, table.submittedAt),
+    index("learning_attempt_user_idx").on(table.userId, table.startedAt),
+    check("learning_attempt_number_check", sql`${table.attemptNumber} between 1 and 10`),
+    check("learning_attempt_status_check", sql`${table.status} in ('IN_PROGRESS','SUBMITTED','EXPIRED','GRADED')`),
+    check("learning_attempt_points_check", sql`${table.rawPoints} is null or ${table.rawPoints} >= 0`),
+    check("learning_attempt_max_points_check", sql`${table.maxPoints} is null or ${table.maxPoints} > 0`),
+    check("learning_attempt_percentage_check", sql`${table.percentage} is null or ${table.percentage} between 0 and 100`),
+  ],
+);
+
+export const learningAnswer = pgTable(
+  "learning_answer",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    attemptId: text("attempt_id").notNull().references(() => learningAttempt.id, { onDelete: "cascade" }),
+    questionId: text("question_id").notNull().references(() => learningQuestion.id, { onDelete: "cascade" }),
+    selectedOptionIds: jsonb("selected_option_ids").$type<string[]>().notNull(),
+    pointsAwarded: integer("points_awarded").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("learning_answer_attempt_question_unique").on(table.attemptId, table.questionId),
+    index("learning_answer_attempt_idx").on(table.attemptId),
+    check("learning_answer_points_check", sql`${table.pointsAwarded} >= 0`),
+  ],
+);
+
+// Gamification: virtual points economy (no real currency, no payment
+// integration). Balance is always SUM(delta) over this ledger — never a
+// separately stored counter — to avoid drift between a cached balance and
+// the transactions that produced it. The partial unique index on
+// (userId, reason, referenceId) is what makes grantPoints() idempotent: a
+// retried/duplicate call for the same lesson/course/attempt/etc. is a safe
+// no-op rather than a double award.
+export const pointsLedger = pgTable(
+  "points_ledger",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    delta: integer("delta").notNull(),
+    reason: text("reason").notNull(),
+    referenceType: text("reference_type"),
+    referenceId: text("reference_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("points_ledger_user_idx").on(table.userId, table.createdAt),
+    uniqueIndex("points_ledger_idempotency_unique").on(table.userId, table.reason, table.referenceId).where(sql`${table.referenceId} is not null`),
+    check("points_ledger_reason_check", sql`${table.reason} in ('LESSON_COMPLETE','COURSE_COMPLETE','QUIZ_PASSED','REFERRAL_BONUS','REWARD_REDEMPTION','ADMIN_ADJUSTMENT')`),
+  ],
+);
+
+export const rewardItem = pgTable(
+  "reward_item",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    titleFr: text("title_fr").notNull(),
+    titleAr: text("title_ar").notNull(),
+    descriptionFr: text("description_fr").notNull().default(""),
+    descriptionAr: text("description_ar").notNull().default(""),
+    costPoints: integer("cost_points").notNull(),
+    stock: integer("stock"),
+    coverImage: text("cover_image"),
+    published: boolean("published").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    check("reward_item_cost_positive", sql`${table.costPoints} > 0`),
+    check("reward_item_stock_nonnegative", sql`${table.stock} is null or ${table.stock} >= 0`),
+  ],
+);
+
+export const rewardRedemption = pgTable(
+  "reward_redemption",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    rewardItemId: text("reward_item_id").notNull().references(() => rewardItem.id, { onDelete: "cascade" }),
+    costPoints: integer("cost_points").notNull(),
+    status: text("status").notNull().default("PENDING"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    fulfilledAt: timestamp("fulfilled_at", { withTimezone: true }),
+  },
+  (table) => [
+    index("reward_redemption_user_idx").on(table.userId, table.createdAt),
+    check("reward_redemption_status_check", sql`${table.status} in ('PENDING','FULFILLED','CANCELLED')`),
+  ],
+);
+
+// One referral code per user (lazily created on first visit to the referral
+// page). referralConversion.referredUserId is unique: a given account can be
+// the "referred" party of at most one referral, ever.
+export const referralCode = pgTable(
+  "referral_code",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    code: text("code").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("referral_code_user_unique").on(table.userId),
+    uniqueIndex("referral_code_code_unique").on(table.code),
+  ],
+);
+
+export const referralConversion = pgTable(
+  "referral_conversion",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    referralCodeId: text("referral_code_id").notNull().references(() => referralCode.id, { onDelete: "cascade" }),
+    referredUserId: text("referred_user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    status: text("status").notNull().default("PENDING"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    rewardedAt: timestamp("rewarded_at", { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex("referral_conversion_referred_user_unique").on(table.referredUserId),
+    index("referral_conversion_code_idx").on(table.referralCodeId),
+    check("referral_conversion_status_check", sql`${table.status} in ('PENDING','REWARDED')`),
+  ],
+);
+
+// Automated content-publish notifications (news/webinar/course). One row per
+// publish event; the outbox BROADCAST_EMAIL_SEND handler resolves the
+// audience itself at send time rather than trusting a snapshot here.
+export const broadcastNotification = pgTable(
+  "broadcast_notification",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    kind: text("kind").notNull(),
+    entityId: text("entity_id").notNull(),
+    titleFr: text("title_fr").notNull(),
+    titleAr: text("title_ar").notNull(),
+    ctaUrl: text("cta_url").notNull(),
+    createdBy: text("created_by").notNull().references(() => user.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    status: text("status").notNull().default("PENDING"),
+    recipientCount: integer("recipient_count"),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+  },
+  (table) => [
+    check("broadcast_notification_kind_check", sql`${table.kind} in ('NEWS','WEBINAR','COURSE')`),
+    check("broadcast_notification_status_check", sql`${table.status} in ('PENDING','SENT','FAILED')`),
   ],
 );
 
@@ -335,6 +760,7 @@ export const resources = pgTable(
     audienceFr: text("audience_fr").notNull(),
     audienceAr: text("audience_ar").notNull(),
     type: text("type").notNull(),
+    level: text("level").notNull().default("beginner"),
     priceMillimes: integer("price_millimes").notNull(),
     coverImage: text("cover_image"),
     downloadUrl: text("download_url"),
@@ -346,6 +772,7 @@ export const resources = pgTable(
     index("resources_published_created_idx").on(table.published, table.createdAt),
     index("resources_published_type_idx").on(table.published, table.type),
     check("resources_price_nonnegative", sql`${table.priceMillimes} >= 0`),
+    check("resources_level_check", sql`${table.level} in ('beginner','intermediate','advanced')`),
   ],
 );
 
@@ -399,6 +826,7 @@ export const payments = pgTable(
   },
   (table) => [
     index("payments_order_idx").on(table.orderId),
+    index("payments_status_created_idx").on(table.status, table.createdAt),
     uniqueIndex("payments_provider_external_unique").on(table.provider, table.externalPaymentId),
     check("payments_amount_nonnegative", sql`${table.amountMillimes} >= 0`),
     check("payments_status_check", sql`${table.status} in ('pending','paid','failed','expired','cancelled')`),
@@ -895,7 +1323,7 @@ export const crmContactActivity = pgTable(
     index("crm_contact_activity_contact_idx").on(table.contactId, table.createdAt),
     check(
       "crm_contact_activity_type_check",
-      sql`${table.type} in ('CONTACT_CREATED','CONTACT_UPDATED','CONTACT_ARCHIVED','CONTACT_RESTORED','USER_LINKED','USER_UNLINKED','ASSIGNEE_CHANGED','TAG_ATTACHED','TAG_DETACHED','NOTE_ADDED','STAGE_CHANGED','APPOINTMENT_CREATED','APPOINTMENT_RESCHEDULED','APPOINTMENT_CANCELLED','APPOINTMENT_COMPLETED','ASSESSMENT_CREATED','ASSESSMENT_COMPLETED','ADMISSION_ACCEPTED','ADMISSION_REJECTED','WHATSAPP_TEMPLATE_SENT','WHATSAPP_MESSAGE_RECEIVED','WHATSAPP_FAILED','ACCOUNT_INVITATION_SENT','PHONE_VERIFIED','ACCOUNT_LINKED','ACCOUNT_INVITATION_REVOKED','COURSE_ENROLLED')`,
+      sql`${table.type} in ('CONTACT_CREATED','CONTACT_UPDATED','CONTACT_ARCHIVED','CONTACT_RESTORED','USER_LINKED','USER_UNLINKED','ASSIGNEE_CHANGED','TAG_ATTACHED','TAG_DETACHED','NOTE_ADDED','STAGE_CHANGED','APPOINTMENT_CREATED','APPOINTMENT_RESCHEDULED','APPOINTMENT_CANCELLED','APPOINTMENT_COMPLETED','ASSESSMENT_CREATED','ASSESSMENT_COMPLETED','ADMISSION_ACCEPTED','ADMISSION_REJECTED','WHATSAPP_TEMPLATE_SENT','WHATSAPP_MESSAGE_RECEIVED','WHATSAPP_FAILED','ACCOUNT_INVITATION_SENT','PHONE_VERIFIED','ACCOUNT_LINKED','ACCOUNT_INVITATION_REVOKED','COURSE_ENROLLED','WHATSAPP_AI_REPLY_SENT','CONTACT_AUTO_PROVISIONED')`,
     ),
   ],
 );
@@ -940,6 +1368,33 @@ export const appointment = pgTable(
     check("appointment_status_check", sql`${table.status} in ('SCHEDULED','CONFIRMED','COMPLETED','CANCELLED','NO_SHOW')`),
     check("appointment_type_check", sql`${table.type} in ('ASSESSMENT','INFO_MEETING','FOLLOW_UP','OTHER')`),
     check("appointment_time_range_check", sql`${table.endAt} > ${table.startAt}`),
+  ],
+);
+
+export const appointmentAvailabilityRule = pgTable(
+  "appointment_availability_rule",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+    assignedToUserId: text("assigned_to_user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    weekday: integer("weekday").notNull(),
+    startMinute: integer("start_minute").notNull(),
+    endMinute: integer("end_minute").notNull(),
+    durationMinutes: integer("duration_minutes").notNull().default(60),
+    type: text("type").notNull().default("FOLLOW_UP"),
+    timezone: text("timezone").notNull().default("Africa/Tunis"),
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("appointment_availability_rule_unique").on(table.organizationId, table.assignedToUserId, table.weekday, table.startMinute),
+    index("appointment_availability_rule_org_active_idx").on(table.organizationId, table.active),
+    check("appointment_availability_weekday_check", sql`${table.weekday} between 0 and 6`),
+    check("appointment_availability_minutes_check", sql`${table.startMinute} >= 0 and ${table.endMinute} <= 1440 and ${table.endMinute} > ${table.startMinute}`),
+    check("appointment_availability_duration_check", sql`${table.durationMinutes} between 15 and 240`),
+    check("appointment_availability_type_check", sql`${table.type} in ('ASSESSMENT','INFO_MEETING','FOLLOW_UP','OTHER')`),
+    check("appointment_availability_timezone_check", sql`${table.timezone} = 'Africa/Tunis'`),
   ],
 );
 
@@ -1247,7 +1702,7 @@ export const outboxEvent = pgTable(
     index("outbox_event_processing_idx").on(table.status, table.lockedAt),
     index("outbox_event_org_created_idx").on(table.organizationId, table.createdAt),
     check("outbox_event_status_check", sql`${table.status} in ('PENDING','PROCESSING','SUCCEEDED','FAILED')`),
-    check("outbox_event_event_type_check", sql`${table.eventType} in ('WHATSAPP_TEMPLATE_SEND')`),
+    check("outbox_event_event_type_check", sql`${table.eventType} in ('WHATSAPP_TEMPLATE_SEND','AUTOMATION_TRIGGER','WHATSAPP_AI_REPLY','BROADCAST_EMAIL_SEND')`),
     check("outbox_event_attempts_nonnegative", sql`${table.attempts} >= 0`),
     check("outbox_event_max_attempts_positive", sql`${table.maxAttempts} > 0`),
     check("outbox_event_payload_version_positive", sql`${table.payloadVersion} > 0`),
@@ -1718,6 +2173,12 @@ export type AppointmentEventRow = typeof appointmentEvent.$inferSelect;
 export type AssessmentRow = typeof assessment.$inferSelect;
 export type AdmissionRow = typeof admission.$inferSelect;
 export type CourseRow = typeof courses.$inferSelect;
+export type LearningAssessmentRow = typeof learningAssessment.$inferSelect;
+export type LearningQuestionRow = typeof learningQuestion.$inferSelect;
+export type LearningQuestionOptionRow = typeof learningQuestionOption.$inferSelect;
+export type LearningAttemptRow = typeof learningAttempt.$inferSelect;
+export type LearningAnswerRow = typeof learningAnswer.$inferSelect;
+export type CourseDiscussionPostRow = typeof courseDiscussionPosts.$inferSelect;
 export type ResourceRow = typeof resources.$inferSelect;
 export type WebinarRow = typeof webinars.$inferSelect;
 export type NewsPostRow = typeof newsPosts.$inferSelect;
@@ -1727,3 +2188,9 @@ export type AiConversationRow = typeof aiConversation.$inferSelect;
 export type AiMessageRow = typeof aiMessage.$inferSelect;
 export type AiToolExecutionRow = typeof aiToolExecution.$inferSelect;
 export type AiUsageLogRow = typeof aiUsageLog.$inferSelect;
+export type PointsLedgerRow = typeof pointsLedger.$inferSelect;
+export type RewardItemRow = typeof rewardItem.$inferSelect;
+export type RewardRedemptionRow = typeof rewardRedemption.$inferSelect;
+export type ReferralCodeRow = typeof referralCode.$inferSelect;
+export type ReferralConversionRow = typeof referralConversion.$inferSelect;
+export type BroadcastNotificationRow = typeof broadcastNotification.$inferSelect;

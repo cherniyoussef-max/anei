@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gt, ilike, or, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, ilike, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/server/db";
 import { avsProfiles, courseModules, courses, lessons, resources, webinars } from "@/server/db/schema";
 import { env } from "@/server/env";
@@ -14,9 +14,22 @@ function pageBounds(page?: number, pageSize?: number) {
 }
 
 function normalizedQuery(value?: string) {
-  const trimmed = value?.trim().slice(0, 100);
+  const trimmed = value?.normalize("NFKC").trim().replace(/\s+/g, " ").slice(0, 100);
   return trimmed || undefined;
 }
+
+function searchTerms(value?: string) {
+  return normalizedQuery(value)?.split(" ").filter(Boolean).slice(0, 8) ?? [];
+}
+
+function escapeLike(value: string) {
+  return value.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_");
+}
+
+const COURSE_FIXTURE_SLUG_PATTERN = "^(stream-course|learn-course|course|preview-course|target-course|public-course|enrolled-course)-[0-9a-f]{8}-";
+const RESOURCE_FIXTURE_SLUG_PATTERN = "^storage-authz-resource-[0-9a-f]{8}-";
+const publicCourseFilter = and(eq(courses.published, true), sql`${courses.slug} !~ ${COURSE_FIXTURE_SLUG_PATTERN}`)!;
+const publicResourceFilter = and(eq(resources.published, true), sql`${resources.slug} !~ ${RESOURCE_FIXTURE_SLUG_PATTERN}`)!;
 
 export type CourseSearchInput = {
   q?: string;
@@ -24,7 +37,7 @@ export type CourseSearchInput = {
   level?: "beginner" | "intermediate" | "advanced";
   mode?: "online" | "hybrid" | "onsite";
   price?: "free" | "paid";
-  sort?: "featured" | "newest" | "price-asc" | "price-desc";
+  sort?: "relevance" | "featured" | "newest" | "price-asc" | "price-desc";
   page?: number;
   pageSize?: number;
 };
@@ -32,16 +45,16 @@ export type CourseSearchInput = {
 export async function searchPublishedCourses(input: CourseSearchInput = {}) {
   const { page, pageSize, offset } = pageBounds(input.page, input.pageSize);
   const q = normalizedQuery(input.q);
-  const filters: SQL[] = [eq(courses.published, true)];
+  const filters: SQL[] = [publicCourseFilter];
   if (q) {
-    const pattern = `%${q}%`;
-    filters.push(or(
-      ilike(courses.titleFr, pattern),
-      ilike(courses.titleAr, pattern),
-      ilike(courses.summaryFr, pattern),
-      ilike(courses.summaryAr, pattern),
-      ilike(courses.trainerName, pattern),
-    )!);
+    for (const term of searchTerms(q)) {
+      const pattern = `%${escapeLike(term)}%`;
+      filters.push(or(
+        ilike(courses.titleFr, pattern), ilike(courses.titleAr, pattern),
+        ilike(courses.summaryFr, pattern), ilike(courses.summaryAr, pattern),
+        ilike(courses.trainerName, pattern), ilike(courses.category, pattern),
+      )!);
+    }
   }
   if (input.category) filters.push(eq(courses.category, input.category.slice(0, 80)));
   if (input.level) filters.push(eq(courses.level, input.level));
@@ -50,7 +63,19 @@ export async function searchPublishedCourses(input: CourseSearchInput = {}) {
   if (input.price === "paid") filters.push(gt(courses.priceMillimes, 0));
   const where = and(...filters)!;
 
-  let order = [desc(courses.featured), asc(courses.startAt), desc(courses.createdAt)];
+  const exact = q ?? "";
+  const prefix = `${escapeLike(q ?? "")}%`;
+  const contains = `%${escapeLike(q ?? "")}%`;
+  const relevance = sql<number>`case
+    when lower(${courses.titleFr}) = lower(${exact}) or lower(${courses.titleAr}) = lower(${exact}) then 100
+    when ${courses.titleFr} ilike ${prefix} or ${courses.titleAr} ilike ${prefix} then 70
+    when ${courses.titleFr} ilike ${contains} or ${courses.titleAr} ilike ${contains} then 50
+    when ${courses.trainerName} ilike ${contains} then 30
+    when ${courses.summaryFr} ilike ${contains} or ${courses.summaryAr} ilike ${contains} then 20
+    else 10 end`;
+  let order = q && input.sort === "relevance"
+    ? [desc(relevance), desc(courses.featured), asc(courses.startAt)]
+    : [desc(courses.featured), asc(courses.startAt), desc(courses.createdAt)];
   if (input.sort === "newest") order = [desc(courses.createdAt)];
   if (input.sort === "price-asc") order = [asc(courses.priceMillimes), desc(courses.featured)];
   if (input.sort === "price-desc") order = [desc(courses.priceMillimes), desc(courses.featured)];
@@ -58,17 +83,17 @@ export async function searchPublishedCourses(input: CourseSearchInput = {}) {
   const [[{ value: total }], items, categories] = await Promise.all([
     db.select({ value: count() }).from(courses).where(where),
     db.select().from(courses).where(where).orderBy(...order).limit(pageSize).offset(offset),
-    db.selectDistinct({ value: courses.category }).from(courses).where(eq(courses.published, true)).orderBy(asc(courses.category)),
+    db.selectDistinct({ value: courses.category }).from(courses).where(publicCourseFilter).orderBy(asc(courses.category)),
   ]);
   return { items, total, page, pageSize, totalPages: Math.max(1, Math.ceil(total / pageSize)), categories: categories.map((row) => row.value) };
 }
 
 export async function listPublishedCourses() {
-  return db.select().from(courses).where(eq(courses.published, true)).orderBy(desc(courses.featured), asc(courses.startAt)).limit(24);
+  return db.select().from(courses).where(publicCourseFilter).orderBy(desc(courses.featured), asc(courses.startAt)).limit(24);
 }
 
 export async function getPublishedCourse(slug: string) {
-  const [course] = await db.select().from(courses).where(and(eq(courses.slug, slug), eq(courses.published, true))).limit(1);
+  const [course] = await db.select().from(courses).where(and(eq(courses.slug, slug), publicCourseFilter)).limit(1);
   if (!course) return null;
   const [courseLessons, modules] = await Promise.all([
     db.select().from(lessons).where(eq(lessons.courseId, course.id)).orderBy(asc(lessons.position)),
@@ -79,7 +104,7 @@ export async function getPublishedCourse(slug: string) {
   const publicLessons = await Promise.all(courseLessons.map(async (lesson) => ({
     ...lesson,
     videoUrl: lesson.preview && lesson.videoUrl
-      ? env.STORAGE_PROVIDER === "s3-compatible" ? await signedMediaUrl(lesson.videoUrl) : lesson.videoUrl
+      ? env.STORAGE_PROVIDER === "s3-compatible" ? await signedMediaUrl(lesson.videoUrl).catch(() => null) : lesson.videoUrl
       : null,
     documentUrl: null,
   })));
@@ -90,7 +115,7 @@ export type ResourceSearchInput = {
   q?: string;
   type?: string;
   price?: "free" | "paid";
-  sort?: "newest" | "price-asc" | "price-desc";
+  sort?: "relevance" | "newest" | "price-asc" | "price-desc";
   page?: number;
   pageSize?: number;
 };
@@ -98,34 +123,83 @@ export type ResourceSearchInput = {
 export async function searchPublishedResources(input: ResourceSearchInput = {}) {
   const { page, pageSize, offset } = pageBounds(input.page, input.pageSize);
   const q = normalizedQuery(input.q);
-  const filters: SQL[] = [eq(resources.published, true)];
+  const filters: SQL[] = [publicResourceFilter];
   if (q) {
-    const pattern = `%${q}%`;
-    filters.push(or(
-      ilike(resources.titleFr, pattern), ilike(resources.titleAr, pattern),
-      ilike(resources.descriptionFr, pattern), ilike(resources.descriptionAr, pattern),
-      ilike(resources.audienceFr, pattern), ilike(resources.audienceAr, pattern),
-    )!);
+    for (const term of searchTerms(q)) {
+      const pattern = `%${escapeLike(term)}%`;
+      filters.push(or(
+        ilike(resources.titleFr, pattern), ilike(resources.titleAr, pattern),
+        ilike(resources.descriptionFr, pattern), ilike(resources.descriptionAr, pattern),
+        ilike(resources.audienceFr, pattern), ilike(resources.audienceAr, pattern),
+        ilike(resources.type, pattern),
+      )!);
+    }
   }
   if (input.type) filters.push(eq(resources.type, input.type.slice(0, 80)));
   if (input.price === "free") filters.push(eq(resources.priceMillimes, 0));
   if (input.price === "paid") filters.push(gt(resources.priceMillimes, 0));
   const where = and(...filters)!;
-  const order = input.sort === "price-asc" ? [asc(resources.priceMillimes)] : input.sort === "price-desc" ? [desc(resources.priceMillimes)] : [desc(resources.createdAt)];
-  const [[{ value: total }], items, types] = await Promise.all([
+  const exact = q ?? "";
+  const prefix = `${escapeLike(q ?? "")}%`;
+  const contains = `%${escapeLike(q ?? "")}%`;
+  const relevance = sql<number>`case
+    when lower(${resources.titleFr}) = lower(${exact}) or lower(${resources.titleAr}) = lower(${exact}) then 100
+    when ${resources.titleFr} ilike ${prefix} or ${resources.titleAr} ilike ${prefix} then 70
+    when ${resources.titleFr} ilike ${contains} or ${resources.titleAr} ilike ${contains} then 50
+    when ${resources.type} ilike ${contains} then 35
+    when ${resources.audienceFr} ilike ${contains} or ${resources.audienceAr} ilike ${contains} then 25
+    when ${resources.descriptionFr} ilike ${contains} or ${resources.descriptionAr} ilike ${contains} then 20
+    else 10 end`;
+  const order = q && input.sort === "relevance" ? [desc(relevance), desc(resources.createdAt)]
+    : input.sort === "price-asc" ? [asc(resources.priceMillimes)]
+      : input.sort === "price-desc" ? [desc(resources.priceMillimes)]
+        : [desc(resources.createdAt)];
+  const [[{ value: total }], rows, types] = await Promise.all([
     db.select({ value: count() }).from(resources).where(where),
     db.select().from(resources).where(where).orderBy(...order).limit(pageSize).offset(offset),
-    db.selectDistinct({ value: resources.type }).from(resources).where(eq(resources.published, true)).orderBy(asc(resources.type)),
+    db.selectDistinct({ value: resources.type }).from(resources).where(publicResourceFilter).orderBy(asc(resources.type)),
   ]);
+  const items = await Promise.all(rows.map(async (row) => ({
+    ...row,
+    coverImageUrl: row.coverImage && env.STORAGE_PROVIDER === "s3-compatible" ? await signedMediaUrl(row.coverImage).catch(() => null) : null,
+  })));
   return { items, total, page, pageSize, totalPages: Math.max(1, Math.ceil(total / pageSize)), types: types.map((row) => row.value) };
 }
 
 export async function listPublishedResources() {
-  return db.select().from(resources).where(eq(resources.published, true)).orderBy(desc(resources.createdAt)).limit(24);
+  return db.select().from(resources).where(publicResourceFilter).orderBy(desc(resources.createdAt)).limit(24);
+}
+
+const ADMIN_RESOURCE_PAGE_SIZE = 25;
+
+/** Paginated resource listing for the admin console — includes unpublished resources. */
+export async function listResourcesAdminPage(input: { q?: string; page?: number } = {}) {
+  const { page, pageSize, offset } = pageBounds(input.page, ADMIN_RESOURCE_PAGE_SIZE);
+  const q = normalizedQuery(input.q);
+  const where = q ? or(ilike(resources.titleFr, `%${q}%`), ilike(resources.titleAr, `%${q}%`), ilike(resources.slug, `%${q}%`)) : undefined;
+  const [[{ value: total }], items] = await Promise.all([
+    db.select({ value: count() }).from(resources).where(where),
+    db.select().from(resources).where(where).orderBy(desc(resources.createdAt)).limit(pageSize).offset(offset),
+  ]);
+  return { items, total, page, pageSize, totalPages: Math.max(1, Math.ceil(total / pageSize)) };
 }
 
 export async function listPublishedWebinars() {
   return db.select().from(webinars).where(eq(webinars.published, true)).orderBy(asc(webinars.startsAt)).limit(100);
+}
+
+const ADMIN_WEBINAR_PAGE_SIZE = 25;
+
+/** Paginated webinar listing for the admin console — includes unpublished/archived webinars. */
+export async function listWebinarsAdminPage(input: { q?: string; page?: number } = {}) {
+  const { page, pageSize, offset } = pageBounds(input.page, ADMIN_WEBINAR_PAGE_SIZE);
+  const q = normalizedQuery(input.q);
+  const where = q ? or(ilike(webinars.titleFr, `%${q}%`), ilike(webinars.titleAr, `%${q}%`), ilike(webinars.slug, `%${q}%`)) : undefined;
+  const [[{ value: total }], items] = await Promise.all([
+    db.select({ value: count() }).from(webinars).where(where),
+    db.select().from(webinars).where(where).orderBy(desc(webinars.startsAt)).limit(pageSize).offset(offset),
+  ]);
+  return { items, total, page, pageSize, totalPages: Math.max(1, Math.ceil(total / pageSize)) };
 }
 
 export type AvsSearchInput = { q?: string; city?: string; certified?: boolean; page?: number; pageSize?: number };

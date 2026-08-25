@@ -11,6 +11,8 @@ export const adminPermissions = [
   "courses.update",
   "courses.publish",
   "courses.delete",
+  "assessments.manage",
+  "results.read",
   "enrollments.read",
   "cohorts.manage",
   "learning.read",
@@ -19,6 +21,7 @@ export const adminPermissions = [
   "webinars.manage",
   "resources.read",
   "resources.manage",
+  "rewards.manage",
   "news.read",
   "news.manage",
   "orders.read",
@@ -39,8 +42,9 @@ export type AdminRole = "USER" | "ADMIN" | "SUPER_ADMIN";
 const adminCapabilities = new Set<AdminPermission>([
   "overview.read", "users.read", "users.manage", "personas.manage", "organizations.manage", "relationships.manage", "courses.read", "courses.create",
   "courses.update", "courses.publish", "enrollments.read", "cohorts.manage", "learning.read",
+  "assessments.manage", "results.read",
   "certificates.read", "webinars.read", "webinars.manage", "resources.read",
-  "resources.manage", "news.read", "news.manage", "orders.read", "payments.read",
+  "resources.manage", "rewards.manage", "news.read", "news.manage", "orders.read", "payments.read",
   "payments.reconcile", "contacts.read", "contacts.manage", "crm.read", "crm.manage", "audit.read", "system.read",
 ]);
 

@@ -1,7 +1,7 @@
 export const courseVisuals = [
-  "/media/anei-hero-learning-v2.webp",
-  "/media/anei-learning-story-v2.webp",
-  "/media/anei-learning-path-v2.webp",
+  "/media/anei-hero-learning.webp",
+  "/media/anei-learning-story.webp",
+  "/media/anei-learning-path.webp",
 ] as const;
 
 export function getCourseVisual(slug: string) {

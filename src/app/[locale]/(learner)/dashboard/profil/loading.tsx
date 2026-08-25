@@ -1,0 +1,1 @@
+export default function LoadingProfile() { return <div className="learner-page-skeleton" aria-busy="true" aria-label="Chargement du profil"><span className="student-skeleton learner-skeleton-title" /><span className="student-skeleton learner-skeleton-profile" /><span className="student-skeleton learner-skeleton-list" /></div>; }

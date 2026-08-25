@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Locale } from "@/types";
+import { AdminObjectUpload } from "./AdminObjectUpload";
 
 function lines(value: FormDataEntryValue | null) {
   return String(value ?? "").split("\n").map((item) => item.trim()).filter(Boolean);
@@ -31,8 +32,10 @@ export function AdminCourseForm({ locale }: { locale: Locale }) {
       durationMinutes: Number(f.get("durationMinutes")),
       priceMillimes: Math.round(Number(f.get("priceTnd")) * 1000),
       mode: String(f.get("mode")),
+      level: String(f.get("level")),
       published: f.get("published") === "on",
       objectives: { fr: lines(f.get("objectivesFr")), ar: lines(f.get("objectivesAr")) },
+      coverImageObjectKey: String(f.get("coverImageObjectKey") || "") || null,
     };
     const res = await fetch("/api/admin/courses", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     setState(res.ok ? "done" : "error");
@@ -47,6 +50,8 @@ export function AdminCourseForm({ locale }: { locale: Locale }) {
     <div className="field-row"><label><span>Objectifs FR — un par ligne</span><textarea name="objectivesFr" rows={4} required/></label><label><span>الأهداف AR — هدف في كل سطر</span><textarea name="objectivesAr" dir="rtl" rows={4} required/></label></div>
     <div className="field-row"><label><span>{ar?"الفئة":"Catégorie"}</span><input name="category" defaultValue="education" required/></label><label><span>{ar?"الصيغة":"Modalité"}</span><select name="mode"><option value="online">En ligne</option><option value="hybrid">Hybride</option><option value="onsite">Présentiel</option></select></label></div>
     <div className="field-row"><label><span>{ar?"المدة بالدقائق":"Durée (minutes)"}</span><input name="durationMinutes" type="number" min="30" defaultValue="600" required/></label><label><span>{ar?"السعر بالدينار":"Prix (TND)"}</span><input name="priceTnd" type="number" min="0" step="0.001" defaultValue="0" required/></label></div>
+    <label><span>{ar?"مستوى الصعوبة":"Niveau"}</span><select name="level" defaultValue="beginner"><option value="beginner">{ar?"مبتدئ":"Débutant"}</option><option value="intermediate">{ar?"متوسط":"Intermédiaire"}</option><option value="advanced">{ar?"متقدم":"Avancé"}</option></select></label>
+    <AdminObjectUpload locale={locale} name="coverImageObjectKey" category="course" accept="image/jpeg,image/png,image/webp" labelFr="Image de couverture" labelAr="صورة الغلاف"/>
     <label className="checkbox-row"><input name="published" type="checkbox" defaultChecked/><span>{ar?"نشر الدورة مباشرة":"Publier la formation immédiatement"}</span></label>
     <button className="btn btn-primary" disabled={state==="loading"}>{state==="loading"?(ar?"جارٍ الإنشاء...":"Création..."):(ar?"إنشاء الدورة":"Créer la formation")}</button>
     {state==="done"?<small className="success-inline">{ar?"تم الإنشاء.":"Formation créée."}</small>:state==="error"?<small className="form-error">{ar?"تعذر الإنشاء.":"Création impossible. Vérifiez les champs ou le slug."}</small>:null}

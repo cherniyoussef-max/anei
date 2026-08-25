@@ -17,6 +17,7 @@ const MAX_TOOL_ITERATIONS = 3;
 
 interface ChatRequest {
   conversationId?: string;
+  organizationId?: string;
   message: string;
   locale?: "fr" | "ar";
 }
@@ -73,8 +74,11 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const locale = body.locale ?? session.user.locale ?? "fr";
-  const conversationId = body.conversationId ?? (await getOrCreateConversation(session.user.id, locale));
   const requestId = crypto.randomUUID();
+  const organizationId = typeof body.organizationId === "string" && /^[0-9a-f-]{36}$/i.test(body.organizationId)
+    ? body.organizationId
+    : null;
+  const conversationId = body.conversationId ?? (await getOrCreateConversation(session.user.id, organizationId, locale));
 
   try {
     const response = await processChatTurn({
@@ -83,6 +87,7 @@ export async function POST(request: Request): Promise<Response> {
       userMessage,
       locale,
       requestId,
+      organizationId,
     });
 
     return new Response(JSON.stringify(response), {
@@ -90,17 +95,21 @@ export async function POST(request: Request): Promise<Response> {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Internal error";
-    return new Response(JSON.stringify({ error: message }), {
+    console.error("ai.chat.failed", {
+      requestId,
+      userId: session.user.id,
+      reasonCode: error instanceof Error && error.name === "AbortError" ? "PROVIDER_TIMEOUT" : "AI_OPERATION_FAILED",
+    });
+    return new Response(JSON.stringify({ error: "AI_UNAVAILABLE", requestId }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });
   }
 }
 
-async function getOrCreateConversation(userId: string, locale: "fr" | "ar"): Promise<string> {
+async function getOrCreateConversation(userId: string, organizationId: string | null, locale: "fr" | "ar"): Promise<string> {
   const repo = getConversationRepository();
-  return repo.createConversation(userId, null, locale === "fr" ? "Nouvelle conversation" : "محادثة جديدة");
+  return repo.createConversation(userId, organizationId, locale === "fr" ? "Nouvelle conversation" : "محادثة جديدة");
 }
 
 async function processChatTurn(input: {
@@ -109,8 +118,9 @@ async function processChatTurn(input: {
   userMessage: string;
   locale: "fr" | "ar";
   requestId: string;
+  organizationId: string | null;
 }): Promise<ChatResponse> {
-  const { userId, conversationId, userMessage, locale, requestId } = input;
+  const { userId, conversationId, userMessage, locale, requestId, organizationId } = input;
 
   const repo = getConversationRepository();
   const llm = getLLMProvider();
@@ -130,6 +140,7 @@ async function processChatTurn(input: {
     query: userMessage,
     locale,
     userId,
+    organizationId,
     limit: 5,
   });
 
@@ -145,6 +156,7 @@ async function processChatTurn(input: {
     userId,
     locale,
     requestId,
+    organizationId,
   });
 
   let iterations = 0;
@@ -164,6 +176,9 @@ async function processChatTurn(input: {
         locale,
         messages,
         requestId,
+        tools: toolRegistryTools
+          .filter((tool) => tool.riskLevel !== "SENSITIVE" && tool.inputSchema)
+          .map((tool) => ({ name: tool.name, description: tool.description, inputSchema: tool.inputSchema! })),
       });
     } catch (error) {
       await usageMeter.record({
@@ -196,12 +211,26 @@ async function processChatTurn(input: {
       }));
     }
 
-    const toolCalls = extractToolCalls(llmOutput.text);
+    // Provider-native structured calls are authoritative. Text parsing remains
+    // only as a compatibility fallback for providers without tool support.
+    const toolCalls = llmOutput.toolCalls ?? extractToolCalls(llmOutput.text);
     if (toolCalls.length === 0) {
       break;
     }
 
-    for (const toolCall of toolCalls) {
+    messages.push({
+      role: "assistant",
+      content: llmOutput.text,
+      metadata: {
+        toolCalls: toolCalls.map((call, index) => ({
+          id: call.id ?? `compatibility-call-${iterations}-${index}`,
+          type: "function" as const,
+          function: { name: call.name, arguments: JSON.stringify(call.arguments) },
+        })),
+      },
+    });
+
+    for (const [toolIndex, toolCall] of toolCalls.entries()) {
       const tool = toolRegistryTools.find((t) => t.name === toolCall.name);
       if (!tool) {
         messages.push({ role: "assistant" as const, content: `Error: Unknown tool ${toolCall.name}` });
@@ -209,12 +238,23 @@ async function processChatTurn(input: {
       }
 
       try {
-        const result = await tool.execute(toolCall.arguments, {
-          userId,
-          locale,
-          requestId,
+        const context = { userId, locale, requestId, organizationId };
+        if (tool.riskLevel === "BUSINESS_WRITE") {
+          const proposal = await toolRegistry.proposeTool(toolCall.name, context, toolCall.arguments, conversationId);
+          pendingAction = {
+            executionId: proposal.executionId,
+            toolName: toolCall.name,
+            summary: `Execute ${toolCall.name} with provided parameters`,
+            expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+          };
+          break;
+        }
+        const result = await tool.execute(toolCall.arguments, context);
+        messages.push({
+          role: "tool" as const,
+          content: JSON.stringify(result),
+          metadata: { toolCallId: toolCall.id ?? `compatibility-call-${iterations}-${toolIndex}` },
         });
-        messages.push({ role: "tool" as const, content: JSON.stringify(result) });
       } catch (error) {
         const message = error instanceof Error ? error.message : "Tool execution failed";
         if (message.startsWith("CONFIRMATION_REQUIRED:")) {
@@ -227,7 +267,11 @@ async function processChatTurn(input: {
           };
           break;
         }
-        messages.push({ role: "tool" as const, content: `Error: ${message}` });
+        messages.push({
+          role: "tool" as const,
+          content: `Error: ${message}`,
+          metadata: { toolCallId: toolCall.id ?? `compatibility-call-${iterations}-${toolIndex}` },
+        });
       }
     }
 
@@ -267,9 +311,6 @@ ${getAllToolDefinitions()
   .map((t) => `- ${t.name}: ${t.description}`)
   .join("\n")}
 
-TOOL CALL FORMAT:
-When you need to use a tool, output: TOOL_CALL {"name": "tool_name", "arguments": {...}}
-
 RULES:
 - Never invent citations. Only cite from retrieved context.
 - If you don't know, say so.
@@ -277,8 +318,8 @@ RULES:
 - Never expose internal system details.`;
 }
 
-function extractToolCalls(text: string): Array<{ name: string; arguments: unknown }> {
-  const calls: Array<{ name: string; arguments: unknown }> = [];
+function extractToolCalls(text: string): Array<{ id?: string; name: string; arguments: unknown }> {
+  const calls: Array<{ id?: string; name: string; arguments: unknown }> = [];
   const regex = /TOOL_CALL\s+(\{[\s\S]*?\})/g;
   let match;
   while ((match = regex.exec(text)) !== null) {

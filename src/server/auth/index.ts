@@ -1,12 +1,12 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
-import { oneTap } from "better-auth/plugins";
 import { db } from "@/server/db";
 import { account, rateLimit, session, user, verification } from "@/server/db/schema";
 import { env, googleAuthConfigured, isLocalProductionSmoke } from "@/server/env";
 import { enforceNewUserDefaults } from "@/server/auth/policy";
 import { sendResetEmail, sendVerificationEmail } from "@/server/services/mailer";
 import { ensurePrimaryPersonaMembership } from "@/server/services/personas";
+import { captureReferralAtSignup } from "@/server/services/referrals";
 
 export const auth = betterAuth({
   appName: "Académie Nationale de l’Éducation Inclusive",
@@ -23,6 +23,8 @@ export const auth = betterAuth({
         before: async (data) => ({ data: enforceNewUserDefaults(data) }),
         after: async (created) => {
           const profileType = typeof created.profileType === "string" ? created.profileType : "learner";
+          const referredByCode = typeof created.referredByCode === "string" ? created.referredByCode : null;
+          if (referredByCode) await captureReferralAtSignup(created.id, referredByCode);
           await ensurePrimaryPersonaMembership(created.id, profileType);
         },
       },
@@ -46,6 +48,10 @@ export const auth = betterAuth({
         required: false,
         defaultValue: "learner",
       },
+      referredByCode: {
+        type: "string",
+        required: false,
+      },
     },
     changeEmail: {
       enabled: true,
@@ -54,7 +60,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: env.AUTH_REQUIRE_EMAIL_VERIFICATION,
-    minPasswordLength: 10,
+    minPasswordLength: 15,
     maxPasswordLength: 128,
     revokeSessionsOnPasswordReset: true,
     sendResetPassword: async ({ user: authUser, url }) => {
@@ -78,7 +84,7 @@ export const auth = betterAuth({
         },
       }
     : {},
-  plugins: googleAuthConfigured ? [oneTap()] : [],
+  plugins: [],
   account: {
     encryptOAuthTokens: true,
     accountLinking: {

@@ -1,18 +1,67 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { authClient } from "@/lib/auth-client";
 import type { Locale } from "@/types";
 
 export function PasswordRecoveryForm({ locale }: { locale: Locale }) {
-  const [state, setState] = useState<"idle" | "loading" | "sent" | "error">("idle");
   const ar = locale === "ar";
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setState("loading");
-    const email = String(new FormData(event.currentTarget).get("email") ?? "").trim();
-    const result = await authClient.requestPasswordReset({ email, redirectTo: `/${locale}/reset-password` });
-    setState(result.error ? "error" : "sent");
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [channel, setChannel] = useState<"EMAIL" | "WHATSAPP">("EMAIL");
+  const [state, setState] = useState<"idle" | "requested" | "verifying" | "verified" | "error">("idle");
+  const [message, setMessage] = useState<string | null>(null);
+
+  async function request(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setState("requested");
+    setMessage(null);
+    const response = await fetch("/api/auth/password/forgot", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, channel }),
+    });
+    if (!response.ok) {
+      setState("error");
+      setMessage(ar ? "تعذر إرسال الطلب." : "Impossible d'envoyer la demande.");
+      return;
+    }
+    setMessage(ar ? "إذا كان الحساب مؤهلاً، تم إرسال رمز تحقق." : "Si un compte éligible existe, un code de vérification a été envoyé.");
   }
-  if (state === "sent") return <div className="form-success"><strong>{ar ? "تحقق من بريدك الإلكتروني" : "Consultez votre boîte mail"}</strong><p>{ar ? "إذا كان الحساب موجودًا، ستصلك رسالة لإعادة تعيين كلمة المرور." : "Si le compte existe, un lien de réinitialisation vient d’être envoyé."}</p></div>;
-  return <form className="auth-form" onSubmit={submit}><label><span>Email</span><input name="email" type="email" autoComplete="email" required placeholder="vous@exemple.com"/></label>{state === "error" ? <div className="form-error">{ar ? "تعذر إرسال الطلب." : "Impossible d’envoyer la demande."}</div> : null}<button className="btn btn-primary btn-block" disabled={state === "loading"}>{state === "loading" ? (ar ? "جارٍ الإرسال..." : "Envoi...") : (ar ? "إرسال رابط الاسترجاع" : "Envoyer le lien de récupération")}</button></form>;
+
+  async function verifyCode() {
+    setState("verifying");
+    const response = await fetch("/api/auth/password/verify-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, code }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || !payload.resetAuthorizationToken) {
+      setState("error");
+      setMessage(ar ? "رمز غير صالح أو منتهي." : "Code invalide ou expiré.");
+      return;
+    }
+    sessionStorage.setItem("anei_reset_authorization", String(payload.resetAuthorizationToken));
+    setState("verified");
+    window.location.assign(`/${locale}/reset-password`);
+  }
+
+  return (
+    <div className="auth-form">
+      <form onSubmit={request}>
+        <label><span>Email</span><input value={email} onChange={(event) => setEmail(event.target.value)} type="email" autoComplete="email" required /></label>
+        <label><span>{ar ? "قناة التحقق" : "Canal de vérification"}</span><select value={channel} onChange={(event) => setChannel(event.target.value as "EMAIL" | "WHATSAPP")}><option value="EMAIL">Email</option><option value="WHATSAPP">WhatsApp</option></select></label>
+        <button className="btn btn-primary btn-block" type="submit">{ar ? "إرسال رمز التحقق" : "Envoyer le code"}</button>
+      </form>
+
+      {state === "requested" || state === "verifying" || state === "error" ? (
+        <>
+          <label><span>{ar ? "رمز التحقق" : "Code"}</span><input value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" maxLength={6} autoComplete="one-time-code" /></label>
+          <button className="btn btn-primary btn-block" type="button" disabled={code.length !== 6 || state === "verifying"} onClick={verifyCode}>{ar ? "تأكيد الرمز" : "Vérifier le code"}</button>
+        </>
+      ) : null}
+
+      {message ? <div className={state === "error" ? "form-error" : "form-success"} role="status">{message}</div> : null}
+    </div>
+  );
 }

@@ -1,0 +1,400 @@
+/* Homepage preservation layer. The structure and first-view composition match the approved ANEI reference. */
+.public-experience .public-hero {
+  border-bottom: 1px solid var(--public-border-subtle);
+  background: var(--public-surface-page);
+}
+
+.public-experience .public-hero-grid {
+  min-height: min(820px, calc(100dvh - 76px));
+  display: grid;
+  grid-template-columns: minmax(0, 530px) minmax(480px, 1fr);
+  align-items: center;
+  gap: clamp(48px, 6vw, 88px);
+  padding-block: clamp(54px, 6vw, 88px);
+}
+
+.public-experience .public-hero .hero-copy {
+  max-width: 560px;
+}
+
+.public-experience .reference-hero-kicker {
+  display: block;
+  margin-block-end: 28px;
+  color: var(--public-brand-gold-strong);
+  font-size: .78rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  line-height: 1.5;
+}
+
+[lang="ar"] .public-experience .reference-hero-kicker {
+  letter-spacing: 0;
+}
+
+.public-experience .public-hero h1 {
+  max-width: 8.9ch;
+  margin: 0 0 24px;
+  color: var(--public-text-primary);
+  font-family: inherit;
+  font-size: clamp(3rem, 4.35vw, 4rem);
+  font-weight: 760;
+  letter-spacing: -.045em;
+  line-height: 1;
+  text-wrap: balance;
+}
+
+[lang="ar"] .public-experience .public-hero h1 {
+  max-width: 10ch;
+  font-size: clamp(3rem, 4vw, 4rem);
+  letter-spacing: 0;
+  line-height: 1.25;
+}
+
+.public-experience .public-hero .hero-copy > p:not(.reference-hero-note) {
+  max-width: 49ch;
+  margin: 0;
+  color: var(--public-text-secondary);
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+.public-experience .public-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-block-start: 30px;
+}
+
+.public-experience .public-hero-actions .btn {
+  min-height: 56px;
+  padding-inline: 27px;
+  border-radius: var(--public-radius-control);
+  white-space: nowrap;
+}
+
+.public-experience .reference-hero-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 38ch;
+  margin: 6px 0 0 24px;
+  color: var(--public-text-muted);
+  font-size: .98rem;
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+[dir="rtl"] .public-experience .reference-hero-note {
+  margin-inline: 24px 0;
+}
+
+.public-experience .reference-hero-note svg {
+  flex: 0 0 auto;
+  margin-block-start: 3px;
+  color: var(--public-brand-navy-soft);
+}
+
+.public-experience .public-hero-figure {
+  margin: 0;
+}
+
+.public-experience .public-hero-photo {
+  position: relative;
+  min-height: 520px;
+  overflow: visible;
+  border-start-start-radius: 260px;
+  border-end-start-radius: 260px;
+  border-start-end-radius: 20px;
+  border-end-end-radius: 20px;
+  background: var(--public-surface-muted);
+}
+
+.public-experience .public-hero-photo > img {
+  width: 100%;
+  height: 520px;
+  object-fit: cover;
+  object-position: center;
+  border-radius: inherit;
+}
+
+.public-experience .reference-mission-card {
+  position: absolute;
+  inset-inline-end: -22px;
+  inset-block-end: 44px;
+  width: min(330px, 58%);
+  min-height: 100px;
+  display: grid;
+  grid-template-columns: 54px 1fr;
+  align-items: center;
+  gap: 14px;
+  margin: 0;
+  padding: 18px;
+  border: 1px solid var(--public-border-subtle);
+  border-radius: 16px;
+  background: white;
+  box-shadow: var(--public-shadow-raised);
+  color: var(--public-text-primary);
+}
+
+.public-experience .reference-mission-card > span {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--public-brand-navy);
+  color: var(--public-brand-gold);
+}
+
+.public-experience .reference-mission-card strong {
+  display: block;
+  margin-block-end: 4px;
+  font-size: 1rem;
+}
+
+.public-experience .reference-mission-card p {
+  margin: 0;
+  color: var(--public-text-secondary);
+  font-size: .75rem;
+  line-height: 1.45;
+}
+
+.public-experience .reference-pillars {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--public-border-subtle);
+}
+
+.public-experience .reference-pillars article {
+  min-height: 132px;
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  align-items: center;
+  gap: 16px;
+  padding: 25px 24px;
+  border-inline-end: 1px solid var(--public-border-subtle);
+}
+
+.public-experience .reference-pillars article:last-child {
+  border-inline-end: 0;
+}
+
+.public-experience .reference-pillars article > span {
+  color: var(--public-brand-gold-strong);
+}
+
+.public-experience .reference-pillars strong {
+  display: block;
+  margin-block-end: 5px;
+  font-size: 1rem;
+}
+
+.public-experience .reference-pillars p {
+  margin: 0;
+  color: var(--public-text-muted);
+  font-size: .75rem;
+  line-height: 1.55;
+}
+
+/* Keep the preserved lower homepage within the same navy, gold and neutral system. */
+.public-experience .discovery-section,
+.public-experience .human-story-section,
+.public-experience .section:not(.section-tint, .library-highlight) {
+  background: var(--public-surface-page);
+}
+
+.public-experience .home-avs-grid .certified,
+.public-experience .webinar-card .status-pill {
+  background: var(--public-surface-warm);
+  color: var(--public-brand-gold-strong);
+}
+
+.public-experience .webinar-card .date-tile,
+.public-experience .library-highlight {
+  background: var(--public-brand-navy-strong);
+}
+
+.public-experience .library-highlight .library-copy h2,
+.public-experience .library-highlight .resource-mini h3 {
+  color: var(--public-text-on-dark);
+}
+
+.public-experience .library-highlight .eyebrow,
+.public-experience .library-highlight .resource-mini > span:last-child {
+  color: var(--public-brand-gold-muted);
+}
+
+.public-experience .library-highlight .resource-type {
+  background: rgb(255 255 255 / 10%);
+  color: var(--public-brand-gold-muted);
+}
+
+@media (max-width: 1180px) {
+  .public-experience .public-hero-grid {
+    grid-template-columns: minmax(0, .9fr) minmax(420px, 1.1fr);
+    gap: 40px;
+  }
+
+  .public-experience .public-hero h1 {
+    font-size: clamp(3rem, 5vw, 4rem);
+  }
+}
+
+@media (max-width: 900px) {
+  .public-experience .public-hero-grid {
+    min-height: auto;
+    grid-template-columns: 1fr;
+    gap: 38px;
+    padding-block: 54px;
+  }
+
+  .public-experience .public-hero .hero-copy {
+    max-width: 680px;
+  }
+
+  .public-experience .public-hero h1 {
+    max-width: 12ch;
+  }
+
+  .public-experience .public-hero-photo {
+    min-height: 480px;
+  }
+
+  .public-experience .public-hero-photo > img {
+    height: 480px;
+  }
+
+  .public-experience .reference-pillars {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .public-experience .reference-pillars article:nth-child(2) {
+    border-inline-end: 0;
+  }
+
+  .public-experience .reference-pillars article:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--public-border-subtle);
+  }
+}
+
+@media (max-width: 767px) {
+  .public-experience .public-hero-grid {
+    gap: 30px;
+    padding-block: 42px;
+  }
+
+  .public-experience .reference-hero-kicker {
+    margin-block-end: 18px;
+    font-size: .75rem;
+  }
+
+  .public-experience .public-hero h1,
+  [lang="ar"] .public-experience .public-hero h1 {
+    max-width: 11ch;
+    margin-block-end: 18px;
+    font-size: clamp(2.1rem, 12vw, 3.15rem);
+  }
+
+  .public-experience .public-hero-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    margin-block-start: 24px;
+  }
+
+  .public-experience .public-hero-actions .btn {
+    width: 100%;
+    min-height: 52px;
+  }
+
+  .public-experience .reference-hero-note,
+  [dir="rtl"] .public-experience .reference-hero-note {
+    margin-inline: 0;
+  }
+
+  .public-experience .public-hero-photo {
+    min-height: 330px;
+    border-start-start-radius: 150px;
+    border-end-start-radius: 150px;
+    border-start-end-radius: 14px;
+    border-end-end-radius: 14px;
+  }
+
+  .public-experience .public-hero-photo > img {
+    height: 330px;
+  }
+
+  .public-experience .reference-mission-card {
+    position: absolute;
+    inset-inline: 12px;
+    inset-block-end: 12px;
+    width: auto;
+    min-height: 82px;
+    grid-template-columns: 44px 1fr;
+    padding: 12px;
+  }
+
+  .public-experience .reference-mission-card > span {
+    width: 44px;
+    height: 44px;
+  }
+
+  .public-experience .reference-pillars {
+    grid-template-columns: 1fr;
+  }
+
+  .public-experience .reference-pillars article,
+  .public-experience .reference-pillars article:nth-child(2) {
+    min-height: 104px;
+    padding: 20px 0;
+    border-inline-end: 0;
+    border-bottom: 1px solid var(--public-border-subtle);
+  }
+
+  .public-experience .reference-pillars article:last-child {
+    border-bottom: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-experience .public-hero-actions .btn {
+    transition-duration: 1ms;
+  }
+}
+
+/* Audience entry points deliberately use an editorial surface until ANEI has
+   four distinct, approved photographs. This avoids broken or synthetic people. */
+.public-experience .audience-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  border-block-start: 1px solid var(--public-border-subtle);
+}
+
+.public-experience .audience-card {
+  min-height: 270px;
+  justify-content: space-between;
+  padding: 26px 22px;
+  border: 0;
+  border-inline-end: 1px solid var(--public-border-subtle);
+  border-block-end: 1px solid var(--public-border-subtle);
+  border-radius: 0;
+  background: transparent;
+  color: var(--public-text-primary);
+  box-shadow: none;
+}
+
+.public-experience .audience-card:last-child { border-inline-end: 0; }
+.public-experience .audience-card:hover { background: var(--public-surface-warm); box-shadow: none; transform: none; }
+.public-experience .audience-tag { order: 2; align-self: flex-start; margin: 18px 0 0; padding: 0; background: transparent; color: var(--public-brand-navy); }
+.public-experience .audience-icon { background: var(--public-surface-warm); color: var(--public-brand-gold); }
+.public-experience .audience-card p { color: var(--public-text-muted); }
+
+@media (max-width: 900px) {
+  .public-experience .audience-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .public-experience .audience-card:nth-child(2) { border-inline-end: 0; }
+}
+
+@media (max-width: 560px) {
+  .public-experience .audience-grid { grid-template-columns: 1fr; }
+  .public-experience .audience-card { min-height: 0; border-inline-end: 0; }
+}

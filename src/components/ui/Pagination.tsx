@@ -25,15 +25,16 @@ export function Pagination({
 }) {
   if (totalPages <= 1) return null;
   const ar = locale === "ar";
+  const en = locale === "en";
   const start = Math.max(1, page - 2);
   const end = Math.min(totalPages, page + 2);
   const pages = Array.from({ length: end - start + 1 }, (_, index) => start + index);
 
   return (
-    <nav className="pagination" aria-label={ar ? "ترقيم الصفحات" : "Pagination"}>
+    <nav className="pagination" aria-label={ar ? "ترقيم الصفحات" : en ? "Pagination" : "Pagination"}>
       {page > 1 ? (
         <Link className="pagination-link" href={withPage(basePath, params, page - 1)}>
-          {ar ? "السابق" : "Précédent"}
+          {ar ? "السابق" : en ? "Previous" : "Précédent"}
         </Link>
       ) : null}
       {start > 1 ? <span aria-hidden="true">…</span> : null}
@@ -50,7 +51,7 @@ export function Pagination({
       {end < totalPages ? <span aria-hidden="true">…</span> : null}
       {page < totalPages ? (
         <Link className="pagination-link" href={withPage(basePath, params, page + 1)}>
-          {ar ? "التالي" : "Suivant"}
+          {ar ? "التالي" : en ? "Next" : "Suivant"}
         </Link>
       ) : null}
     </nav>

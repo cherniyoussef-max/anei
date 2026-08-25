@@ -5,6 +5,7 @@ import { db } from "@/server/db";
 import { automationServiceCredential, organizationMembership } from "@/server/db/schema";
 import { isTrustedMutation } from "@/server/security/origin";
 import { consumeRateLimit, requestFingerprint } from "@/server/security/rate-limit";
+import { getSessionAssurance } from "@/server/auth/assurance";
 import type { McpScope } from "./scopes";
 
 /**
@@ -29,7 +30,7 @@ type OrganizationRole = NonNullable<McpActor["organizationRole"]>;
 /** Session resolution is injectable so integration tests can drive requests. */
 export type McpSessionResolver = (
   request: Request,
-) => Promise<{ user: { id: string; locale?: string | null } } | null>;
+) => Promise<{ user: { id: string; locale?: string | null }; session?: { id: string } } | null>;
 
 let sessionResolver: McpSessionResolver | null = null;
 
@@ -37,7 +38,7 @@ export function setMcpSessionResolver(resolver: McpSessionResolver | null) {
   sessionResolver = resolver;
 }
 
-async function defaultSessionResolver(request: Request): Promise<{ user: { id: string; locale?: string | null } } | null> {
+async function defaultSessionResolver(request: Request): Promise<{ user: { id: string; locale?: string | null }; session?: { id: string } } | null> {
   const { auth } = await import("@/server/auth");
   return auth.api.getSession({ headers: request.headers, query: { disableCookieCache: true } });
 }
@@ -70,7 +71,7 @@ export async function resolveMcpActor(request: Request): Promise<McpAuthResult> 
   const match = authorization ? BEARER_PATTERN.exec(authorization) : null;
 
   if (match) {
-    const preAuthRate = await consumeRateLimit(`mcp:svc-preauth:${requestFingerprint(request)}`, 180, 60);
+    const preAuthRate = await consumeRateLimit(`mcp:svc-preauth:${requestFingerprint(request)}`, 180, 60, { fallbackLimit: 20 });
     if (!preAuthRate.allowed) {
       return { ok: false, status: 429, error: "Too many requests" };
     }
@@ -97,7 +98,7 @@ export async function resolveMcpActor(request: Request): Promise<McpAuthResult> 
       return { ok: false, status: 401, error: "Service credential expired" };
     }
 
-    const rate = await consumeRateLimit(`mcp:svc:${credential.id}`, 120, 60);
+    const rate = await consumeRateLimit(`mcp:svc:${credential.id}`, 120, 60, { fallbackLimit: 20 });
     if (!rate.allowed) {
       return { ok: false, status: 429, error: "Too many requests" };
     }
@@ -135,6 +136,13 @@ export async function resolveMcpActor(request: Request): Promise<McpAuthResult> 
   const session = await resolver(request);
   if (!session?.user) {
     return { ok: false, status: 401, error: "Unauthorized" };
+  }
+
+  if (session.session?.id) {
+    const assurance = await getSessionAssurance(session.session.id);
+    if (!assurance) {
+      return { ok: false, status: 403, error: "Session assurance required" };
+    }
   }
 
   const [membership] = await db

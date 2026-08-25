@@ -395,6 +395,46 @@ test("concurrent appointments for the same staff member cannot both succeed (dou
   });
 });
 
+test("learner availability is real, bounded, user-scoped, and concurrent booking has exactly one winner", { skip: !url }, async () => {
+  await withClient(async (client) => {
+    process.env.TEST_DATABASE_URL = url;
+    const { createOrganization } = await import("../../src/server/services/organizations");
+    const { getLearnerAvailability, bookLearnerAppointment } = await import("../../src/server/services/learner-appointments");
+
+    const adminId = await seedUser(client);
+    const providerId = await seedUser(client);
+    const learnerA = await seedUser(client);
+    const learnerB = await seedUser(client);
+    const org = await createOrganization(adminId, { name: "Learner Apt Org", slug: `learner-apt-${crypto.randomUUID()}` }, providerId);
+    const contactA = await seedContact(adminId, org.id, "Amal", "Learner");
+    const contactB = await seedContact(adminId, org.id, "Sami", "Learner");
+    await client.query("update crm_contact set linked_user_id = $1 where id = $2", [learnerA, contactA.id]);
+    await client.query("update crm_contact set linked_user_id = $1 where id = $2", [learnerB, contactB.id]);
+
+    const start = dayStart(3);
+    const tunis = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Tunis", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(start);
+    const part = (type: string) => Number(tunis.find((item) => item.type === type)?.value);
+    const weekday = new Date(Date.UTC(part("year"), part("month") - 1, part("day"))).getUTCDay();
+    const startMinute = part("hour") * 60 + part("minute");
+    const ruleId = crypto.randomUUID();
+    await client.query(`insert into appointment_availability_rule (id, organization_id, assigned_to_user_id, weekday, start_minute, end_minute, duration_minutes, type, timezone, active) values ($1,$2,$3,$4,$5,$6,60,'FOLLOW_UP','Africa/Tunis',true)`, [ruleId, org.id, providerId, weekday, startMinute, startMinute + 60]);
+
+    const slots = await getLearnerAvailability(learnerA, new Date(start.getTime() - 60_000), new Date(start.getTime() + 2 * 60 * 60_000));
+    assert.equal(slots.length, 1);
+    assert.equal(slots[0].ruleId, ruleId);
+    assert.equal(slots[0].timezone, "Africa/Tunis");
+    assert.deepEqual(await getLearnerAvailability(adminId, new Date(start.getTime() - 60_000), new Date(start.getTime() + 2 * 60 * 60_000)), [], "a user without a linked contact must see no slots");
+    assert.deepEqual(await getLearnerAvailability(learnerA, start, new Date(start.getTime() + 50 * 86_400_000)), [], "an over-broad calendar range must be rejected");
+
+    const [a, b] = await Promise.all([bookLearnerAppointment(learnerA, ruleId, start), bookLearnerAppointment(learnerB, ruleId, start)]);
+    assert.deepEqual([a.kind, b.kind].sort(), ["ok", "slot_conflict"]);
+    const count = await client.query("select count(*)::int as n from appointment where organization_id=$1 and assigned_to_user_id=$2 and start_at=$3", [org.id, providerId, start]);
+    assert.equal(count.rows[0].n, 1);
+
+    await cleanup(client, [org.id], [adminId, providerId, learnerA, learnerB]);
+  });
+});
+
 test("DB rejects an appointment with an invalid status or an inverted time range", { skip: !url }, async () => {
   await withClient(async (client) => {
     process.env.TEST_DATABASE_URL = url;

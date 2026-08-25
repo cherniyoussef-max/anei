@@ -11,6 +11,8 @@ import type { NormalizedInboundMessage, NormalizedStatusUpdate, NormalizedWebhoo
 import { webhookStableKey } from "@/server/whatsapp/webhook";
 import { normalizeWhatsAppPhone, phonesMatch } from "@/server/whatsapp/phone";
 import { canApplyMessageStatus, type WhatsAppMessageStatus } from "@/modules/whatsapp/domain/permissions";
+import { enqueueOutboxEvent } from "@/server/queue/outbox";
+import { whatsappAiRepliesConfigured } from "@/server/env";
 
 type DbClient = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -73,18 +75,21 @@ async function processInbound(tx: DbClient, event: NormalizedInboundMessage): Pr
 
   const contactId = await resolveContactForWaId(tx, accountRow.organizationId, event.senderWaId);
 
-  await tx.insert(whatsappMessage).values({
-    organizationId: accountRow.organizationId,
-    accountId: accountRow.id,
-    contactId,
-    direction: "INBOUND",
-    messageType: event.messageType,
-    status: "DELIVERED", // Meta delivered it to us; inbound delivery state is authoritative
-    providerMessageId: event.messageId,
-    fromPhone: event.senderWaId,
-    textPreview: event.textPreview,
-    deliveredAt: event.timestamp ? new Date(event.timestamp * 1000) : new Date(),
-  });
+  const [inserted] = await tx
+    .insert(whatsappMessage)
+    .values({
+      organizationId: accountRow.organizationId,
+      accountId: accountRow.id,
+      contactId,
+      direction: "INBOUND",
+      messageType: event.messageType,
+      status: "DELIVERED", // Meta delivered it to us; inbound delivery state is authoritative
+      providerMessageId: event.messageId,
+      fromPhone: event.senderWaId,
+      textPreview: event.textPreview,
+      deliveredAt: event.timestamp ? new Date(event.timestamp * 1000) : new Date(),
+    })
+    .returning({ id: whatsappMessage.id });
 
   if (contactId) {
     await tx.insert(crmContactActivity).values({
@@ -93,6 +98,22 @@ async function processInbound(tx: DbClient, event: NormalizedInboundMessage): Pr
       type: "WHATSAPP_MESSAGE_RECEIVED",
       metadata: { messageId: event.messageId, direction: "INBOUND" },
     });
+
+    // Dev/staging only (whatsappAiRepliesConfigured is always false in
+    // production, see src/server/env.ts). A text message with no resolvable
+    // reply content (e.g. an image/location-only inbound) still gets a
+    // best-effort reply attempt — the handler falls back to a safe generic
+    // response rather than skipping silently.
+    if (event.messageType === "TEXT" && whatsappAiRepliesConfigured) {
+      await enqueueOutboxEvent(tx, {
+        organizationId: accountRow.organizationId,
+        aggregateType: "whatsapp_message",
+        aggregateId: inserted.id,
+        eventType: "WHATSAPP_AI_REPLY",
+        payload: { inboundMessageId: inserted.id },
+        idempotencyKey: `whatsapp-ai-reply:${inserted.id}`,
+      });
+    }
   }
 
   return "processed";

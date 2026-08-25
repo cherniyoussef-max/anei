@@ -158,7 +158,7 @@ test("RAG: PgVectorRetriever tenant isolation - Org B cannot retrieve Org A priv
       sourceType: "COURSE",
       sourceId: "course-a",
       title: "Org A Course Document",
-      visibility: "PLATFORM",
+      visibility: "ORGANIZATION",
       contentHash: "hash-a-" + crypto.randomUUID(),
       status: "INDEXED",
       metadata: { courseId: "course-a" },
@@ -170,7 +170,7 @@ test("RAG: PgVectorRetriever tenant isolation - Org B cannot retrieve Org A priv
       sourceType: "COURSE",
       sourceId: "course-b",
       title: "Org B Course Document",
-      visibility: "PLATFORM",
+      visibility: "ORGANIZATION",
       contentHash: "hash-b-" + crypto.randomUUID(),
       status: "INDEXED",
       metadata: { courseId: "course-b" },
@@ -229,6 +229,7 @@ test("RAG: PgVectorRetriever tenant isolation - Org B cannot retrieve Org A priv
       query: "test query content",
       locale: "fr",
       userId: userA,
+      organizationId: orgA,
       courseId: "course-a",
       limit: 5,
     });
@@ -237,6 +238,7 @@ test("RAG: PgVectorRetriever tenant isolation - Org B cannot retrieve Org A priv
       query: "test query content org b",
       locale: "fr",
       userId: userB,
+      organizationId: orgB,
       courseId: "course-b",
       limit: 5,
     });
@@ -245,6 +247,7 @@ test("RAG: PgVectorRetriever tenant isolation - Org B cannot retrieve Org A priv
       query: "test query content",
       locale: "fr",
       userId: userA,
+      organizationId: orgB,
       courseId: "course-b",
       limit: 5,
     });

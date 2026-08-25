@@ -1,12 +1,30 @@
 import "server-only";
 import { sql } from "drizzle-orm";
 import { db } from "@/server/db";
+import { getRedis } from "@/server/cache/redis";
 
 export type AdminPeriod = "7d" | "30d" | "90d" | "365d";
 const periodDays: Record<AdminPeriod, number> = { "7d": 7, "30d": 30, "90d": 90, "365d": 365 };
 
 export function parseAdminPeriod(value?: string): AdminPeriod {
   return value && value in periodDays ? value as AdminPeriod : "30d";
+}
+
+/**
+ * Cache-aside helper for the dashboard overview queries, matching the
+ * pattern in admin-users.ts. These are heavy multi-subquery aggregations
+ * hit on every /admin landing-page load; 60s TTL keeps the dashboard close
+ * to real-time while avoiding a full re-aggregation on every request.
+ */
+async function withDashboardCache<T>(cacheKey: string, compute: () => Promise<T>): Promise<T> {
+  const redis = await getRedis();
+  if (redis) {
+    const cached = await redis.get(cacheKey);
+    if (cached) return JSON.parse(cached) as T;
+  }
+  const value = await compute();
+  if (redis) await redis.set(cacheKey, JSON.stringify(value), { EX: 60 });
+  return value;
 }
 
 type OverviewRow = {
@@ -17,6 +35,10 @@ type OverviewRow = {
 };
 
 export async function getAdminOverview(period: AdminPeriod) {
+  return withDashboardCache(`admin:overview:${period}`, () => computeAdminOverview(period));
+}
+
+async function computeAdminOverview(period: AdminPeriod) {
   const days = periodDays[period];
   const result = await db.execute<OverviewRow>(sql`
     select
@@ -56,6 +78,11 @@ export async function getAdminOverview(period: AdminPeriod) {
 
 type GrowthRow = { bucket: Date; users: number; enrollments: number };
 export async function getAdminGrowth(period: AdminPeriod) {
+  const rows = await withDashboardCache(`admin:growth:${period}`, () => computeAdminGrowth(period));
+  return rows.map((row) => ({ ...row, date: new Date(row.date) }));
+}
+
+async function computeAdminGrowth(period: AdminPeriod) {
   const days = periodDays[period];
   const result = await db.execute<GrowthRow>(sql`
     with buckets as (
@@ -76,8 +103,12 @@ export async function getAdminGrowth(period: AdminPeriod) {
   return result.rows.map((row) => ({ date: row.bucket, users: row.users, enrollments: row.enrollments }));
 }
 
-type DistributionRow = { label: string; value: number };
+type DistributionRow = { label: string; value: number; id?: string };
 export async function getAdminDistributions() {
+  return withDashboardCache("admin:distributions", computeAdminDistributions);
+}
+
+async function computeAdminDistributions() {
   const [roles, providers, courses] = await Promise.all([
     db.execute<DistributionRow>(sql`select role label, count(*)::int value from "user" group by role order by value desc`),
     db.execute<DistributionRow>(sql`
@@ -86,7 +117,7 @@ export async function getAdminDistributions() {
       from account group by 1 order by value desc
     `),
     db.execute<DistributionRow>(sql`
-      select c.title_fr label, count(e.id)::int value from courses c
+      select c.id, c.title_fr label, count(e.id)::int value from courses c
       left join enrollments e on e.course_id = c.id
       group by c.id, c.title_fr order by value desc, c.title_fr limit 6
     `),

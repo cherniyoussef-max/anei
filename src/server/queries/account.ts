@@ -1,40 +1,142 @@
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, lt } from "drizzle-orm";
 import { db } from "@/server/db";
-import { certificates, courseModules, courses, enrollments, lessonProgress, lessons, notifications, orders, purchases, resources, webinarRegistrations, webinars } from "@/server/db/schema";
+import { appointment, certificates, courseModules, courses, crmContact, enrollments, learningAssessment, learningAttempt, lessonProgress, lessons, notifications, purchases, resources, user, webinarRegistrations, webinars } from "@/server/db/schema";
 import { env } from "@/server/env";
 import { signedMediaUrl } from "@/server/storage";
 
 export async function getDashboardData(userId: string) {
-  const [enrollmentRows, purchaseRows, certificateRows, upcomingWebinars, userNotifications] = await Promise.all([
+  const [enrollmentRows, purchaseRows, certificateRows, upcomingWebinars] = await Promise.all([
     db
-      .select({ enrollment: enrollments, course: courses })
+      .select({
+        enrollment: {
+          id: enrollments.id,
+          progressPercent: enrollments.progressPercent,
+          status: enrollments.status,
+        },
+        course: {
+          id: courses.id,
+          slug: courses.slug,
+          titleFr: courses.titleFr,
+          titleAr: courses.titleAr,
+          category: courses.category,
+          coverImage: courses.coverImage,
+        },
+      })
       .from(enrollments)
       .innerJoin(courses, eq(enrollments.courseId, courses.id))
       .where(eq(enrollments.userId, userId))
-      .orderBy(desc(enrollments.enrolledAt)),
+      .orderBy(desc(enrollments.enrolledAt))
+      .limit(24),
     db
-      .select({ purchase: purchases, resource: resources, order: orders })
+      .select({
+        purchase: { grantedAt: purchases.grantedAt },
+        resource: {
+          id: resources.id,
+          titleFr: resources.titleFr,
+          titleAr: resources.titleAr,
+          descriptionFr: resources.descriptionFr,
+          descriptionAr: resources.descriptionAr,
+          type: resources.type,
+          coverImage: resources.coverImage,
+        },
+      })
       .from(purchases)
       .leftJoin(resources, eq(purchases.resourceId, resources.id))
-      .innerJoin(orders, eq(purchases.orderId, orders.id))
       .where(eq(purchases.userId, userId))
-      .orderBy(desc(purchases.grantedAt)),
+      .orderBy(desc(purchases.grantedAt))
+      .limit(20),
     db
-      .select({ certificate: certificates, course: courses })
+      .select({
+        certificate: { id: certificates.id, code: certificates.code, issuedAt: certificates.issuedAt, fileUrl: certificates.fileUrl },
+        course: { titleFr: courses.titleFr, titleAr: courses.titleAr },
+      })
       .from(certificates)
       .innerJoin(courses, eq(certificates.courseId, courses.id))
       .where(eq(certificates.userId, userId))
-      .orderBy(desc(certificates.issuedAt)),
+      .orderBy(desc(certificates.issuedAt))
+      .limit(20),
     db
-      .select({ registration: webinarRegistrations, webinar: webinars })
+      .select({
+        webinar: {
+          id: webinars.id,
+          titleFr: webinars.titleFr,
+          titleAr: webinars.titleAr,
+          startsAt: webinars.startsAt,
+          trainerName: webinars.trainerName,
+          meetingUrl: webinars.meetingUrl,
+        },
+      })
       .from(webinarRegistrations)
       .innerJoin(webinars, eq(webinarRegistrations.webinarId, webinars.id))
-      .where(eq(webinarRegistrations.userId, userId))
-      .orderBy(asc(webinars.startsAt)),
-    db.select().from(notifications).where(eq(notifications.userId, userId)).orderBy(desc(notifications.createdAt)).limit(8),
+      .where(and(eq(webinarRegistrations.userId, userId), gte(webinars.startsAt, new Date())))
+      .orderBy(asc(webinars.startsAt))
+      .limit(4),
   ]);
 
-  return { enrollmentRows, purchaseRows, certificateRows, upcomingWebinars, notifications: userNotifications };
+  return { enrollmentRows, purchaseRows, certificateRows, upcomingWebinars };
+}
+
+export async function getUnreadNotificationCount(userId: string) {
+  const [row] = await db.select({ value: count() }).from(notifications).where(and(eq(notifications.userId, userId), eq(notifications.read, false)));
+  return row?.value ?? 0;
+}
+
+export async function getLearnerNotifications(userId: string, limit = 30) {
+  return db.select({ id: notifications.id, title: notifications.title, body: notifications.body, href: notifications.href, read: notifications.read, createdAt: notifications.createdAt }).from(notifications).where(eq(notifications.userId, userId)).orderBy(desc(notifications.createdAt)).limit(Math.min(50, Math.max(1, limit)));
+}
+
+export async function getLearnerAppointments(userId: string, history = false, limit = 20) {
+  const now = new Date();
+  return db
+    .select({
+      id: appointment.id,
+      type: appointment.type,
+      startAt: appointment.startAt,
+      endAt: appointment.endAt,
+      status: appointment.status,
+      assignedToUserId: appointment.assignedToUserId,
+      assignedToName: user.name,
+    })
+    .from(appointment)
+    .innerJoin(crmContact, and(eq(appointment.contactId, crmContact.id), eq(appointment.organizationId, crmContact.organizationId)))
+    .innerJoin(user, eq(appointment.assignedToUserId, user.id))
+    .where(and(eq(crmContact.linkedUserId, userId), history ? lt(appointment.startAt, now) : gte(appointment.startAt, now)))
+    .orderBy(history ? desc(appointment.startAt) : asc(appointment.startAt))
+    .limit(Math.min(50, Math.max(1, limit)));
+}
+
+export async function getLearnerCoursesPage(userId: string, limit = 24) {
+  return db.select({
+    enrollment: { id: enrollments.id, progressPercent: enrollments.progressPercent, status: enrollments.status },
+    course: { id: courses.id, slug: courses.slug, titleFr: courses.titleFr, titleAr: courses.titleAr, category: courses.category },
+  }).from(enrollments).innerJoin(courses, eq(enrollments.courseId, courses.id)).where(eq(enrollments.userId, userId)).orderBy(desc(enrollments.enrolledAt)).limit(Math.min(48, Math.max(1, limit)));
+}
+
+export async function getLearnerResourcesPage(userId: string, limit = 30) {
+  return db.select({
+    purchase: { grantedAt: purchases.grantedAt },
+    resource: { id: resources.id, titleFr: resources.titleFr, titleAr: resources.titleAr, descriptionFr: resources.descriptionFr, descriptionAr: resources.descriptionAr, type: resources.type },
+  }).from(purchases).innerJoin(resources, eq(purchases.resourceId, resources.id)).where(eq(purchases.userId, userId)).orderBy(desc(purchases.grantedAt)).limit(Math.min(50, Math.max(1, limit)));
+}
+
+export async function getLearnerCertificatesPage(userId: string, limit = 30) {
+  return db.select({
+    certificate: { id: certificates.id, code: certificates.code, issuedAt: certificates.issuedAt, fileUrl: certificates.fileUrl },
+    course: { titleFr: courses.titleFr, titleAr: courses.titleAr },
+  }).from(certificates).innerJoin(courses, eq(certificates.courseId, courses.id)).where(eq(certificates.userId, userId)).orderBy(desc(certificates.issuedAt)).limit(Math.min(50, Math.max(1, limit)));
+}
+
+export async function getOwnedCertificateForDownload(userId: string, certificateId: string) {
+  const [row] = await db.select({
+    id: certificates.id,
+    code: certificates.code,
+    fileUrl: certificates.fileUrl,
+    courseTitleFr: courses.titleFr,
+  }).from(certificates)
+    .innerJoin(courses, eq(certificates.courseId, courses.id))
+    .where(and(eq(certificates.id, certificateId), eq(certificates.userId, userId)))
+    .limit(1);
+  return row ?? null;
 }
 
 export async function getLearningCourse(userId: string, slug: string) {
@@ -46,19 +148,28 @@ export async function getLearningCourse(userId: string, slug: string) {
     .limit(1);
   if (!row) return null;
 
-  const [courseLessons, modules, progress] = await Promise.all([
+  const [courseLessons, modules, progress, assessments] = await Promise.all([
     db.select().from(lessons).where(eq(lessons.courseId, row.course.id)).orderBy(asc(lessons.position)),
     db.select().from(courseModules).where(eq(courseModules.courseId, row.course.id)).orderBy(asc(courseModules.position)),
     db.select().from(lessonProgress).where(eq(lessonProgress.enrollmentId, row.enrollment.id)),
+    db.select().from(learningAssessment).where(and(eq(learningAssessment.courseId, row.course.id), eq(learningAssessment.published, true))).orderBy(asc(learningAssessment.createdAt)),
   ]);
   const resolvedLessons = env.STORAGE_PROVIDER === "s3-compatible"
     ? await Promise.all(courseLessons.map(async (lesson) => ({
         ...lesson,
-        videoUrl: lesson.videoUrl ? await signedMediaUrl(lesson.videoUrl) : null,
-        documentUrl: lesson.documentUrl ? await signedMediaUrl(lesson.documentUrl) : null,
+        videoUrl: lesson.videoUrl && !/^(?:https?:\/\/|\/)/.test(lesson.videoUrl) ? await signedMediaUrl(lesson.videoUrl) : lesson.videoUrl,
+        documentUrl: lesson.documentUrl && !/^(?:https?:\/\/|\/)/.test(lesson.documentUrl) ? await signedMediaUrl(lesson.documentUrl) : lesson.documentUrl,
       })))
     : courseLessons;
-  return { ...row, lessons: resolvedLessons, modules, progress };
+  const attempts = assessments.length ? await db.select().from(learningAttempt)
+    .where(and(eq(learningAttempt.userId, userId), inArray(learningAttempt.assessmentId, assessments.map((item) => item.id))))
+    .orderBy(desc(learningAttempt.startedAt)) : [];
+  const assessmentsWithAttempts = assessments.map((assessment) => {
+    const assessmentAttempts = attempts.filter((attempt) => attempt.assessmentId === assessment.id);
+    const bestGraded = assessmentAttempts.filter((attempt) => attempt.status === "GRADED").sort((a, b) => (b.percentage ?? 0) - (a.percentage ?? 0))[0] ?? null;
+    return { assessment, attemptCount: assessmentAttempts.length, bestAttempt: bestGraded };
+  });
+  return { ...row, lessons: resolvedLessons, modules, progress, assessments: assessmentsWithAttempts };
 }
 
 export async function getLearningCourses(userId: string) {

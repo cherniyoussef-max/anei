@@ -11,12 +11,14 @@ export function AccountActions({ locale }: { locale: Locale }) {
   const { data, isPending } = useSession();
   const router = useRouter();
   const ar = locale === "ar";
+  const en = locale === "en";
   const [loggingOut, setLoggingOut] = useState(false);
   const [logoutFailed, setLogoutFailed] = useState(false);
-  if (isPending) return <><Link className="btn btn-ghost btn-sm desktop-action" href={`/${locale}/login`}>{ar ? "تسجيل الدخول" : "Se connecter"}</Link><Link className="btn btn-primary btn-sm desktop-action" href={`/${locale}/register`}>{ar ? "إنشاء حساب" : "Créer un compte"}</Link></>;
-  if (!data?.user) return <><Link className="btn btn-ghost btn-sm desktop-action" href={`/${locale}/login`}>{ar ? "تسجيل الدخول" : "Se connecter"}</Link><Link className="btn btn-primary btn-sm desktop-action" href={`/${locale}/register`}>{ar ? "إنشاء حساب" : "Créer un compte"}</Link></>;
+  if (isPending) return <><Link className="btn btn-ghost btn-sm desktop-action" href={`/${locale}/login`}>{ar ? "تسجيل الدخول" : en ? "Sign in" : "Se connecter"}</Link><Link className="btn btn-primary btn-sm desktop-action" href={`/${locale}/register`}>{ar ? "إنشاء حساب" : en ? "Create account" : "Créer un compte"}</Link></>;
+  if (!data?.user) return <><Link className="btn btn-ghost btn-sm desktop-action" href={`/${locale}/login`}>{ar ? "تسجيل الدخول" : en ? "Sign in" : "Se connecter"}</Link><Link className="btn btn-primary btn-sm desktop-action" href={`/${locale}/register`}>{ar ? "إنشاء حساب" : en ? "Create account" : "Créer un compte"}</Link></>;
 
-  const initial = data.user.name?.trim().charAt(0).toUpperCase() || "U";
+  const firstName = data.user.name?.trim().split(/\s+/)[0] || (ar ? "حسابي" : en ? "Account" : "Compte");
+  const initial = firstName.charAt(0).toLocaleUpperCase(locale);
   async function logout() {
     if (loggingOut) return;
     setLoggingOut(true);
@@ -30,5 +32,5 @@ export function AccountActions({ locale }: { locale: Locale }) {
     router.push(`/${locale}`);
     router.refresh();
   }
-  return <div className="account-actions desktop-action"><Link className="account-chip" href={`/${locale}/dashboard`}><span>{initial}</span><span>{data.user.name}</span></Link><button className="btn btn-ghost btn-sm logout-button" type="button" onClick={logout} disabled={loggingOut} aria-busy={loggingOut}><Icon name="arrow" size={16}/><span>{loggingOut ? (ar ? "جارٍ الخروج..." : "Déconnexion…") : (ar ? "تسجيل الخروج" : "Se déconnecter")}</span></button>{logoutFailed ? <span className="logout-error" role="alert">{ar ? "تعذر تسجيل الخروج." : "Déconnexion impossible."}</span> : null}</div>;
+  return <details className="account-actions account-menu desktop-action"><summary className="account-chip" aria-label={ar ? `قائمة حساب ${firstName}` : en ? `${firstName} account menu` : `Menu du compte de ${firstName}`}><span>{initial}</span><span>{firstName}</span><Icon name="chevron" size={15}/></summary><div className="account-menu-panel"><Link href={`/${locale}/dashboard`}><Icon name="graduation" size={17}/>{ar ? "مساحتي التعليمية" : en ? "My learning" : "Mon espace"}</Link><Link href={`/${locale}/dashboard/profil`}><Icon name="user" size={17}/>{ar ? "ملفي الشخصي" : en ? "My profile" : "Mon profil"}</Link><Link href={`/${locale}/dashboard/notifications`}><Icon name="bell" size={17}/>{ar ? "الإشعارات" : en ? "Notifications" : "Notifications"}</Link><button className="account-menu-signout" type="button" onClick={logout} disabled={loggingOut} aria-busy={loggingOut}><Icon name="arrow" size={16}/>{loggingOut ? (ar ? "جارٍ الخروج..." : en ? "Signing out..." : "Déconnexion...") : (ar ? "تسجيل الخروج" : en ? "Sign out" : "Se déconnecter")}</button>{logoutFailed ? <span className="logout-error" role="alert">{ar ? "تعذر تسجيل الخروج." : en ? "Unable to sign out." : "Déconnexion impossible."}</span> : null}</div></details>;
 }

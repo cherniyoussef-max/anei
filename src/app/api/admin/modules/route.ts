@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { adminMutationRateLimit, getAdminSession } from "@/server/auth/admin";
+import { adminMutationRateLimit, getAdminSessionFor } from "@/server/auth/admin";
 import { db } from "@/server/db";
 import { auditLogs, courseModules, courses } from "@/server/db/schema";
 import { isTrustedMutation } from "@/server/security/origin";
@@ -18,7 +18,7 @@ const schema = z.object({
 
 export async function POST(request: Request) {
   if (!isTrustedMutation(request)) return NextResponse.json({ error: "UNTRUSTED_ORIGIN" }, { status: 403 });
-  const session = await getAdminSession();
+  const session = await getAdminSessionFor("courses.update");
   if (!session) return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
   const rate = await adminMutationRateLimit(session.user.id);
   if (!rate.allowed) return NextResponse.json({ error: "RATE_LIMITED" }, { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } });

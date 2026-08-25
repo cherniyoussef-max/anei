@@ -15,21 +15,22 @@ export function googleAuthErrorMessage(locale: Locale, code?: string | null) {
   if (!code) return null;
   const normalized = code.toLowerCase().replaceAll(" ", "_");
   const ar = locale === "ar";
+  const en = locale === "en";
 
   if (normalized === "access_denied") {
-    return ar ? "تم إلغاء تسجيل الدخول عبر Google." : "La connexion Google a été annulée.";
+    return ar ? "تم إلغاء تسجيل الدخول عبر Google." : en ? "Google sign-in was cancelled." : "La connexion Google a été annulée.";
   }
   if (normalized.includes("account") || normalized.includes("email")) {
     return ar
       ? "تعذر ربط حساب Google بهذا الحساب بأمان. سجّل الدخول بالطريقة المعتادة ثم اربط Google من إعدادات الحساب."
-      : "Ce compte Google ne peut pas être associé automatiquement en toute sécurité. Connectez-vous normalement, puis associez Google depuis les paramètres.";
+      : en ? "This Google account cannot be linked automatically. Sign in normally, then connect Google from your account settings." : "Ce compte Google ne peut pas être associé automatiquement en toute sécurité. Connectez-vous normalement, puis associez Google depuis les paramètres.";
   }
   if (GOOGLE_ERROR_CODES.has(normalized) || normalized.includes("oauth") || normalized.includes("state")) {
     return ar
       ? "تعذر إتمام تسجيل الدخول عبر Google. أعد المحاولة أو استخدم البريد الإلكتروني."
-      : "La connexion Google n’a pas abouti. Réessayez ou utilisez votre adresse e-mail.";
+      : en ? "Google sign-in could not be completed. Try again or use your email address." : "La connexion Google n’a pas abouti. Réessayez ou utilisez votre adresse e-mail.";
   }
   return ar
     ? "تعذر إتمام تسجيل الدخول. أعد المحاولة."
-    : "La connexion n’a pas abouti. Veuillez réessayer.";
+    : en ? "Sign-in could not be completed. Please try again." : "La connexion n’a pas abouti. Veuillez réessayer.";
 }

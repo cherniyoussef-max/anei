@@ -1,0 +1,1 @@
+export default function LoadingCertificates() { return <div className="learner-page-skeleton" aria-busy="true" aria-label="Chargement des certificats"><span className="student-skeleton learner-skeleton-title" /><div className="learner-skeleton-grid"><span className="student-skeleton" /><span className="student-skeleton" /></div></div>; }

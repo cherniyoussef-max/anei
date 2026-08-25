@@ -10,6 +10,8 @@ import {
   type ProviderTemplate,
   type SendTemplateInput,
   type SendTemplateResult,
+  type SendTextInput,
+  type SendTextResult,
   type WhatsAppProvider,
 } from "@/server/whatsapp/contracts";
 
@@ -96,6 +98,41 @@ export const metaWhatsAppCloudProvider: WhatsAppProvider = {
             ? [{ type: "body", parameters: input.bodyParameters }]
             : [],
         },
+      }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
+    });
+
+    let payload: SendResponse = {};
+    try {
+      payload = (await response.json()) as SendResponse;
+    } catch {
+      throw new WhatsAppProviderError(`META_INVALID_RESPONSE (${response.status})`, "invalid_response");
+    }
+
+    const providerMessageId = payload.messages?.[0]?.id;
+    if (!response.ok || !providerMessageId) {
+      throw mapSendError(response, payload);
+    }
+    return { providerMessageId };
+  },
+
+  async sendTextMessage(input: SendTextInput): Promise<SendTextResult> {
+    if (!whatsappConfigured) throw new WhatsAppNotConfiguredError();
+    const url = `${whatsappApiBaseUrl}/${whatsappApiVersion}/${encodeURIComponent(input.phoneNumberId)}/messages`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: authorizationHeader(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: input.to,
+        type: "text",
+        text: { preview_url: false, body: input.body },
       }),
       cache: "no-store",
       signal: AbortSignal.timeout(10_000),

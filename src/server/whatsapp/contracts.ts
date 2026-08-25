@@ -29,6 +29,19 @@ export type SendTemplateResult = {
   providerMessageId: string;
 };
 
+export type SendTextInput = {
+  /** Organization-scoped provider account (phone number id) — resolved server-side, never client-supplied. */
+  phoneNumberId: string;
+  /** Destination wa_id in digits-only canonical form. */
+  to: string;
+  /** Bounded plain-text body. Meta only accepts free-form text within its 24h customer-service session window. */
+  body: string;
+};
+
+export type SendTextResult = {
+  providerMessageId: string;
+};
+
 /** Template catalog entry returned by the provider's message-templates fetch. */
 export type ProviderTemplate = {
   name: string;
@@ -43,6 +56,7 @@ export interface WhatsAppProvider {
   readonly name: WhatsAppProviderName;
   isConfigured(): boolean;
   sendTemplateMessage(input: SendTemplateInput): Promise<SendTemplateResult>;
+  sendTextMessage(input: SendTextInput): Promise<SendTextResult>;
   listTemplates(wabaId: string): Promise<ProviderTemplate[]>;
 }
 

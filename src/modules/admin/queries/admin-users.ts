@@ -37,6 +37,33 @@ type UserListRow = {
   enrollments: number; completion: number; total_count: number;
 };
 
+type AdminUsersPayload = {
+  items: UserListRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  filters: ReturnType<typeof normalize>;
+};
+
+type JsonRecord = Record<string, unknown>;
+type AdminUserDetailPayload = {
+  user: DetailRow;
+  enrollments: JsonRecord[];
+  sessions: JsonRecord[];
+  certificates: JsonRecord[];
+  videoProgress: JsonRecord[];
+};
+
+function parseCached<T>(value: string): T {
+  return JSON.parse(value) as T;
+}
+
+function reviveDate(row: JsonRecord, key: string) {
+  const value = row[key];
+  if (typeof value === "string" || typeof value === "number") row[key] = new Date(value);
+}
+
 export async function getAdminUsers(input: AdminUserFilters = {}) {
   const filter = normalize(input);
   const cacheKey = `admin:users:list:${JSON.stringify(filter)}`;
@@ -45,12 +72,12 @@ export async function getAdminUsers(input: AdminUserFilters = {}) {
   if (redis) {
     const cached = await redis.get(cacheKey);
     if (cached) {
-      const parsed = JSON.parse(cached);
-      parsed.items.forEach((item: any) => {
+      const parsed = parseCached<AdminUsersPayload>(cached);
+      parsed.items.forEach((item) => {
         if (item.joined_at) item.joined_at = new Date(item.joined_at);
         if (item.last_activity) item.last_activity = new Date(item.last_activity);
       });
-      return parsed as { items: UserListRow[]; total: number; page: number; pageSize: number; totalPages: number; filters: ReturnType<typeof normalize> };
+      return parsed;
     }
   }
 
@@ -108,25 +135,14 @@ export async function getAdminUserDetail(id: string) {
   if (redis) {
     const cached = await redis.get(cacheKey);
     if (cached) {
-      const parsed = JSON.parse(cached);
+      const parsed = parseCached<AdminUserDetailPayload>(cached);
       if (parsed.user?.joined_at) parsed.user.joined_at = new Date(parsed.user.joined_at);
       if (parsed.user?.last_activity) parsed.user.last_activity = new Date(parsed.user.last_activity);
-      parsed.enrollments.forEach((e: any) => {
-        if (e.enrolled_at) e.enrolled_at = new Date(e.enrolled_at);
-        if (e.completed_at) e.completed_at = new Date(e.completed_at);
-      });
-      parsed.sessions.forEach((s: any) => {
-        if (s.created_at) s.created_at = new Date(s.created_at);
-        if (s.updated_at) s.updated_at = new Date(s.updated_at);
-        if (s.expires_at) s.expires_at = new Date(s.expires_at);
-      });
-      parsed.certificates.forEach((c: any) => {
-        if (c.issued_at) c.issued_at = new Date(c.issued_at);
-      });
-      parsed.videoProgress.forEach((v: any) => {
-        if (v.updated_at) v.updated_at = new Date(v.updated_at);
-      });
-      return parsed as { user: DetailRow; enrollments: Record<string, unknown>[]; sessions: Record<string, unknown>[]; certificates: Record<string, unknown>[]; videoProgress: Record<string, unknown>[] };
+      parsed.enrollments.forEach((row) => { reviveDate(row, "enrolled_at"); reviveDate(row, "completed_at"); });
+      parsed.sessions.forEach((row) => { reviveDate(row, "created_at"); reviveDate(row, "updated_at"); reviveDate(row, "expires_at"); });
+      parsed.certificates.forEach((row) => reviveDate(row, "issued_at"));
+      parsed.videoProgress.forEach((row) => reviveDate(row, "updated_at"));
+      return parsed;
     }
   }
 

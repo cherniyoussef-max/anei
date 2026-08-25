@@ -1,4 +1,4 @@
-export type Locale = "fr" | "ar";
+export type Locale = "en" | "ar" | "fr";
 
 export type Course = {
   slug: string;

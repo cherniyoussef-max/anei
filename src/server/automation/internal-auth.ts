@@ -23,7 +23,7 @@ export type InternalAuthResult =
  * public internet; see docs/premium/N8N_SETUP.md for the network boundary).
  */
 export async function authenticateInternalAutomation(request: Request): Promise<InternalAuthResult> {
-  const preAuthRate = await consumeRateLimit(`automation:preauth:${requestFingerprint(request)}`, 120, 60);
+  const preAuthRate = await consumeRateLimit(`automation:preauth:${requestFingerprint(request)}`, 120, 60, { fallbackLimit: 20 });
   if (!preAuthRate.allowed) {
     return { ok: false, response: json(429, { error: "Too many requests" }) };
   }
@@ -39,7 +39,7 @@ export async function authenticateInternalAutomation(request: Request): Promise<
     return { ok: false, response: json(401, { error: "Invalid service credential" }) };
   }
 
-  const rate = await consumeRateLimit(`automation:${credential.id}`, 300, 60);
+  const rate = await consumeRateLimit(`automation:${credential.id}`, 300, 60, { fallbackLimit: 30 });
   if (!rate.allowed) {
     return { ok: false, response: json(429, { error: "Too many requests" }) };
   }

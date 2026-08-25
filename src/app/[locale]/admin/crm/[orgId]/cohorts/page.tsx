@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { isLocale } from "@/lib/i18n";
 import { requireAdminPermission } from "@/server/auth/session";
-import { listOrganizations } from "@/server/queries/organizations";
+import { getOrganizationById } from "@/server/queries/organizations";
 import { listCohorts } from "@/server/queries/cohorts";
 import { listPublishedCourses } from "@/server/queries/catalog";
 import { AdminPageHeader } from "@/modules/admin/components/AdminPageHeader";
@@ -17,8 +17,7 @@ export default async function AdminCrmCohortsPage({ params }: { params: Promise<
   await requireAdminPermission(locale, "cohorts.manage");
   const ar = locale === "ar";
 
-  const organizations = await listOrganizations();
-  const organization = organizations.find((org) => org.id === orgId);
+  const organization = await getOrganizationById(orgId);
   if (!organization) notFound();
 
   const [cohorts, courses] = await Promise.all([listCohorts(orgId), listPublishedCourses()]);

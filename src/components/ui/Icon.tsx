@@ -23,7 +23,12 @@ export type IconName =
   | "phone"
   | "spark"
   | "chevron"
-  | "bell";
+  | "bell"
+  | "linkedin"
+  | "facebook"
+  | "instagram"
+  | "wallet"
+  | "gift";
 
 const paths: Record<IconName, React.ReactNode> = {
   arrow: <><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></>,
@@ -48,7 +53,12 @@ const paths: Record<IconName, React.ReactNode> = {
   phone: <path d="M6.5 3h3l1.4 4-2 1.5a15 15 0 0 0 6.6 6.6l1.5-2 4 1.4v3a3 3 0 0 1-3.2 3C10.3 19.7 4.3 13.7 3.5 6.2A3 3 0 0 1 6.5 3Z"/>,
   spark: <><path d="m12 2 1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8z"/><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></>,
   chevron: <path d="m9 6 6 6-6 6"/>,
-  bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></>
+  bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></>,
+  linkedin: <><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 10v7M7 7v.01M11 17v-4.5a2.5 2.5 0 0 1 5 0V17M11 10v7"/></>,
+  facebook: <><path d="M15 8h-2a2 2 0 0 0-2 2v2H9v3h2v6h3v-6h2.2l.8-3H14v-1.5c0-.5.2-1 1-1h1V6.2A15 15 0 0 0 14.5 6C12.5 6 11 7.2 11 9.5V10"/><circle cx="12" cy="12" r="9"/></>,
+  instagram: <><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17 7h.01"/></>,
+  wallet: <><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v3H5"/><path d="M3 7v11a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1h-4a2 2 0 1 0 0 4h5"/></>,
+  gift: <><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8v13M3 12h18"/><path d="M12 8c-2-3-6-3-6-.5S9 8 12 8c3 0 6-1 6-3.5S14 5 12 8Z"/></>
 };
 
 export function Icon({ name, size = 20, ...props }: SVGProps<SVGSVGElement> & { name: IconName; size?: number }) {

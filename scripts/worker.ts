@@ -3,6 +3,7 @@ import { runOutboxCycle, OUTBOX_BATCH_SIZE } from "../src/server/queue/worker-en
 import { pool } from "../src/server/db";
 import { env } from "../src/server/env";
 import { N8NAutomationClient, setN8NClient } from "../src/server/automation/contracts";
+import { reconcileStaleAutomationExecutions } from "../src/server/automation/executions";
 
 /**
  * Phase 9 outbox worker — a separate process from the Next.js web server.
@@ -40,6 +41,7 @@ async function main() {
 
   let shuttingDown = false;
   let inFlight = false;
+  let nextWatchdogAt = 0;
 
   const onSignal = () => {
     shuttingDown = true;
@@ -56,9 +58,24 @@ async function main() {
     }
     inFlight = true;
     try {
+      const cycleStartedAt = Date.now();
       const result = await runOutboxCycle({ batchSize });
       if (result.claimed > 0) {
         console.log(`[outbox-worker] cycle claimed=${result.claimed} succeeded=${result.succeeded} retried=${result.retried} terminal=${result.terminal}`);
+      }
+      if (cycleStartedAt >= nextWatchdogAt) {
+        const reconciled = await reconcileStaleAutomationExecutions({
+          now: new Date(cycleStartedAt),
+          dispatchedBefore: new Date(cycleStartedAt - env.AUTOMATION_DISPATCH_SLA_MS),
+          runningBefore: new Date(cycleStartedAt - env.AUTOMATION_RUNNING_SLA_MS),
+          limit: env.AUTOMATION_WATCHDOG_BATCH_SIZE,
+        });
+        const retryable = reconciled.filter((item) => item.classification === "RETRYABLE").length;
+        const operator = reconciled.length - retryable;
+        if (reconciled.length > 0) {
+          console.warn(`[automation-watchdog] reconciled=${reconciled.length} retryable=${retryable} operator=${operator}`);
+        }
+        nextWatchdogAt = cycleStartedAt + env.AUTOMATION_WATCHDOG_INTERVAL_MS;
       }
     } catch (error) {
       // The cycle is built to swallow per-event failures; anything reaching

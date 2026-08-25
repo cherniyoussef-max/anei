@@ -16,15 +16,15 @@ import { readFile } from "node:fs/promises";
 
 const ADMIN_PERSONAS_ROUTE = "src/app/api/admin/users/[id]/personas/route.ts";
 const ACCOUNT_PERSONAS_ROUTE = "src/app/api/account/personas/route.ts";
-const DASHBOARD_PAGE = "src/app/[locale]/dashboard/page.tsx";
-const PENDING_REVIEW_PAGE = "src/app/[locale]/pending-review/page.tsx";
+const DASHBOARD_PAGE = "src/app/[locale]/(learner)/dashboard/page.tsx";
+const PENDING_REVIEW_PAGE = "src/app/[locale]/(auth)/pending-review/page.tsx";
 
 const portalLayouts: Array<{ file: string; persona: string }> = [
-  { file: "src/app/[locale]/teacher/layout.tsx", persona: "TEACHER" },
-  { file: "src/app/[locale]/parent/layout.tsx", persona: "PARENT" },
-  { file: "src/app/[locale]/specialist/layout.tsx", persona: "SPECIALIST" },
-  { file: "src/app/[locale]/organization/layout.tsx", persona: "ORGANIZATION" },
-  { file: "src/app/[locale]/avs/espace/layout.tsx", persona: "AVS" },
+  { file: "src/app/[locale]/(site)/teacher/layout.tsx", persona: "TEACHER" },
+  { file: "src/app/[locale]/(site)/parent/layout.tsx", persona: "PARENT" },
+  { file: "src/app/[locale]/(site)/specialist/layout.tsx", persona: "SPECIALIST" },
+  { file: "src/app/[locale]/(site)/organization/layout.tsx", persona: "ORGANIZATION" },
+  { file: "src/app/[locale]/(site)/avs/espace/layout.tsx", persona: "AVS" },
 ];
 
 test("every professional/parent portal layout gates on requireActivePersona with its own persona, server-side", async () => {
@@ -44,9 +44,9 @@ test("portal layouts never authorize from client-suppliable state (profileType, 
 });
 
 test("AVS portal is placed at /avs/espace, distinct from the public /avs directory, and links back to it rather than duplicating it", async () => {
-  const source = await readFile("src/app/[locale]/avs/espace/layout.tsx", "utf8");
+  const source = await readFile("src/app/[locale]/(site)/avs/espace/layout.tsx", "utf8");
   assert.equal(source.includes("/${locale}/avs`"), true, "the AVS portal must link to the existing public directory, not reimplement it");
-  const publicDirectory = await readFile("src/app/[locale]/avs/page.tsx", "utf8");
+  const publicDirectory = await readFile("src/app/[locale]/(site)/avs/page.tsx", "utf8");
   assert.equal(publicDirectory.includes("requireActivePersona"), false, "the public AVS directory must remain unauthenticated/unchanged");
 });
 

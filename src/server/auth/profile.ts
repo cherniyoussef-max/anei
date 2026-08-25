@@ -1,0 +1,238 @@
+import "server-only";
+import { and, eq } from "drizzle-orm";
+import { z } from "zod";
+import { db } from "@/server/db";
+import { user, userProfile } from "@/server/db/schema";
+import { ensurePrimaryPersonaMembership } from "@/server/services/personas";
+import { provisionCrmContactForUser } from "@/server/services/crm-onboarding";
+import { enqueueSystemWelcomeWhatsAppMessage } from "@/server/services/whatsapp";
+import { env, whatsappAutoWelcomeConfigured } from "@/server/env";
+import { logger } from "@/server/security/logger";
+
+const namePattern = /^[\p{L}\p{M}' -]{1,80}$/u;
+const phonePattern = /^\+[1-9]\d{6,14}$/;
+
+export const TUNISIA_GOVERNORATES = [
+  "Ariana",
+  "Béja",
+  "Ben Arous",
+  "Bizerte",
+  "Gabès",
+  "Gafsa",
+  "Jendouba",
+  "Kairouan",
+  "Kasserine",
+  "Kébili",
+  "Le Kef",
+  "Mahdia",
+  "La Manouba",
+  "Médenine",
+  "Monastir",
+  "Nabeul",
+  "Sfax",
+  "Sidi Bouzid",
+  "Siliana",
+  "Sousse",
+  "Tataouine",
+  "Tozeur",
+  "Tunis",
+  "Zaghouan",
+] as const;
+
+const MIN_AGE_YEARS = 18;
+
+function isAtLeastMinAge(birthDate?: string, birthYear?: number): boolean {
+  const now = new Date();
+  if (birthDate) {
+    const cutoff = new Date(Date.UTC(now.getUTCFullYear() - MIN_AGE_YEARS, now.getUTCMonth(), now.getUTCDate()));
+    return new Date(birthDate).getTime() <= cutoff.getTime();
+  }
+  if (birthYear) return birthYear <= now.getUTCFullYear() - MIN_AGE_YEARS;
+  return true;
+}
+
+export const profileSchema = z
+  .object({
+    firstName: z.string().trim().min(1).max(80).regex(namePattern),
+    lastName: z.string().trim().min(1).max(80).regex(namePattern),
+    birthDate: z.string().datetime().optional(),
+    birthYear: z.number().int().min(1900).max(new Date().getUTCFullYear()).optional(),
+    phoneNumber: z.string().trim().regex(phonePattern),
+    country: z.string().trim().min(1).max(80),
+    governorate: z.enum(TUNISIA_GOVERNORATES),
+    city: z.string().trim().min(1).max(120),
+    preferredLocale: z.enum(["fr", "ar"]),
+    requestedPersona: z.enum(["STUDENT", "AVS", "PARENT", "TEACHER", "SPECIALIST", "ORGANIZATION"]),
+    educationLevel: z.string().trim().min(1).max(120),
+    institutionName: z.string().trim().min(1).max(160),
+    termsAccepted: z.literal(true),
+    privacyAccepted: z.literal(true),
+  })
+  .strict()
+  .refine((data) => Boolean(data.birthDate || data.birthYear), {
+    message: "birthDate_or_birthYear_required",
+    path: ["birthDate"],
+  })
+  .refine((data) => isAtLeastMinAge(data.birthDate, data.birthYear), {
+    message: "must_be_at_least_18",
+    path: ["birthDate"],
+  });
+
+function toLegacyProfileType(persona: z.infer<typeof profileSchema>["requestedPersona"]) {
+  switch (persona) {
+    case "STUDENT":
+      return "learner";
+    case "TEACHER":
+      return "teacher";
+    case "AVS":
+      return "avs";
+    case "PARENT":
+      return "parent";
+    case "SPECIALIST":
+      return "specialist";
+    case "ORGANIZATION":
+      return "institution";
+  }
+}
+
+export async function getUserProfile(userId: string) {
+  const [row] = await db.select().from(userProfile).where(eq(userProfile.userId, userId)).limit(1);
+  return row ?? null;
+}
+
+export const learnerProfileUpdateSchema = z.object({
+  firstName: z.string().trim().min(1).max(80).regex(namePattern),
+  lastName: z.string().trim().min(1).max(80).regex(namePattern),
+  country: z.string().trim().min(1).max(80),
+  governorate: z.enum(TUNISIA_GOVERNORATES),
+  city: z.string().trim().min(1).max(120),
+  preferredLocale: z.enum(["fr", "ar"]),
+  educationLevel: z.string().trim().min(1).max(120),
+  institutionName: z.string().trim().min(1).max(160),
+}).strict();
+
+export async function updateLearnerProfile(userId: string, raw: unknown) {
+  const parsed = learnerProfileUpdateSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false as const, error: "INVALID_PROFILE", details: parsed.error.flatten() };
+  const data = parsed.data;
+  const now = new Date();
+  return db.transaction(async (tx) => {
+    const [updated] = await tx.update(userProfile).set({ ...data, updatedAt: now }).where(eq(userProfile.userId, userId)).returning({ id: userProfile.id });
+    if (!updated) return { ok: false as const, error: "PROFILE_NOT_FOUND" };
+    await tx.update(user).set({ name: `${data.firstName} ${data.lastName}`.trim(), locale: data.preferredLocale, updatedAt: now }).where(eq(user.id, userId));
+    return { ok: true as const };
+  });
+}
+
+export function isOnboardingCompleted(profile: Awaited<ReturnType<typeof getUserProfile>>): boolean {
+  return Boolean(profile?.onboardingCompletedAt);
+}
+
+export async function completeUserProfile(userId: string, raw: unknown) {
+  const parsed = profileSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false as const, error: "INVALID_PROFILE", details: parsed.error.flatten() };
+  const data = parsed.data;
+  const now = new Date();
+  const birthDate = data.birthDate ? new Date(data.birthDate) : null;
+  if (birthDate && birthDate.getTime() > Date.now()) {
+    return { ok: false as const, error: "INVALID_BIRTH_DATE" };
+  }
+
+  const priorProfile = await getUserProfile(userId);
+  const isFirstCompletion = !isOnboardingCompleted(priorProfile);
+
+  await db.transaction(async (tx) => {
+    await tx
+      .insert(userProfile)
+      .values({
+        userId,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        birthDate,
+        birthYear: data.birthYear ?? null,
+        phoneNumber: data.phoneNumber ?? null,
+        country: data.country,
+        governorate: data.governorate,
+        city: data.city,
+        preferredLocale: data.preferredLocale,
+        requestedPersona: data.requestedPersona,
+        educationLevel: data.educationLevel ?? null,
+        institutionName: data.institutionName ?? null,
+        onboardingCompletedAt: now,
+        termsAcceptedAt: now,
+        privacyAcceptedAt: now,
+        updatedAt: now,
+      })
+      .onConflictDoUpdate({
+        target: userProfile.userId,
+        set: {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          birthDate,
+          birthYear: data.birthYear ?? null,
+          phoneNumber: data.phoneNumber ?? null,
+          country: data.country,
+          governorate: data.governorate,
+          city: data.city,
+          preferredLocale: data.preferredLocale,
+          requestedPersona: data.requestedPersona,
+          educationLevel: data.educationLevel ?? null,
+          institutionName: data.institutionName ?? null,
+          onboardingCompletedAt: now,
+          termsAcceptedAt: now,
+          privacyAcceptedAt: now,
+          updatedAt: now,
+        },
+      });
+
+    await tx
+      .update(user)
+      .set({
+        name: `${data.firstName} ${data.lastName}`.trim(),
+        locale: data.preferredLocale,
+        profileType: toLegacyProfileType(data.requestedPersona),
+        updatedAt: now,
+      })
+      .where(and(eq(user.id, userId)));
+  });
+
+  await ensurePrimaryPersonaMembership(userId, toLegacyProfileType(data.requestedPersona));
+
+  // CRM + WhatsApp welcome provisioning runs in its OWN transaction, strictly
+  // after the profile-save transaction has committed. Deliberately not
+  // nested inside the profile transaction: a Postgres-level error here (e.g.
+  // a constraint violation) would otherwise poison and roll back the
+  // learner's own profile save, which must never depend on CRM/WhatsApp
+  // being configured or healthy. `provisionCrmContactForUser` is idempotent,
+  // so a later retry (e.g. the learner re-saving their profile) safely
+  // reconciles the CRM contact if this best-effort step failed.
+  try {
+    const [userRow] = await db.select({ email: user.email }).from(user).where(eq(user.id, userId)).limit(1);
+    await db.transaction(async (tx) => {
+      const { contactId, organizationId } = await provisionCrmContactForUser(tx, userId, {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: userRow?.email ?? null,
+        phone: data.phoneNumber,
+      });
+
+      if (isFirstCompletion && whatsappAutoWelcomeConfigured) {
+        await enqueueSystemWelcomeWhatsAppMessage(
+          organizationId,
+          {
+            contactId,
+            templateName: env.WHATSAPP_WELCOME_TEMPLATE_NAME,
+            language: data.preferredLocale,
+            firstName: data.firstName,
+            requestId: `welcome:${userId}`,
+          },
+          tx,
+        );
+      }
+    });
+  } catch (error) {
+    logger.warn("crm_onboarding.provisioning_failed", { userId, error: error instanceof Error ? error.message : "unknown" });
+  }
+
+  return { ok: true as const };
+}

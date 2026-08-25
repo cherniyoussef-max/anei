@@ -33,7 +33,7 @@ const resultStatus: Record<string, number> = {
  */
 export async function POST(request: Request) {
   if (!isTrustedMutation(request)) return NextResponse.json({ error: "UNTRUSTED_ORIGIN" }, { status: 403 });
-  const rate = await consumeRateLimit(`invitation-otp-verify:${requestFingerprint(request)}`, 30, 3600);
+  const rate = await consumeRateLimit(`invitation-otp-verify:${requestFingerprint(request)}`, 30, 3600, { fallbackLimit: 8 });
   if (!rate.allowed) return NextResponse.json({ error: "RATE_LIMITED" }, { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } });
 
   const parsed = bodySchema.safeParse(await readLimitedJson(request).catch(() => null));

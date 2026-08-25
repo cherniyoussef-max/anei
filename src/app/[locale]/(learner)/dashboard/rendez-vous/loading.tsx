@@ -1,0 +1,1 @@
+export default function LoadingAppointments() { return <div className="learner-page-skeleton" aria-busy="true" aria-label="Chargement des rendez-vous"><span className="student-skeleton learner-skeleton-title" /><span className="student-skeleton learner-skeleton-calendar" /><span className="student-skeleton learner-skeleton-list" /></div>; }

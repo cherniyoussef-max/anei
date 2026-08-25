@@ -81,7 +81,7 @@ test("admin lesson update requires trusted origin, then admin permission, before
   const originIndex = source.indexOf("isTrustedMutation(request)");
   const sessionIndex = source.indexOf('getAdminSessionFor("courses.update")');
   const rateIndex = source.indexOf("adminMutationRateLimit(");
-  const updateIndex = source.indexOf("db.update(lessons)");
+  const updateIndex = source.indexOf("tx.update(lessons)");
   assert.ok(originIndex > -1 && sessionIndex > -1 && rateIndex > -1 && updateIndex > -1);
   assert.ok(originIndex < sessionIndex && sessionIndex < rateIndex && rateIndex < updateIndex);
 });

@@ -31,7 +31,7 @@ export function AdminUserCrmActions({ userId, userEmail, userName, locale }: Adm
             : `Un lien a été envoyé à ${userEmail}.`
         );
       }
-    } catch (err) {
+    } catch {
       setMessage(locale === "ar" ? "حدث خطأ." : "Une erreur s'est produite.");
     } finally {
       setResetting(false);
@@ -43,7 +43,7 @@ export function AdminUserCrmActions({ userId, userEmail, userName, locale }: Adm
   return (
     <div style={{ marginTop: 24, padding: "18px 22px", background: "#fff", border: "1px solid #e2e5ea", borderRadius: 10 }}>
       <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8, color: "#1e3a5f" }}>
-        {ar ? "إجراءات CRM (المشرف المتميز)" : "Actions CRM (Super Admin)"}
+        {ar ? `إجراءات حساب ${userName}` : `Actions du compte de ${userName}`}
       </h3>
       <p style={{ fontSize: 13, color: "#6b7a8d", marginBottom: 16 }}>
         {ar 

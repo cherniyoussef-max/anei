@@ -2,19 +2,13 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/server/db";
 import { auditLogs, courseModules, courses, lessons } from "@/server/db/schema";
-import { adminMutationRateLimit, getAdminSession } from "@/server/auth/admin";
+import { adminMutationRateLimit, getAdminSessionFor } from "@/server/auth/admin";
 import { and, eq } from "drizzle-orm";
 import { isTrustedMutation } from "@/server/security/origin";
-import { env } from "@/server/env";
 import { readLimitedJson } from "@/server/security/request-body";
-import { mediaProviderSchema, resolveMediaRef, InvalidLessonMediaError } from "@/server/services/lesson-media";
+import { lessonMediaReferenceSchema, mediaProviderSchema, resolveMediaRef, InvalidLessonMediaError } from "@/server/services/lesson-media";
 
-const mediaReference = z.string().min(1).max(2048).refine((value) => {
-  const localOrHttps = value.startsWith("/") || /^https:\/\//i.test(value);
-  const privateObjectKey = /^[a-zA-Z0-9._\/-]+$/.test(value) && !value.startsWith("/") && !value.includes("..");
-  if (env.NODE_ENV === "production" && env.STORAGE_PROVIDER === "s3-compatible") return privateObjectKey;
-  return localOrHttps || privateObjectKey;
-}, "Use a private object key in production, or a local/HTTPS path in development");
+const mediaReference = lessonMediaReferenceSchema;
 const schema = z.object({
   courseId: z.string().uuid(),
   moduleId: z.string().uuid().nullable().optional(),
@@ -33,7 +27,7 @@ const schema = z.object({
 
 export async function POST(request: Request) {
   if (!isTrustedMutation(request)) return NextResponse.json({ error: "UNTRUSTED_ORIGIN" }, { status: 403 });
-  const session = await getAdminSession();
+  const session = await getAdminSessionFor("courses.update");
   if (!session) return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
   const rate = await adminMutationRateLimit(session.user.id);
   if (!rate.allowed) return NextResponse.json({ error: "RATE_LIMITED" }, { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } });

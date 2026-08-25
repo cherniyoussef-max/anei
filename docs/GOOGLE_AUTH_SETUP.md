@@ -10,15 +10,14 @@ Normal `npm run dev` development uses:
 - Authorized JavaScript origin: `http://localhost:3000`
 - Authorized redirect URI: `http://localhost:3000/api/auth/callback/google`
 
-The standalone local-production smoke command (`npm run start:local`) deliberately
-uses a different canonical loopback host:
+The standalone local-production smoke command (`npm run start:local`) binds to
+`127.0.0.1` but keeps the browser/OAuth origin canonical and consistent with `.env`:
 
-- Authorized JavaScript origin: `http://127.0.0.1:3000`
-- Authorized redirect URI: `http://127.0.0.1:3000/api/auth/callback/google`
+- Authorized JavaScript origin: `http://localhost:3000`
+- Authorized redirect URI: `http://localhost:3000/api/auth/callback/google`
 
-Google compares redirect URIs exactly. Do not start a flow on `localhost` when
-`BETTER_AUTH_URL` is `127.0.0.1`, or the reverse. If you test both modes, register
-both pairs in the same Web client.
+Google compares redirect URIs exactly. Open the application through `localhost`
+so the browser origin and `BETTER_AUTH_URL` remain identical.
 
 ## Google Cloud Console
 

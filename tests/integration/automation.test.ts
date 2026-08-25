@@ -13,6 +13,7 @@ import {
 } from "@/server/services/automation-credentials";
 import { triggerAutomation, setN8NClient, type N8NClient } from "@/server/automation/contracts";
 import { runOutboxCycle } from "@/server/queue/worker-engine";
+import { reconcileStaleAutomationExecutions } from "@/server/automation/executions";
 
 const url = process.env.TEST_DATABASE_URL ?? (process.env.NODE_ENV !== "production" ? "postgresql://anei:anei@127.0.0.1:5432/anei" : undefined);
 if (!url) throw new Error("A test database URL is required");
@@ -470,6 +471,61 @@ test("automation: callback transitions are monotonic and idempotent", { skip: !u
     const regression = await POST(request("FAILED"));
     assert.equal(regression.status, 409);
   });
+});
+
+test("automation watchdog classifies stale DISPATCHED as retryable without blind retry", { skip: !url }, async () => {
+  const executionId = uuid();
+  const staleAt = new Date("2026-01-01T00:00:00.000Z");
+  await withClient(async (client) => {
+    await client.query(
+      `insert into automation_execution (id, workflow_name, status, idempotency_key, requested_at, updated_at, dispatched_at)
+       values ($1, 'automation.appointment_reminder', 'DISPATCHED', $2, $3, $3, $3)`,
+      [executionId, `watchdog-dispatched-${uuid()}`, staleAt],
+    );
+  });
+
+  const result = await reconcileStaleAutomationExecutions({
+    now: new Date("2026-01-01T01:00:00.000Z"),
+    dispatchedBefore: new Date("2026-01-01T00:10:00.000Z"),
+    runningBefore: new Date("2026-01-01T00:10:00.000Z"),
+  });
+  assert.deepEqual(result.find((item) => item.automationExecutionId === executionId), {
+    automationExecutionId: executionId,
+    previousStatus: "DISPATCHED",
+    classification: "RETRYABLE",
+    reasonCode: "DISPATCH_CLAIM_TIMEOUT",
+  });
+  const [row] = await db.select().from(automationExecution).where(eq(automationExecution.id, executionId));
+  assert.equal(row.status, "WORKFLOW_FAILED");
+  assert.equal(row.resultCode, "DISPATCH_CLAIM_TIMEOUT");
+  assert.equal(row.attemptCount, 0, "watchdog must not retry or duplicate a potentially delivered workflow");
+});
+
+test("automation watchdog sends stale RUNNING uncertain outcomes to operator review", { skip: !url }, async () => {
+  const executionId = uuid();
+  const staleAt = new Date("2026-01-01T00:00:00.000Z");
+  await withClient(async (client) => {
+    await client.query(
+      `insert into automation_execution (id, workflow_name, status, idempotency_key, requested_at, updated_at, dispatched_at, started_at)
+       values ($1, 'automation.teacher_notification', 'RUNNING', $2, $3, $3, $3, $3)`,
+      [executionId, `watchdog-running-${uuid()}`, staleAt],
+    );
+  });
+
+  const result = await reconcileStaleAutomationExecutions({
+    now: new Date("2026-01-01T01:00:00.000Z"),
+    dispatchedBefore: new Date("2026-01-01T00:10:00.000Z"),
+    runningBefore: new Date("2026-01-01T00:10:00.000Z"),
+  });
+  assert.deepEqual(result.find((item) => item.automationExecutionId === executionId), {
+    automationExecutionId: executionId,
+    previousStatus: "RUNNING",
+    classification: "NEEDS_OPERATOR_ATTENTION",
+    reasonCode: "RUNNING_TIMEOUT_UNCERTAIN_OUTCOME",
+  });
+  const [row] = await db.select().from(automationExecution).where(eq(automationExecution.id, executionId));
+  assert.equal(row.status, "WORKFLOW_FAILED");
+  assert.equal(row.resultCode, "RUNNING_TIMEOUT_UNCERTAIN_OUTCOME");
 });
 
 test("automation: cross-org claim is rejected", { skip: !url }, async () => {

@@ -7,9 +7,34 @@ import type { Locale } from "@/types";
 import { hasAdminPermission, type AdminPermission } from "@/modules/admin/domain/permissions";
 import type { Persona } from "@/modules/personas/domain/permissions";
 import { getUserPersonas } from "@/server/queries/personas";
+import { getSessionAssurance } from "@/server/auth/assurance";
+
+/**
+ * Request-scoped memoization of getSessionAssurance, keyed implicitly by
+ * sessionId via React's cache(). getFreshSession() and requireAdmin()/
+ * requireAdminPermission() each need the assurance row for the same
+ * session within the same request (page + layout, or a helper calling
+ * getFreshSession then re-checking assurance) — without this wrapper that
+ * was a second, uncached DB round trip on every admin page render. This
+ * does not change freshness semantics: cache() resets every request, so a
+ * newly-completed or newly-expired assurance is still read correctly on
+ * the next request.
+ */
+const getCachedSessionAssurance = cache((sessionId: string) => getSessionAssurance(sessionId));
+
+const getAssuredSessionState = cache(async () => {
+  const current = await auth.api.getSession({ headers: await headers() });
+  if (!current) return { session: null, assurance: null };
+  const assurance = await getCachedSessionAssurance(current.session.id);
+  return { session: assurance ? current : null, assurance };
+});
 
 export async function getSession() {
-  return auth.api.getSession({ headers: await headers() });
+  return (await getAssuredSessionState()).session;
+}
+
+export async function getSessionWithAssurance() {
+  return getAssuredSessionState();
 }
 
 /**
@@ -25,7 +50,10 @@ export async function getSession() {
  * page both authorizing) only pays for one DB round trip.
  */
 export const getFreshSession = cache(async () => {
-  return auth.api.getSession({ headers: await headers(), query: { disableCookieCache: true } });
+  const current = await auth.api.getSession({ headers: await headers(), query: { disableCookieCache: true } });
+  if (!current) return null;
+  const assurance = await getCachedSessionAssurance(current.session.id);
+  return assurance ? current : null;
 });
 
 /**
@@ -43,7 +71,14 @@ export async function revokeUserSessions(userId: string) {
 }
 
 export async function requireUser(locale: Locale) {
-  const current = await getSession();
+  const { session: current, assurance } = await getSessionWithAssurance();
+  if (!current) redirect(`/${locale}/login?next=/${locale}/dashboard`);
+  if (!assurance) redirect(`/${locale}/verification-channel`);
+  return current;
+}
+
+export async function requirePrimaryUser(locale: Locale) {
+  const current = await auth.api.getSession({ headers: await headers() });
   if (!current) redirect(`/${locale}/login?next=/${locale}/dashboard`);
   return current;
 }
@@ -51,6 +86,8 @@ export async function requireUser(locale: Locale) {
 export async function requireAdmin(locale: Locale) {
   const current = await getFreshSession();
   if (!current) redirect(`/${locale}/login?next=/${locale}/dashboard`);
+  const assurance = await getCachedSessionAssurance(current.session.id);
+  if (!assurance) redirect(`/${locale}/verification-channel`);
   const role = current.user.role as string | undefined;
   if (role !== "ADMIN" && role !== "SUPER_ADMIN") redirect(`/${locale}/dashboard`);
   return current;
@@ -59,6 +96,8 @@ export async function requireAdmin(locale: Locale) {
 export async function requireAdminPermission(locale: Locale, permission: AdminPermission) {
   const current = await getFreshSession();
   if (!current) redirect(`/${locale}/login?next=/${locale}/dashboard`);
+  const assurance = await getCachedSessionAssurance(current.session.id);
+  if (!assurance) redirect(`/${locale}/verification-channel`);
   if (!hasAdminPermission(String(current.user.role), permission)) redirect(`/${locale}/dashboard`);
   return current;
 }

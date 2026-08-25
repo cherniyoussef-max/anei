@@ -286,3 +286,16 @@ test("public course preview: only preview lessons get a signed media URL, and do
     assert.equal(gated!.videoUrl, null, "a non-preview lesson's video must never be signed on the public catalog path");
   });
 });
+
+test("public course preview: a legacy external media URL is omitted instead of breaking the public course page", { skip: !url }, async () => {
+  const { getPublishedCourse } = await import("../../src/server/queries/catalog");
+  await withClient(async (client) => {
+    const courseId = await seedCourse(client, `public-course-legacy-${crypto.randomUUID()}`);
+    await seedLesson(client, courseId, { preview: true, videoUrl: "https://legacy.example.test/preview.mp4" });
+
+    const course = await client.query(`select slug from courses where id = $1`, [courseId]);
+    const data = await getPublishedCourse(course.rows[0].slug);
+    assert.ok(data);
+    assert.equal(data!.lessons[0].videoUrl, null);
+  });
+});

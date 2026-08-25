@@ -1,14 +1,13 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { Locale } from "@/types";
 import { t } from "@/lib/i18n";
-import { Icon } from "@/components/ui/Icon";
 
-export function Logo({ locale, compact = false }: { locale: Locale; compact?: boolean }) {
+export function Logo({ locale, compact = false, priority = false }: { locale: Locale; compact?: boolean; priority?: boolean }) {
   const c = t(locale);
   return (
-    <Link href={`/${locale}`} className="logo" aria-label={c.academy}>
-      <span className="logo-mark" aria-hidden="true"><Icon name="graduation" size={22}/></span>
-      {!compact && <span className="logo-copy"><strong>ANEI</strong><small>{locale === "fr" ? "Éducation inclusive" : "التربية الدامجة"}</small></span>}
+    <Link href={`/${locale}`} className={compact ? "logo is-compact" : "logo"} aria-label={c.academy}>
+      <Image className="brand-logo-image" src="/media/anei-brand-logo.webp" alt="" width={520} height={174} priority={priority} sizes={compact ? "52px" : "(max-width: 640px) 150px, 210px"} />
     </Link>
   );
 }

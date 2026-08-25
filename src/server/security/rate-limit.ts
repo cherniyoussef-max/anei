@@ -5,6 +5,8 @@ import { env } from "@/server/env";
 
 type Bucket = { count: number; resetAt: number };
 const memoryBuckets = new Map<string, Bucket>();
+type RateLimitRedisClient = Awaited<ReturnType<typeof getRedis>>;
+let redisResolver: () => Promise<RateLimitRedisClient> = getRedis;
 const REDIS_CONSUME_SCRIPT = `
 local count = redis.call("INCR", KEYS[1])
 if count == 1 then
@@ -33,10 +35,16 @@ function memoryConsume(key: string, limit: number, windowSeconds: number) {
   };
 }
 
-export async function consumeRateLimit(key: string, limit: number, windowSeconds: number) {
+export async function consumeRateLimit(
+  key: string,
+  limit: number,
+  windowSeconds: number,
+  options?: { fallbackLimit?: number },
+) {
+  const fallbackLimit = Math.min(Math.max(options?.fallbackLimit ?? limit, 1), limit);
   try {
-    const client = await getRedis();
-    if (!client) return memoryConsume(key, limit, windowSeconds);
+    const client = await redisResolver();
+    if (!client) return memoryConsume(key, fallbackLimit, windowSeconds);
     const redisKey = `anei:rl:${key}`;
     const result = await client.sendCommand([
       "EVAL",
@@ -53,8 +61,14 @@ export async function consumeRateLimit(key: string, limit: number, windowSeconds
       retryAfterSeconds: ttl > 0 ? ttl : windowSeconds,
     };
   } catch {
-    return memoryConsume(key, limit, windowSeconds);
+    return memoryConsume(key, fallbackLimit, windowSeconds);
   }
+}
+
+/** Test-only fault injection for proving Redis-outage behavior. */
+export function setRateLimitRedisResolverForTests(resolver: (() => Promise<RateLimitRedisClient>) | null) {
+  if (env.NODE_ENV === "production") throw new Error("Rate-limit backend injection is forbidden in production");
+  redisResolver = resolver ?? getRedis;
 }
 
 export function requestFingerprint(request: Request) {

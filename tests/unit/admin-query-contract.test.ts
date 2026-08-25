@@ -27,6 +27,6 @@ test("Google provider is conditional and credentials remain server-only", async 
   assert.equal(authSource.includes("clientSecret: env.GOOGLE_CLIENT_SECRET"), true);
   assert.equal(clientSource.includes("GOOGLE_CLIENT_SECRET"), false);
   assert.equal(formSource.includes('provider: "google"'), true);
-  assert.equal(authSource.includes("oneTap()"), true);
+  assert.equal(authSource.includes("oneTap()"), false);
   assert.equal(authSource.includes("encryptOAuthTokens: true"), true);
 });

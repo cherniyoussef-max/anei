@@ -7,6 +7,7 @@ export function VideoLessonPlayer({ lessonId, videoUrl, title, initialSeconds, i
   const [completed, setCompleted] = useState(initiallyCompleted);
   const [saving, setSaving] = useState(false);
   const ar = locale === "ar";
+  const en = locale === "en";
 
   async function save() {
     if (!video.current) return;
@@ -41,12 +42,12 @@ export function VideoLessonPlayer({ lessonId, videoUrl, title, initialSeconds, i
       onEnded={() => { void save(); }}
     >
       <source src={videoUrl} type="video/mp4"/>
-      {ar ? "المتصفح لا يدعم تشغيل الفيديو." : "Votre navigateur ne prend pas en charge la vidéo."}
+      {ar ? "المتصفح لا يدعم تشغيل الفيديو." : en ? "Your browser does not support video playback." : "Votre navigateur ne prend pas en charge la vidéo."}
     </video>
     <div className="lesson-player-meta">
       <div>
         <strong>{title}</strong>
-        <small>{saving ? (ar ? "حفظ التقدم..." : "Enregistrement...") : completed ? (ar ? "مكتمل ✓" : "Terminé ✓") : (ar ? "يُحفظ التقدم تلقائيًا" : "Progression sauvegardée automatiquement")}</small>
+        <small>{saving ? (ar ? "حفظ التقدم..." : en ? "Saving progress..." : "Enregistrement...") : completed ? (ar ? "مكتمل" : en ? "Completed" : "Terminé") : (ar ? "يُحفظ التقدم تلقائيًا" : en ? "Progress is saved automatically" : "Progression sauvegardée automatiquement")}</small>
       </div>
     </div>
   </div>;

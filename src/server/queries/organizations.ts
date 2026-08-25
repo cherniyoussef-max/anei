@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, count, eq, ilike, or } from "drizzle-orm";
 import { db } from "@/server/db";
 import { organization, organizationMembership, type OrganizationMembershipRow, type OrganizationRow } from "@/server/db/schema";
 import { organizationRoleAtLeast, type OrganizationRole } from "@/modules/relationships/domain/permissions";
@@ -54,8 +54,28 @@ export async function getOrganizationMembers(organizationId: string): Promise<Or
   return db.select().from(organizationMembership).where(eq(organizationMembership.organizationId, organizationId));
 }
 
+/** Unbounded-looking but capped listing — the only caller (GET /api/admin/organizations) has no pagination UI/consumer today; the cap is a safety bound, not a real limit for expected data volume. Use listOrganizationsPage for anything that needs real pagination. */
 export async function listOrganizations(): Promise<OrganizationRow[]> {
-  return db.select().from(organization);
+  return db.select().from(organization).orderBy(organization.name).limit(500);
+}
+
+/** Single-row lookup by primary key, for pages that only need to validate/render one organization. */
+export async function getOrganizationById(organizationId: string): Promise<OrganizationRow | undefined> {
+  const [row] = await db.select().from(organization).where(eq(organization.id, organizationId)).limit(1);
+  return row;
+}
+
+const ORG_PAGE_SIZE = 25;
+
+/** Paginated, optionally search-filtered organization listing for admin list pages. */
+export async function listOrganizationsPage(input: { q?: string; page?: number }) {
+  const page = Math.max(1, input.page ?? 1);
+  const where = input.q ? or(ilike(organization.name, `%${input.q}%`), ilike(organization.slug, `%${input.q}%`)) : undefined;
+  const [items, [{ value: total }]] = await Promise.all([
+    db.select().from(organization).where(where).orderBy(organization.name).limit(ORG_PAGE_SIZE).offset((page - 1) * ORG_PAGE_SIZE),
+    db.select({ value: count() }).from(organization).where(where),
+  ]);
+  return { items, total, page, pageSize: ORG_PAGE_SIZE, totalPages: Math.max(1, Math.ceil(total / ORG_PAGE_SIZE)) };
 }
 
 export async function countActiveOwners(client: DbClient, organizationId: string, excludeMembershipId?: string) {

@@ -20,12 +20,20 @@ const schema = z.object({
   ENABLE_CLICTOPAY: boolString,
   ENABLE_AI: boolString,
   ENABLE_WHATSAPP: boolString,
+  ENABLE_WHATSAPP_AUTO_WELCOME: boolString,
+  ENABLE_WHATSAPP_AI_REPLIES: boolString,
+  WHATSAPP_WELCOME_TEMPLATE_NAME: z.string().default("anei_welcome"),
+  WHATSAPP_AI_REPLY_MAX_PER_CONTACT_PER_DAY: z.coerce.number().int().min(1).max(200).default(20),
   ENABLE_ADMIN_MFA: boolString,
   ENABLE_MCP: boolString,
   N8N_WEBHOOK_BASE_URL: optionalTrimmed,
   ANEI_N8N_DISPATCH_TOKEN: optionalTrimmed,
   N8N_ANEI_SERVICE_TOKEN: optionalTrimmed,
   N8N_TIMEOUT_MS: z.coerce.number().int().positive().default(8000),
+  AUTOMATION_WATCHDOG_INTERVAL_MS: z.coerce.number().int().min(5_000).max(3_600_000).default(30_000),
+  AUTOMATION_DISPATCH_SLA_MS: z.coerce.number().int().min(60_000).max(86_400_000).default(300_000),
+  AUTOMATION_RUNNING_SLA_MS: z.coerce.number().int().min(60_000).max(604_800_000).default(1_800_000),
+  AUTOMATION_WATCHDOG_BATCH_SIZE: z.coerce.number().int().min(1).max(200).default(50),
   N8N_ENCRYPTION_KEY: optionalTrimmed,
   DATABASE_URL: z.string().min(1).default("postgresql://anei:anei@localhost:5432/anei"),
   DB_POOL_MAX: z.coerce.number().int().min(1).max(100).default(20),
@@ -53,6 +61,10 @@ const schema = z.object({
   CONTACT_PHONE: optionalTrimmed,
   CONTACT_ADDRESS: z.string().default("Tunis, Tunisie"),
   SECURITY_CONTACT_EMAIL: z.string().email().optional(),
+  PLATFORM_INTRO_VIDEO_YOUTUBE_ID: optionalTrimmed,
+  SOCIAL_LINKEDIN_URL: z.string().url().optional(),
+  SOCIAL_FACEBOOK_URL: z.string().url().optional(),
+  SOCIAL_INSTAGRAM_URL: z.string().url().optional(),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
   SEED_DEMO_DATA: boolString,
   STORAGE_PROVIDER: z.enum(["local", "s3-compatible"]).default("local"),
@@ -189,6 +201,15 @@ if (env.NODE_ENV === "production" && !isBuildPhase && !isLocalProductionSmoke) {
   if (env.ENABLE_WHATSAPP && (!env.WHATSAPP_ACCESS_TOKEN || !env.WHATSAPP_APP_SECRET || !env.WHATSAPP_VERIFY_TOKEN)) {
     throw new Error("WhatsApp is enabled but WHATSAPP_ACCESS_TOKEN/WHATSAPP_APP_SECRET/WHATSAPP_VERIFY_TOKEN are missing.");
   }
+  if (env.ENABLE_WHATSAPP_AUTO_WELCOME && !env.ENABLE_WHATSAPP) {
+    throw new Error("ENABLE_WHATSAPP_AUTO_WELCOME requires ENABLE_WHATSAPP.");
+  }
+  if (env.ENABLE_WHATSAPP_AI_REPLIES) {
+    // Same conservative posture as ENABLE_AI: the WhatsApp auto-reply model
+    // has no retrieval/quota/eval hardening yet (docs/premium/ROADMAP.md
+    // Phase 10 boundary) — never enabled in production until that work lands.
+    throw new Error("ENABLE_WHATSAPP_AI_REPLIES cannot be true in production until the AI reply implementation is reviewed and hardened.");
+  }
   if (env.ENABLE_CLOUDFLARE_STREAM && (!env.CLOUDFLARE_ACCOUNT_ID || !env.CLOUDFLARE_STREAM_API_TOKEN || !env.CLOUDFLARE_STREAM_CUSTOMER_CODE)) {
     throw new Error("Cloudflare Stream is enabled but CLOUDFLARE_ACCOUNT_ID/CLOUDFLARE_STREAM_API_TOKEN/CLOUDFLARE_STREAM_CUSTOMER_CODE are missing.");
   }
@@ -205,6 +226,10 @@ export const clickToPayConfigured = Boolean(
 );
 export const whatsappConfigured = Boolean(
   env.ENABLE_WHATSAPP && env.WHATSAPP_ACCESS_TOKEN && env.WHATSAPP_APP_SECRET && env.WHATSAPP_VERIFY_TOKEN,
+);
+export const whatsappAutoWelcomeConfigured = Boolean(env.ENABLE_WHATSAPP_AUTO_WELCOME && whatsappConfigured);
+export const whatsappAiRepliesConfigured = Boolean(
+  env.ENABLE_WHATSAPP_AI_REPLIES && whatsappConfigured && env.OPENAI_API_KEY,
 );
 export const cloudflareStreamConfigured = Boolean(
   env.ENABLE_CLOUDFLARE_STREAM && env.CLOUDFLARE_ACCOUNT_ID && env.CLOUDFLARE_STREAM_API_TOKEN && env.CLOUDFLARE_STREAM_CUSTOMER_CODE,

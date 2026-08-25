@@ -145,6 +145,8 @@ export class ControlledToolRegistry implements ToolRegistry {
       allowedTools.push({
           name: toolDef.name,
           description: toolDef.description,
+          riskLevel: toolDef.riskLevel,
+          inputSchema: z.toJSONSchema(toolDef.inputSchema) as Record<string, unknown>,
           execute: async (input: unknown) => {
             if (toolDef.riskLevel === "READ") {
               const result = await executeReadTool(toolDef, toolContext, input);

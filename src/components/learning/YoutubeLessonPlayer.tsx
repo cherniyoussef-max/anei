@@ -1,20 +1,14 @@
 import type { Locale } from "@/types";
+import { YoutubePlayer } from "@/components/learning/YoutubePlayer";
 
 /** Public/preview lessons only. videoId is already validated/canonicalized server-side (canonicalYoutubeId) before it reaches this component. */
 export function YoutubeLessonPlayer({ videoId, title, locale }: { videoId: string; title: string; locale: Locale }) {
   const ar = locale === "ar";
+  const en = locale === "en";
   return <div className="lesson-player">
-    <iframe
-      className="course-video"
-      src={`https://www.youtube-nocookie.com/embed/${videoId}`}
-      title={title}
-      loading="lazy"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-      allowFullScreen
-      referrerPolicy="strict-origin-when-cross-origin"
-    />
+    <YoutubePlayer videoId={videoId} title={title} />
     <div className="lesson-player-meta">
-      <div><strong>{title}</strong><small>{ar ? "معاينة يوتيوب" : "Aperçu YouTube"}</small></div>
+      <div><strong>{title}</strong><small>{ar ? "معاينة يوتيوب" : en ? "YouTube preview" : "Aperçu YouTube"}</small></div>
     </div>
   </div>;
 }

@@ -35,6 +35,10 @@ export const crmContactActivityTypes = [
   "WHATSAPP_TEMPLATE_SENT",
   "WHATSAPP_MESSAGE_RECEIVED",
   "WHATSAPP_FAILED",
+  // AI auto-reply (dev/staging only, src/server/queue/handlers/whatsapp-ai-reply.ts).
+  "WHATSAPP_AI_REPLY_SENT",
+  // Learner self-registration onboarding (src/server/services/crm-onboarding.ts).
+  "CONTACT_AUTO_PROVISIONED",
   // Phase 6: account invitation / phone verification / user-linking timeline
   // events (bounded — OTP send/verify attempts stay in invitation history
   // only, to avoid CRM timeline noise).

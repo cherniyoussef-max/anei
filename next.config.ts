@@ -18,6 +18,10 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   output: "standalone",
+  outputFileTracingRoot: process.cwd(),
+  turbopack: {
+    root: process.cwd(),
+  },
   compress: true,
   ...(allowedDevOrigins.length ? { allowedDevOrigins } : {}),
   async headers() {
