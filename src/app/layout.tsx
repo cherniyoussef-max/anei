@@ -35,7 +35,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
       <body>
         {/* Browsers intentionally hide nonce values from DOM attribute reads; suppress
             the resulting React hydration comparison while keeping CSP enforcement. */}
-        <script suppressHydrationWarning nonce={nonce} dangerouslySetInnerHTML={{ __html: installDirectionContract }} />
+        <script suppressHydrationWarning nonce={nonce}>{installDirectionContract}</script>
         <a className="skip-link" href="#main-content">
           {locale === "ar" ? "الانتقال إلى المحتوى" : locale === "en" ? "Skip to content" : "Aller au contenu"}
         </a>

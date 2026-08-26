@@ -16,6 +16,9 @@ export function AdminShell({ children, locale, user }: {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    Pilotage: true, Apprentissage: true, Gestion: true, Commerce: true, "Opérations": true,
+  });
   const closeRef = useRef<HTMLButtonElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const ar = locale === "ar";
@@ -49,6 +52,8 @@ export function AdminShell({ children, locale, user }: {
     ]},
   ];
   const activeHref = groups.flatMap((group) => group.items).filter((item) => item.href === base ? pathname === base : pathname === item.href || pathname.startsWith(`${item.href}/`)).sort((a, b) => b.href.length - a.href.length)[0]?.href;
+  const activeGroup = groups.find((group) => group.items.some((item) => item.href === activeHref));
+  const activeItem = activeGroup?.items.find((item) => item.href === activeHref);
   useEffect(() => {
     if (!mobileOpen) return;
     const trigger = triggerRef.current;
@@ -59,24 +64,30 @@ export function AdminShell({ children, locale, user }: {
     document.addEventListener("keydown", close);
     return () => { document.body.style.overflow = overflow; document.removeEventListener("keydown", close); trigger?.focus(); };
   }, [mobileOpen]);
+  function toggleCollapsed() {
+    setCollapsed((current) => !current);
+  }
   const nav = <nav className="admin-app-nav" aria-label={ar ? "التنقل الإداري" : "Navigation d’administration"}>
     {groups.map((group) => <div className="admin-nav-group" key={group.fr}>
-      <span className="admin-nav-label">{ar ? group.ar : group.fr}</span>
-      {group.items.map((item) => {
+      <button type="button" className="admin-nav-group-trigger" aria-expanded={openGroups[group.fr] !== false}
+        onClick={() => setOpenGroups((current) => ({ ...current, [group.fr]: current[group.fr] === false }))}>
+        <span>{ar ? group.ar : group.fr}</span><Icon name="chevron" size={14}/>
+      </button>
+      <div className="admin-nav-group-items" hidden={!collapsed && openGroups[group.fr] === false}>{group.items.map((item) => {
         const active = item.href === activeHref;
         const label = ar ? item.ar : item.fr;
         return <Link href={item.href} key={item.href} className={active ? "active" : ""} aria-current={active ? "page" : undefined}
           title={collapsed ? label : undefined} onClick={() => setMobileOpen(false)}>
           <Icon name={item.icon} size={19}/><span>{label}</span>
         </Link>;
-      })}
+      })}</div>
     </div>)}
   </nav>;
   return <div className={`admin-app ${collapsed ? "is-collapsed" : ""}`}>
     <aside className="admin-app-sidebar">
       <div className="admin-app-brand"><span className="admin-brand-mark"><Image src="/media/anei-brand-logo.webp" width={347} height={347} alt="" priority/></span><div><strong>ANEI</strong><small>{ar ? "وحدة تحكم الإدارة" : "Console d’administration"}</small></div></div>
       {nav}
-      <div className="admin-app-profile"><span>{user.name.slice(0, 2).toUpperCase()}</span><div><strong>{user.name}</strong><small>{user.role}</small></div></div>
+      <div className="admin-app-profile"><span>{user.name.slice(0, 2).toUpperCase()}</span><div><strong>{user.name}</strong><small className="admin-role-badge">{user.role}</small></div></div>
     </aside>
     {mobileOpen ? <button className="admin-drawer-backdrop" aria-label={ar ? "إغلاق القائمة" : "Fermer le menu"} onClick={() => setMobileOpen(false)}/> : null}
     <aside className={`admin-mobile-drawer ${mobileOpen ? "open" : ""}`} aria-hidden={!mobileOpen} role="dialog" aria-modal="true" aria-label={ar ? "قائمة الإدارة" : "Menu d’administration"}>
@@ -86,13 +97,19 @@ export function AdminShell({ children, locale, user }: {
     </aside>
     <div className="admin-app-body">
       <header className="admin-app-topbar">
-        <button className="admin-icon-button desktop-collapse" onClick={() => setCollapsed(!collapsed)}
+        <button className="admin-icon-button desktop-collapse" onClick={toggleCollapsed}
           aria-label={collapsed ? (ar ? "توسيع القائمة" : "Développer le menu") : (ar ? "طي القائمة" : "Réduire le menu")}>
           <Icon name="menu"/>
         </button>
         <button ref={triggerRef} className="admin-icon-button mobile-menu-trigger" onClick={() => setMobileOpen(true)}
           aria-label={ar ? "فتح القائمة" : "Ouvrir le menu"}><Icon name="menu"/></button>
-        <div className="admin-topbar-title"><strong>{ar ? "وحدة تحكم الإدارة" : "Console d’administration"}</strong><small>{user.email}</small></div>
+        <div className="admin-topbar-context">
+          <nav className="admin-breadcrumbs" aria-label={ar ? "مسار التنقل" : "Fil d’Ariane"}>
+            <Link href={base}>{ar ? "الإدارة" : "Administration"}</Link>
+            {activeGroup ? <><Icon className="admin-directional-icon" name="chevron" size={12}/><span>{ar ? activeGroup.ar : activeGroup.fr}</span></> : null}
+          </nav>
+          <strong>{activeItem ? (ar ? activeItem.ar : activeItem.fr) : (ar ? "وحدة تحكم الإدارة" : "Console d’administration")}</strong>
+        </div>
         <Link className="admin-locale-link" href={`/${ar ? "fr" : "ar"}${pathname.replace(/^\/(fr|ar)/, "")}`} hrefLang={ar ? "fr" : "ar"}>{ar ? "FR" : "العربية"}</Link>
       </header>
       <main className="admin-app-content" id="main-content" tabIndex={-1}>{children}</main>

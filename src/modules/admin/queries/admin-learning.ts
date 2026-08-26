@@ -11,13 +11,32 @@ import {
   learningAssessment,
   learningAttempt,
   learningQuestion,
-  learningQuestionOption,
   lessons,
   lessonProgress,
   personaMembership,
   user,
   userProfile,
 } from "@/server/db/schema";
+
+const adminCourseEditorColumns = {
+  id: courses.id,
+  slug: courses.slug,
+  titleFr: courses.titleFr,
+  titleAr: courses.titleAr,
+  summaryFr: courses.summaryFr,
+  summaryAr: courses.summaryAr,
+  descriptionFr: courses.descriptionFr,
+  descriptionAr: courses.descriptionAr,
+  category: courses.category,
+  trainerName: courses.trainerName,
+  durationMinutes: courses.durationMinutes,
+  priceMillimes: courses.priceMillimes,
+  level: courses.level,
+  mode: courses.mode,
+  published: courses.published,
+  coverImage: courses.coverImage,
+  updatedAt: courses.updatedAt,
+};
 
 export async function getAdminCourseList(limit = 50) {
   const result = await db.execute<{
@@ -31,28 +50,39 @@ export async function getAdminCourseList(limit = 50) {
   return result.rows;
 }
 
-export async function getAdminCourseEditor(courseId: string) {
-  const [course] = await db.select().from(courses).where(eq(courses.id, courseId)).limit(1);
-  if (!course) return null;
-  const [modules, lessonRows, assessments] = await Promise.all([
+export async function getAdminCourseEditorBase(courseId: string) {
+  const [course] = await db.select(adminCourseEditorColumns).from(courses).where(eq(courses.id, courseId)).limit(1);
+  return course ?? null;
+}
+
+export async function getAdminCourseCurriculum(courseId: string) {
+  const [modules, lessonRows] = await Promise.all([
     db.select().from(courseModules).where(eq(courseModules.courseId, courseId)).orderBy(asc(courseModules.position)),
     db.select().from(lessons).where(eq(lessons.courseId, courseId)).orderBy(asc(lessons.position)),
-    db.select().from(learningAssessment).where(eq(learningAssessment.courseId, courseId)).orderBy(desc(learningAssessment.updatedAt)),
   ]);
+  return { modules, lessons: lessonRows };
+}
+
+export async function getAdminCourseAssessments(courseId: string) {
+  const assessments = await db.select().from(learningAssessment).where(eq(learningAssessment.courseId, courseId)).orderBy(desc(learningAssessment.updatedAt));
   const questions = assessments.length ? await db.select({
     id: learningQuestion.id, assessmentId: learningQuestion.assessmentId, promptFr: learningQuestion.promptFr,
     promptAr: learningQuestion.promptAr, type: learningQuestion.type, position: learningQuestion.position, points: learningQuestion.points,
   }).from(learningQuestion).where(inArray(learningQuestion.assessmentId, assessments.map((item) => item.id))).orderBy(asc(learningQuestion.position)) : [];
-  const options = questions.length ? await db.select({
-    id: learningQuestionOption.id, questionId: learningQuestionOption.questionId, textFr: learningQuestionOption.textFr,
-    textAr: learningQuestionOption.textAr, position: learningQuestionOption.position, isCorrect: learningQuestionOption.isCorrect,
-  }).from(learningQuestionOption).where(inArray(learningQuestionOption.questionId, questions.map((question) => question.id))) : [];
-  const assessmentsWithQuestions = assessments.map((assessment) => ({
+  return assessments.map((assessment) => ({
     ...assessment,
-    questions: questions.filter((question) => question.assessmentId === assessment.id)
-      .map((question) => ({ ...question, options: options.filter((option) => option.questionId === question.id) })),
+    questions: questions.filter((question) => question.assessmentId === assessment.id),
   }));
-  return { course, modules, lessons: lessonRows, assessments: assessmentsWithQuestions };
+}
+
+export async function getAdminCoursePublicationSummary(courseId: string) {
+  const result = await db.execute<{ modules: number; lessons: number; assessments: number }>(sql`
+    select
+      (select count(*)::int from course_modules where course_id = ${courseId}) as modules,
+      (select count(*)::int from lessons where course_id = ${courseId}) as lessons,
+      (select count(*)::int from learning_assessment where course_id = ${courseId}) as assessments
+  `);
+  return result.rows[0] ?? { modules: 0, lessons: 0, assessments: 0 };
 }
 
 export async function getAdminAssessmentList(limit = 50) {
