@@ -30,3 +30,4 @@ docs/archive/CLAUDE_LEGACY_*.md
 .claude/settings.local.json
 .claude/settings.json.graphify-bak
 .claude/settings.json
+.vercel

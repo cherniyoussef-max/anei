@@ -9,6 +9,7 @@ const csvOrigins = z.string().optional().transform((value) =>
 
 const schema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  ANEI_DEPLOYMENT_ENV: z.enum(["development", "staging", "production"]).default("production"),
   APP_URL: z.string().url().default("http://localhost:3000"),
   BETTER_AUTH_URL: z.string().url().default("http://localhost:3000"),
   BETTER_AUTH_SECRET: z.string().min(32).default("development-only-secret-change-me-123456789"),
@@ -147,7 +148,14 @@ if (env.NODE_ENV === "production" && !isBuildPhase && !isLocalProductionSmoke) {
     throw new Error("APP_URL and BETTER_AUTH_URL must use HTTPS in production.");
   }
   if (env.TRUSTED_ORIGINS.some(isLocalUrl)) throw new Error("TRUSTED_ORIGINS must not contain localhost in production.");
-  if (env.PAYMENT_ALLOW_MOCK || env.PAYMENT_DEFAULT_PROVIDER === "mock") {
+  // Isolated staging deployments run with NODE_ENV=production (e.g. Vercel) but have no real
+  // payment provider credentials yet. Mock payments stay forbidden unless the deployment is
+  // explicitly marked ANEI_DEPLOYMENT_ENV=staging and mock is opted into on both flags.
+  const stagingMockPaymentsEnabled =
+    env.ANEI_DEPLOYMENT_ENV === "staging"
+    && env.PAYMENT_ALLOW_MOCK
+    && env.PAYMENT_DEFAULT_PROVIDER === "mock";
+  if (!stagingMockPaymentsEnabled && (env.PAYMENT_ALLOW_MOCK || env.PAYMENT_DEFAULT_PROVIDER === "mock")) {
     throw new Error("Mock payments are forbidden in production.");
   }
   if (!env.AUTH_REQUIRE_EMAIL_VERIFICATION) {
