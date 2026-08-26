@@ -1,5 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import type { getRedis } from "@/server/cache/redis";
+
+type FakeRedisResolverClient = Awaited<ReturnType<typeof getRedis>>;
 
 /**
  * src/modules/admin/queries/admin-analytics.ts and admin-users.ts are guarded
@@ -19,7 +22,7 @@ function fakeRedis(overrides: Partial<{ get: (key: string) => Promise<string | n
   return {
     get: overrides.get ?? (async () => null),
     set: overrides.set ?? (async () => "OK"),
-  } as any;
+  } as unknown as FakeRedisResolverClient;
 }
 
 test("admin dashboard cache: corrupted JSON degrades to a live DB read instead of throwing", async (t) => {
