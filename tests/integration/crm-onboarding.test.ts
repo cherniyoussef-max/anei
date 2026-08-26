@@ -132,6 +132,29 @@ test("provisionCrmContactForUser: creates once, updates (never duplicates) on re
   });
 });
 
+test("provisionCrmContactForUser: two concurrent lifecycle events for the same user still yield exactly one canonical contact", { skip: !url }, async () => {
+  await withClient(async (client) => {
+    process.env.TEST_DATABASE_URL = url;
+    const { db } = await import("../../src/server/db");
+    const { ensureAneiPlatformOrganization, provisionCrmContactForUser } = await import("../../src/server/services/crm-onboarding");
+    const { userId } = await seedUser(client, "concurrent");
+    const orgId = await ensureAneiPlatformOrganization();
+
+    try {
+      const [first, second] = await Promise.all([
+        provisionCrmContactForUser(db, userId, { firstName: "Amira", lastName: "Ben Salah", phone: "+21650000010" }),
+        provisionCrmContactForUser(db, userId, { firstName: "Amira", lastName: "Ben Salah", phone: "+21650000011" }),
+      ]);
+      assert.equal(first.contactId, second.contactId);
+
+      const count = await client.query("select count(*)::int as n from crm_contact where organization_id = $1 and linked_user_id = $2", [orgId, userId]);
+      assert.equal(count.rows[0].n, 1);
+    } finally {
+      await cleanupUserOnboarding(client, orgId, [userId]);
+    }
+  });
+});
+
 test("completeUserProfile: auto-provisions a CRM contact and, once configured, sends a welcome template", { skip: !url }, async () => {
   await withClient(async (client) => {
     process.env.TEST_DATABASE_URL = url;
