@@ -37,6 +37,7 @@ export async function getStreamPlayback(videoUid: string) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ exp }),
+        signal: AbortSignal.timeout(10_000),
       },
     );
   } catch {

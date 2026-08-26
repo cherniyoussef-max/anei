@@ -5,11 +5,11 @@ import { courses as courseTranslations, webinars as webinarTranslations, avsProf
 import { formatDate, formatMillimes, t } from "@/lib/i18n";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import type { courses, webinars, avsProfiles } from "@/server/db/schema";
+import type { listHomeAvs, listHomeCourses, listHomeWebinars } from "@/server/queries/catalog";
 
-type CourseRow = typeof courses.$inferSelect;
-type WebinarRow = typeof webinars.$inferSelect;
-type AvsRow = typeof avsProfiles.$inferSelect;
+type CourseRow = Awaited<ReturnType<typeof listHomeCourses>>[number];
+type WebinarRow = Awaited<ReturnType<typeof listHomeWebinars>>[number];
+type AvsRow = Awaited<ReturnType<typeof listHomeAvs>>[number];
 
 function localText(locale: Locale, values: { en: string; fr: string; ar: string }) {
   return values[locale];

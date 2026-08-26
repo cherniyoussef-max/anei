@@ -2,6 +2,36 @@ import "server-only";
 import { sql, type SQL } from "drizzle-orm";
 import { db } from "@/server/db";
 import { getRedis } from "@/server/cache/redis";
+import { logger } from "@/server/security/logger";
+
+/**
+ * Redis is non-authoritative: a connection failure, get/set failure, or a
+ * corrupted cache value must all degrade to a direct DB read, not fail
+ * the request.
+ */
+type UsersRedisClient = Awaited<ReturnType<typeof getRedis>>;
+let redisResolver: () => Promise<UsersRedisClient> = getRedis;
+
+/** Test-only seam, matching the pattern in src/server/security/rate-limit.ts. */
+export function setAdminUsersRedisResolverForTests(resolver: (() => Promise<UsersRedisClient>) | null) {
+  redisResolver = resolver ?? getRedis;
+}
+
+async function getCacheClient(context: string) {
+  return redisResolver().catch((error) => {
+    logger.error("admin.users_cache_unavailable", { context, error: String(error) });
+    return null;
+  });
+}
+
+/**
+ * Logs a corrupted/unparsable cache entry without ever including the cached
+ * payload. Only the error name is recorded — JSON.parse's SyntaxError message
+ * can embed a snippet of the malformed input, so String(error) is avoided.
+ */
+function logCacheCorrupt(context: string, error: unknown) {
+  logger.error("admin.users_cache_corrupt", { context, error: error instanceof Error ? error.name : "unknown" });
+}
 
 export const userSortFields = ["joined", "name", "email", "role", "activity"] as const;
 export type UserSort = (typeof userSortFields)[number];
@@ -67,17 +97,21 @@ function reviveDate(row: JsonRecord, key: string) {
 export async function getAdminUsers(input: AdminUserFilters = {}) {
   const filter = normalize(input);
   const cacheKey = `admin:users:list:${JSON.stringify(filter)}`;
-  const redis = await getRedis();
-  
+  const redis = await getCacheClient("list");
+
   if (redis) {
-    const cached = await redis.get(cacheKey);
+    const cached = await redis.get(cacheKey).catch(() => null);
     if (cached) {
-      const parsed = parseCached<AdminUsersPayload>(cached);
-      parsed.items.forEach((item) => {
-        if (item.joined_at) item.joined_at = new Date(item.joined_at);
-        if (item.last_activity) item.last_activity = new Date(item.last_activity);
-      });
-      return parsed;
+      try {
+        const parsed = parseCached<AdminUsersPayload>(cached);
+        parsed.items.forEach((item) => {
+          if (item.joined_at) item.joined_at = new Date(item.joined_at);
+          if (item.last_activity) item.last_activity = new Date(item.last_activity);
+        });
+        return parsed;
+      } catch (error) {
+        logCacheCorrupt("list", error);
+      }
     }
   }
 
@@ -121,28 +155,32 @@ export async function getAdminUsers(input: AdminUserFilters = {}) {
     totalPages: Math.max(1, Math.ceil(total / filter.pageSize)), filters: filter };
     
   if (redis) {
-    await redis.set(cacheKey, JSON.stringify(payload), { EX: 60 });
+    await redis.set(cacheKey, JSON.stringify(payload), { EX: 60 }).catch(() => undefined);
   }
-  
+
   return payload;
 }
 
 type DetailRow = UserListRow & { profile_type: string; locale: string; email_verified: boolean; certificates: number; webinars: number; paid_millimes: number };
 export async function getAdminUserDetail(id: string) {
   const cacheKey = `admin:users:detail:${id}`;
-  const redis = await getRedis();
-  
+  const redis = await getCacheClient("detail");
+
   if (redis) {
-    const cached = await redis.get(cacheKey);
+    const cached = await redis.get(cacheKey).catch(() => null);
     if (cached) {
-      const parsed = parseCached<AdminUserDetailPayload>(cached);
-      if (parsed.user?.joined_at) parsed.user.joined_at = new Date(parsed.user.joined_at);
-      if (parsed.user?.last_activity) parsed.user.last_activity = new Date(parsed.user.last_activity);
-      parsed.enrollments.forEach((row) => { reviveDate(row, "enrolled_at"); reviveDate(row, "completed_at"); });
-      parsed.sessions.forEach((row) => { reviveDate(row, "created_at"); reviveDate(row, "updated_at"); reviveDate(row, "expires_at"); });
-      parsed.certificates.forEach((row) => reviveDate(row, "issued_at"));
-      parsed.videoProgress.forEach((row) => reviveDate(row, "updated_at"));
-      return parsed;
+      try {
+        const parsed = parseCached<AdminUserDetailPayload>(cached);
+        if (parsed.user?.joined_at) parsed.user.joined_at = new Date(parsed.user.joined_at);
+        if (parsed.user?.last_activity) parsed.user.last_activity = new Date(parsed.user.last_activity);
+        parsed.enrollments.forEach((row) => { reviveDate(row, "enrolled_at"); reviveDate(row, "completed_at"); });
+        parsed.sessions.forEach((row) => { reviveDate(row, "created_at"); reviveDate(row, "updated_at"); reviveDate(row, "expires_at"); });
+        parsed.certificates.forEach((row) => reviveDate(row, "issued_at"));
+        parsed.videoProgress.forEach((row) => reviveDate(row, "updated_at"));
+        return parsed;
+      } catch (error) {
+        logCacheCorrupt("detail", error);
+      }
     }
   }
 
@@ -168,8 +206,8 @@ export async function getAdminUserDetail(id: string) {
   const payload = { user: result.rows[0], enrollments: enrollments.rows, sessions: sessions.rows, certificates: certificates.rows, videoProgress: videoProgress.rows };
   
   if (redis) {
-    await redis.set(cacheKey, JSON.stringify(payload), { EX: 60 });
+    await redis.set(cacheKey, JSON.stringify(payload), { EX: 60 }).catch(() => undefined);
   }
-  
+
   return payload;
 }
