@@ -1,8 +1,8 @@
 import "dotenv/config";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { auth } from "../src/server/auth";
 import { db, pool } from "../src/server/db";
-import { user } from "../src/server/db/schema";
+import { account, user } from "../src/server/db/schema";
 
 function requiredEnv(name: string) {
   const value = process.env[name]?.trim();
@@ -15,7 +15,7 @@ const password = requiredEnv("BOOTSTRAP_ADMIN_PASSWORD");
 const name = process.env.BOOTSTRAP_ADMIN_NAME?.trim() || "ANEI Super Admin";
 
 if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error("BOOTSTRAP_ADMIN_EMAIL must be a valid email address.");
-if (password.length < 14) throw new Error("BOOTSTRAP_ADMIN_PASSWORD must contain at least 14 characters.");
+if (password.length < 15) throw new Error("BOOTSTRAP_ADMIN_PASSWORD must contain at least 15 characters.");
 if (/DemoAdmin|change-me|password/i.test(password)) throw new Error("Refusing an obvious/default administrator password.");
 
 async function main() {
@@ -28,6 +28,26 @@ async function main() {
     [existing] = await db.select().from(user).where(eq(user.email, email)).limit(1);
   }
   if (!existing) throw new Error("Administrator account was not found after creation.");
+
+  // An account that previously signed up via a social provider (e.g. Google)
+  // has no credential row, so it cannot use password + OTP login locally.
+  // Link one idempotently: only when missing, never overwriting a password
+  // an operator may already rely on.
+  const [credentialAccount] = await db
+    .select({ id: account.id })
+    .from(account)
+    .where(and(eq(account.userId, existing.id), eq(account.providerId, "credential")))
+    .limit(1);
+  if (!credentialAccount) {
+    const context = await auth.$context;
+    const hashedPassword = await context.password.hash(password);
+    await context.internalAdapter.linkAccount({
+      accountId: existing.id,
+      providerId: "credential",
+      userId: existing.id,
+      password: hashedPassword,
+    });
+  }
 
   await db
     .update(user)
