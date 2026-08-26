@@ -107,7 +107,7 @@ export async function listHomeCourses() {
 }
 
 export async function getPublishedCourse(slug: string) {
-  const [course] = await db.select().from(courses).where(and(eq(courses.slug, slug), publicCourseFilter)).limit(1);
+  const [course] = await db.select().from(courses).where(and(eq(courses.published, true), eq(courses.slug, slug))).limit(1);
   if (!course) return null;
   const [courseLessons, modules] = await Promise.all([
     db.select().from(lessons).where(eq(lessons.courseId, course.id)).orderBy(asc(lessons.position)),
