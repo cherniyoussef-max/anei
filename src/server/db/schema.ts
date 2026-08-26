@@ -2149,7 +2149,10 @@ export const auditLogs = pgTable(
     metadata: jsonb("metadata").$type<Record<string, unknown>>(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
   },
-  (table) => [index("audit_actor_idx").on(table.actorUserId)],
+  (table) => [
+    index("audit_actor_idx").on(table.actorUserId),
+    index("audit_logs_created_at_idx").on(table.createdAt),
+  ],
 );
 
 export type DbUser = typeof user.$inferSelect;

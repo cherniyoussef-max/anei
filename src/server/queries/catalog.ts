@@ -92,6 +92,20 @@ export async function listPublishedCourses() {
   return db.select().from(courses).where(publicCourseFilter).orderBy(desc(courses.featured), asc(courses.startAt)).limit(24);
 }
 
+/**
+ * Homepage-only projection: keeps the same 24-row bound as listPublishedCourses
+ * (the homepage derives its category chips from this pool) but skips the heavy
+ * descriptionFr/descriptionAr/objectives columns, which the homepage never renders.
+ */
+export async function listHomeCourses() {
+  return db.select({
+    id: courses.id, slug: courses.slug, titleFr: courses.titleFr, titleAr: courses.titleAr,
+    summaryFr: courses.summaryFr, summaryAr: courses.summaryAr, category: courses.category,
+    durationMinutes: courses.durationMinutes, priceMillimes: courses.priceMillimes,
+    startAt: courses.startAt, featured: courses.featured,
+  }).from(courses).where(publicCourseFilter).orderBy(desc(courses.featured), asc(courses.startAt)).limit(24);
+}
+
 export async function getPublishedCourse(slug: string) {
   const [course] = await db.select().from(courses).where(and(eq(courses.slug, slug), publicCourseFilter)).limit(1);
   if (!course) return null;
@@ -188,6 +202,14 @@ export async function listPublishedWebinars() {
   return db.select().from(webinars).where(eq(webinars.published, true)).orderBy(asc(webinars.startsAt)).limit(100);
 }
 
+/** Homepage renders only the next 2 webinars, so this skips the description columns and the 100-row bound. */
+export async function listHomeWebinars() {
+  return db.select({
+    id: webinars.id, titleFr: webinars.titleFr, titleAr: webinars.titleAr, trainerName: webinars.trainerName,
+    startsAt: webinars.startsAt, replayUrl: webinars.replayUrl,
+  }).from(webinars).where(eq(webinars.published, true)).orderBy(asc(webinars.startsAt)).limit(2);
+}
+
 const ADMIN_WEBINAR_PAGE_SIZE = 25;
 
 /** Paginated webinar listing for the admin console — includes unpublished/archived webinars. */
@@ -233,4 +255,12 @@ export async function searchVisibleAvs(input: AvsSearchInput = {}) {
 
 export async function listVisibleAvs() {
   return db.select().from(avsProfiles).where(eq(avsProfiles.visible, true)).orderBy(desc(avsProfiles.certified), asc(avsProfiles.displayName)).limit(24);
+}
+
+/** Homepage renders only 3 AVS cards, so this skips the bio/availability columns and the 24-row bound. */
+export async function listHomeAvs() {
+  return db.select({
+    id: avsProfiles.id, displayName: avsProfiles.displayName, cityFr: avsProfiles.cityFr, cityAr: avsProfiles.cityAr,
+    specialtyFr: avsProfiles.specialtyFr, specialtyAr: avsProfiles.specialtyAr, certified: avsProfiles.certified,
+  }).from(avsProfiles).where(eq(avsProfiles.visible, true)).orderBy(desc(avsProfiles.certified), asc(avsProfiles.displayName)).limit(3);
 }

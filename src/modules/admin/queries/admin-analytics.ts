@@ -1,5 +1,6 @@
 import "server-only";
 import { sql } from "drizzle-orm";
+import { logger } from "@/server/security/logger";
 import { db } from "@/server/db";
 import { getRedis } from "@/server/cache/redis";
 
@@ -10,20 +11,43 @@ export function parseAdminPeriod(value?: string): AdminPeriod {
   return value && value in periodDays ? value as AdminPeriod : "30d";
 }
 
+type DashboardRedisClient = Awaited<ReturnType<typeof getRedis>>;
+let redisResolver: () => Promise<DashboardRedisClient> = getRedis;
+
+/** Test-only seam, matching the pattern in src/server/security/rate-limit.ts. */
+export function setAdminDashboardRedisResolverForTests(resolver: (() => Promise<DashboardRedisClient>) | null) {
+  redisResolver = resolver ?? getRedis;
+}
+
 /**
  * Cache-aside helper for the dashboard overview queries, matching the
  * pattern in admin-users.ts. These are heavy multi-subquery aggregations
  * hit on every /admin landing-page load; 60s TTL keeps the dashboard close
  * to real-time while avoiding a full re-aggregation on every request.
+ * Redis is non-authoritative: a connection failure, get/set failure, or a
+ * corrupted cache value must all degrade to a direct DB read, not fail
+ * the request.
  */
 async function withDashboardCache<T>(cacheKey: string, compute: () => Promise<T>): Promise<T> {
-  const redis = await getRedis();
+  const redis = await redisResolver().catch((error) => {
+    logger.error("admin.dashboard_cache_unavailable", { cacheKey, error: String(error) });
+    return null;
+  });
   if (redis) {
-    const cached = await redis.get(cacheKey);
-    if (cached) return JSON.parse(cached) as T;
+    const cached = await redis.get(cacheKey).catch(() => null);
+    if (cached) {
+      try {
+        return JSON.parse(cached) as T;
+      } catch (error) {
+        // JSON.parse's SyntaxError message can embed a snippet of the malformed
+        // input, so only the error name is logged — never String(error) or the
+        // cached value itself.
+        logger.error("admin.dashboard_cache_corrupt", { cacheKey, error: error instanceof Error ? error.name : "unknown" });
+      }
+    }
   }
   const value = await compute();
-  if (redis) await redis.set(cacheKey, JSON.stringify(value), { EX: 60 });
+  if (redis) await redis.set(cacheKey, JSON.stringify(value), { EX: 60 }).catch(() => undefined);
   return value;
 }
 

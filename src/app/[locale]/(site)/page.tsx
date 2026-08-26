@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { HomeHero } from "@/components/sections/HomeHero";
 import { HomeSections } from "@/components/sections/HomeSections";
 import { isLocale } from "@/lib/i18n";
-import { listPublishedCourses, listPublishedWebinars, listVisibleAvs } from "@/server/queries/catalog";
+import { listHomeAvs, listHomeCourses, listHomeWebinars } from "@/server/queries/catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -33,9 +33,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const [courses, webinars, avsProfiles] = await Promise.all([
-    listPublishedCourses(),
-    listPublishedWebinars(),
-    listVisibleAvs(),
+    listHomeCourses(),
+    listHomeWebinars(),
+    listHomeAvs(),
   ]);
   return <><HomeHero locale={locale}/><HomeSections locale={locale} courses={courses} webinars={webinars} avsProfiles={avsProfiles}/></>;
 }
