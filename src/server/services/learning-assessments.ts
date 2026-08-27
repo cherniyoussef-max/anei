@@ -12,25 +12,35 @@ import {
   learningQuestionOption,
 } from "@/server/db/schema";
 import { grantPoints, POINT_VALUES } from "@/server/services/points";
+import {
+  isLearningQuestionValid,
+  type LearningQuestionInput,
+} from "@/modules/learning/domain/assessment";
 
-type QuestionInput = {
-  promptFr: string;
-  promptAr: string;
-  type: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TRUE_FALSE";
-  position: number;
-  points: number;
-  explanationFr?: string | null;
-  explanationAr?: string | null;
-  options: { textFr: string; textAr: string; position: number; isCorrect: boolean }[];
-};
+type QuestionInput = LearningQuestionInput;
 
 export function validateQuestionCorrectness(input: QuestionInput) {
-  const correct = input.options.filter((option) => option.isCorrect).length;
-  if (input.options.length < 2 || input.options.length > 20) return false;
-  if (new Set(input.options.map((option) => option.position)).size !== input.options.length) return false;
-  if (input.type === "MULTIPLE_CHOICE") return correct >= 1;
-  if (input.type === "TRUE_FALSE" && input.options.length !== 2) return false;
-  return correct === 1;
+  return isLearningQuestionValid(input);
+}
+
+type AssessmentSettingsInput = {
+  titleFr: string;
+  titleAr: string;
+  instructionsFr: string;
+  instructionsAr: string;
+  timeLimitSeconds: number;
+  passingScore: number;
+  maxAttempts: number;
+};
+
+async function getStructuralEditState(tx: Parameters<Parameters<typeof db.transaction>[0]>[0], assessmentId: string) {
+  const [assessment] = await tx.select({ id: learningAssessment.id, published: learningAssessment.published })
+    .from(learningAssessment).where(eq(learningAssessment.id, assessmentId)).limit(1);
+  if (!assessment) return { kind: "not_found" as const };
+  if (assessment.published) return { kind: "published" as const };
+  const [{ value }] = await tx.select({ value: count() }).from(learningAttempt).where(eq(learningAttempt.assessmentId, assessmentId));
+  if (Number(value) > 0) return { kind: "attempts_exist" as const };
+  return { kind: "editable" as const };
 }
 
 export async function createLearningAssessment(actorUserId: string, input: {
@@ -50,24 +60,64 @@ export async function createLearningAssessment(actorUserId: string, input: {
 export async function addLearningQuestion(actorUserId: string, assessmentId: string, input: QuestionInput) {
   if (!validateQuestionCorrectness(input)) return { kind: "invalid_correctness" as const };
   return db.transaction(async (tx) => {
-    const [assessment] = await tx.select({ id: learningAssessment.id, published: learningAssessment.published }).from(learningAssessment).where(eq(learningAssessment.id, assessmentId)).limit(1);
-    if (!assessment) return { kind: "not_found" as const };
-    if (assessment.published) return { kind: "published" as const };
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${assessmentId}, 0))`);
+    const editState = await getStructuralEditState(tx, assessmentId);
+    if (editState.kind !== "editable") return editState;
     const { options, ...questionValues } = input;
     const [question] = await tx.insert(learningQuestion).values({ assessmentId, ...questionValues }).returning();
-    await tx.insert(learningQuestionOption).values(options.map((option) => ({ questionId: question.id, ...option })));
+    const insertedOptions = await tx.insert(learningQuestionOption).values(options.map((option) => ({ questionId: question.id, ...option }))).returning();
     await tx.insert(auditLogs).values({ actorUserId, action: "learning_assessment.question.create", entityType: "learning_question", entityId: question.id, metadata: { assessmentId } });
-    return { kind: "ok" as const, question };
+    return { kind: "ok" as const, question: { ...question, options: insertedOptions } };
+  });
+}
+
+export async function updateLearningAssessment(
+  actorUserId: string,
+  assessmentId: string,
+  input: AssessmentSettingsInput,
+) {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${assessmentId}, 0))`);
+    const editState = await getStructuralEditState(tx, assessmentId);
+    if (editState.kind !== "editable") return editState;
+    const [assessment] = await tx.update(learningAssessment).set({ ...input, updatedAt: new Date() })
+      .where(eq(learningAssessment.id, assessmentId)).returning();
+    await tx.insert(auditLogs).values({ actorUserId, action: "learning_assessment.update", entityType: "learning_assessment", entityId: assessmentId });
+    return { kind: "ok" as const, assessment };
+  });
+}
+
+export async function updateLearningQuestion(
+  actorUserId: string,
+  assessmentId: string,
+  questionId: string,
+  input: QuestionInput,
+) {
+  if (!validateQuestionCorrectness(input)) return { kind: "invalid_correctness" as const };
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${assessmentId}, 0))`);
+    const editState = await getStructuralEditState(tx, assessmentId);
+    if (editState.kind !== "editable") return editState;
+    const [existing] = await tx.select({ id: learningQuestion.id }).from(learningQuestion)
+      .where(and(eq(learningQuestion.id, questionId), eq(learningQuestion.assessmentId, assessmentId))).limit(1);
+    if (!existing) return { kind: "not_found" as const };
+    const { options, ...questionValues } = input;
+    const [question] = await tx.update(learningQuestion).set({ ...questionValues, updatedAt: new Date() })
+      .where(eq(learningQuestion.id, questionId)).returning();
+    await tx.delete(learningQuestionOption).where(eq(learningQuestionOption.questionId, questionId));
+    const insertedOptions = await tx.insert(learningQuestionOption).values(options.map((option) => ({ questionId, ...option }))).returning();
+    await tx.insert(auditLogs).values({ actorUserId, action: "learning_assessment.question.update", entityType: "learning_question", entityId: questionId, metadata: { assessmentId } });
+    return { kind: "ok" as const, question: { ...question, options: insertedOptions } };
   });
 }
 
 export async function deleteLearningQuestion(actorUserId: string, assessmentId: string, questionId: string) {
   return db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${assessmentId}, 0))`);
     const [question] = await tx.select({ id: learningQuestion.id, assessmentId: learningQuestion.assessmentId }).from(learningQuestion).where(and(eq(learningQuestion.id, questionId), eq(learningQuestion.assessmentId, assessmentId))).limit(1);
     if (!question) return { kind: "not_found" as const };
-    const [assessment] = await tx.select({ published: learningAssessment.published }).from(learningAssessment).where(eq(learningAssessment.id, assessmentId)).limit(1);
-    if (!assessment) return { kind: "not_found" as const };
-    if (assessment.published) return { kind: "published" as const };
+    const editState = await getStructuralEditState(tx, assessmentId);
+    if (editState.kind !== "editable") return editState;
     await tx.delete(learningQuestion).where(eq(learningQuestion.id, questionId));
     await tx.insert(auditLogs).values({ actorUserId, action: "learning_assessment.question.delete", entityType: "learning_question", entityId: questionId, metadata: { assessmentId } });
     return { kind: "ok" as const };
@@ -76,6 +126,7 @@ export async function deleteLearningQuestion(actorUserId: string, assessmentId: 
 
 export async function deleteLearningAssessment(actorUserId: string, assessmentId: string) {
   return db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${assessmentId}, 0))`);
     const [assessment] = await tx.select({ id: learningAssessment.id }).from(learningAssessment).where(eq(learningAssessment.id, assessmentId)).limit(1);
     if (!assessment) return { kind: "not_found" as const };
     const [{ value: attemptCount }] = await tx.select({ value: count() }).from(learningAttempt).where(eq(learningAttempt.assessmentId, assessmentId));
@@ -96,12 +147,12 @@ export async function publishLearningAssessment(actorUserId: string, assessmentI
     const [assessment] = await tx.select({ id: learningAssessment.id }).from(learningAssessment).where(eq(learningAssessment.id, assessmentId)).limit(1);
     if (!assessment) return { kind: "not_found" as const };
     if (published) {
-      const questionRows = await tx.select({ id: learningQuestion.id }).from(learningQuestion).where(eq(learningQuestion.assessmentId, assessmentId));
+      const questionRows = await tx.select().from(learningQuestion).where(eq(learningQuestion.assessmentId, assessmentId));
       if (!questionRows.length) return { kind: "empty" as const };
       const optionRows = await tx.select().from(learningQuestionOption).where(inArray(learningQuestionOption.questionId, questionRows.map((row) => row.id)));
       for (const question of questionRows) {
         const options = optionRows.filter((option) => option.questionId === question.id);
-        if (options.length < 2 || !options.some((option) => option.isCorrect)) return { kind: "invalid_question" as const };
+        if (!isLearningQuestionValid({ ...question, type: question.type as QuestionInput["type"], options }, { allowLegacySingleChoice: true })) return { kind: "invalid_question" as const };
       }
     }
     await tx.update(learningAssessment).set({ published, updatedAt: new Date() }).where(eq(learningAssessment.id, assessmentId));
@@ -134,11 +185,30 @@ export async function getLearnerAssessment(userId: string, assessmentId: string)
     textFr: learningQuestionOption.textFr, textAr: learningQuestionOption.textAr,
     position: learningQuestionOption.position,
   }).from(learningQuestionOption).where(inArray(learningQuestionOption.questionId, questions.map((question) => question.id))).orderBy(asc(learningQuestionOption.position)) : [];
-  return { ...row, questions: questions.map((question) => ({ ...question, options: options.filter((option) => option.questionId === question.id) })) };
+  const attempts = await db.select({
+    id: learningAttempt.id,
+    attemptNumber: learningAttempt.attemptNumber,
+    status: learningAttempt.status,
+    submittedAt: learningAttempt.submittedAt,
+    rawPoints: learningAttempt.rawPoints,
+    maxPoints: learningAttempt.maxPoints,
+    percentage: learningAttempt.percentage,
+    passed: learningAttempt.passed,
+  }).from(learningAttempt)
+    .where(and(eq(learningAttempt.assessmentId, assessmentId), eq(learningAttempt.userId, userId)))
+    .orderBy(asc(learningAttempt.attemptNumber));
+  return {
+    ...row,
+    questions: questions.map((question) => ({ ...question, options: options.filter((option) => option.questionId === question.id) })),
+    attempts,
+  };
 }
 
 export async function startLearningAttempt(userId: string, assessmentId: string) {
   return db.transaction(async (tx) => {
+    // Serialize attempt creation with publishing and every structural mutation.
+    // The per-user lock remains second to preserve one active attempt per learner.
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${assessmentId}, 0))`);
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`${assessmentId}:${userId}`}, 0))`);
     const [context] = await tx.select({
       assessment: learningAssessment,

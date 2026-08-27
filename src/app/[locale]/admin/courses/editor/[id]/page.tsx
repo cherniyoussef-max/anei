@@ -96,7 +96,19 @@ export default async function CourseEditorPage({ params, searchParams }: {
 
     {section === "evaluation" && assessments ? <section className="admin-surface admin-editor-section" aria-labelledby="editor-evaluation-title">
       <header><div><span>{assessments.length} {ar ? "اختبارات" : "quiz"}</span><h2 id="editor-evaluation-title">{labels.evaluation}</h2></div><p>{ar ? "أنشئ التقييم، ثم أضف الأسئلة وانشره." : "Créez le quiz, ajoutez ses questions, puis publiez-le."}</p></header>
-      <AdminAssessmentBuilder locale={locale} courseId={id} assessments={assessments.map((item) => ({ id: item.id, title: ar ? item.titleAr : item.titleFr, published: item.published, questions: item.questions.map((question) => ({ id: question.id, prompt: ar ? question.promptAr : question.promptFr, type: question.type, points: question.points })) }))}/>
+      <AdminAssessmentBuilder locale={locale} courseId={id} assessments={assessments.map((item) => ({
+        id: item.id,
+        titleFr: item.titleFr,
+        titleAr: item.titleAr,
+        instructionsFr: item.instructionsFr,
+        instructionsAr: item.instructionsAr,
+        timeLimitSeconds: item.timeLimitSeconds,
+        passingScore: item.passingScore,
+        maxAttempts: item.maxAttempts,
+        published: item.published,
+        attemptCount: item.attemptCount,
+        questions: item.questions,
+      }))}/>
     </section> : null}
 
     {section === "publication" && summary ? <section className="admin-surface admin-editor-section" aria-labelledby="editor-publication-title">

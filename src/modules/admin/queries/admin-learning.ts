@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/server/db";
 import {
   appointment,
@@ -11,6 +11,7 @@ import {
   learningAssessment,
   learningAttempt,
   learningQuestion,
+  learningQuestionOption,
   lessons,
   lessonProgress,
   personaMembership,
@@ -68,10 +69,31 @@ export async function getAdminCourseAssessments(courseId: string) {
   const questions = assessments.length ? await db.select({
     id: learningQuestion.id, assessmentId: learningQuestion.assessmentId, promptFr: learningQuestion.promptFr,
     promptAr: learningQuestion.promptAr, type: learningQuestion.type, position: learningQuestion.position, points: learningQuestion.points,
+    explanationFr: learningQuestion.explanationFr, explanationAr: learningQuestion.explanationAr,
   }).from(learningQuestion).where(inArray(learningQuestion.assessmentId, assessments.map((item) => item.id))).orderBy(asc(learningQuestion.position)) : [];
+  const options = questions.length ? await db.select({
+    id: learningQuestionOption.id,
+    questionId: learningQuestionOption.questionId,
+    textFr: learningQuestionOption.textFr,
+    textAr: learningQuestionOption.textAr,
+    position: learningQuestionOption.position,
+    isCorrect: learningQuestionOption.isCorrect,
+  }).from(learningQuestionOption)
+    .where(inArray(learningQuestionOption.questionId, questions.map((item) => item.id)))
+    .orderBy(asc(learningQuestionOption.position)) : [];
+  const attemptCounts = assessments.length ? await db.select({
+    assessmentId: learningAttempt.assessmentId,
+    value: count(),
+  }).from(learningAttempt)
+    .where(inArray(learningAttempt.assessmentId, assessments.map((item) => item.id)))
+    .groupBy(learningAttempt.assessmentId) : [];
   return assessments.map((assessment) => ({
     ...assessment,
-    questions: questions.filter((question) => question.assessmentId === assessment.id),
+    attemptCount: Number(attemptCounts.find((row) => row.assessmentId === assessment.id)?.value ?? 0),
+    questions: questions.filter((question) => question.assessmentId === assessment.id).map((question) => ({
+      ...question,
+      options: options.filter((option) => option.questionId === question.id),
+    })),
   }));
 }
 
@@ -106,6 +128,63 @@ export async function getAdminResultList(limit = 50) {
     .innerJoin(courses, eq(learningAssessment.courseId, courses.id))
     .where(eq(learningAttempt.status, "GRADED"))
     .orderBy(desc(learningAttempt.submittedAt)).limit(Math.min(100, Math.max(1, limit)));
+}
+
+export async function getAdminAssessmentAnalytics(limit = 50) {
+  const assessmentLimit = Math.min(100, Math.max(1, limit));
+  const studentLimit = Math.min(200, Math.max(1, limit * 4));
+  const [assessmentRows, studentRows, summaryRows] = await Promise.all([
+    db.execute<{
+      id: string; title_fr: string; title_ar: string; course_title_fr: string; course_title_ar: string;
+      published: boolean; questions: number; participants: number; attempts: number; average_score: number; pass_rate: number; best_score: number;
+    }>(sql`
+      select a.id, a.title_fr, a.title_ar, c.title_fr as course_title_fr, c.title_ar as course_title_ar, a.published,
+        (select count(*)::int from learning_question q where q.assessment_id = a.id) as questions,
+        count(distinct t.user_id) filter (where t.status = 'GRADED')::int as participants,
+        count(t.id) filter (where t.status = 'GRADED')::int as attempts,
+        coalesce(round(avg(t.percentage) filter (where t.status = 'GRADED')), 0)::int as average_score,
+        coalesce(round(100.0 * count(t.id) filter (where t.status = 'GRADED' and t.passed) / nullif(count(t.id) filter (where t.status = 'GRADED'), 0)), 0)::int as pass_rate,
+        coalesce(max(t.percentage) filter (where t.status = 'GRADED'), 0)::int as best_score
+      from learning_assessment a
+      join courses c on c.id = a.course_id
+      left join learning_attempt t on t.assessment_id = a.id
+      group by a.id, c.id
+      order by a.updated_at desc
+      limit ${assessmentLimit}
+    `),
+    db.execute<{
+      assessment_id: string; assessment_title_fr: string; assessment_title_ar: string; user_id: string; student_name: string; student_email: string;
+      attempts: number; best_score: number; latest_score: number; latest_passed: boolean; completed_at: Date;
+    }>(sql`
+      select a.id as assessment_id, a.title_fr as assessment_title_fr, a.title_ar as assessment_title_ar,
+        u.id as user_id, u.name as student_name, u.email as student_email,
+        count(t.id)::int as attempts, max(t.percentage)::int as best_score,
+        (array_agg(t.percentage order by t.submitted_at desc))[1]::int as latest_score,
+        (array_agg(t.passed order by t.submitted_at desc))[1] as latest_passed,
+        max(t.submitted_at) as completed_at
+      from learning_attempt t
+      join learning_assessment a on a.id = t.assessment_id
+      join "user" u on u.id = t.user_id
+      where t.status = 'GRADED'
+      group by a.id, u.id
+      order by completed_at desc
+      limit ${studentLimit}
+    `),
+    db.execute<{ assessments: number; attempts: number; average_score: number; pass_rate: number }>(sql`
+      select
+        (select count(*)::int from learning_assessment) as assessments,
+        count(*) filter (where status = 'GRADED')::int as attempts,
+        coalesce(round(avg(percentage) filter (where status = 'GRADED')), 0)::int as average_score,
+        coalesce(round(100.0 * count(*) filter (where status = 'GRADED' and passed) / nullif(count(*) filter (where status = 'GRADED'), 0)), 0)::int as pass_rate
+      from learning_attempt
+    `),
+  ]);
+  return {
+    assessments: assessmentRows.rows,
+    students: studentRows.rows,
+    summary: summaryRows.rows[0] ?? { assessments: 0, attempts: 0, average_score: 0, pass_rate: 0 },
+    scope: { assessmentLimit, studentLimit },
+  };
 }
 
 export async function getCrmLearnerOperationalDetail(organizationId: string, contactId: string) {
