@@ -6,6 +6,7 @@ import { searchPublishedResources, type ResourceSearchInput } from "@/server/que
 import { getPaymentCapabilities } from "@/server/payments";
 import { Icon } from "@/components/ui/Icon";
 import { resources as resourceTranslations } from "@/lib/data";
+import { publicDataOr } from "@/server/queries/public-fallback";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 function one(value: string | string[] | undefined) { return Array.isArray(value) ? value[0] : value; }
@@ -28,7 +29,10 @@ export default async function LibraryPage({ params, searchParams }: { params: Pr
       ? sort
       : undefined,
   };
-  const data = await searchPublishedResources({ ...filters, page: pageNumber(one(raw.page)) });
+  const page = pageNumber(one(raw.page));
+  const data = await publicDataOr("resources", () => searchPublishedResources({ ...filters, page }), {
+    items: [], total: 0, page, pageSize: 12, totalPages: 1, types: [],
+  });
   const items: CatalogResource[] = data.items.map((resource) => {
     const translated = resourceTranslations.find((item) => item.title.fr === resource.titleFr);
 

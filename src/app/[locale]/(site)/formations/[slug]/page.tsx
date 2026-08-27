@@ -13,13 +13,14 @@ import { getSession } from "@/server/auth/session";
 import { db } from "@/server/db";
 import { enrollments } from "@/server/db/schema";
 import { courses as courseTranslations } from "@/lib/data";
+import { publicDataOr } from "@/server/queries/public-fallback";
 
 export const dynamic = "force-dynamic";
 
 export default async function CourseDetailPage({ params }: { params: Promise<{ locale: string; slug: string }> }) {
   const { locale, slug } = await params;
   if (!isLocale(locale)) notFound();
-  const result = await getPublishedCourse(slug);
+  const result = await publicDataOr("course-detail", () => getPublishedCourse(slug), null);
   if (!result) notFound();
   const { course, lessons, modules } = result;
   const ar = locale === "ar";
@@ -28,10 +29,10 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ l
   const title = ar ? course.titleAr : en ? translated?.title.en ?? course.titleFr : course.titleFr;
   const description = ar ? course.descriptionAr : en ? translated?.description.en ?? course.descriptionFr : course.descriptionFr;
   const objectives = ar ? course.objectives.ar : en ? translated?.objectives.en ?? course.objectives.fr : course.objectives.fr;
-  const session = await getSession();
+  const session = await publicDataOr("course-session", getSession, null);
   let enrolled = false;
   if (session) {
-    const [row] = await db.select({ id: enrollments.id }).from(enrollments).where(and(eq(enrollments.userId, session.user.id), eq(enrollments.courseId, course.id))).limit(1);
+    const [row] = await publicDataOr("course-enrollment", () => db.select({ id: enrollments.id }).from(enrollments).where(and(eq(enrollments.userId, session.user.id), eq(enrollments.courseId, course.id))).limit(1), []);
     enrolled = Boolean(row);
   }
   const preview = lessons.find((lesson) => lesson.preview && (lesson.videoUrl || (lesson.mediaProvider === "youtube" && lesson.mediaRef)));

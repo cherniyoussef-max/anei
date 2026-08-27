@@ -6,6 +6,7 @@ import { Icon } from "@/components/ui/Icon";
 import { newsItems as translations } from "@/lib/data";
 import { formatDate, isLocale } from "@/lib/i18n";
 import { getPublishedNews } from "@/server/queries/news";
+import { publicDataOr } from "@/server/queries/public-fallback";
 import "./news-page.css";
 
 export const dynamic = "force-dynamic";
@@ -37,7 +38,7 @@ export default async function NewsPage({ params }: { params: Promise<{ locale: s
 
   const ar = locale === "ar";
   const en = locale === "en";
-  const items = await getPublishedNews();
+  const items = await publicDataOr("news", getPublishedNews, []);
   const localizedItems = items.map((item, index) => {
     const translated = translations[index];
     return {

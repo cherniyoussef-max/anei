@@ -5,6 +5,7 @@ import { PageHero } from "@/components/ui/PageHero";
 import { Icon } from "@/components/ui/Icon";
 import { WebinarRegisterButton } from "@/components/interactive/WebinarRegisterButton";
 import { listPublishedWebinars } from "@/server/queries/catalog";
+import { publicDataOr } from "@/server/queries/public-fallback";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,7 @@ export default async function WebinarsPage({ params }: { params: Promise<{ local
   if (!isLocale(locale)) notFound();
   const ar = locale === "ar";
   const en = locale === "en";
-  const rows = await listPublishedWebinars();
+  const rows = await publicDataOr("webinars", listPublishedWebinars, []);
   const dateLocale = ar ? "ar-TN" : en ? "en-GB" : "fr-FR";
   return <>
     <PageHero eyebrow={ar ? "ندوات مباشرة وإعادات" : en ? "Live webinars and replays" : "Webinaires & replays"} title={ar ? "تعلّم مباشرة واحتفظ بإمكانية الرجوع" : en ? "Learn live. Ask questions. Revisit the session." : "Apprendre en direct, échanger, revoir"} description={ar ? "جلسات مع مختصين وتسجيل مرتبط بحسابك وإعادات للمشاركين." : en ? "Sessions with specialists, account-based registration and replays for participants." : "Des sessions avec des spécialistes, une inscription liée à votre compte et des replays pour les participants."}/>

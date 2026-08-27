@@ -4,6 +4,7 @@ import { PageHero } from "@/components/ui/PageHero";
 import { CourseFilter, type CatalogCourse } from "@/components/interactive/CourseFilter";
 import { searchPublishedCourses, type CourseSearchInput } from "@/server/queries/catalog";
 import { courses as courseTranslations } from "@/lib/data";
+import { publicDataOr } from "@/server/queries/public-fallback";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,10 @@ export default async function CoursesPage({ params, searchParams }: { params: Pr
       ? sort
       : undefined,
   };
-  const data = await searchPublishedCourses({ ...filters, page: pageNumber(one(raw.page)) });
+  const page = pageNumber(one(raw.page));
+  const data = await publicDataOr("courses", () => searchPublishedCourses({ ...filters, page }), {
+    items: [], total: 0, page, pageSize: 12, totalPages: 1, categories: [],
+  });
   const items: CatalogCourse[] = data.items.map((course) => {
     const translated = courseTranslations.find((item) => item.slug === course.slug);
     return ({

@@ -5,6 +5,7 @@ import { Icon } from "@/components/ui/Icon";
 import { newsItems as translations } from "@/lib/data";
 import { formatDate, isLocale } from "@/lib/i18n";
 import { getPublishedNewsBySlug } from "@/server/queries/news";
+import { publicDataOr } from "@/server/queries/public-fallback";
 import "../news-page.css";
 
 export const dynamic = "force-dynamic";
@@ -30,7 +31,7 @@ function publicParagraphs(content: string) {
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; id: string }> }): Promise<Metadata> {
   const { locale, id } = await params;
-  const item = await getPublishedNewsBySlug(id);
+  const item = await publicDataOr("news-metadata", () => getPublishedNewsBySlug(id), null);
   if (!item) return {};
   const translated = translationForSlug(id);
   const title = locale === "ar" ? item.titleAr : locale === "en" ? translated?.title.en ?? item.titleFr : item.titleFr;
@@ -55,7 +56,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function NewsDetail({ params }: { params: Promise<{ locale: string; id: string }> }) {
   const { locale, id } = await params;
   if (!isLocale(locale)) notFound();
-  const item = await getPublishedNewsBySlug(id);
+  const item = await publicDataOr("news-detail", () => getPublishedNewsBySlug(id), null);
   if (!item) notFound();
 
   const ar = locale === "ar";
