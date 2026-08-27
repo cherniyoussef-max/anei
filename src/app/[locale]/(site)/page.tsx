@@ -3,7 +3,8 @@ import type { Metadata } from "next";
 import { HomeHero } from "@/components/sections/HomeHero";
 import { HomeSections } from "@/components/sections/HomeSections";
 import { isLocale } from "@/lib/i18n";
-import { listHomeAvs, listHomeCourses, listHomeWebinars } from "@/server/queries/catalog";
+import { listHomeAvs, listHomeCourses, listHomeResources, listHomeWebinars } from "@/server/queries/catalog";
+import { listHomeNews } from "@/server/queries/news";
 
 export const dynamic = "force-dynamic";
 
@@ -32,10 +33,12 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
-  const [courses, webinars, avsProfiles] = await Promise.all([
+  const [courses, webinars, avsProfiles, resources, news] = await Promise.all([
     listHomeCourses(),
     listHomeWebinars(),
     listHomeAvs(),
+    listHomeResources(),
+    listHomeNews(),
   ]);
-  return <><HomeHero locale={locale}/><HomeSections locale={locale} courses={courses} webinars={webinars} avsProfiles={avsProfiles}/></>;
+  return <><HomeHero locale={locale}/><HomeSections locale={locale} courses={courses} webinars={webinars} avsProfiles={avsProfiles} resources={resources} news={news}/></>;
 }

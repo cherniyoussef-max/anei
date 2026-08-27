@@ -9,7 +9,9 @@ type HeroContent = {
   body: string;
   primary: string;
   secondary: string;
-  note: string;
+  searchLabel: string;
+  searchPlaceholder: string;
+  searchAction: string;
   imageAlt: string;
   missionTitle: string;
   missionBody: string;
@@ -19,57 +21,60 @@ type HeroContent = {
 
 const heroContent: Record<Locale, HeroContent> = {
   en: {
-    kicker: "SUPPORT • TRAIN • INCLUDE • TOGETHER",
+    kicker: "INCLUSIVE EDUCATION IN PRACTICE",
     title: "Together, for stronger inclusive education.",
-    body: "ANEI supports professionals and families in turning knowledge into precise, inclusive and humane practice.",
+    body: "Bilingual learning, practical resources and human support for everyone involved in inclusion.",
     primary: "Discover our courses",
-    secondary: "Learn more",
-    note: "Bilingual professional learning grounded in practice.",
+    secondary: "Understand ANEI",
+    searchLabel: "Search ANEI courses",
+    searchPlaceholder: "What skill do you want to develop?",
+    searchAction: "Search",
     imageAlt: "Education professionals taking part in an ANEI training session",
     missionTitle: "Our mission",
     missionBody: "Make inclusive education applicable every day.",
     pillarsLabel: "ANEI commitments",
     pillars: [
-      { icon: "users", title: "Support", body: "Stand alongside every person involved in inclusion." },
-      { icon: "book", title: "Train", body: "Share concrete and reliable methods." },
-      { icon: "spark", title: "Inspire", body: "Give people the confidence to act." },
-      { icon: "shield", title: "Include", body: "Build accessible, lasting practices." },
+      { icon: "book", title: "Structured learning", body: "Clear pathways for every professional role." },
+      { icon: "spark", title: "Useful resources", body: "Methods and tools connected to field practice." },
+      { icon: "users", title: "Human support", body: "Webinars, specialists and a certified AVS network." },
     ],
   },
   fr: {
-    kicker: "ACCOMPAGNER • FORMER • INCLURE • ENSEMBLE",
+    kicker: "L’ÉDUCATION INCLUSIVE, EN PRATIQUE",
     title: "Ensemble, pour une éducation inclusive plus forte.",
-    body: "ANEI accompagne les professionnels et les familles pour transformer les connaissances en pratiques inclusives, précises et humaines.",
+    body: "Formations bilingues, ressources concrètes et accompagnement humain pour chaque acteur de l’inclusion.",
     primary: "Découvrir nos parcours",
-    secondary: "En savoir plus",
-    note: "Une formation professionnelle bilingue, ancrée dans la pratique.",
+    secondary: "Comprendre ANEI",
+    searchLabel: "Rechercher dans les formations ANEI",
+    searchPlaceholder: "Quelle compétence souhaitez-vous développer ?",
+    searchAction: "Rechercher",
     imageAlt: "Équipe éducative participant à une session de formation ANEI",
     missionTitle: "Notre mission",
     missionBody: "Rendre l’éducation inclusive applicable, chaque jour.",
     pillarsLabel: "Engagements ANEI",
     pillars: [
-      { icon: "users", title: "Accompagner", body: "Être aux côtés de chaque acteur de l’inclusion." },
-      { icon: "book", title: "Former", body: "Transmettre des méthodes concrètes et fiables." },
-      { icon: "spark", title: "Inspirer", body: "Donner les clés pour agir avec confiance." },
-      { icon: "shield", title: "Inclure", body: "Construire des pratiques accessibles et durables." },
+      { icon: "book", title: "Parcours structurés", body: "Des apprentissages lisibles pour chaque rôle." },
+      { icon: "spark", title: "Ressources utiles", body: "Des méthodes et outils reliés au terrain." },
+      { icon: "users", title: "Accompagnement humain", body: "Webinaires, spécialistes et réseau AVS certifié." },
     ],
   },
   ar: {
-    kicker: "نرافق • نكوّن • ندمج • معًا",
+    kicker: "التربية الدامجة في الممارسة",
     title: "معًا، من أجل تربية دامجة أكثر قوة.",
-    body: "ترافق ANEI المهنيين والأسر لتحويل المعارف إلى ممارسات دامجة دقيقة وإنسانية.",
+    body: "تكوين ثنائي اللغة وموارد عملية ومرافقة إنسانية لكل فاعل في مجال الدمج.",
     primary: "اكتشف مساراتنا",
-    secondary: "تعرّف علينا",
-    note: "تكوين مهني ثنائي اللغة، مرتبط بالممارسة.",
+    secondary: "تعرّف على ANEI",
+    searchLabel: "البحث في دورات ANEI",
+    searchPlaceholder: "ما المهارة التي تريد تطويرها؟",
+    searchAction: "بحث",
     imageAlt: "مهنيات في التربية يشاركن في جلسة تكوين لدى ANEI",
     missionTitle: "مهمتنا",
     missionBody: "جعل التربية الدامجة قابلة للتطبيق كل يوم.",
     pillarsLabel: "التزامات ANEI",
     pillars: [
-      { icon: "users", title: "نرافق", body: "نقف إلى جانب كل فاعل في مجال الدمج." },
-      { icon: "book", title: "نكوّن", body: "ننقل أساليب عملية وموثوقة." },
-      { icon: "spark", title: "نُلهم", body: "نمنح الأدوات اللازمة للعمل بثقة." },
-      { icon: "shield", title: "ندمج", body: "نبني ممارسات متاحة ومستدامة." },
+      { icon: "book", title: "مسارات منظمة", body: "تعلم واضح يناسب كل دور مهني." },
+      { icon: "spark", title: "موارد عملية", body: "أساليب وأدوات مرتبطة بالميدان." },
+      { icon: "users", title: "مرافقة إنسانية", body: "ندوات ومختصون وشبكة AVS معتمدة." },
     ],
   },
 };
@@ -84,13 +89,18 @@ export function HomeHero({ locale }: { locale: Locale }) {
           <span className="reference-hero-kicker">{content.kicker}</span>
           <h1 id="public-hero-title">{content.title}</h1>
           <p>{content.body}</p>
+          <form className="home-course-search" action={`/${locale}/formations`} method="get" role="search">
+            <label className="sr-only" htmlFor="home-course-search">{content.searchLabel}</label>
+            <Icon name="search" size={20} />
+            <input id="home-course-search" name="q" maxLength={100} autoComplete="off" placeholder={content.searchPlaceholder} />
+            <button type="submit">{content.searchAction}<Icon className="directional-icon" name="arrow" size={17} /></button>
+          </form>
           <div className="hero-actions public-hero-actions">
             <Link className="btn btn-primary btn-lg" href={`/${locale}/formations`}>
               {content.primary}<Icon className="directional-icon" name="arrow" size={19} />
             </Link>
             <Link className="btn btn-ghost btn-lg" href={`/${locale}/about`}>{content.secondary}</Link>
           </div>
-          <p className="reference-hero-note"><Icon name="shield" size={18} />{content.note}</p>
         </div>
 
         <figure className="public-hero-figure">

@@ -22,6 +22,27 @@ export function getPublishedNews() {
     .limit(24);
 }
 
+/** Compact projection used by the homepage discovery chapter. */
+export function listHomeNews() {
+  return db
+    .select({
+      id: newsPosts.id,
+      slug: newsPosts.slug,
+      tagFr: newsPosts.tagFr,
+      tagAr: newsPosts.tagAr,
+      titleFr: newsPosts.titleFr,
+      titleAr: newsPosts.titleAr,
+      excerptFr: newsPosts.excerptFr,
+      excerptAr: newsPosts.excerptAr,
+      publishedAt: newsPosts.publishedAt,
+      createdAt: newsPosts.createdAt,
+    })
+    .from(newsPosts)
+    .where(eq(newsPosts.published, true))
+    .orderBy(desc(newsPosts.publishedAt), desc(newsPosts.createdAt))
+    .limit(3);
+}
+
 export function getPublishedNewsBySlug(slug: string) {
   return db.query.newsPosts.findFirst({ where: and(eq(newsPosts.slug, slug), eq(newsPosts.published, true)) });
 }

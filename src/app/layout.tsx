@@ -8,7 +8,7 @@ const fraunces = Fraunces({ subsets: ["latin"], variable: "--font-fraunces", wei
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: {
-    default: "ANEI — Académie Nationale de l’Éducation Inclusive",
+    default: "ANEI - Académie Nationale de l’Éducation Inclusive",
     template: "%s | ANEI",
   },
   description: "Plateforme bilingue de formation continue dédiée à l’éducation inclusive.",
@@ -23,10 +23,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const locale = requestedLocale === "ar" ? "ar" : requestedLocale === "en" ? "en" : "fr";
   const nonce = requestHeaders.get("x-nonce") ?? undefined;
   const directionContract = `THESIS: ANEI is an institutional field guide turning inclusive education into daily practice; it refuses generic SaaS card-stack brochure layouts.
-OWN-WORLD: Deep navy, gold, warm ivory, restrained cool surfaces, border-led depth, 8–12px radii, unified professional Latin/Arabic typography, and authentic documentary photography.
+OWN-WORLD: Deep navy, gold, warm ivory, restrained cool surfaces, border-led depth, 8-12px radii, unified professional Latin/Arabic typography, and authentic documentary photography.
 STORY: Visitors understand ANEI, choose their role, discover learning, see the method and human support, browse resources and news, then act.
 FIRST VIEWPORT: A concise editorial split pairs mission copy and two actions with one real photograph; a three-part proof strip enters the lower viewport. The primary action is course discovery.
-FORM: Established ANEI world, preservation-led editorial overhaul, assigned Grounded Concept 5, seed b30d51c8.
+FORM: Established ANEI world, preservation-led institutional field guide, assigned Grounded Concept 4, seed 5091884d.
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md`;
   const installDirectionContract = `document.currentScript?.parentNode?.insertBefore(document.createComment(${JSON.stringify(directionContract)}),document.currentScript);`;
 

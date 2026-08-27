@@ -28,8 +28,16 @@ function escapeLike(value: string) {
 
 const COURSE_FIXTURE_SLUG_PATTERN = "^(stream-course|learn-course|course|preview-course|target-course|public-course|enrolled-course)-[0-9a-f]{8}-";
 const RESOURCE_FIXTURE_SLUG_PATTERN = "^storage-authz-resource-[0-9a-f]{8}-";
+const HOMEPAGE_PLACEHOLDER_PATTERN = "^(test|course|sum|demo|example|exemple|placeholder)$";
 const publicCourseFilter = and(eq(courses.published, true), sql`${courses.slug} !~ ${COURSE_FIXTURE_SLUG_PATTERN}`)!;
 const publicResourceFilter = and(eq(resources.published, true), sql`${resources.slug} !~ ${RESOURCE_FIXTURE_SLUG_PATTERN}`)!;
+const homepageCourseFilter = and(
+  publicCourseFilter,
+  sql`lower(trim(${courses.titleFr})) !~ ${HOMEPAGE_PLACEHOLDER_PATTERN}`,
+  sql`lower(trim(${courses.titleAr})) !~ ${HOMEPAGE_PLACEHOLDER_PATTERN}`,
+  sql`lower(trim(${courses.summaryFr})) !~ ${HOMEPAGE_PLACEHOLDER_PATTERN}`,
+  sql`lower(trim(${courses.summaryAr})) !~ ${HOMEPAGE_PLACEHOLDER_PATTERN}`,
+)!;
 
 export type CourseSearchInput = {
   q?: string;
@@ -102,8 +110,26 @@ export async function listHomeCourses() {
     id: courses.id, slug: courses.slug, titleFr: courses.titleFr, titleAr: courses.titleAr,
     summaryFr: courses.summaryFr, summaryAr: courses.summaryAr, category: courses.category,
     durationMinutes: courses.durationMinutes, priceMillimes: courses.priceMillimes,
-    startAt: courses.startAt, featured: courses.featured,
-  }).from(courses).where(publicCourseFilter).orderBy(desc(courses.featured), asc(courses.startAt)).limit(24);
+    startAt: courses.startAt, featured: courses.featured, level: courses.level,
+    mode: courses.mode, trainerName: courses.trainerName,
+  }).from(courses).where(homepageCourseFilter).orderBy(desc(courses.featured), asc(courses.startAt)).limit(24);
+}
+
+/** Homepage-only resource projection, intentionally capped to keep the public
+ * landing page fast while still showing live, database-backed material. */
+export async function listHomeResources() {
+  return db.select({
+    id: resources.id,
+    slug: resources.slug,
+    titleFr: resources.titleFr,
+    titleAr: resources.titleAr,
+    descriptionFr: resources.descriptionFr,
+    descriptionAr: resources.descriptionAr,
+    audienceFr: resources.audienceFr,
+    audienceAr: resources.audienceAr,
+    type: resources.type,
+    createdAt: resources.createdAt,
+  }).from(resources).where(publicResourceFilter).orderBy(desc(resources.createdAt)).limit(2);
 }
 
 export async function getPublishedCourse(slug: string) {
