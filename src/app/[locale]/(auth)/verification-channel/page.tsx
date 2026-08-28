@@ -1,8 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { isLocale } from "@/lib/i18n";
 import { requirePrimaryUser } from "@/server/auth/session";
-import { getSessionAssurance } from "@/server/auth/assurance";
-import { getUserProfile, isOnboardingCompleted } from "@/server/auth/profile";
+import { resolveOnboardingState, onboardingPathFor } from "@/server/auth/onboarding";
 import { VerificationChannelForm } from "@/components/auth/VerificationChannelForm";
 
 export const dynamic = "force-dynamic";
@@ -11,12 +10,9 @@ export default async function VerificationChannelPage({ params }: { params: Prom
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 
-  const session = await requirePrimaryUser(locale);
-  const profile = await getUserProfile(session.user.id);
-  if (!isOnboardingCompleted(profile)) redirect(`/${locale}/complete-profile`);
-
-  const assurance = await getSessionAssurance(session.session.id);
-  if (assurance) redirect(`/${locale}/dashboard`);
+  await requirePrimaryUser(locale);
+  const state = await resolveOnboardingState();
+  if (state.state !== "ASSURANCE_REQUIRED") redirect(onboardingPathFor(locale, state));
 
   const ar = locale === "ar";
   return (

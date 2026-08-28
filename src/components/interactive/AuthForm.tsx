@@ -40,7 +40,6 @@ export function AuthForm({ locale, mode, googleConfigured, verificationRequired 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(() => googleAuthErrorMessage(locale, search.get("error")));
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [registered, setRegistered] = useState(false);
   const [profileType, setProfileType] = useState<ProfileType>(() => {
     const requested = search.get("role");
     return isProfileType(requested) ? requested : "teacher";
@@ -61,17 +60,23 @@ export function AuthForm({ locale, mode, googleConfigured, verificationRequired 
     try {
       if (mode === "login") {
         const result = await authClient.signIn.email({ email, password, callbackURL: assuranceDestination });
-        if (result.error) throw new Error(result.error.message || "AUTH_ERROR");
+        if (result.error) {
+          if (result.error.code === "EMAIL_NOT_VERIFIED") {
+            router.push(`/${locale}/verify-email?email=${encodeURIComponent(email)}`);
+            return;
+          }
+          throw new Error(result.error.message || "AUTH_ERROR");
+        }
       } else {
         const name = String(form.get("name") ?? "").trim();
         const referredByCode = search.get("ref")?.trim().slice(0, 16) || undefined;
-        const result = await authClient.signUp.email({ name, email, password, locale: locale === "en" ? "fr" : locale, profileType, referredByCode, callbackURL: assuranceDestination });
+        const verifyCallbackURL = `/${locale}/verify-email?email=${encodeURIComponent(email)}`;
+        const result = await authClient.signUp.email({ name, email, password, locale: locale === "en" ? "fr" : locale, profileType, referredByCode, callbackURL: verificationRequired ? verifyCallbackURL : assuranceDestination });
         if (result.error) throw new Error(result.error.message || "AUTH_ERROR");
-      }
-      if (mode === "register" && verificationRequired) {
-        setRegistered(true);
-        setLoading(false);
-        return;
+        if (verificationRequired) {
+          router.push(verifyCallbackURL);
+          return;
+        }
       }
       router.push(assuranceDestination);
       router.refresh();
@@ -101,8 +106,6 @@ export function AuthForm({ locale, mode, googleConfigured, verificationRequired 
       setGoogleLoading(false);
     }
   }
-
-  if (registered) return <div className="form-success" role="status"><strong>{ar ? "تحقق من بريدك الإلكتروني" : en ? "Check your email" : "Vérifiez votre adresse e-mail"}</strong><p>{ar ? "تم إنشاء الحساب. افتح رابط التحقق المرسل إلى بريدك قبل تسجيل الدخول." : en ? "Your account is ready. Open the verification link sent by email before signing in." : "Votre compte est créé. Ouvrez le lien de vérification envoyé par e-mail avant de vous connecter."}</p></div>;
 
   return (
     <form className="auth-form" onSubmit={submit} aria-busy={loading || googleLoading}>

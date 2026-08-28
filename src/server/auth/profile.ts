@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/server/db";
 import { user, userProfile } from "@/server/db/schema";
-import { ensurePrimaryPersonaMembership } from "@/server/services/personas";
+import { establishOnboardingPersonaTx, type DbClient } from "@/server/services/personas";
 import { provisionCrmContactForUser } from "@/server/services/crm-onboarding";
 import { enqueueSystemWelcomeWhatsAppMessage } from "@/server/services/whatsapp";
 import { env, whatsappAutoWelcomeConfigured } from "@/server/env";
@@ -128,24 +128,62 @@ export function isOnboardingCompleted(profile: Awaited<ReturnType<typeof getUser
   return Boolean(profile?.onboardingCompletedAt);
 }
 
-export async function completeUserProfile(userId: string, raw: unknown) {
-  const parsed = profileSchema.safeParse(raw);
-  if (!parsed.success) return { ok: false as const, error: "INVALID_PROFILE", details: parsed.error.flatten() };
-  const data = parsed.data;
-  const now = new Date();
-  const birthDate = data.birthDate ? new Date(data.birthDate) : null;
-  if (birthDate && birthDate.getTime() > Date.now()) {
-    return { ok: false as const, error: "INVALID_BIRTH_DATE" };
+type ProfileData = z.infer<typeof profileSchema>;
+
+type CompleteProfileTxResult = { ok: true } | { ok: false; error: "ONBOARDING_ALREADY_COMPLETED" };
+
+/**
+ * The single authoritative onboarding write: advisory lock + persona
+ * reconciliation + `user`/`userProfile` writes, all on the caller-supplied
+ * `tx`. Extracted from `completeUserProfile` so the rollback-atomicity
+ * invariant (persona, profileType, and requestedPersona always agree after
+ * commit) can be exercised directly in tests via `db.transaction` + a forced
+ * error, without needing to fake an HTTP/CRM boundary.
+ */
+export async function completeUserProfileTx(
+  tx: DbClient,
+  userId: string,
+  data: ProfileData,
+  now: Date,
+  birthDate: Date | null,
+  onboardingAlreadyCompleted: boolean,
+): Promise<CompleteProfileTxResult> {
+  // Persona reconciliation happens BEFORE the profile is persisted, and the
+  // whole completion is aborted if it is rejected. Both this call and the
+  // user/userProfile writes below run on the same `tx`, so a rejection or a
+  // later failure rolls back the persona change together with the profile
+  // write - a successful commit can never leave requestedPersona/profileType
+  // pointing at one persona while personaMembership.isPrimary points at
+  // another - the exact primary-persona-mismatch bug this replaces.
+  const personaResult = await establishOnboardingPersonaTx(tx, userId, data.requestedPersona, onboardingAlreadyCompleted);
+  if (personaResult.kind === "locked") {
+    return { ok: false as const, error: "ONBOARDING_ALREADY_COMPLETED" };
   }
 
-  const priorProfile = await getUserProfile(userId);
-  const isFirstCompletion = !isOnboardingCompleted(priorProfile);
-
-  await db.transaction(async (tx) => {
-    await tx
-      .insert(userProfile)
-      .values({
-        userId,
+  await tx
+    .insert(userProfile)
+    .values({
+      userId,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      birthDate,
+      birthYear: data.birthYear ?? null,
+      phoneNumber: data.phoneNumber ?? null,
+      country: data.country,
+      governorate: data.governorate,
+      city: data.city,
+      preferredLocale: data.preferredLocale,
+      requestedPersona: data.requestedPersona,
+      educationLevel: data.educationLevel ?? null,
+      institutionName: data.institutionName ?? null,
+      onboardingCompletedAt: now,
+      termsAcceptedAt: now,
+      privacyAcceptedAt: now,
+      updatedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: userProfile.userId,
+      set: {
         firstName: data.firstName,
         lastName: data.lastName,
         birthDate,
@@ -162,41 +200,39 @@ export async function completeUserProfile(userId: string, raw: unknown) {
         termsAcceptedAt: now,
         privacyAcceptedAt: now,
         updatedAt: now,
-      })
-      .onConflictDoUpdate({
-        target: userProfile.userId,
-        set: {
-          firstName: data.firstName,
-          lastName: data.lastName,
-          birthDate,
-          birthYear: data.birthYear ?? null,
-          phoneNumber: data.phoneNumber ?? null,
-          country: data.country,
-          governorate: data.governorate,
-          city: data.city,
-          preferredLocale: data.preferredLocale,
-          requestedPersona: data.requestedPersona,
-          educationLevel: data.educationLevel ?? null,
-          institutionName: data.institutionName ?? null,
-          onboardingCompletedAt: now,
-          termsAcceptedAt: now,
-          privacyAcceptedAt: now,
-          updatedAt: now,
-        },
-      });
+      },
+    });
 
-    await tx
-      .update(user)
-      .set({
-        name: `${data.firstName} ${data.lastName}`.trim(),
-        locale: data.preferredLocale,
-        profileType: toLegacyProfileType(data.requestedPersona),
-        updatedAt: now,
-      })
-      .where(and(eq(user.id, userId)));
-  });
+  await tx
+    .update(user)
+    .set({
+      name: `${data.firstName} ${data.lastName}`.trim(),
+      locale: data.preferredLocale,
+      profileType: toLegacyProfileType(data.requestedPersona),
+      updatedAt: now,
+    })
+    .where(and(eq(user.id, userId)));
 
-  await ensurePrimaryPersonaMembership(userId, toLegacyProfileType(data.requestedPersona));
+  return { ok: true as const };
+}
+
+export async function completeUserProfile(userId: string, raw: unknown) {
+  const parsed = profileSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false as const, error: "INVALID_PROFILE", details: parsed.error.flatten() };
+  const data = parsed.data;
+  const now = new Date();
+  const birthDate = data.birthDate ? new Date(data.birthDate) : null;
+  if (birthDate && birthDate.getTime() > Date.now()) {
+    return { ok: false as const, error: "INVALID_BIRTH_DATE" };
+  }
+
+  const priorProfile = await getUserProfile(userId);
+  const isFirstCompletion = !isOnboardingCompleted(priorProfile);
+
+  const result = await db.transaction((tx) => completeUserProfileTx(tx, userId, data, now, birthDate, !isFirstCompletion));
+  if (!result.ok) {
+    return { ok: false as const, error: result.error };
+  }
 
   // CRM + WhatsApp welcome provisioning runs in its OWN transaction, strictly
   // after the profile-save transaction has committed. Deliberately not

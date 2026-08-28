@@ -9,7 +9,7 @@ import {
 } from "@/modules/personas/domain/permissions";
 import { grantPoints, POINT_VALUES } from "@/server/services/points";
 
-type DbClient = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type DbClient = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /**
  * Grants the referrer's bonus once a referred user's persona becomes ACTIVE
@@ -93,6 +93,80 @@ export async function ensureStudentPersonaMembership(tx: DbClient, userId: strin
 type PersonaMutationResult =
   | { kind: "ok"; from: PersonaStatus | null }
   | { kind: "not_found" };
+
+type OnboardingPersonaResult = { kind: "ok" } | { kind: "locked" };
+
+/**
+ * Authoritative onboarding-time persona establishment/reconciliation. Not for
+ * general self-service persona switching after onboarding — that remains
+ * `adminSetPrimaryPersona`. Concurrency-safe via the same
+ * `pg_advisory_xact_lock(hashtext(userId))` pattern as `adminSetPrimaryPersona`.
+ *
+ * Runs on the caller-supplied executor `tx` — the caller (e.g.
+ * `completeUserProfile`) is responsible for opening the surrounding
+ * `db.transaction`, so the advisory lock and the persona write share the same
+ * transaction as the caller's `user`/`userProfile` writes instead of being
+ * committed independently. Two concurrent onboarding submissions for the same
+ * user still always serialize on the advisory lock.
+ *
+ * - No primary yet -> creates `persona` as primary.
+ * - Primary already equals `persona` -> idempotent success, no writes.
+ * - Primary differs and onboarding is not yet complete -> atomically
+ *   reconciles: unsets the old primary, sets/creates `persona` as primary.
+ * - Onboarding already complete and primary differs -> rejected ("locked").
+ *   This onboarding path must never be usable to switch an already-onboarded
+ *   user's primary persona; that remains an admin-only operation.
+ *
+ * Status is always computed server-side via `defaultStatusFor` (STUDENT/PARENT
+ * auto-ACTIVE, professional personas PENDING_REVIEW) - never accepted from the
+ * caller, so this can never be used to self-activate a professional persona.
+ */
+export async function establishOnboardingPersonaTx(
+  tx: DbClient,
+  userId: string,
+  persona: Persona,
+  onboardingAlreadyCompleted: boolean,
+): Promise<OnboardingPersonaResult> {
+  const status = defaultStatusFor(persona);
+  await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${userId}))`);
+
+  const [existingPrimary] = await tx
+    .select({ id: personaMembership.id, persona: personaMembership.persona })
+    .from(personaMembership)
+    .where(and(eq(personaMembership.userId, userId), eq(personaMembership.isPrimary, true)))
+    .limit(1);
+
+  if (existingPrimary?.persona === persona) return { kind: "ok" as const };
+  if (onboardingAlreadyCompleted) return { kind: "locked" as const };
+
+  if (existingPrimary) {
+    await tx
+      .update(personaMembership)
+      .set({ isPrimary: false, updatedAt: new Date() })
+      .where(eq(personaMembership.id, existingPrimary.id));
+  }
+
+  await tx
+    .insert(personaMembership)
+    .values({ userId, persona, status, isPrimary: true })
+    .onConflictDoUpdate({
+      target: [personaMembership.userId, personaMembership.persona],
+      set: { isPrimary: true, status, updatedAt: new Date() },
+    });
+
+  if (status === "ACTIVE") await maybeRewardReferral(tx, userId);
+
+  return { kind: "ok" as const };
+}
+
+/** Standalone wrapper around {@link establishOnboardingPersonaTx} for call sites with no existing transaction. */
+export async function establishOnboardingPersona(
+  userId: string,
+  persona: Persona,
+  onboardingAlreadyCompleted: boolean,
+): Promise<OnboardingPersonaResult> {
+  return db.transaction((tx) => establishOnboardingPersonaTx(tx, userId, persona, onboardingAlreadyCompleted));
+}
 
 /** Admin-only: set (create or update) a persona's status for a user. Always audited. */
 export async function adminSetPersonaStatus(

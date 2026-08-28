@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import type { GenericEndpointContext } from "@better-auth/core";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { db } from "@/server/db";
 import { account, rateLimit, session, user, verification } from "@/server/db/schema";
@@ -7,6 +8,18 @@ import { enforceNewUserDefaults } from "@/server/auth/policy";
 import { sendResetEmail, sendVerificationEmail } from "@/server/services/mailer";
 import { ensurePrimaryPersonaMembership } from "@/server/services/personas";
 import { captureReferralAtSignup } from "@/server/services/referrals";
+
+/**
+ * Only credentials sign-up (which always sends an explicit, validated
+ * profileType) gets an eager persona membership at signup. OAuth/One Tap
+ * accounts have no registration-persona dropdown — `profileType` defaulting
+ * to "learner" for them is not a real user choice, so an OAuth-created
+ * account must reach complete-profile and choose a persona explicitly
+ * instead of silently becoming STUDENT.
+ */
+export function shouldCreatePersonaAtSignup(context: GenericEndpointContext | null): boolean {
+  return context?.path === "/sign-up/email";
+}
 
 export const auth = betterAuth({
   appName: "Académie Nationale de l’Éducation Inclusive",
@@ -21,11 +34,13 @@ export const auth = betterAuth({
     user: {
       create: {
         before: async (data) => ({ data: enforceNewUserDefaults(data) }),
-        after: async (created) => {
+        after: async (created, context: GenericEndpointContext | null) => {
           const profileType = typeof created.profileType === "string" ? created.profileType : "learner";
           const referredByCode = typeof created.referredByCode === "string" ? created.referredByCode : null;
           if (referredByCode) await captureReferralAtSignup(created.id, referredByCode);
-          await ensurePrimaryPersonaMembership(created.id, profileType);
+          if (shouldCreatePersonaAtSignup(context)) {
+            await ensurePrimaryPersonaMembership(created.id, profileType);
+          }
         },
       },
     },

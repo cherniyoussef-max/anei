@@ -55,7 +55,9 @@ function normalizePhoneNumber(value: string) {
   return digitsOnly;
 }
 
-export function CompleteProfileForm({ locale, email, name }: { locale: Locale; email: string; name: string }) {
+type Persona = "STUDENT" | "AVS" | "PARENT" | "TEACHER" | "SPECIALIST" | "ORGANIZATION";
+
+export function CompleteProfileForm({ locale, email, name, initialPersona }: { locale: Locale; email: string; name: string; initialPersona: Persona | null }) {
   const router = useRouter();
   const ar = locale === "ar";
   const [loading, setLoading] = useState(false);
@@ -85,7 +87,7 @@ export function CompleteProfileForm({ locale, email, name }: { locale: Locale; e
       governorate: String(form.get("governorate") ?? "").trim(),
       city: String(form.get("city") ?? "").trim(),
       preferredLocale: String(form.get("preferredLocale") ?? locale),
-      requestedPersona: String(form.get("requestedPersona") ?? "STUDENT"),
+      requestedPersona: String(form.get("requestedPersona") ?? ""),
       educationLevel: String(form.get("educationLevel") ?? "").trim(),
       institutionName: String(form.get("institutionName") ?? "").trim(),
       termsAccepted: Boolean(form.get("termsAccepted")),
@@ -137,7 +139,7 @@ export function CompleteProfileForm({ locale, email, name }: { locale: Locale; e
       </label>
       <label><span>{ar ? "المدينة" : "Ville"}</span><input name="city" required /></label>
       <label><span>{ar ? "اللغة المفضلة" : "Langue"}</span><select name="preferredLocale" defaultValue={locale}><option value="fr">Français</option><option value="ar">العربية</option></select></label>
-      <label><span>{ar ? "الملف" : "Profil"}</span><select name="requestedPersona" defaultValue="STUDENT"><option value="STUDENT">{ar ? "طالب" : "Étudiant"}</option><option value="AVS">AVS</option><option value="PARENT">{ar ? "ولي" : "Parent"}</option><option value="TEACHER">{ar ? "مدرس" : "Enseignant"}</option><option value="SPECIALIST">{ar ? "مختص" : "Spécialiste"}</option><option value="ORGANIZATION">{ar ? "مؤسسة" : "Institution"}</option></select></label>
+      <label><span>{ar ? "الملف" : "Profil"}</span><select name="requestedPersona" defaultValue={initialPersona ?? ""} required>{initialPersona ? null : <option value="" disabled>{ar ? "اختر صفتك" : "Choisissez votre profil"}</option>}<option value="STUDENT">{ar ? "طالب" : "Étudiant"}</option><option value="AVS">AVS</option><option value="PARENT">{ar ? "ولي" : "Parent"}</option><option value="TEACHER">{ar ? "مدرس" : "Enseignant"}</option><option value="SPECIALIST">{ar ? "مختص" : "Spécialiste"}</option><option value="ORGANIZATION">{ar ? "مؤسسة" : "Institution"}</option></select></label>
       <label><span>{ar ? "المستوى الدراسي" : "Niveau d'étude"}</span><input name="educationLevel" maxLength={120} required /></label>
       <label><span>{ar ? "المؤسسة" : "Institution"}</span><input name="institutionName" maxLength={160} required /></label>
       <label><input type="checkbox" name="termsAccepted" required /> {ar ? "أوافق على الشروط" : "J'accepte les conditions"}</label>

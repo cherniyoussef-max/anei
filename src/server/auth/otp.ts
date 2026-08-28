@@ -207,7 +207,7 @@ export async function requestOtp(input: {
         subject: "ANEI verification code",
         text: `Bonjour ${identity.name},\n\nVotre code de vérification ANEI est: ${code}\n\nExpire dans 5 minutes.`,
         html: `<div><p>Bonjour ${identity.name},</p><p>Votre code de vérification ANEI est <strong>${code}</strong>.</p><p>Expire dans 5 minutes.</p></div>`,
-      });
+      }, "OTP");
     } else {
       const organizationId = await resolvePreferredWhatsappOrganization(input.userId);
       if (!organizationId) throw new Error("missing_org_for_whatsapp_auth_otp");

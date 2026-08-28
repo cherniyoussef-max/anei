@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import { env } from "@/server/env";
+import { logger } from "@/server/security/logger";
 import type { Locale } from "@/types";
 
 const transporter = nodemailer.createTransport({
@@ -14,14 +15,60 @@ const transporter = nodemailer.createTransport({
 
 type Mail = { to: string; subject: string; text: string; html: string };
 type AuthMailInput = { name: string; email: string; url: string; locale: Locale };
+export type MailType = "EMAIL_VERIFICATION" | "PASSWORD_RESET" | "OTP";
 
-export async function sendMail(message: Mail) {
+/**
+ * Sanitized failure category, safe to log and safe to report externally.
+ * Shared with scripts/verify-smtp.ts so the two never drift.
+ */
+export type MailErrorCategory =
+  | "AUTH_FAILED"
+  | "CONNECTION_REFUSED"
+  | "TLS_ERROR"
+  | "DNS_ERROR"
+  | "SENDER_REJECTED"
+  | "UNAUTHORIZED_IP"
+  | "TIMEOUT"
+  | "UNKNOWN";
+
+export function categorizeMailError(error: unknown): MailErrorCategory {
+  const details = error as { code?: string; responseCode?: number; response?: string; message?: string } | null;
+  const response = details?.response ?? details?.message ?? "";
+  if (details?.responseCode === 525 || /unauthorized ip/i.test(response)) return "UNAUTHORIZED_IP";
+  if (details?.code === "EAUTH") return "AUTH_FAILED";
+  if (details?.code === "ECONNREFUSED") return "CONNECTION_REFUSED";
+  if (details?.code === "ETIMEDOUT") return "TIMEOUT";
+  if (details?.code === "ESOCKET" || /tls|ssl/i.test(response)) return "TLS_ERROR";
+  if (details?.code === "EDNS" || details?.code === "ENOTFOUND") return "DNS_ERROR";
+  if (details?.responseCode && details.responseCode >= 500 && details.responseCode < 600) return "SENDER_REJECTED";
+  return "UNKNOWN";
+}
+
+function maskRecipient(value: string) {
+  const [local, domain] = value.split("@");
+  if (!local || !domain) return "***";
+  return `${local[0] ?? "*"}***@${domain}`;
+}
+
+export async function sendMail(message: Mail, type: MailType) {
+  const recipient = maskRecipient(message.to);
+  logger.info("mail.send.started", { type, recipient, provider: env.SMTP_HOST });
   try {
-    await transporter.sendMail({ from: env.SMTP_FROM, ...message });
+    const result = await transporter.sendMail({ from: env.SMTP_FROM, ...message });
+    logger.info("mail.send.succeeded", {
+      type,
+      recipient,
+      provider: env.SMTP_HOST,
+      messageId: result.messageId,
+      accepted: result.accepted?.length ?? 0,
+      rejected: result.rejected?.length ?? 0,
+    });
   } catch (error) {
+    const category = categorizeMailError(error);
+    logger.error("mail.send.failed", { type, recipient, provider: env.SMTP_HOST, category });
     if (env.NODE_ENV === "production") throw error;
     // Authentication links/tokens must never be copied into application logs.
-    console.warn("[ANEI mail fallback] SMTP unavailable", { subject: message.subject, to: message.to });
+    console.warn("[ANEI mail fallback] SMTP unavailable", { subject: message.subject, to: recipient });
   }
 }
 
@@ -44,7 +91,7 @@ export async function sendVerificationEmail(input: AuthMailInput) {
       url,
       footer: ar ? "إذا لم تنشئ هذا الحساب، يمكنك تجاهل هذه الرسالة." : "Si vous n’avez pas créé ce compte, ignorez ce message.",
     }),
-  });
+  }, "EMAIL_VERIFICATION");
 }
 
 export async function sendResetEmail(input: AuthMailInput) {
@@ -66,7 +113,7 @@ export async function sendResetEmail(input: AuthMailInput) {
       url,
       footer: ar ? "إذا لم تطلب ذلك، يمكنك تجاهل هذه الرسالة." : "Si vous n’êtes pas à l’origine de cette demande, ignorez ce message.",
     }),
-  });
+  }, "PASSWORD_RESET");
 }
 
 function emailFrame(input: { dir: "rtl" | "ltr"; title: string; greeting: string; body: string; action: string; url: string; footer: string }) {
