@@ -39,19 +39,9 @@ export const TUNISIA_GOVERNORATES = [
   "Zaghouan",
 ] as const;
 
-const MIN_AGE_YEARS = 18;
+const requestedPersonaEnum = z.enum(["STUDENT", "AVS", "PARENT", "TEACHER", "SPECIALIST", "ORGANIZATION"]);
 
-function isAtLeastMinAge(birthDate?: string, birthYear?: number): boolean {
-  const now = new Date();
-  if (birthDate) {
-    const cutoff = new Date(Date.UTC(now.getUTCFullYear() - MIN_AGE_YEARS, now.getUTCMonth(), now.getUTCDate()));
-    return new Date(birthDate).getTime() <= cutoff.getTime();
-  }
-  if (birthYear) return birthYear <= now.getUTCFullYear() - MIN_AGE_YEARS;
-  return true;
-}
-
-export const profileSchema = z
+const baseProfileSchema = z
   .object({
     firstName: z.string().trim().min(1).max(80).regex(namePattern),
     lastName: z.string().trim().min(1).max(80).regex(namePattern),
@@ -62,21 +52,47 @@ export const profileSchema = z
     governorate: z.enum(TUNISIA_GOVERNORATES),
     city: z.string().trim().min(1).max(120),
     preferredLocale: z.enum(["fr", "ar"]),
-    requestedPersona: z.enum(["STUDENT", "AVS", "PARENT", "TEACHER", "SPECIALIST", "ORGANIZATION"]),
-    educationLevel: z.string().trim().min(1).max(120),
-    institutionName: z.string().trim().min(1).max(160),
+    requestedPersona: requestedPersonaEnum,
+    educationLevel: z.string().trim().min(1).max(120).optional(),
+    institutionName: z.string().trim().min(1).max(160).optional(),
     termsAccepted: z.literal(true),
     privacyAccepted: z.literal(true),
   })
-  .strict()
-  .refine((data) => Boolean(data.birthDate || data.birthYear), {
-    message: "birthDate_or_birthYear_required",
-    path: ["birthDate"],
-  })
-  .refine((data) => isAtLeastMinAge(data.birthDate, data.birthYear), {
-    message: "must_be_at_least_18",
-    path: ["birthDate"],
-  });
+  .strict();
+
+/**
+ * Persona-conditional requirements, authoritative server-side (never trust
+ * client-side step gating). Deliberately reuses the existing
+ * educationLevel/institutionName userProfile columns instead of inventing
+ * new ones:
+ * - birthDate/birthYear are NEVER required by onboarding, for any persona.
+ *   Repo-wide search found zero downstream functional dependents (no
+ *   age-gated content, no minor-consent workflow, no certificate/analytics/
+ *   authorization use) and no documented/product requirement that ANEI is
+ *   adults-only - requiring or age-gating on it would be data collected
+ *   "just in case", which data-minimization forbids. The columns remain in
+ *   the schema (and in the DB) for backward compatibility with any
+ *   historical rows, but the onboarding wizard no longer asks for them.
+ * - PARENT needs neither educationLevel nor institutionName (not a
+ *   professional/academic attribute of the parent themselves).
+ * - STUDENT needs both educationLevel and institutionName (existing
+ *   behavior, unchanged).
+ * - TEACHER/AVS/SPECIALIST require institutionName (employer/organization,
+ *   needed for admin review) but educationLevel (qualification) stays
+ *   optional - no product requirement makes it a hard blocker.
+ */
+export const profileSchema = baseProfileSchema.superRefine((data, ctx) => {
+  const isParent = data.requestedPersona === "PARENT";
+  const isStudent = data.requestedPersona === "STUDENT";
+
+  if (!isParent && !data.institutionName) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "institution_required", path: ["institutionName"] });
+  }
+
+  if (isStudent && !data.educationLevel) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "education_level_required", path: ["educationLevel"] });
+  }
+});
 
 function toLegacyProfileType(persona: z.infer<typeof profileSchema>["requestedPersona"]) {
   switch (persona) {
