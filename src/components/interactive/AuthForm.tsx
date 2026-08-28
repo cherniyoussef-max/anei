@@ -127,7 +127,7 @@ export function AuthForm({ locale, mode, googleConfigured, verificationRequired 
       </>
       {mode === "register" ? <label><span>{ar ? "الاسم الكامل" : en ? "Full name" : "Nom complet"}</span><input name="name" autoComplete="name" required minLength={2} maxLength={100} placeholder={ar ? "الاسم واللقب" : en ? "First and last name" : "Nom et prénom"}/></label> : null}
       <label><span>Email</span><input name="email" type="email" autoComplete="email" required placeholder="name@example.com"/></label>
-      <label><span>{ar ? "كلمة المرور" : en ? "Password" : "Mot de passe"}</span><input name="password" type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} required minLength={10}/>{mode === "register" ? <small>{ar ? "10 أحرف على الأقل." : en ? "At least 10 characters." : "10 caractères minimum."}</small> : null}</label>
+      <label><span>{ar ? "كلمة المرور" : en ? "Password" : "Mot de passe"}</span><input name="password" type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} required minLength={15}/>{mode === "register" ? <small>{ar ? "15 حرفًا على الأقل." : en ? "At least 15 characters." : "15 caractères minimum."}</small> : null}</label>
       {mode === "register" ? <div className="auth-persona-field">
         <span>{ar ? "الصفة" : en ? "Your role" : "Votre profil"}</span>
         <input type="hidden" name="profileType" value={profileType} />
