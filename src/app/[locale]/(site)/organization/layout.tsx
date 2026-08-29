@@ -14,7 +14,7 @@ export default async function OrganizationLayout({ children, params }: {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const session = await requireActivePersona(locale, "ORGANIZATION");
-  return <PersonaPortalShell locale={locale} user={{ name: session.user.name, email: session.user.email }} items={[
+  return <PersonaPortalShell locale={locale} user={{ name: session.user.name, email: session.user.email }} profileHref={`/${locale}/organization/profil`} items={[
     { href: `/${locale}/organization`, icon: "chart", fr: "Vue d’ensemble", ar: "نظرة عامة" },
   ]}>{children}</PersonaPortalShell>;
 }

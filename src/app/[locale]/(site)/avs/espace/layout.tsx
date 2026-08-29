@@ -15,7 +15,7 @@ export default async function AvsPortalLayout({ children, params }: {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const session = await requireActivePersona(locale, "AVS");
-  return <PersonaPortalShell locale={locale} user={{ name: session.user.name, email: session.user.email }} items={[
+  return <PersonaPortalShell locale={locale} user={{ name: session.user.name, email: session.user.email }} profileHref={`/${locale}/avs/espace/profil`} items={[
     { href: `/${locale}/avs/espace`, icon: "chart", fr: "Vue d’ensemble", ar: "نظرة عامة" },
     { href: `/${locale}/avs`, icon: "users", fr: "Annuaire public", ar: "الدليل العام" },
   ]}>{children}</PersonaPortalShell>;

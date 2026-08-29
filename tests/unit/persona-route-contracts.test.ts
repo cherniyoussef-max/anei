@@ -17,6 +17,8 @@ import { readFile } from "node:fs/promises";
 const ADMIN_PERSONAS_ROUTE = "src/app/api/admin/users/[id]/personas/route.ts";
 const ACCOUNT_PERSONAS_ROUTE = "src/app/api/account/personas/route.ts";
 const DASHBOARD_PAGE = "src/app/[locale]/(learner)/dashboard/page.tsx";
+const DASHBOARD_PROFILE_PAGE = "src/app/[locale]/(learner)/dashboard/profil/page.tsx";
+const PARENT_CHILDREN_PAGE = "src/app/[locale]/(site)/parent/enfants/page.tsx";
 const PENDING_REVIEW_PAGE = "src/app/[locale]/(auth)/pending-review/page.tsx";
 
 const portalLayouts: Array<{ file: string; persona: string }> = [
@@ -25,6 +27,19 @@ const portalLayouts: Array<{ file: string; persona: string }> = [
   { file: "src/app/[locale]/(site)/specialist/layout.tsx", persona: "SPECIALIST" },
   { file: "src/app/[locale]/(site)/organization/layout.tsx", persona: "ORGANIZATION" },
   { file: "src/app/[locale]/(site)/avs/espace/layout.tsx", persona: "AVS" },
+];
+
+// The persona-specific "Profil & sécurité" pages every portal links to
+// (via PersonaPortalShell's profileHref) — each must gate on its own
+// persona, exactly like the portal pages, never fall back to the shared
+// learner-shell /dashboard/profil (which would leak student branding/nav
+// to a PARENT/TEACHER/AVS/SPECIALIST/ORGANIZATION user).
+const portalProfilePages: Array<{ file: string; persona: string }> = [
+  { file: "src/app/[locale]/(site)/teacher/profil/page.tsx", persona: "TEACHER" },
+  { file: "src/app/[locale]/(site)/parent/profil/page.tsx", persona: "PARENT" },
+  { file: "src/app/[locale]/(site)/specialist/profil/page.tsx", persona: "SPECIALIST" },
+  { file: "src/app/[locale]/(site)/organization/profil/page.tsx", persona: "ORGANIZATION" },
+  { file: "src/app/[locale]/(site)/avs/espace/profil/page.tsx", persona: "AVS" },
 ];
 
 test("every professional/parent portal layout gates on requireActivePersona with its own persona, server-side", async () => {
@@ -128,4 +143,31 @@ test("persona status/primary mutations run inside a DB transaction (atomic with 
   assert.equal(statusBlock.includes("db.transaction("), true);
   const primaryBlock = service.slice(service.indexOf("export async function adminSetPrimaryPersona"));
   assert.equal(primaryBlock.includes("db.transaction("), true);
+});
+
+test("every persona portal's profil page gates on requireActivePersona with its own persona, server-side", async () => {
+  for (const { file, persona } of portalProfilePages) {
+    const source = await readFile(file, "utf8");
+    assert.equal(source.includes("import { requireActivePersona } from \"@/server/auth/session\""), true, `${file} must import the server-side persona guard`);
+    assert.equal(source.includes(`requireActivePersona(locale, "${persona}")`), true, `${file} must require the ACTIVE ${persona} persona before rendering`);
+  }
+});
+
+test("the shared learner-shell /dashboard/profil redirects a non-admin, non-STUDENT primary persona to their own persona's profil page, before rendering learner data", async () => {
+  const source = await readFile(DASHBOARD_PROFILE_PAGE, "utf8");
+  const adminCheckIndex = source.indexOf('["ADMIN", "SUPER_ADMIN"].includes(String(session.user.role))');
+  const membershipIndex = source.indexOf("getUserPersonas(session.user.id)");
+  const renderIndex = source.indexOf("getUserProfile(session.user.id)");
+  assert.ok(adminCheckIndex > -1 && membershipIndex > -1 && renderIndex > -1);
+  assert.ok(adminCheckIndex < membershipIndex, "admin bypass must be decided before persona membership is even queried");
+  assert.ok(membershipIndex < renderIndex, "a redirect for a non-STUDENT active persona must happen before the learner profile page queries its own data");
+  assert.equal(source.includes("personaPortalPath[primary.persona as Persona]"), true, "the redirect target must come from the server-defined persona->path map, not client input");
+  assert.equal(source.includes('redirect(`/${locale}/pending-review`)'), true, "a non-ACTIVE primary persona must redirect to pending-review, never render the learner profile page");
+});
+
+test("the parent children page (/parent/enfants) is gated on the ACTIVE PARENT persona and only ever shows the caller's own linked students", async () => {
+  const source = await readFile(PARENT_CHILDREN_PAGE, "utf8");
+  assert.equal(source.includes("requireActivePersona(locale, \"PARENT\")"), true);
+  assert.equal(source.includes("getLinkedStudentsForParent(session.user.id)"), true, "must be scoped to the caller's own session, never a client-supplied id");
+  assert.equal(/searchParams/.test(source), false, "must not accept a client-supplied student/parent id override");
 });

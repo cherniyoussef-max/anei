@@ -8,10 +8,11 @@ type NavItem = { href: string; icon: IconName; fr: string; ar: string };
 // (separate route/layout per persona, not one dashboard with hidden links).
 // Deeper per-persona features (rosters, relationships, cohorts) land in
 // later phases per docs/premium/ROADMAP.md.
-export function PersonaPortalShell({ locale, user, items, children }: {
+export function PersonaPortalShell({ locale, user, items, profileHref, children }: {
   locale: Locale;
   user: { name: string; email: string };
   items: NavItem[];
+  profileHref: string;
   children: React.ReactNode;
 }) {
   const ar = locale === "ar";
@@ -22,7 +23,7 @@ export function PersonaPortalShell({ locale, user, items, children }: {
         {items.map((item) => <Link key={item.href} href={item.href}><Icon name={item.icon} size={18}/>{ar ? item.ar : item.fr}</Link>)}
       </nav>
       <div className="dashboard-sidebar-actions">
-        <Link className="btn btn-ghost btn-block" href={`/${locale}/dashboard/profil`}>{ar ? "الملف والأمان" : "Profil & sécurité"}</Link>
+        <Link className="btn btn-ghost btn-block" href={profileHref}>{ar ? "الملف والأمان" : "Profil & sécurité"}</Link>
       </div>
     </aside>
     <div className="dashboard-main">{children}</div>

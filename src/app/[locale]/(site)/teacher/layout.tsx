@@ -11,9 +11,9 @@ export default async function TeacherLayout({ children, params }: {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const session = await requireActivePersona(locale, "TEACHER");
-  return <PersonaPortalShell locale={locale} user={{ name: session.user.name, email: session.user.email }} items={[
+  {/* "Mes cohortes"/"Ressources" are Phase 11 scope (see src/server/queries/teacher-assignments.ts):
+      the underlying query exists but the UI isn't wired yet, so no nav entry points there until it is. */}
+  return <PersonaPortalShell locale={locale} user={{ name: session.user.name, email: session.user.email }} profileHref={`/${locale}/teacher/profil`} items={[
     { href: `/${locale}/teacher`, icon: "chart", fr: "Vue d’ensemble", ar: "نظرة عامة" },
-    { href: `/${locale}/teacher/cohortes`, icon: "graduation", fr: "Mes cohortes", ar: "مجموعاتي" },
-    { href: `/${locale}/teacher/ressources`, icon: "book", fr: "Ressources", ar: "الموارد" },
   ]}>{children}</PersonaPortalShell>;
 }

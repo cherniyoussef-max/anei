@@ -11,9 +11,8 @@ export default async function ParentLayout({ children, params }: {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const session = await requireActivePersona(locale, "PARENT");
-  return <PersonaPortalShell locale={locale} user={{ name: session.user.name, email: session.user.email }} items={[
+  return <PersonaPortalShell locale={locale} user={{ name: session.user.name, email: session.user.email }} profileHref={`/${locale}/parent/profil`} items={[
     { href: `/${locale}/parent`, icon: "chart", fr: "Vue d’ensemble", ar: "نظرة عامة" },
     { href: `/${locale}/parent/enfants`, icon: "users", fr: "Mes enfants", ar: "أبنائي" },
-    { href: `/${locale}/parent/messages`, icon: "mail", fr: "Messages", ar: "الرسائل" },
   ]}>{children}</PersonaPortalShell>;
 }
