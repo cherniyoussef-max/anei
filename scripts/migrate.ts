@@ -3,9 +3,10 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { Client } from "pg";
 import { getDatabaseUrl } from "./migration-env";
+import { hardenPostgresConnectionString } from "../src/server/db/connection-string";
 
 const migrationsDir = path.resolve(process.cwd(), "drizzle");
-const databaseUrl = getDatabaseUrl();
+const databaseUrl = hardenPostgresConnectionString(getDatabaseUrl());
 const BASELINE = "0000_initial.sql";
 const BASELINE_TABLES = ["user", "account", "session", "courses", "lessons", "resources", "orders", "payments", "webinars"];
 

@@ -620,11 +620,22 @@ test("whatsapp_webhook_event: the stable-key unique index makes concurrent repla
   await withClient(async (client) => {
     process.env.TEST_DATABASE_URL = url;
     const stableKey = `status:${crypto.randomUUID()}:delivered`;
-    await Promise.all([
-      client.query(`insert into whatsapp_webhook_event (id, stable_key, event_type, received_at) values ($1, $2, 'STATUS_UPDATE', now()) on conflict do nothing`, [crypto.randomUUID(), stableKey]),
-      client.query(`insert into whatsapp_webhook_event (id, stable_key, event_type, received_at) values ($1, $2, 'STATUS_UPDATE', now()) on conflict do nothing`, [crypto.randomUUID(), stableKey]),
-      client.query(`insert into whatsapp_webhook_event (id, stable_key, event_type, received_at) values ($1, $2, 'STATUS_UPDATE', now()) on conflict do nothing`, [crypto.randomUUID(), stableKey]),
-    ]);
+    const replayClients = await Promise.all(Array.from({ length: 3 }, async () => {
+      const replayClient = new Client({ connectionString: url });
+      await replayClient.connect();
+      return replayClient;
+    }));
+    try {
+      await Promise.all(replayClients.map((replayClient) =>
+        replayClient.query(
+          `insert into whatsapp_webhook_event (id, stable_key, event_type, received_at)
+           values ($1, $2, 'STATUS_UPDATE', now()) on conflict do nothing`,
+          [crypto.randomUUID(), stableKey],
+        ),
+      ));
+    } finally {
+      await Promise.all(replayClients.map((replayClient) => replayClient.end()));
+    }
     const rows = await client.query("select count(*) as n from whatsapp_webhook_event where stable_key = $1", [stableKey]);
     assert.equal(Number(rows.rows[0].n), 1);
     await client.query("delete from whatsapp_webhook_event where stable_key = $1", [stableKey]);

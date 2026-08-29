@@ -1,17 +1,16 @@
 import type { ToolRegistry, AiToolContext, AiTool } from "@/server/ai/contracts";
 import type { ToolDefinition, ToolContext } from "./types";
 import { z } from "zod";
-import { executeReadTool } from "./execution";
 import crypto from "node:crypto";
 
-const TestInputSchema = z.object({});
-const TestOutputSchema = z.object({});
+const _TestInputSchema = z.object({});
+const _TestOutputSchema = z.object({});
 
 export class TestToolRegistry implements ToolRegistry {
   private tools: Map<string, (input: unknown, context: AiToolContext) => Promise<unknown>> = new Map();
-  private toolDefs: Map<string, ToolDefinition<typeof TestInputSchema, typeof TestOutputSchema>> = new Map();
+  private toolDefs: Map<string, ToolDefinition<typeof _TestInputSchema, typeof _TestOutputSchema>> = new Map();
 
-  registerTool(def: ToolDefinition<typeof TestInputSchema, typeof TestOutputSchema>, impl: (context: ToolContext, input: unknown) => Promise<unknown>): void {
+  registerTool(def: ToolDefinition<typeof _TestInputSchema, typeof _TestOutputSchema>, impl: (context: ToolContext, input: unknown) => Promise<unknown>): void {
     this.toolDefs.set(def.name, def);
     this.tools.set(def.name, async (input: unknown, context: AiToolContext) => {
       const toolContext: ToolContext = {
@@ -25,7 +24,7 @@ export class TestToolRegistry implements ToolRegistry {
     });
   }
 
-  async getAllowedTools(context: AiToolContext): Promise<AiTool[]> {
+  async getAllowedTools(_context: AiToolContext): Promise<AiTool[]> {
     const allowed: AiTool[] = [];
     for (const [name, execute] of this.tools) {
       const def = this.toolDefs.get(name);
@@ -40,7 +39,7 @@ export class TestToolRegistry implements ToolRegistry {
     toolName: string,
     aiContext: AiToolContext,
     input: unknown,
-    conversationId: string
+    _conversationId: string
   ): Promise<{ executionId: string; requiresConfirmation: boolean; preview: Record<string, unknown> }> {
     const def = this.toolDefs.get(toolName);
     if (!def) throw new Error(`Unknown tool: ${toolName}`);
@@ -72,7 +71,7 @@ export class TestToolRegistry implements ToolRegistry {
     }
   }
 
-  async rejectTool(aiContext: AiToolContext, executionId: string): Promise<void> {
+  async rejectTool(_aiContext: AiToolContext, _executionId: string): Promise<void> {
     // No-op for test
   }
 }

@@ -6,7 +6,7 @@ const expected: Record<string, string> = {
   react: "19.2.8",
   "react-dom": "19.2.8",
   sharp: "0.35.3",
-  postcss: "8.5.23",
+  postcss: "8.5.26",
   "drizzle-kit": "0.31.10",
   eslint: "9.39.5",
   "eslint-config-next": "16.2.12",
@@ -74,6 +74,42 @@ async function main() {
       for (const [location, pkg] of vulnerablePostcss) console.error(`  - ${location}: ${pkg.version}`);
     } else {
       console.log("✓ no postcss < 8.5.18 in package-lock.json");
+    }
+
+    const vulnerableNanoid = Object.entries(packages).filter(([location, pkg]) =>
+      /(^|\/)node_modules\/nanoid$/.test(location) && pkg.version && compareVersions(pkg.version, "3.3.18") < 0,
+    );
+    if (vulnerableNanoid.length) {
+      failed = true;
+      console.error("✗ vulnerable nanoid versions remain:");
+      for (const [location, pkg] of vulnerableNanoid) console.error(`  - ${location}: ${pkg.version}`);
+    } else {
+      console.log("✓ no nanoid < 3.3.18 in package-lock.json");
+    }
+
+    const vulnerableBraceExpansion = Object.entries(packages).filter(([location, pkg]) => {
+      if (!/(^|\/)node_modules\/brace-expansion$/.test(location) || !pkg.version) return false;
+      const major = Number.parseInt(pkg.version.split(".")[0] ?? "0", 10);
+      return (major === 1 && compareVersions(pkg.version, "1.1.18") < 0)
+        || ((major === 4 || major === 5) && compareVersions(pkg.version, "5.0.9") < 0);
+    });
+    if (vulnerableBraceExpansion.length) {
+      failed = true;
+      console.error("✗ vulnerable brace-expansion versions remain:");
+      for (const [location, pkg] of vulnerableBraceExpansion) console.error(`  - ${location}: ${pkg.version}`);
+    } else {
+      console.log("✓ no vulnerable brace-expansion versions in package-lock.json");
+    }
+
+    const vulnerableJsYaml = Object.entries(packages).filter(([location, pkg]) =>
+      /(^|\/)node_modules\/js-yaml$/.test(location) && pkg.version && compareVersions(pkg.version, "4.3.1") < 0,
+    );
+    if (vulnerableJsYaml.length) {
+      failed = true;
+      console.error("✗ vulnerable js-yaml versions remain:");
+      for (const [location, pkg] of vulnerableJsYaml) console.error(`  - ${location}: ${pkg.version}`);
+    } else {
+      console.log("✓ no js-yaml < 4.3.1 in package-lock.json");
     }
   } catch {
     failed = true;

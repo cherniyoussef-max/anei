@@ -1,6 +1,6 @@
 import "server-only";
 import { db } from "@/server/db";
-import { knowledgeChunk, knowledgeDocument, organizationMembership, user } from "@/server/db/schema";
+import { knowledgeChunk, knowledgeDocument, organizationMembership } from "@/server/db/schema";
 import { and, eq, or, sql } from "drizzle-orm";
 import { getEmbeddingProvider } from "./embedding-provider";
 import { getVectorStore } from "./vector-store";

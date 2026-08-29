@@ -233,7 +233,7 @@ test("revokeAccountInvitation: a revoked invitation cannot request or verify an 
     process.env.TEST_DATABASE_URL = url;
     const { revokeAccountInvitation, requestInvitationOtp, verifyInvitationOtp } = await import("../../src/server/services/account-invitations");
     const ctx = await seedFullyEligibleInvitationContext(client);
-    const { rawToken } = await createInvitationAndCaptureToken(ctx);
+    const { rawToken } = await createInvitationAndCaptureToken(client, ctx);
 
     const revoked = await revokeAccountInvitation(ctx.adminId, "OWNER", ctx.orgId, ctx.contactId);
     assert.equal(revoked.kind, "ok");
@@ -247,64 +247,58 @@ test("revokeAccountInvitation: a revoked invitation cannot request or verify an 
 
 // --- End-to-end OTP + claim, capturing the raw token via a test-only hook ------------------
 
-async function createInvitationAndCaptureToken(ctx: { adminId: string; orgId: string; contactId: string }) {
+async function readEncryptedMessageParameters(client: Client, organizationId: string): Promise<string[]> {
+  const { decryptSecretParameters } = await import("../../src/server/security/outbox-crypto");
+  const message = await client.query<{ body_parameters_encrypted: { ciphertext: string; nonce: string } }>(
+    `select body_parameters_encrypted
+       from whatsapp_message
+      where organization_id = $1 and body_parameters_encrypted is not null
+      order by created_at desc
+      limit 1`,
+    [organizationId],
+  );
+  assert.equal(message.rowCount, 1, "expected one queued message with encrypted secret parameters");
+  return decryptSecretParameters(message.rows[0].body_parameters_encrypted);
+}
+
+async function createInvitationAndCaptureToken(client: Client, ctx: { adminId: string; orgId: string; contactId: string }) {
   const { createAccountInvitation } = await import("../../src/server/services/account-invitations");
   const { hashInvitationToken } = await import("../../src/server/security/invitation-crypto");
 
-  let capturedParams: string[] | undefined;
   const originalFetch = globalThis.fetch;
-  globalThis.fetch = (async (_input: unknown, init?: RequestInit) => {
-    if (init?.body) {
-      try {
-        const payload = JSON.parse(String(init.body));
-        const bodyComponent = payload?.template?.components?.find((c: { type: string }) => c.type === "body");
-        capturedParams = bodyComponent?.parameters?.map((p: { text: string }) => p.text);
-      } catch {
-        // ignore
-      }
-    }
-    return providerSendOk();
-  }) as typeof fetch;
+  globalThis.fetch = (async () => providerSendOk()) as typeof fetch;
 
   let invitationId: string;
+  let secretParameters: string[];
   try {
     const created = await createAccountInvitation(ctx.adminId, "OWNER", ctx.orgId, ctx.contactId);
     assert.ok(created.kind === "ok" && created.sent);
     invitationId = created.id;
-    // Phase 9: the Meta call happens in the worker, not during the create —
-    // run the worker inside the capture window so the token is observable.
+    // Read through the same authenticated decryption primitive used by the
+    // worker. This is deterministic even when integration files run in
+    // parallel, and verifies that the secret is encrypted—not plaintext—at
+    // rest before delivery.
+    secretParameters = await readEncryptedMessageParameters(client, ctx.orgId);
     await drainOutboxForOrg(ctx.orgId);
   } finally {
     globalThis.fetch = originalFetch;
   }
 
   // The invitation URL is the second body parameter (org name, url); pull the token back out.
-  const urlParam = capturedParams?.[1] ?? "";
+  const urlParam = secretParameters[1] ?? "";
   const rawToken = decodeURIComponent(urlParam.split("/invitation/")[1] ?? "");
   assert.ok(rawToken.length > 0, "expected to capture the invitation URL/token from the outbound template call");
   assert.equal(hashInvitationToken(rawToken).length, 64);
   return { invitationId, rawToken };
 }
 
-async function captureOtp(organizationId: string, action: () => Promise<unknown>): Promise<string> {
-  let captured = "";
+async function captureOtp(client: Client, organizationId: string, action: () => Promise<unknown>): Promise<string> {
   const originalFetch = globalThis.fetch;
-  globalThis.fetch = (async (_input: unknown, init?: RequestInit) => {
-    if (init?.body) {
-      try {
-        const payload = JSON.parse(String(init.body));
-        const bodyComponent = payload?.template?.components?.find((c: { type: string }) => c.type === "body");
-        captured = bodyComponent?.parameters?.[0]?.text ?? "";
-      } catch {
-        // ignore
-      }
-    }
-    return providerSendOk();
-  }) as typeof fetch;
+  globalThis.fetch = (async () => providerSendOk()) as typeof fetch;
+  let captured = "";
   try {
     await action();
-    // Phase 9: the OTP template send happens in the worker — run it inside
-    // the capture window so the decrypted OTP is observable.
+    [captured = ""] = await readEncryptedMessageParameters(client, organizationId);
     await drainOutboxForOrg(organizationId);
   } finally {
     globalThis.fetch = originalFetch;
@@ -317,9 +311,9 @@ test("OTP lifecycle: wrong code rejected, correct code verifies once, replay is 
     process.env.TEST_DATABASE_URL = url;
     const { requestInvitationOtp, verifyInvitationOtp } = await import("../../src/server/services/account-invitations");
     const ctx = await seedFullyEligibleInvitationContext(client);
-    const { rawToken } = await createInvitationAndCaptureToken(ctx);
+    const { rawToken } = await createInvitationAndCaptureToken(client, ctx);
 
-    const otp = await captureOtp(ctx.orgId, async () => {
+    const otp = await captureOtp(client, ctx.orgId, async () => {
       const result = await requestInvitationOtp(rawToken);
       assert.equal(result.kind, "ok");
     });
@@ -356,9 +350,9 @@ test("OTP lifecycle: max attempts locks the challenge; a fresh request supersede
     process.env.TEST_DATABASE_URL = url;
     const { requestInvitationOtp, verifyInvitationOtp } = await import("../../src/server/services/account-invitations");
     const ctx = await seedFullyEligibleInvitationContext(client);
-    const { rawToken, invitationId } = await createInvitationAndCaptureToken(ctx);
+    const { rawToken, invitationId } = await createInvitationAndCaptureToken(client, ctx);
 
-    await captureOtp(ctx.orgId, async () => requestInvitationOtp(rawToken));
+    await captureOtp(client, ctx.orgId, async () => requestInvitationOtp(rawToken));
 
     for (let i = 0; i < 5; i += 1) {
       const result = await verifyInvitationOtp(rawToken, "999999");
@@ -384,7 +378,7 @@ test("concurrent OTP requests leave at most one ACTIVE challenge", { skip: !url 
     process.env.TEST_DATABASE_URL = url;
     const { requestInvitationOtp } = await import("../../src/server/services/account-invitations");
     const ctx = await seedFullyEligibleInvitationContext(client);
-    const { rawToken, invitationId } = await createInvitationAndCaptureToken(ctx);
+    const { rawToken, invitationId } = await createInvitationAndCaptureToken(client, ctx);
 
     const originalFetch = globalThis.fetch;
     globalThis.fetch = (async () => providerSendOk()) as typeof fetch;
@@ -406,9 +400,9 @@ test("claim: requires an authenticated claimant, links the contact, ensures STUD
     process.env.TEST_DATABASE_URL = url;
     const { requestInvitationOtp, verifyInvitationOtp, claimAccountInvitation } = await import("../../src/server/services/account-invitations");
     const ctx = await seedFullyEligibleInvitationContext(client);
-    const { rawToken } = await createInvitationAndCaptureToken(ctx);
+    const { rawToken } = await createInvitationAndCaptureToken(client, ctx);
 
-    const otp = await captureOtp(ctx.orgId, async () => requestInvitationOtp(rawToken));
+    const otp = await captureOtp(client, ctx.orgId, async () => requestInvitationOtp(rawToken));
     assert.equal((await verifyInvitationOtp(rawToken, otp)).kind, "ok");
 
     const claimant = await seedUser(client, "claimant");
@@ -438,9 +432,9 @@ test("claim: a contact already linked to a different user is a conflict; ADMIN/S
     const { requestInvitationOtp, verifyInvitationOtp, claimAccountInvitation } = await import("../../src/server/services/account-invitations");
     const { linkCrmContactUser } = await import("../../src/server/services/crm");
     const ctx = await seedFullyEligibleInvitationContext(client);
-    const { rawToken } = await createInvitationAndCaptureToken(ctx);
+    const { rawToken } = await createInvitationAndCaptureToken(client, ctx);
 
-    const otp = await captureOtp(ctx.orgId, async () => requestInvitationOtp(rawToken));
+    const otp = await captureOtp(client, ctx.orgId, async () => requestInvitationOtp(rawToken));
     assert.equal((await verifyInvitationOtp(rawToken, otp)).kind, "ok");
 
     const alreadyLinkedUser = await seedUser(client, "already");
@@ -462,9 +456,9 @@ test("claim: concurrent claims by two different users never both succeed", { ski
     process.env.TEST_DATABASE_URL = url;
     const { requestInvitationOtp, verifyInvitationOtp, claimAccountInvitation } = await import("../../src/server/services/account-invitations");
     const ctx = await seedFullyEligibleInvitationContext(client);
-    const { rawToken } = await createInvitationAndCaptureToken(ctx);
+    const { rawToken } = await createInvitationAndCaptureToken(client, ctx);
 
-    const otp = await captureOtp(ctx.orgId, async () => requestInvitationOtp(rawToken));
+    const otp = await captureOtp(client, ctx.orgId, async () => requestInvitationOtp(rawToken));
     assert.equal((await verifyInvitationOtp(rawToken, otp)).kind, "ok");
 
     const userA = await seedUser(client, "a");
@@ -515,7 +509,7 @@ test("audit log for account_invitation actions never contains a token/OTP value"
   await withClient(async (client) => {
     process.env.TEST_DATABASE_URL = url;
     const ctx = await seedFullyEligibleInvitationContext(client);
-    await createInvitationAndCaptureToken(ctx);
+    await createInvitationAndCaptureToken(client, ctx);
 
     const audit = await client.query(`select metadata from audit_logs where entity_type = 'account_invitation'`);
     for (const row of audit.rows) {

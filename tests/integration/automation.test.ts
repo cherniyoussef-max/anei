@@ -4,7 +4,7 @@ import crypto from "node:crypto";
 import { Client } from "pg";
 import { db } from "@/server/db";
 import { eq } from "drizzle-orm";
-import { automationServiceCredential, automationExecution, outboxEvent } from "@/server/db/schema";
+import { automationExecution, outboxEvent } from "@/server/db/schema";
 import {
   createAutomationCredential,
   revokeAutomationCredential,
@@ -122,7 +122,6 @@ test("automation: appointments/state enforces org boundary and scope", { skip: !
     const orgB = await seedOrg(client);
     const userA = await seedUser(client);
     const contactA = await seedContact(client, orgA, userA);
-    const contactB = await seedContact(client, orgB, userA);
     const startA = new Date("2031-01-01T09:00:00.000Z");
     const apptA = uuid();
     await client.query(
@@ -218,9 +217,7 @@ test("automation: onboarding/candidates only returns members of the credential o
 test("automation: knowledge/ingest forces organization visibility and org scope", { skip: !url }, async () => {
   await withClient(async (client) => {
     const orgA = await seedOrg(client);
-    const orgB = await seedOrg(client);
     const tokenA = await createAutomationCredential({ name: "OrgA", organizationId: orgA, scopes: ["automation:knowledge:ingest"] });
-    const tokenB = await createAutomationCredential({ name: "OrgB", organizationId: orgB, scopes: ["automation:knowledge:ingest"] });
 
     const { POST } = await import("@/app/api/internal/automation/knowledge/ingest/route");
     const payload = { sourceType: "automation-test", title: "Doc", content: "Inclusive education content." };
@@ -377,6 +374,7 @@ test("automation: transient n8n dispatch failure is retryable and keeps PENDING"
     const [execution] = await db.select().from(automationExecution).where(eq(automationExecution.id, executionId));
     assert.equal(execution.status, "PENDING", "transient failure keeps execution PENDING for retry");
     assert.equal(execution.attemptCount, 1);
+    assert.equal(calls, 1);
   } finally {
     setN8NClient(null as never);
   }

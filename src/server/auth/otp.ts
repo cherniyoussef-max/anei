@@ -1,6 +1,6 @@
 import "server-only";
 import crypto from "node:crypto";
-import { and, desc, eq, gt, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/server/db";
 import {
   authVerificationChallenge,

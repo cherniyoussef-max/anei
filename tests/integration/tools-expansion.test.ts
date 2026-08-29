@@ -3,21 +3,15 @@ import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import { Client } from "pg";
 import { db } from "@/server/db";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import {
   aiConversation,
-  crmContact,
   crmContactNote,
-  crmContactTag,
-  crmTag,
   courses,
   enrollments,
-  organization,
-  organizationMembership,
   parentStudentLink,
   personaMembership,
   teacherCourseAssignment,
-  user as userTable,
 } from "@/server/db/schema";
 import { getToolRegistry } from "@/server/tools/registry";
 import { createCrmNoteTool, addCrmTagTool } from "@/server/tools/definitions/low-risk-tools";
@@ -314,7 +308,7 @@ test("10C.7: enroll_student cannot execute before confirmation", async () => {
     const courseA = await seedCourse(client);
     const conversation = await seedConversation(client, staff);
 
-    const proposal = await getToolRegistry().proposeTool(
+    await getToolRegistry().proposeTool(
       "enroll_student",
       { userId: staff, locale: "fr", requestId: uuid(), organizationId: orgA },
       { userId: student, courseId: courseA },
