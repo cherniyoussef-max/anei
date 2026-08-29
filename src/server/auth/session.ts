@@ -85,7 +85,7 @@ export async function requirePrimaryUser(locale: Locale) {
 
 export async function requireAdmin(locale: Locale) {
   const current = await getFreshSession();
-  if (!current) redirect(`/${locale}/login?next=/${locale}/dashboard`);
+  if (!current) redirect(`/${locale}/login?next=/${locale}/admin`);
   const assurance = await getCachedSessionAssurance(current.session.id);
   if (!assurance) redirect(`/${locale}/verification-channel`);
   const role = current.user.role as string | undefined;
@@ -95,7 +95,7 @@ export async function requireAdmin(locale: Locale) {
 
 export async function requireAdminPermission(locale: Locale, permission: AdminPermission) {
   const current = await getFreshSession();
-  if (!current) redirect(`/${locale}/login?next=/${locale}/dashboard`);
+  if (!current) redirect(`/${locale}/login?next=/${locale}/admin`);
   const assurance = await getCachedSessionAssurance(current.session.id);
   if (!assurance) redirect(`/${locale}/verification-channel`);
   if (!hasAdminPermission(String(current.user.role), permission)) redirect(`/${locale}/dashboard`);
