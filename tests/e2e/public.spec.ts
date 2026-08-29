@@ -86,6 +86,12 @@ test("Arabic authentication remains RTL and mobile operable", async ({ page }) =
   const form = page.locator(".auth-form");
   await expect(form.getByLabel("Email")).toBeVisible();
   await expect(form.getByLabel("كلمة المرور")).toBeVisible();
+  const forgotPassword = form.getByRole("link", { name: "نسيت كلمة المرور؟" });
+  await expect(forgotPassword).toBeVisible();
+  const box = await forgotPassword.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box!.x).toBeGreaterThanOrEqual(0);
+  expect(box!.x + box!.width).toBeLessThanOrEqual(375);
 });
 
 test("Google controls are locale-safe when the provider is configured", async ({ page }) => {
