@@ -5,7 +5,7 @@ import { requireActivePersona } from "@/server/auth/session";
 import { getUserProfile } from "@/server/auth/profile";
 import { db } from "@/server/db";
 import { account } from "@/server/db/schema";
-import { AccountSecurityPanel } from "@/components/account/AccountSecurityPanel";
+import { ProfessionalProfilePage } from "@/modules/personas/components/ProfessionalProfilePage";
 
 export const dynamic = "force-dynamic";
 
@@ -18,11 +18,5 @@ export default async function ParentProfilePage({ params }: { params: Promise<{ 
     db.query.account.findFirst({ where: and(eq(account.userId, session.user.id), eq(account.providerId, "credential")) }),
     getUserProfile(session.user.id),
   ]);
-  return <div className="dashboard-heading dashboard-heading-human">
-    <div className="dashboard-heading-copy">
-      <span className="eyebrow">{ar ? "مساحة الوالدين" : "Espace parent"}</span>
-      <h1>{ar ? "الملف الشخصي والأمان" : "Profil et sécurité"}</h1>
-    </div>
-    <AccountSecurityPanel locale={locale} name={session.user.name} email={session.user.email} phoneNumber={profile?.phoneNumber} phoneVerifiedAt={profile?.phoneVerifiedAt} hasCredential={Boolean(credential)} />
-  </div>;
+  return <ProfessionalProfilePage locale={locale} roleLabel={ar ? "مساحة الأولياء" : "Espace parent"} name={session.user.name} email={session.user.email} phoneNumber={profile?.phoneNumber} phoneVerifiedAt={profile?.phoneVerifiedAt} country={profile?.country} governorate={profile?.governorate} city={profile?.city} professionalTitle={ar ? "معلومات الملف" : "Informations du profil"} professionalFacts={[]} hasCredential={Boolean(credential)}/>;
 }

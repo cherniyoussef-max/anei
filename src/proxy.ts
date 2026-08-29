@@ -58,6 +58,7 @@ export function proxy(request: NextRequest) {
   requestHeaders.set("x-nonce", nonce);
   const pathLocale = request.nextUrl.pathname.split("/")[1];
   requestHeaders.set("x-anei-locale", pathLocale === "ar" ? "ar" : pathLocale === "en" ? "en" : "fr");
+  requestHeaders.set("x-anei-pathname", request.nextUrl.pathname);
   requestHeaders.set("Content-Security-Policy", csp);
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });

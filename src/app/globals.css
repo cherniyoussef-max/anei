@@ -359,6 +359,60 @@ body{background:var(--bg);color:var(--ink)}
 /* Persona dashboard empty states (Parent/Teacher/AVS/Specialist/Organization) */
 .dashboard-empty-copy{color:var(--muted);font-size:.9rem;margin:0;padding:8px 0}
 .dashboard-panel .panel-head + .dashboard-empty-copy{padding-top:0}
+
+/* Auth onboarding containment: every step remains inside its card in LTR and RTL. */
+.public-auth-experience .auth-grid>*{min-inline-size:0}
+.public-auth-experience .auth-card{min-inline-size:0;overflow:hidden}
+.public-auth-experience .profile-wizard,.public-auth-experience .profile-wizard form,.public-auth-experience .wizard-fields,.public-auth-experience .wizard-field,.public-auth-experience .wizard-field-grid>*{min-inline-size:0}
+.public-auth-experience .wizard-field :is(input,select,textarea),.public-auth-experience .wizard-combobox,.public-auth-experience .wizard-combobox-shell{inline-size:100%;max-inline-size:100%;min-inline-size:0}
+[dir="rtl"] .public-auth-experience .profile-wizard{text-align:start}
+[dir="rtl"] .public-auth-experience .wizard-step-head strong{letter-spacing:0;text-transform:none}
+[dir="rtl"] .public-auth-experience .wizard-nav{direction:rtl}
+@media(max-width:900px){.public-auth-experience .auth-grid{max-inline-size:760px}.public-auth-experience .auth-intro{order:2;min-height:320px}.public-auth-experience .auth-card{order:1}}
+@media(max-width:640px){.public-auth-experience .auth-card{padding:20px 16px}.public-auth-experience .wizard-phone-group{display:grid;grid-template-columns:auto minmax(0,1fr)}.public-auth-experience .wizard-summary-row{align-items:start;flex-direction:column;gap:3px}.public-auth-experience .wizard-summary-row dd{text-align:start}}
+
+/* Shared professional profile surface — separate from the public and admin experiences. */
+.professional-profile-page{--border:#dfe5ee;--border-subtle:#dfe5ee;--border-strong:#c9d2df;--surface-card:#fff;--surface-subtle:#f1f4f8;--text-primary:#0b172a;--text-muted:#68758a;display:grid;gap:16px;min-inline-size:0}
+.professional-profile-header{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;padding-block:4px 8px;border-block-end:1px solid var(--border-subtle)}
+.professional-profile-header>div>p{margin:0;color:#2559d6;font-size:.75rem;font-weight:800}
+.professional-profile-header h1{margin:5px 0 6px;color:var(--text-primary);font-size:clamp(1.75rem,3vw,2.45rem);line-height:1.16;letter-spacing:-.025em}
+[dir="rtl"] .professional-profile-header h1{letter-spacing:0;line-height:1.35}
+.professional-profile-header>div>span{display:block;max-inline-size:68ch;color:var(--text-muted);font-size:.9rem}
+.professional-profile-status{min-height:34px;display:inline-flex;align-items:center;gap:6px;flex:none;padding:6px 10px;border-radius:999px;background:#eaf6f1;color:#14765a;font-size:.74rem;font-weight:800}
+.professional-identity{display:grid;grid-template-columns:auto minmax(180px,.65fr) minmax(0,1.35fr);align-items:center;gap:18px;padding:22px;border-radius:12px;background:#0b172a;color:#f7f9fc}
+.professional-avatar{inline-size:58px;block-size:58px;display:grid;place-items:center;border:1px solid rgb(255 255 255/22%);border-radius:10px;background:#17345d;color:#fff;font-size:1.25rem;font-weight:850}
+.professional-identity h2{margin:0;color:#fff;font-size:1.18rem}
+.professional-identity>div>p{margin:3px 0 0;overflow-wrap:anywhere;color:#b8c5d6;font-size:.78rem}
+.professional-identity dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0;border-inline-start:1px solid rgb(255 255 255/16%)}
+.professional-identity dl>div{min-inline-size:0;padding-inline:18px}
+.professional-identity dt{color:#9fb0c6;font-size:.7rem}
+.professional-identity dd{margin:4px 0 0;overflow-wrap:anywhere;color:#f7f9fc;font-size:.82rem;font-weight:700}
+.professional-details,.professional-profile-page .learner-settings-section{padding:24px;border:1px solid var(--border-subtle);border-radius:12px;background:#fff}
+.professional-section-heading,.professional-profile-page .learner-settings-heading{max-inline-size:70ch;margin-block-end:20px}
+.professional-section-heading h2,.professional-profile-page .learner-settings-heading h2,.professional-profile-page .learner-data-export h2{margin:0;color:var(--text-primary);font-size:1.16rem}
+.professional-section-heading p,.professional-profile-page .learner-settings-heading p,.professional-profile-page .learner-data-export p{margin:5px 0 0;color:var(--text-muted);font-size:.84rem;line-height:1.55}
+.professional-fact-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin:0;border-block-start:1px solid var(--border-subtle)}
+.professional-fact-list>div{min-inline-size:0;padding:15px 0;border-block-end:1px solid var(--border-subtle)}
+.professional-fact-list>div:nth-child(odd){padding-inline-end:24px;border-inline-end:1px solid var(--border-subtle)}
+.professional-fact-list>div:nth-child(even){padding-inline-start:24px}
+.professional-fact-list dt{color:var(--text-muted);font-size:.72rem}
+.professional-fact-list dd{margin:4px 0 0;overflow-wrap:anywhere;color:var(--text-primary);font-size:.9rem;font-weight:750}
+.professional-empty-state{display:flex;align-items:flex-start;gap:12px;padding:18px;border:1px dashed var(--border-strong);border-radius:9px;background:var(--surface-subtle);color:#35516f}
+.professional-empty-state strong{color:var(--text-primary);font-size:.88rem}.professional-empty-state p{margin:3px 0 0;color:var(--text-muted);font-size:.8rem}
+.professional-profile-page .learner-security-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.professional-profile-page .learner-security-grid>article{min-inline-size:0;padding:18px;border-radius:9px;background:var(--surface-subtle)}
+.professional-profile-page .learner-security-grid>article.is-wide{grid-column:1/-1}
+.professional-profile-page .learner-security-grid h3{margin:0 0 14px;color:var(--text-primary);font-size:.95rem}
+.professional-profile-page .learner-data-export{display:flex;align-items:center;justify-content:space-between;gap:24px}
+.professional-profile-page .student-secondary-action{min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:7px;flex:none;padding:9px 14px;border:1px solid var(--border-strong);border-radius:8px;background:#fff;color:var(--text-primary);font-size:.82rem;font-weight:750}
+.professional-profile-page :is(.connected-account,.session-item){border-color:var(--border-subtle);background:#fff}
+.persona-experience{min-height:100dvh;background:#f4f7fb}.persona-portal{min-height:100dvh;padding-block:32px 64px}
+.persona-portal-brand{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:-4px 0 14px;padding:0 3px 14px;border-block-end:1px solid var(--line)}
+.persona-portal-brand .logo{min-inline-size:0}.persona-portal-brand .brand-logo-image{inline-size:92px;block-size:auto}.persona-portal-brand>span{color:#68758a;font-size:.67rem;font-weight:750}
+.persona-public-link,.persona-portal .student-signout{min-height:44px;display:flex;align-items:center;justify-content:center;gap:8px;inline-size:100%;border:0;border-radius:8px;background:transparent;color:#52657c;font-size:.78rem;font-weight:750;cursor:pointer}
+.persona-public-link:hover,.persona-portal .student-signout:hover{background:#f1f4f8;color:#1745b8}.persona-portal .student-signout-wrap small{display:block;margin-block-start:5px;color:#b91c1c;font-size:.7rem}
+@media(max-width:900px){.professional-identity{grid-template-columns:auto 1fr}.professional-identity dl{grid-column:1/-1;border-inline-start:0;border-block-start:1px solid rgb(255 255 255/16%);padding-block-start:16px}}
+@media(max-width:640px){.professional-profile-header{align-items:stretch;flex-direction:column}.professional-profile-status{align-self:flex-start}.professional-identity{grid-template-columns:auto minmax(0,1fr);padding:18px 16px}.professional-identity dl{grid-template-columns:1fr}.professional-identity dl>div{padding:9px 0;border-block-end:1px solid rgb(255 255 255/12%)}.professional-identity dl>div:last-child{border-block-end:0}.professional-details,.professional-profile-page .learner-settings-section{padding:20px 16px}.professional-fact-list,.professional-profile-page .learner-security-grid{grid-template-columns:1fr}.professional-fact-list>div:nth-child(n){padding-inline:0;border-inline-end:0}.professional-profile-page .learner-security-grid>article.is-wide{grid-column:auto}.professional-profile-page .learner-data-export{align-items:stretch;flex-direction:column}.professional-profile-page .student-secondary-action{inline-size:100%}}
 /* Parent dashboard: per-child course progress */
 .learning-progress-list{display:grid;gap:6px;margin-top:4px}
 .learning-progress-item{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}

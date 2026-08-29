@@ -24,7 +24,7 @@ export type OnboardingState =
   | { state: "PROFILE_INCOMPLETE" }
   | { state: "ASSURANCE_REQUIRED" }
   | { state: "PERSONA_PENDING_APPROVAL" }
-  | { state: "READY"; persona: Persona | null };
+  | { state: "READY"; persona: Persona | null; admin: boolean };
 
 export async function resolveOnboardingState(): Promise<OnboardingState> {
   // Uses the raw, assurance-independent session (like requirePrimaryUser),
@@ -39,7 +39,7 @@ export async function resolveOnboardingState(): Promise<OnboardingState> {
   // routed through learner/persona onboarding - existing admin authorization
   // (requireAdmin/requireAdminPermission) remains the sole gate for /admin.
   const role = session.user.role as string | undefined;
-  if (role === "ADMIN" || role === "SUPER_ADMIN") return { state: "READY", persona: null };
+  if (role === "ADMIN" || role === "SUPER_ADMIN") return { state: "READY", persona: null, admin: true };
 
   // In production AUTH_REQUIRE_EMAIL_VERIFICATION is always enabled, and
   // Better Auth already blocks sign-in / skips auto-sign-in for unverified
@@ -60,7 +60,7 @@ export async function resolveOnboardingState(): Promise<OnboardingState> {
   const primary = memberships.find((row) => row.isPrimary);
   if (primary && primary.status !== "ACTIVE") return { state: "PERSONA_PENDING_APPROVAL" };
 
-  return { state: "READY", persona: (primary?.persona as Persona | undefined) ?? null };
+  return { state: "READY", persona: (primary?.persona as Persona | undefined) ?? null, admin: false };
 }
 
 /** Maps a resolved state to the correct in-app path. `next` is only ever used for the UNAUTHENTICATED->login case, and always goes through safeAppRedirect. */
@@ -79,6 +79,7 @@ export function onboardingPathFor(locale: Locale, result: OnboardingState, next?
     case "PERSONA_PENDING_APPROVAL":
       return `/${locale}/pending-review`;
     case "READY":
+      if (result.admin) return `/${locale}/admin`;
       return result.persona ? `/${locale}${personaPortalPath[result.persona]}` : `/${locale}/dashboard`;
   }
 }
