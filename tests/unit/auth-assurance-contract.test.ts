@@ -9,6 +9,14 @@ test("protected session helpers enforce assurance for app access", async () => {
   assert.match(source, /getCachedSessionAssurance\(current\.session\.id\)/);
 });
 
+test("admin onboarding requires assurance before resolving the admin as ready", async () => {
+  const source = await readFile("src/server/auth/onboarding.ts", "utf8");
+  const adminBranch = source.match(/if \(role === "ADMIN"[\s\S]*?return \{ state: "READY", persona: null, admin: true \};\n  \}/)?.[0];
+  assert.ok(adminBranch, "admin onboarding branch must exist");
+  assert.match(adminBranch, /getSessionAssurance\(session\.session\.id\)/);
+  assert.match(adminBranch, /if \(!assurance\) return \{ state: "ASSURANCE_REQUIRED" \}/);
+});
+
 test("auth form routes primary auth to verification channel and keeps Google button", async () => {
   const source = await readFile("src/components/interactive/AuthForm.tsx", "utf8");
   assert.match(source, /verification-channel/);

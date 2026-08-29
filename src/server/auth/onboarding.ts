@@ -35,11 +35,16 @@ export async function resolveOnboardingState(): Promise<OnboardingState> {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return { state: "UNAUTHENTICATED" };
 
-  // ADMIN/SUPER_ADMIN accounts are provisioned out-of-band and are never
-  // routed through learner/persona onboarding - existing admin authorization
-  // (requireAdmin/requireAdminPermission) remains the sole gate for /admin.
+  // ADMIN/SUPER_ADMIN accounts bypass learner/persona profile onboarding, but
+  // never session assurance. Keeping this aligned with requireAdmin* prevents
+  // an /admin -> /verification-channel -> /admin redirect loop while retaining
+  // the stronger verification gate for every privileged session.
   const role = session.user.role as string | undefined;
-  if (role === "ADMIN" || role === "SUPER_ADMIN") return { state: "READY", persona: null, admin: true };
+  if (role === "ADMIN" || role === "SUPER_ADMIN") {
+    const assurance = await getSessionAssurance(session.session.id);
+    if (!assurance) return { state: "ASSURANCE_REQUIRED" };
+    return { state: "READY", persona: null, admin: true };
+  }
 
   // In production AUTH_REQUIRE_EMAIL_VERIFICATION is always enabled, and
   // Better Auth already blocks sign-in / skips auto-sign-in for unverified
