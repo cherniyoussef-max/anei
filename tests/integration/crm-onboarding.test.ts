@@ -54,7 +54,7 @@ function profilePayload(overrides: Partial<Record<string, unknown>> = {}) {
     phoneNumber: `+2165${Math.floor(1000000 + Math.random() * 8999999)}`,
     country: "Tunisie",
     governorate: "Tunis",
-    city: "Tunis",
+    city: "Carthage",
     preferredLocale: "fr",
     requestedPersona: "STUDENT",
     educationLevel: "Licence",
@@ -199,7 +199,7 @@ test("completeUserProfile: auto-provisions a CRM contact and, once configured, s
 
       // Re-completing the profile (an edit, not first completion) must not
       // send a second welcome message.
-      const secondPayload = profilePayload({ city: "Sfax" });
+      const secondPayload = profilePayload({ city: "La Marsa" });
       const secondResult = await completeUserProfile(userId, secondPayload);
       assert.equal(secondResult.ok, true);
       globalThis.fetch = (async () => providerSendOk(`wamid.${crypto.randomUUID()}`)) as typeof fetch;

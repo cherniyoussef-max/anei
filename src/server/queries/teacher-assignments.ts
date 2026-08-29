@@ -1,6 +1,6 @@
-import { and, eq } from "drizzle-orm";
+import { and, count, countDistinct, eq, inArray } from "drizzle-orm";
 import { db } from "@/server/db";
-import { courses, teacherCourseAssignment } from "@/server/db/schema";
+import { cohort, courses, enrollments, teacherCourseAssignment } from "@/server/db/schema";
 
 export async function listTeacherAssignments(organizationId: string) {
   return db
@@ -23,6 +23,40 @@ export async function getAssignedCoursesForTeacher(teacherUserId: string) {
     .from(teacherCourseAssignment)
     .innerJoin(courses, eq(teacherCourseAssignment.courseId, courses.id))
     .where(and(eq(teacherCourseAssignment.teacherUserId, teacherUserId), eq(teacherCourseAssignment.status, "ACTIVE")));
+}
+
+/**
+ * Count of distinct learners enrolled in this teacher's assigned courses -
+ * a bounded aggregate, never a roster/PII listing (see the get_cohort_
+ * information privacy note: teacher dashboard authorization must stay
+ * anchored to teacherCourseAssignment, never a broad enrollment scan).
+ */
+export async function getAssignedLearnerCountForTeacher(teacherUserId: string): Promise<number> {
+  const assignedCourses = await db
+    .select({ courseId: teacherCourseAssignment.courseId })
+    .from(teacherCourseAssignment)
+    .where(and(eq(teacherCourseAssignment.teacherUserId, teacherUserId), eq(teacherCourseAssignment.status, "ACTIVE")));
+  const courseIds = assignedCourses.map((row) => row.courseId);
+  if (courseIds.length === 0) return 0;
+
+  const [row] = await db
+    .select({ count: countDistinct(enrollments.userId) })
+    .from(enrollments)
+    .where(inArray(enrollments.courseId, courseIds));
+  return row?.count ?? 0;
+}
+
+/** Count of cohorts running on this teacher's assigned courses - bounded aggregate for the dashboard KPI row. */
+export async function getCohortCountForTeacher(teacherUserId: string): Promise<number> {
+  const assignedCourses = await db
+    .select({ courseId: teacherCourseAssignment.courseId })
+    .from(teacherCourseAssignment)
+    .where(and(eq(teacherCourseAssignment.teacherUserId, teacherUserId), eq(teacherCourseAssignment.status, "ACTIVE")));
+  const courseIds = assignedCourses.map((row) => row.courseId);
+  if (courseIds.length === 0) return 0;
+
+  const [row] = await db.select({ count: count() }).from(cohort).where(inArray(cohort.courseId, courseIds));
+  return row?.count ?? 0;
 }
 
 export async function isTeacherAssignedToCourse(teacherUserId: string, courseId: string): Promise<boolean> {

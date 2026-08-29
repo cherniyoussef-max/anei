@@ -1,30 +1,3 @@
-export const GOVERNORATES = [
-  "Ariana",
-  "Béja",
-  "Ben Arous",
-  "Bizerte",
-  "Gabès",
-  "Gafsa",
-  "Jendouba",
-  "Kairouan",
-  "Kasserine",
-  "Kébili",
-  "Le Kef",
-  "Mahdia",
-  "La Manouba",
-  "Médenine",
-  "Monastir",
-  "Nabeul",
-  "Sfax",
-  "Sidi Bouzid",
-  "Siliana",
-  "Sousse",
-  "Tataouine",
-  "Tozeur",
-  "Tunis",
-  "Zaghouan",
-] as const;
-
 export type Persona = "STUDENT" | "AVS" | "PARENT" | "TEACHER" | "SPECIALIST" | "ORGANIZATION";
 export type StepId = "persona" | "identity" | "contact" | "specific" | "review";
 
@@ -37,8 +10,25 @@ export type FormState = {
   city: string;
   preferredLocale: "fr" | "ar";
   requestedPersona: Persona | "";
+  // STUDENT only
   educationLevel: string;
   institutionName: string;
+  // TEACHER
+  discipline: string;
+  levelsTaught: string;
+  professionalInstitution: string;
+  // TEACHER / AVS / SPECIALIST
+  qualification: string;
+  experienceYears: string;
+  // AVS / SPECIALIST
+  interventionDomains: string;
+  // SPECIALIST
+  specialty: string;
+  practiceStructure: string;
+  // ORGANIZATION
+  organizationName: string;
+  organizationType: string;
+  representativeRole: string;
   termsAccepted: boolean;
   privacyAccepted: boolean;
 };
@@ -88,6 +78,9 @@ export const STEP_META: Record<StepId, { eyebrowFr: string; eyebrowAr: string; t
 export const ERROR_MESSAGES: Record<string, { fr: string; ar: string }> = {
   institution_required: { fr: "Merci d'indiquer votre établissement / organisme.", ar: "يرجى إدخال المؤسسة أو الهيئة." },
   education_level_required: { fr: "Merci d'indiquer votre niveau d'étude.", ar: "يرجى إدخال المستوى الدراسي." },
+  invalid_phone: { fr: "Numéro de téléphone invalide (8 chiffres).", ar: "رقم هاتف غير صالح (8 أرقام)." },
+  invalid_governorate: { fr: "Gouvernorat invalide.", ar: "الولاية غير صالحة." },
+  invalid_delegation: { fr: "Cette délégation n'appartient pas à ce gouvernorat.", ar: "هذه المعتمدية لا تنتمي إلى هذه الولاية." },
 };
 
 export const FIELD_STEP: Record<string, StepId> = {
@@ -100,13 +93,17 @@ export const FIELD_STEP: Record<string, StepId> = {
   city: "contact",
   educationLevel: "specific",
   institutionName: "specific",
+  discipline: "specific",
+  levelsTaught: "specific",
+  professionalInstitution: "specific",
+  qualification: "specific",
+  experienceYears: "specific",
+  interventionDomains: "specific",
+  specialty: "specific",
+  practiceStructure: "specific",
+  organizationName: "specific",
+  organizationType: "specific",
+  representativeRole: "specific",
   termsAccepted: "review",
   privacyAccepted: "review",
 };
-
-export function normalizePhoneNumber(value: string) {
-  const digitsOnly = value.replace(/[^\d+]/g, "");
-  if (digitsOnly.startsWith("+")) return digitsOnly;
-  if (/^\d{8}$/.test(digitsOnly)) return `+216${digitsOnly}`;
-  return digitsOnly;
-}

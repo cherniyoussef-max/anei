@@ -2,95 +2,166 @@ import "server-only";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/server/db";
-import { user, userProfile } from "@/server/db/schema";
+import { personaMembership, user, userProfile } from "@/server/db/schema";
 import { establishOnboardingPersonaTx, type DbClient } from "@/server/services/personas";
+import {
+  upsertAvsProfileTx,
+  upsertOrganizationProfileTx,
+  upsertSpecialistProfileTx,
+  upsertTeacherProfileTx,
+} from "@/server/services/persona-profiles";
 import { provisionCrmContactForUser } from "@/server/services/crm-onboarding";
 import { enqueueSystemWelcomeWhatsAppMessage } from "@/server/services/whatsapp";
 import { env, whatsappAutoWelcomeConfigured } from "@/server/env";
 import { logger } from "@/server/security/logger";
+import { normalizeTunisiaPhone } from "@/lib/tunisia/phone";
+import { TUNISIA_GOVERNORATE_NAMES, isValidGovernorateDelegation } from "@/lib/tunisia/locations";
 
 const namePattern = /^[\p{L}\p{M}' -]{1,80}$/u;
-const phonePattern = /^\+[1-9]\d{6,14}$/;
 
-export const TUNISIA_GOVERNORATES = [
-  "Ariana",
-  "Béja",
-  "Ben Arous",
-  "Bizerte",
-  "Gabès",
-  "Gafsa",
-  "Jendouba",
-  "Kairouan",
-  "Kasserine",
-  "Kébili",
-  "Le Kef",
-  "Mahdia",
-  "La Manouba",
-  "Médenine",
-  "Monastir",
-  "Nabeul",
-  "Sfax",
-  "Sidi Bouzid",
-  "Siliana",
-  "Sousse",
-  "Tataouine",
-  "Tozeur",
-  "Tunis",
-  "Zaghouan",
-] as const;
+/**
+ * Canonical governorate name list, kept exported under its historical name
+ * for backward compatibility with existing importers - now sourced from the
+ * single Tunisia administrative dataset (src/lib/tunisia/locations.ts)
+ * instead of a duplicated local array.
+ */
+export const TUNISIA_GOVERNORATES = TUNISIA_GOVERNORATE_NAMES;
 
-const requestedPersonaEnum = z.enum(["STUDENT", "AVS", "PARENT", "TEACHER", "SPECIALIST", "ORGANIZATION"]);
+// Shared field builders reused across every persona-specific variant below,
+// so the phone/location normalization logic exists in exactly one place.
+const phoneNumberField = z
+  .string()
+  .trim()
+  .transform((value, ctx) => {
+    const normalized = normalizeTunisiaPhone(value);
+    if (!normalized) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "invalid_phone" });
+      return z.NEVER;
+    }
+    return normalized;
+  });
+const governorateField = z.string().refine((value) => (TUNISIA_GOVERNORATE_NAMES as readonly string[]).includes(value), {
+  message: "invalid_governorate",
+});
+const cityField = z.string().trim().min(1).max(120);
+const experienceYearsField = z.number().int().min(0).max(80).optional();
+const domainListField = z.array(z.string().trim().min(1).max(60)).max(20).optional();
 
-const baseProfileSchema = z
-  .object({
-    firstName: z.string().trim().min(1).max(80).regex(namePattern),
-    lastName: z.string().trim().min(1).max(80).regex(namePattern),
-    birthDate: z.string().datetime().optional(),
-    birthYear: z.number().int().min(1900).max(new Date().getUTCFullYear()).optional(),
-    phoneNumber: z.string().trim().regex(phonePattern),
-    country: z.string().trim().min(1).max(80),
-    governorate: z.enum(TUNISIA_GOVERNORATES),
-    city: z.string().trim().min(1).max(120),
-    preferredLocale: z.enum(["fr", "ar"]),
-    requestedPersona: requestedPersonaEnum,
-    educationLevel: z.string().trim().min(1).max(120).optional(),
-    institutionName: z.string().trim().min(1).max(160).optional(),
-    termsAccepted: z.literal(true),
-    privacyAccepted: z.literal(true),
+/**
+ * Common identity/contact/location fields, shared by every persona - never
+ * ambiguous professional data (see src/server/db/schema.ts persona-profile
+ * comment: that lives in persona-specific tables, not here).
+ *
+ * birthDate/birthYear are NEVER required by onboarding, for any persona.
+ * Repo-wide search found zero downstream functional dependents (no
+ * age-gated content, no minor-consent workflow, no certificate/analytics/
+ * authorization use) and no documented/product requirement that ANEI is
+ * adults-only - requiring or age-gating on it would be data collected "just
+ * in case", which data-minimization forbids. The columns remain in the
+ * schema for backward compatibility with historical rows, but the
+ * onboarding wizard no longer asks for them.
+ */
+const commonFieldsSchema = z.object({
+  firstName: z.string().trim().min(1).max(80).regex(namePattern),
+  lastName: z.string().trim().min(1).max(80).regex(namePattern),
+  birthDate: z.string().datetime().optional(),
+  birthYear: z.number().int().min(1900).max(new Date().getUTCFullYear()).optional(),
+  phoneNumber: phoneNumberField,
+  country: z.string().trim().min(1).max(80),
+  governorate: governorateField,
+  city: cityField,
+  preferredLocale: z.enum(["fr", "ar"]),
+  termsAccepted: z.literal(true),
+  privacyAccepted: z.literal(true),
+});
+
+// STUDENT needs both educationLevel and institutionName (existing behavior,
+// unchanged) - these two userProfile columns are STUDENT-only in meaning
+// going forward; professional personas persist their own equivalents in
+// their dedicated profile table instead (see persona-profiles.ts).
+const studentProfileSchema = commonFieldsSchema
+  .extend({
+    requestedPersona: z.literal("STUDENT"),
+    educationLevel: z.string().trim().min(1, "education_level_required").max(120),
+    institutionName: z.string().trim().min(1, "institution_required").max(160),
   })
   .strict();
 
+// PARENT has no persona-specific fields at all - the common fields are
+// enough, and child linking is a separate explicit authorization flow
+// (parent_student_link), never collected during onboarding.
+const parentProfileSchema = commonFieldsSchema
+  .extend({
+    requestedPersona: z.literal("PARENT"),
+  })
+  .strict();
+
+const teacherProfileSchema = commonFieldsSchema
+  .extend({
+    requestedPersona: z.literal("TEACHER"),
+    discipline: z.string().trim().min(1).max(120).optional(),
+    qualification: z.string().trim().min(1).max(160).optional(),
+    experienceYears: experienceYearsField,
+    levelsTaught: domainListField,
+    professionalInstitution: z.string().trim().min(1).max(160).optional(),
+  })
+  .strict();
+
+const avsProfileSchema = commonFieldsSchema
+  .extend({
+    requestedPersona: z.literal("AVS"),
+    qualification: z.string().trim().min(1).max(160).optional(),
+    experienceYears: experienceYearsField,
+    interventionDomains: domainListField,
+  })
+  .strict();
+
+const specialistProfileSchema = commonFieldsSchema
+  .extend({
+    requestedPersona: z.literal("SPECIALIST"),
+    specialty: z.string().trim().min(1).max(120).optional(),
+    qualification: z.string().trim().min(1).max(160).optional(),
+    experienceYears: experienceYearsField,
+    practiceStructure: z.string().trim().min(1).max(160).optional(),
+    interventionDomains: domainListField,
+  })
+  .strict();
+
+// organizationName is required (the organization's declared name is
+// essential for admin review); type/representative role stay optional.
+// This is pre-approval application data only - it never creates an
+// `organization`/`organization_membership` row by itself (see
+// src/server/services/persona-profiles.ts).
+const organizationProfileSchema = commonFieldsSchema
+  .extend({
+    requestedPersona: z.literal("ORGANIZATION"),
+    organizationName: z.string().trim().min(1, "institution_required").max(160),
+    organizationType: z.string().trim().min(1).max(120).optional(),
+    representativeRole: z.string().trim().min(1).max(120).optional(),
+  })
+  .strict();
+
+const profileSchemaUnion = z.discriminatedUnion("requestedPersona", [
+  studentProfileSchema,
+  parentProfileSchema,
+  teacherProfileSchema,
+  avsProfileSchema,
+  specialistProfileSchema,
+  organizationProfileSchema,
+]);
+
 /**
- * Persona-conditional requirements, authoritative server-side (never trust
- * client-side step gating). Deliberately reuses the existing
- * educationLevel/institutionName userProfile columns instead of inventing
- * new ones:
- * - birthDate/birthYear are NEVER required by onboarding, for any persona.
- *   Repo-wide search found zero downstream functional dependents (no
- *   age-gated content, no minor-consent workflow, no certificate/analytics/
- *   authorization use) and no documented/product requirement that ANEI is
- *   adults-only - requiring or age-gating on it would be data collected
- *   "just in case", which data-minimization forbids. The columns remain in
- *   the schema (and in the DB) for backward compatibility with any
- *   historical rows, but the onboarding wizard no longer asks for them.
- * - PARENT needs neither educationLevel nor institutionName (not a
- *   professional/academic attribute of the parent themselves).
- * - STUDENT needs both educationLevel and institutionName (existing
- *   behavior, unchanged).
- * - TEACHER/AVS/SPECIALIST require institutionName (employer/organization,
- *   needed for admin review) but educationLevel (qualification) stays
- *   optional - no product requirement makes it a hard blocker.
+ * Authoritative server-side schema (never trust client-side step gating).
+ * Persona-specific requirements live entirely in each variant above; the
+ * only cross-cutting rule left here is the governorate/delegation pairing,
+ * which applies identically regardless of persona.
  */
-export const profileSchema = baseProfileSchema.superRefine((data, ctx) => {
-  const isParent = data.requestedPersona === "PARENT";
-  const isStudent = data.requestedPersona === "STUDENT";
-
-  if (!isParent && !data.institutionName) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "institution_required", path: ["institutionName"] });
-  }
-
-  if (isStudent && !data.educationLevel) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "education_level_required", path: ["educationLevel"] });
+export const profileSchema = profileSchemaUnion.superRefine((data, ctx) => {
+  // Authoritative governorate/delegation relationship check - the client
+  // combobox already filters by governorate, but the browser is never
+  // trusted as the source of truth for this administrative pairing.
+  if (!isValidGovernorateDelegation(data.governorate, data.city)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "invalid_delegation", path: ["city"] });
   }
 });
 
@@ -116,11 +187,19 @@ export async function getUserProfile(userId: string) {
   return row ?? null;
 }
 
+// Deliberately NOT cross-validating city against the governorate's
+// delegation list here (unlike profileSchema below): this schema still
+// backs the existing free-text city input on the student's own
+// /dashboard/profil edit form (LearnerProfileForm), which this task does
+// not redesign - adding that constraint here would reject legacy/valid
+// values the current UI never collected as a structured delegation.
 export const learnerProfileUpdateSchema = z.object({
   firstName: z.string().trim().min(1).max(80).regex(namePattern),
   lastName: z.string().trim().min(1).max(80).regex(namePattern),
   country: z.string().trim().min(1).max(80),
-  governorate: z.enum(TUNISIA_GOVERNORATES),
+  governorate: z.string().refine((value) => (TUNISIA_GOVERNORATE_NAMES as readonly string[]).includes(value), {
+    message: "invalid_governorate",
+  }),
   city: z.string().trim().min(1).max(120),
   preferredLocale: z.enum(["fr", "ar"]),
   educationLevel: z.string().trim().min(1).max(120),
@@ -176,6 +255,12 @@ export async function completeUserProfileTx(
     return { ok: false as const, error: "ONBOARDING_ALREADY_COMPLETED" };
   }
 
+  // educationLevel/institutionName are STUDENT-only in meaning now -
+  // professional personas persist their own equivalents in their dedicated
+  // profile table below instead of these shared userProfile columns.
+  const educationLevel = data.requestedPersona === "STUDENT" ? data.educationLevel : null;
+  const institutionName = data.requestedPersona === "STUDENT" ? data.institutionName : null;
+
   await tx
     .insert(userProfile)
     .values({
@@ -190,8 +275,8 @@ export async function completeUserProfileTx(
       city: data.city,
       preferredLocale: data.preferredLocale,
       requestedPersona: data.requestedPersona,
-      educationLevel: data.educationLevel ?? null,
-      institutionName: data.institutionName ?? null,
+      educationLevel,
+      institutionName,
       onboardingCompletedAt: now,
       termsAcceptedAt: now,
       privacyAcceptedAt: now,
@@ -210,8 +295,8 @@ export async function completeUserProfileTx(
         city: data.city,
         preferredLocale: data.preferredLocale,
         requestedPersona: data.requestedPersona,
-        educationLevel: data.educationLevel ?? null,
-        institutionName: data.institutionName ?? null,
+        educationLevel,
+        institutionName,
         onboardingCompletedAt: now,
         termsAcceptedAt: now,
         privacyAcceptedAt: now,
@@ -228,6 +313,54 @@ export async function completeUserProfileTx(
       updatedAt: now,
     })
     .where(and(eq(user.id, userId)));
+
+  // Persona-specific profile persistence - reads back the membership row
+  // establishOnboardingPersonaTx above just created/confirmed, so the
+  // upsert is always anchored to a real, type-checked membership rather
+  // than any client-supplied id (see persona-profiles.ts).
+  if (
+    data.requestedPersona === "TEACHER" ||
+    data.requestedPersona === "AVS" ||
+    data.requestedPersona === "SPECIALIST" ||
+    data.requestedPersona === "ORGANIZATION"
+  ) {
+    const [membership] = await tx
+      .select({ id: personaMembership.id })
+      .from(personaMembership)
+      .where(and(eq(personaMembership.userId, userId), eq(personaMembership.persona, data.requestedPersona)))
+      .limit(1);
+    if (!membership) throw new Error("persona_membership missing after establishOnboardingPersonaTx");
+
+    if (data.requestedPersona === "TEACHER") {
+      await upsertTeacherProfileTx(tx, membership.id, {
+        discipline: data.discipline ?? null,
+        qualification: data.qualification ?? null,
+        experienceYears: data.experienceYears ?? null,
+        levelsTaught: data.levelsTaught ?? null,
+        professionalInstitution: data.professionalInstitution ?? null,
+      });
+    } else if (data.requestedPersona === "AVS") {
+      await upsertAvsProfileTx(tx, membership.id, {
+        qualification: data.qualification ?? null,
+        experienceYears: data.experienceYears ?? null,
+        interventionDomains: data.interventionDomains ?? null,
+      });
+    } else if (data.requestedPersona === "SPECIALIST") {
+      await upsertSpecialistProfileTx(tx, membership.id, {
+        specialty: data.specialty ?? null,
+        qualification: data.qualification ?? null,
+        experienceYears: data.experienceYears ?? null,
+        practiceStructure: data.practiceStructure ?? null,
+        interventionDomains: data.interventionDomains ?? null,
+      });
+    } else {
+      await upsertOrganizationProfileTx(tx, membership.id, {
+        organizationName: data.organizationName,
+        organizationType: data.organizationType ?? null,
+        representativeRole: data.representativeRole ?? null,
+      });
+    }
+  }
 
   return { ok: true as const };
 }

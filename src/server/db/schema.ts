@@ -1155,6 +1155,111 @@ export const teacherCourseAssignment = pgTable(
 );
 
 // -----------------------------------------------------------------------------
+// Persona-specific profile tables (professional personas only). `user_profile`
+// stays common identity/contact/location data shared by every persona a user
+// holds; these tables hold the data that only makes sense for one persona.
+// Each is owned by a `persona_membership` row (not directly by `user_id`) so a
+// single account holding both TEACHER and SPECIALIST personas gets two
+// independent rows that can never collide or overwrite each other — the FK +
+// UNIQUE(persona_membership_id) pair guarantees at most one profile row per
+// membership, and the owning service (src/server/services/persona-profiles.ts)
+// additionally verifies persona_membership.persona matches the expected
+// persona before every write (a bare FK cannot express that constraint).
+// ON DELETE cascade mirrors persona_membership's own cascade from `user` -
+// deleting the membership (or the user) removes the persona-specific data
+// with it, same lifecycle as the membership it belongs to.
+export const teacherProfile = pgTable(
+  "teacher_profile",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    personaMembershipId: text("persona_membership_id")
+      .notNull()
+      .references(() => personaMembership.id, { onDelete: "cascade" }),
+    discipline: text("discipline"),
+    qualification: text("qualification"),
+    experienceYears: integer("experience_years"),
+    levelsTaught: text("levels_taught").array(),
+    professionalInstitution: text("professional_institution"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("teacher_profile_membership_unique").on(table.personaMembershipId),
+    check(
+      "teacher_profile_experience_years_check",
+      sql`${table.experienceYears} is null or (${table.experienceYears} >= 0 and ${table.experienceYears} <= 80)`,
+    ),
+  ],
+);
+
+export const avsProfile = pgTable(
+  "avs_profile",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    personaMembershipId: text("persona_membership_id")
+      .notNull()
+      .references(() => personaMembership.id, { onDelete: "cascade" }),
+    qualification: text("qualification"),
+    experienceYears: integer("experience_years"),
+    interventionDomains: text("intervention_domains").array(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("avs_profile_membership_unique").on(table.personaMembershipId),
+    check(
+      "avs_profile_experience_years_check",
+      sql`${table.experienceYears} is null or (${table.experienceYears} >= 0 and ${table.experienceYears} <= 80)`,
+    ),
+  ],
+);
+
+export const specialistProfile = pgTable(
+  "specialist_profile",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    personaMembershipId: text("persona_membership_id")
+      .notNull()
+      .references(() => personaMembership.id, { onDelete: "cascade" }),
+    specialty: text("specialty"),
+    qualification: text("qualification"),
+    experienceYears: integer("experience_years"),
+    practiceStructure: text("practice_structure"),
+    interventionDomains: text("intervention_domains").array(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("specialist_profile_membership_unique").on(table.personaMembershipId),
+    check(
+      "specialist_profile_experience_years_check",
+      sql`${table.experienceYears} is null or (${table.experienceYears} >= 0 and ${table.experienceYears} <= 80)`,
+    ),
+  ],
+);
+
+// Pre-approval ORGANIZATION-persona application data only - deliberately NOT
+// the authoritative `organization`/`organization_membership` entities below.
+// Holding the ORGANIZATION persona never grants organization access by
+// itself; that always requires an explicit, separately-created
+// organization_membership row (see src/server/services/organizations.ts).
+export const organizationProfile = pgTable(
+  "organization_profile",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    personaMembershipId: text("persona_membership_id")
+      .notNull()
+      .references(() => personaMembership.id, { onDelete: "cascade" }),
+    organizationName: text("organization_name"),
+    organizationType: text("organization_type"),
+    representativeRole: text("representative_role"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [uniqueIndex("organization_profile_membership_unique").on(table.personaMembershipId)],
+);
+
+// -----------------------------------------------------------------------------
 // Phase 3: CRM foundation. Deliberately namespaced `crm*`/`crm_*` and kept
 // separate from `contactMessages` (the public website contact-form
 // submissions table) and from `/admin/contacts` — a CRM contact is a

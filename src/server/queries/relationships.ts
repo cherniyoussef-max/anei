@@ -2,6 +2,8 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import {
   avsStudentAssignment,
+  courses,
+  enrollments,
   parentStudentLink,
   specialistStudentAssignment,
   user,
@@ -66,6 +68,33 @@ export async function getLinkedStudentsForParent(parentUserId: string) {
     .from(parentStudentLink)
     .innerJoin(user, eq(user.id, parentStudentLink.studentUserId))
     .where(and(eq(parentStudentLink.parentUserId, parentUserId), eq(parentStudentLink.status, "ACTIVE")));
+}
+
+/**
+ * Bounded course-progress overview for the parent dashboard: the caller's own
+ * ACTIVE-linked children with their current enrollment progress. Scoped by
+ * parent_student_link (never a client-supplied child list), inner-joined to
+ * enrollments so only children who are actually enrolled appear — same
+ * hasActiveParentLink authorization anchor as the rest of this file.
+ */
+export async function getLinkedStudentsProgressForParent(parentUserId: string) {
+  return db
+    .select({
+      studentId: user.id,
+      studentName: user.name,
+      courseId: courses.id,
+      courseTitleFr: courses.titleFr,
+      courseTitleAr: courses.titleAr,
+      progressPercent: enrollments.progressPercent,
+      status: enrollments.status,
+    })
+    .from(parentStudentLink)
+    .innerJoin(user, eq(user.id, parentStudentLink.studentUserId))
+    .innerJoin(enrollments, eq(enrollments.userId, parentStudentLink.studentUserId))
+    .innerJoin(courses, eq(courses.id, enrollments.courseId))
+    .where(and(eq(parentStudentLink.parentUserId, parentUserId), eq(parentStudentLink.status, "ACTIVE")))
+    .orderBy(user.name, courses.titleFr)
+    .limit(60);
 }
 
 /** Students assigned to this AVS with an ACTIVE assignment — drives the AVS portal. */

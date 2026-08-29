@@ -9,6 +9,12 @@ import { AdminUserRole } from "@/components/admin/AdminUserRole";
 import { AdminUserCrmActions } from "@/modules/admin/components/AdminUserCrmActions";
 import { AdminUserPersonas } from "@/components/admin/AdminUserPersonas";
 import { getUserPersonas } from "@/server/queries/personas";
+import {
+  getAvsProfileForUser,
+  getOrganizationProfileForUser,
+  getSpecialistProfileForUser,
+  getTeacherProfileForUser,
+} from "@/server/services/persona-profiles";
 
 export const dynamic = "force-dynamic";
 export default async function AdminUserDetail({ params, searchParams }: {
@@ -24,6 +30,18 @@ export default async function AdminUserDetail({ params, searchParams }: {
   // section always reflects the current DB state without a separate cache
   // key to invalidate.
   const personaMemberships = tab === "personas" ? await getUserPersonas(id) : [];
+  // Read-only professional-profile detail for the reviewer, scoped to
+  // whichever professional personas this user actually holds - never a
+  // second authorization path, purely display to inform admin approval.
+  const professionalPersonas = new Set(personaMemberships.map((m) => m.persona));
+  const [teacherProfile, avsProfile, specialistProfile, organizationProfile] = tab === "personas"
+    ? await Promise.all([
+        professionalPersonas.has("TEACHER") ? getTeacherProfileForUser(id) : Promise.resolve(null),
+        professionalPersonas.has("AVS") ? getAvsProfileForUser(id) : Promise.resolve(null),
+        professionalPersonas.has("SPECIALIST") ? getSpecialistProfileForUser(id) : Promise.resolve(null),
+        professionalPersonas.has("ORGANIZATION") ? getOrganizationProfileForUser(id) : Promise.resolve(null),
+      ])
+    : [null, null, null, null];
   return <>
     <AdminPageHeader locale={locale} eyebrow={ar ? "ملف المستخدم" : "Fiche utilisateur"} title={data.user.name}
       description={`${data.user.email} · ${data.user.provider === "google" ? "Google" : "Email"}`}
@@ -47,22 +65,27 @@ export default async function AdminUserDetail({ params, searchParams }: {
         const item=row as Record<string,unknown>; return <article key={String(item.id)}><div><strong>{String(ar?item.title_ar:item.title_fr)}</strong><small>{formatDate(item.enrolled_at as Date,locale)} · {String(item.status)}</small></div><b>{String(item.progress_percent)}%</b></article>;
       })}{!data.enrollments.length?<p className="admin-empty">{ar?"لا توجد تسجيلات.":"Aucune inscription."}</p>:null}</div>
       
-      <h2 style={{ marginTop: 32 }}>{ar?"التقدم في الفيديوهات":"Progression vidéo"}</h2>
+      <h2 className="admin-section-heading-spaced">{ar?"التقدم في الفيديوهات":"Progression vidéo"}</h2>
       <div className="admin-list">{data.videoProgress.map((row) => {
         const item=row as Record<string,unknown>;
         const duration = Number(item.duration_seconds) || 0;
         const watched = Number(item.watched_seconds) || 0;
         const pct = duration > 0 ? Math.min(100, Math.round((watched / duration) * 100)) : (item.completed ? 100 : 0);
-        return <article key={String(item.id)}><div><strong>{String(ar?item.title_ar:item.title_fr)}</strong><small>{String(ar?item.course_ar:item.course_fr)}</small></div><div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 100, height: 6, borderRadius: 3, background: "#e2e5ea", overflow: "hidden" }}><div style={{ height: "100%", width: `${pct}%`, background: pct >= 100 ? "#16a34a" : "#3d5a80", borderRadius: 3 }} /></div>
-          <b style={{ minWidth: 40, textAlign: "right" }}>{pct}%</b>
+        return <article key={String(item.id)}><div><strong>{String(ar?item.title_ar:item.title_fr)}</strong><small>{String(ar?item.course_ar:item.course_fr)}</small></div><div className="admin-user-progress-wrap">
+          <progress className="admin-user-progress" max={100} value={pct} aria-label={`${String(ar?item.title_ar:item.title_fr)} ${pct}%`} />
+          <b>{pct}%</b>
         </div></article>;
       })}{!data.videoProgress.length?<p className="admin-empty">{ar?"لا توجد مقاطع فيديو تمت مشاهدتها.":"Aucune vidéo visionnée."}</p>:null}</div>
       
       </div>:null}
       {tab === "certificates" ? <div><h2>{ar?"الشهادات":"Certificats"}</h2><div className="admin-list">{data.certificates.map((row) => {const item=row as Record<string,unknown>;return <article key={String(item.id)}><div><strong>{String(ar?item.title_ar:item.title_fr)}</strong><small>{String(item.code)}</small></div><b>{formatDate(item.issued_at as Date,locale)}</b></article>})}</div></div>:null}
       {tab === "sessions" ? <div><h2>{ar?"جلسات الحساب":"Sessions du compte"}</h2><div className="admin-list">{data.sessions.map((row) => {const item=row as Record<string,unknown>;return <article key={String(item.id)}><div><strong>{String(item.user_agent ?? (ar?"جهاز غير معروف":"Appareil inconnu"))}</strong><small>{item.ip_address?String(item.ip_address):"—"}</small></div><b>{formatDate(item.updated_at as Date,locale)}</b></article>})}</div><p className="admin-help">{ar?"إبطال جلسة طرف ثالث غير متاح بأمان في واجهة الخادم الحالية لـ Better Auth؛ لم تتم محاكاته يدويًا.":"La révocation administrative d’une session tierce n’est pas exposée de façon sûre par l’intégration Better Auth actuelle ; elle n’a pas été réinventée."}</p></div>:null}
-      {tab === "personas" ? <div><h2>{ar?"الأدوار (Personas)":"Personas"}</h2><AdminUserPersonas userId={id} memberships={personaMemberships.map((m) => ({ persona: m.persona, status: m.status, isPrimary: m.isPrimary }))} canEdit={hasAdminPermission(String(session.user.role), "personas.manage")}/></div>:null}
+      {tab === "personas" ? <div><h2>{ar?"الأدوار (Personas)":"Personas"}</h2><AdminUserPersonas userId={id} memberships={personaMemberships.map((m) => ({ persona: m.persona, status: m.status, isPrimary: m.isPrimary }))} canEdit={hasAdminPermission(String(session.user.role), "personas.manage")}/>
+        {teacherProfile && <article className="admin-persona-profile admin-persona-profile-first"><div><strong>{ar?"ملف التدريس":"Profil enseignant"}</strong><small>{[teacherProfile.discipline, teacherProfile.qualification, teacherProfile.experienceYears != null ? `${teacherProfile.experienceYears} ${ar?"سنة خبرة":"ans d'expérience"}` : null, teacherProfile.professionalInstitution].filter(Boolean).join(" · ") || (ar?"لا توجد تفاصيل":"Aucun détail")}</small></div></article>}
+        {avsProfile && <article className="admin-persona-profile"><div><strong>{ar?"ملف AVS":"Profil AVS"}</strong><small>{[avsProfile.qualification, avsProfile.experienceYears != null ? `${avsProfile.experienceYears} ${ar?"سنة خبرة":"ans d'expérience"}` : null, avsProfile.interventionDomains?.join(", ")].filter(Boolean).join(" · ") || (ar?"لا توجد تفاصيل":"Aucun détail")}</small></div></article>}
+        {specialistProfile && <article className="admin-persona-profile"><div><strong>{ar?"ملف الأخصائي":"Profil spécialiste"}</strong><small>{[specialistProfile.specialty, specialistProfile.qualification, specialistProfile.experienceYears != null ? `${specialistProfile.experienceYears} ${ar?"سنة خبرة":"ans d'expérience"}` : null, specialistProfile.practiceStructure].filter(Boolean).join(" · ") || (ar?"لا توجد تفاصيل":"Aucun détail")}</small></div></article>}
+        {organizationProfile && <article className="admin-persona-profile"><div><strong>{ar?"ملف المؤسسة":"Profil organisation"}</strong><small>{[organizationProfile.organizationName, organizationProfile.organizationType, organizationProfile.representativeRole].filter(Boolean).join(" · ") || (ar?"لا توجد تفاصيل":"Aucun détail")}</small></div></article>}
+      </div>:null}
       {tab === "audit" ? <p className="admin-empty">{ar?"استخدم سجل التدقيق مع معرّف المستخدم لتتبع العمليات.":"Utilisez le journal d’audit avec l’identifiant utilisateur pour retracer les opérations."}</p>:null}
     </section>
   </>;

@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Locale } from "@/types";
-import { ERROR_MESSAGES, FIELD_STEP, normalizePhoneNumber, STEP_META, type FormState, type Persona, type StepId } from "@/components/auth/onboarding/constants";
+import { ERROR_MESSAGES, FIELD_STEP, STEP_META, type FormState, type Persona, type StepId } from "@/components/auth/onboarding/constants";
+import { normalizeTunisiaPhone } from "@/lib/tunisia/phone";
 import { PersonaStep } from "@/components/auth/onboarding/PersonaStep";
 import { IdentityStep, validateIdentityStep } from "@/components/auth/onboarding/IdentityStep";
 import { ContactStep, validateContactStep } from "@/components/auth/onboarding/ContactStep";
@@ -37,6 +38,17 @@ export function CompleteProfileForm({
     requestedPersona: initialPersona ?? "",
     educationLevel: "",
     institutionName: "",
+    discipline: "",
+    levelsTaught: "",
+    professionalInstitution: "",
+    qualification: "",
+    experienceYears: "",
+    interventionDomains: "",
+    specialty: "",
+    practiceStructure: "",
+    organizationName: "",
+    organizationType: "",
+    representativeRole: "",
     termsAccepted: false,
     privacyAccepted: false,
   });
@@ -88,7 +100,7 @@ export function CompleteProfileForm({
       case "contact":
         return validateContactStep(data, ar);
       case "specific":
-        return validateSpecificStep(data, isParent, isStudent, ar);
+        return validateSpecificStep(data, isParent, isStudent, isOrganization, ar);
       case "review":
         return validateReviewStep(data, ar);
     }
@@ -118,7 +130,7 @@ export function CompleteProfileForm({
     setLoading(true);
     setSubmitError(null);
 
-    const phoneNumber = normalizePhoneNumber(data.phoneNumber);
+    const phoneNumber = normalizeTunisiaPhone(data.phoneNumber) ?? "";
     const payload: Record<string, unknown> = {
       firstName: data.firstName.trim(),
       lastName: data.lastName.trim(),
@@ -131,11 +143,35 @@ export function CompleteProfileForm({
       termsAccepted: data.termsAccepted,
       privacyAccepted: data.privacyAccepted,
     };
-    if (!isParent && data.institutionName.trim()) {
+    const splitList = (value: string) =>
+      value
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+
+    if (isStudent) {
       payload.institutionName = data.institutionName.trim();
-    }
-    if (data.educationLevel.trim()) {
       payload.educationLevel = data.educationLevel.trim();
+    } else if (isOrganization) {
+      payload.organizationName = data.organizationName.trim();
+      if (data.organizationType.trim()) payload.organizationType = data.organizationType.trim();
+      if (data.representativeRole.trim()) payload.representativeRole = data.representativeRole.trim();
+    } else if (data.requestedPersona === "TEACHER") {
+      if (data.discipline.trim()) payload.discipline = data.discipline.trim();
+      if (data.qualification.trim()) payload.qualification = data.qualification.trim();
+      if (data.experienceYears.trim()) payload.experienceYears = Number(data.experienceYears);
+      if (data.levelsTaught.trim()) payload.levelsTaught = splitList(data.levelsTaught);
+      if (data.professionalInstitution.trim()) payload.professionalInstitution = data.professionalInstitution.trim();
+    } else if (data.requestedPersona === "AVS") {
+      if (data.qualification.trim()) payload.qualification = data.qualification.trim();
+      if (data.experienceYears.trim()) payload.experienceYears = Number(data.experienceYears);
+      if (data.interventionDomains.trim()) payload.interventionDomains = splitList(data.interventionDomains);
+    } else if (data.requestedPersona === "SPECIALIST") {
+      if (data.specialty.trim()) payload.specialty = data.specialty.trim();
+      if (data.qualification.trim()) payload.qualification = data.qualification.trim();
+      if (data.experienceYears.trim()) payload.experienceYears = Number(data.experienceYears);
+      if (data.practiceStructure.trim()) payload.practiceStructure = data.practiceStructure.trim();
+      if (data.interventionDomains.trim()) payload.interventionDomains = splitList(data.interventionDomains);
     }
 
     const response = await fetch("/api/auth/profile/complete", {
@@ -177,8 +213,6 @@ export function CompleteProfileForm({
     return <ConfirmationStep ar={ar} onContinue={continueAfterConfirmation} />;
   }
 
-  const progressPercent = Math.round(((stepIndex + 1) / steps.length) * 100);
-
   return (
     <div className="profile-wizard" aria-busy={loading}>
       <p className="sr-only" aria-live="polite">
@@ -187,7 +221,7 @@ export function CompleteProfileForm({
           : `Étape ${stepIndex + 1} sur ${steps.length} : ${meta.titleFr}`}
       </p>
       <div className="wizard-progress-track" role="presentation">
-        <span style={{ width: `${progressPercent}%` }} />
+        <span className={`wizard-progress-step-${stepIndex + 1}`} />
       </div>
       <ol className="wizard-progress-list" aria-hidden="true">
         {steps.map((step, index) => (

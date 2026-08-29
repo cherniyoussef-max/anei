@@ -1,58 +1,53 @@
-import { Field } from "./Field";
-import { GOVERNORATES, normalizePhoneNumber } from "./constants";
+import { normalizeTunisiaPhone } from "@/lib/tunisia/phone";
+import { getDelegationsForGovernorate, isValidGovernorateDelegation, TUNISIA_LOCATIONS } from "@/lib/tunisia/locations";
+import { PhoneField } from "./PhoneField";
+import { Combobox } from "./Combobox";
+import { TunisiaFlag } from "./TunisiaFlag";
 import type { StepProps } from "./types";
-import { Icon } from "@/components/ui/Icon";
+
+const GOVERNORATE_OPTIONS = TUNISIA_LOCATIONS.map((g) => ({ value: g.nameFr, label: g.nameFr }));
 
 export function ContactStep({ data, errors, ar, set }: StepProps) {
+  const delegationOptions = getDelegationsForGovernorate(data.governorate).map((d) => ({ value: d.nameFr, label: d.nameFr }));
+
   return (
     <div className="wizard-fields">
-      <label className="wizard-field">
-        <span className="wizard-label">{ar ? "رقم الهاتف/واتساب" : "Téléphone / WhatsApp"}</span>
-        <input
-          type="tel"
-          placeholder="+216XXXXXXXX"
-          value={data.phoneNumber}
-          onChange={(event) => set("phoneNumber", event.target.value)}
-          aria-describedby="phone-status err-phoneNumber"
-          aria-invalid={Boolean(errors.phoneNumber)}
-          required
-        />
-        <span id="phone-status" className="wizard-phone-status">
-          <Icon name="phone" size={12} /> {ar ? "غير موثّق" : "Non vérifié"}
+      <PhoneField value={data.phoneNumber} onChange={(digits) => set("phoneNumber", digits)} error={errors.phoneNumber} ar={ar} />
+
+      <div className="wizard-field">
+        <span className="wizard-label">{ar ? "الدولة" : "Pays"}</span>
+        <span className="wizard-country-badge">
+          <TunisiaFlag size={16} /> {ar ? "تونس" : "Tunisie"}
         </span>
-        <small>{ar ? "سيُطلب التحقق عبر واتساب في مرحلة لاحقة." : "La vérification WhatsApp sera demandée à une étape suivante."}</small>
-        {errors.phoneNumber && (
-          <span id="err-phoneNumber" className="wizard-field-error" role="alert">
-            {errors.phoneNumber}
-          </span>
-        )}
-      </label>
-      <Field label={ar ? "الدولة" : "Pays"} id="country" value={data.country} onChange={(v) => set("country", v)} error={errors.country} required />
-      <label className="wizard-field">
-        <span className="wizard-label">{ar ? "الولاية" : "Gouvernorat"}</span>
-        <select
+      </div>
+
+      <div className="wizard-field-grid">
+        <Combobox
+          id="governorate"
+          label={ar ? "الولاية" : "Gouvernorat"}
           value={data.governorate}
-          onChange={(event) => set("governorate", event.target.value)}
-          aria-describedby={errors.governorate ? "err-governorate" : undefined}
-          aria-invalid={Boolean(errors.governorate)}
-          required
-        >
-          <option value="" disabled>
-            {ar ? "اختر الولاية" : "Sélectionnez un gouvernorat"}
-          </option>
-          {GOVERNORATES.map((g) => (
-            <option key={g} value={g}>
-              {g}
-            </option>
-          ))}
-        </select>
-        {errors.governorate && (
-          <span id="err-governorate" className="wizard-field-error" role="alert">
-            {errors.governorate}
-          </span>
-        )}
-      </label>
-      <Field label={ar ? "المدينة" : "Ville"} id="city" value={data.city} onChange={(v) => set("city", v)} error={errors.city} required />
+          onChange={(value) => {
+            set("governorate", value);
+            if (data.city && !isValidGovernorateDelegation(value, data.city)) set("city", "");
+          }}
+          options={GOVERNORATE_OPTIONS}
+          placeholder={ar ? "ابحث عن ولاية..." : "Rechercher un gouvernorat..."}
+          error={errors.governorate}
+          ar={ar}
+        />
+        <Combobox
+          id="city"
+          label={ar ? "المدينة / المعتمدية" : "Ville / délégation"}
+          value={data.city}
+          onChange={(value) => set("city", value)}
+          options={delegationOptions}
+          placeholder={ar ? "ابحث..." : "Rechercher..."}
+          disabledHint={ar ? "اختر الولاية أولاً" : "Sélectionnez d'abord un gouvernorat"}
+          error={errors.city}
+          ar={ar}
+        />
+      </div>
+
       <label className="wizard-field">
         <span className="wizard-label">{ar ? "اللغة المفضلة" : "Langue préférée"}</span>
         <select value={data.preferredLocale} onChange={(event) => set("preferredLocale", event.target.value as "fr" | "ar")}>
@@ -64,12 +59,16 @@ export function ContactStep({ data, errors, ar, set }: StepProps) {
   );
 }
 
-export function validateContactStep(data: { phoneNumber: string; country: string; governorate: string; city: string }, ar: boolean) {
+export function validateContactStep(data: { phoneNumber: string; governorate: string; city: string }, ar: boolean) {
   const errs: Record<string, string> = {};
-  const phone = normalizePhoneNumber(data.phoneNumber);
-  if (!/^\+[1-9]\d{6,14}$/.test(phone)) errs.phoneNumber = ar ? "رقم هاتف غير صالح." : "Numéro de téléphone invalide.";
-  if (!data.country.trim()) errs.country = ar ? "الدولة مطلوبة." : "Le pays est requis.";
+  if (!normalizeTunisiaPhone(data.phoneNumber)) {
+    errs.phoneNumber = ar ? "رقم هاتف غير صالح (8 أرقام)." : "Numéro de téléphone invalide (8 chiffres).";
+  }
   if (!data.governorate) errs.governorate = ar ? "الولاية مطلوبة." : "Le gouvernorat est requis.";
-  if (!data.city.trim()) errs.city = ar ? "المدينة مطلوبة." : "La ville est requise.";
+  if (!data.city) {
+    errs.city = ar ? "المدينة/المعتمدية مطلوبة." : "La ville / délégation est requise.";
+  } else if (data.governorate && !isValidGovernorateDelegation(data.governorate, data.city)) {
+    errs.city = ar ? "هذه المعتمدية لا تنتمي إلى هذه الولاية." : "Cette délégation n'appartient pas à ce gouvernorat.";
+  }
   return errs;
 }
