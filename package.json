@@ -37,29 +37,29 @@
     "start:local": "tsx scripts/start-local.ts"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "3.1095.0",
-    "@aws-sdk/s3-presigned-post": "3.1095.0",
-    "@aws-sdk/s3-request-presigner": "3.1095.0",
-    "@better-auth/drizzle-adapter": "1.6.25",
+    "@aws-sdk/client-s3": "3.1121.0",
+    "@aws-sdk/s3-presigned-post": "3.1121.0",
+    "@aws-sdk/s3-request-presigner": "3.1121.0",
+    "@better-auth/drizzle-adapter": "1.7.2",
     "@modelcontextprotocol/sdk": "1.30.0",
-    "better-auth": "1.6.25",
+    "better-auth": "1.7.2",
     "drizzle-orm": "0.45.2",
-    "next": "16.2.12",
-    "nodemailer": "9.0.3",
-    "pg": "8.22.0",
+    "next": "16.3.3",
+    "nodemailer": "9.0.6",
+    "pg": "8.23.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "redis": "6.1.0",
+    "redis": "6.2.1",
     "server-only": "0.0.1",
-    "sharp": "0.35.3",
-    "zod": "4.4.3"
+    "sharp": "0.35.4",
+    "zod": "4.5.4"
   },
   "devDependencies": {
     "@playwright/test": "1.62.0",
     "@tailwindcss/postcss": "^4.3.0",
     "@types/node": "^22.0.0",
     "@types/nodemailer": "8.0.1",
-    "@types/pg": "8.20.0",
+    "@types/pg": "8.23.1",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "dotenv": "17.4.2",
@@ -73,6 +73,6 @@
   },
   "overrides": {
     "postcss": "8.5.23",
-    "sharp": "0.35.3"
+    "sharp": "0.35.4"
   }
 }
