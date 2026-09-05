@@ -57,15 +57,27 @@ export async function updateLessonProgress(input: { userId: string; lessonId: st
       .set({ progressPercent: percent, status: courseCompleted ? "completed" : "active", completedAt: courseCompleted ? new Date() : null })
       .where(eq(enrollments.id, owned.enrollment.id));
 
+    let certificateCode: string | null = null;
     if (courseCompleted) {
       const code = `ANEI-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 12).toUpperCase()}`;
-      await tx
+      const [inserted] = await tx
         .insert(certificates)
         .values({ userId: input.userId, courseId: owned.lesson.courseId, code })
-        .onConflictDoNothing({ target: [certificates.userId, certificates.courseId] });
-      await grantPoints(tx, { userId: input.userId, reason: "COURSE_COMPLETE", delta: POINT_VALUES.COURSE_COMPLETE, referenceType: "course", referenceId: owned.lesson.courseId });
+        .onConflictDoNothing({ target: [certificates.userId, certificates.courseId] })
+        .returning({ code: certificates.code });
+      if (inserted) {
+        certificateCode = inserted.code;
+        await grantPoints(tx, { userId: input.userId, reason: "COURSE_COMPLETE", delta: POINT_VALUES.COURSE_COMPLETE, referenceType: "course", referenceId: owned.lesson.courseId });
+      } else {
+        const [existing] = await tx
+          .select({ code: certificates.code })
+          .from(certificates)
+          .where(and(eq(certificates.userId, input.userId), eq(certificates.courseId, owned.lesson.courseId)))
+          .limit(1);
+        certificateCode = existing?.code ?? null;
+      }
     }
 
-    return { percent, lessonCompleted, courseCompleted };
+    return { percent, lessonCompleted, courseCompleted, certificateCode };
   });
 }

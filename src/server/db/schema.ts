@@ -2,6 +2,7 @@ import {
   bigint,
   boolean,
   check,
+  date,
   foreignKey,
   index,
   integer,
@@ -428,6 +429,46 @@ export const lessonProgress = pgTable(
   (table) => [
     uniqueIndex("lesson_progress_unique").on(table.enrollmentId, table.lessonId),
     check("lesson_progress_watched_nonnegative", sql`${table.watchedSeconds} >= 0`),
+  ],
+);
+
+export const videoCheckpoint = pgTable(
+  "video_checkpoint",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    lessonId: text("lesson_id").notNull().references(() => lessons.id, { onDelete: "cascade" }),
+    // triggerSeconds >= the lesson's durationSeconds marks a post-video (formative) question
+    // rather than an in-stream pause point.
+    triggerSeconds: integer("trigger_seconds").notNull(),
+    kind: text("kind").notNull().default("REFLECTION"),
+    promptFr: text("prompt_fr").notNull(),
+    promptAr: text("prompt_ar").notNull(),
+    options: jsonb("options").$type<{ id: string; textFr: string; textAr: string }[]>(),
+    correctOptionId: text("correct_option_id"),
+    position: integer("position").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("video_checkpoint_lesson_idx").on(table.lessonId, table.triggerSeconds),
+    check("video_checkpoint_kind_check", sql`${table.kind} in ('REFLECTION','QUIZ')`),
+    check("video_checkpoint_trigger_check", sql`${table.triggerSeconds} >= 0`),
+  ],
+);
+
+export const videoCheckpointResponse = pgTable(
+  "video_checkpoint_response",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    enrollmentId: text("enrollment_id").notNull().references(() => enrollments.id, { onDelete: "cascade" }),
+    checkpointId: text("checkpoint_id").notNull().references(() => videoCheckpoint.id, { onDelete: "cascade" }),
+    responseText: text("response_text"),
+    selectedOptionId: text("selected_option_id"),
+    correct: boolean("correct"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("video_checkpoint_response_unique").on(table.enrollmentId, table.checkpointId),
   ],
 );
 
@@ -1452,6 +1493,7 @@ export const appointment = pgTable(
     endAt: timestamp("end_at", { withTimezone: true }).notNull(),
     status: text("status").notNull().default("SCHEDULED"),
     note: text("note"),
+    meetingUrl: text("meeting_url"),
     completedAt: timestamp("completed_at", { withTimezone: true }),
     cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
@@ -1482,23 +1524,31 @@ export const appointmentAvailabilityRule = pgTable(
     id: text("id").primaryKey().$defaultFn(id),
     organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
     assignedToUserId: text("assigned_to_user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
-    weekday: integer("weekday").notNull(),
+    // Exactly one of weekday (recurring template) / specificDate (one-off slot) is set — see appointment_availability_recurrence_check.
+    weekday: integer("weekday"),
+    specificDate: date("specific_date"),
     startMinute: integer("start_minute").notNull(),
     endMinute: integer("end_minute").notNull(),
     durationMinutes: integer("duration_minutes").notNull().default(60),
     type: text("type").notNull().default("FOLLOW_UP"),
+    sessionType: text("session_type").notNull().default("INDIVIDUAL"),
+    capacity: integer("capacity").notNull().default(1),
     timezone: text("timezone").notNull().default("Africa/Tunis"),
     active: boolean("active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
   },
   (table) => [
-    uniqueIndex("appointment_availability_rule_unique").on(table.organizationId, table.assignedToUserId, table.weekday, table.startMinute),
+    uniqueIndex("appointment_availability_rule_weekly_unique").on(table.organizationId, table.assignedToUserId, table.weekday, table.startMinute).where(sql`${table.weekday} is not null`),
+    uniqueIndex("appointment_availability_rule_dated_unique").on(table.organizationId, table.assignedToUserId, table.specificDate, table.startMinute).where(sql`${table.specificDate} is not null`),
     index("appointment_availability_rule_org_active_idx").on(table.organizationId, table.active),
-    check("appointment_availability_weekday_check", sql`${table.weekday} between 0 and 6`),
+    check("appointment_availability_recurrence_check", sql`(${table.weekday} is not null) <> (${table.specificDate} is not null)`),
+    check("appointment_availability_weekday_check", sql`${table.weekday} is null or ${table.weekday} between 0 and 6`),
     check("appointment_availability_minutes_check", sql`${table.startMinute} >= 0 and ${table.endMinute} <= 1440 and ${table.endMinute} > ${table.startMinute}`),
     check("appointment_availability_duration_check", sql`${table.durationMinutes} between 15 and 240`),
     check("appointment_availability_type_check", sql`${table.type} in ('ASSESSMENT','INFO_MEETING','FOLLOW_UP','OTHER')`),
+    check("appointment_availability_session_type_check", sql`${table.sessionType} in ('INDIVIDUAL','GROUP')`),
+    check("appointment_availability_capacity_check", sql`${table.capacity} between 1 and 200`),
     check("appointment_availability_timezone_check", sql`${table.timezone} = 'Africa/Tunis'`),
   ],
 );

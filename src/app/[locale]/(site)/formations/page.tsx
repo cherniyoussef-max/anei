@@ -3,6 +3,8 @@ import { isLocale } from "@/lib/i18n";
 import { PageHero } from "@/components/ui/PageHero";
 import { CourseFilter, type CatalogCourse } from "@/components/interactive/CourseFilter";
 import { searchPublishedCourses, type CourseSearchInput } from "@/server/queries/catalog";
+import { getEnrollmentProgressForCourses } from "@/server/queries/account";
+import { getSession } from "@/server/auth/session";
 import { courses as courseTranslations } from "@/lib/data";
 import { publicDataOr } from "@/server/queries/public-fallback";
 
@@ -36,8 +38,16 @@ export default async function CoursesPage({ params, searchParams }: { params: Pr
   const data = await publicDataOr("courses", () => searchPublishedCourses({ ...filters, page }), {
     items: [], total: 0, page, pageSize: 12, totalPages: 1, categories: [],
   });
+  const session = await publicDataOr("courses-session", getSession, null);
+  const enrollmentByCourseId = new Map(
+    session
+      ? (await publicDataOr("courses-enrollments", () => getEnrollmentProgressForCourses(session.user.id, data.items.map((course) => course.id)), []))
+        .map((row) => [row.courseId, row])
+      : [],
+  );
   const items: CatalogCourse[] = data.items.map((course) => {
     const translated = courseTranslations.find((item) => item.slug === course.slug);
+    const enrollment = enrollmentByCourseId.get(course.id);
     return ({
     id: course.id,
     slug: course.slug,
@@ -51,6 +61,7 @@ export default async function CoursesPage({ params, searchParams }: { params: Pr
     level: course.level,
     startAt: course.startAt?.toISOString() ?? null,
     featured: course.featured,
+    enrollment: enrollment ? { progressPercent: enrollment.progressPercent, completed: enrollment.status === "completed" } : null,
   }); });
   return <><PageHero eyebrow={ar ? "مسارات تكوينية" : en ? "Certificate course catalog" : "Catalogue certifiant"} title={ar ? "طوّر مهارات تصنع فرقًا في التربية الدامجة" : en ? "Build skills that make inclusion work" : "Développez des compétences qui transforment l’inclusion"} description={ar ? "مسارات منظمة وفيديوهات وموارد عملية وندوات وتتبع للتقدم في مساحة واحدة." : en ? "Structured pathways, practical resources, webinars and progress tracking in one learning environment." : "Des parcours structurés, des vidéos, des documents pratiques, des webinaires et un suivi de progression dans un même espace."} /><section className="section"><div className="container"><CourseFilter locale={locale} courses={items} categories={data.categories} filters={filters} page={data.page} totalPages={data.totalPages} total={data.total} /></div></section></>;
 }

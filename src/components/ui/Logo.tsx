@@ -7,7 +7,7 @@ export function Logo({ locale, compact = false, priority = false }: { locale: Lo
   const c = t(locale);
   return (
     <Link href={`/${locale}`} className={compact ? "logo is-compact" : "logo"} aria-label={c.academy}>
-      <Image className="brand-logo-image" src="/media/anei-brand-logo.webp" alt="" width={520} height={174} priority={priority} sizes={compact ? "52px" : "(max-width: 640px) 150px, 210px"} />
+      <Image className="brand-logo-image" src="/media/academy-home-seal.webp" alt="" width={300} height={301} priority={priority} sizes={compact ? "40px" : "52px"} />
     </Link>
   );
 }

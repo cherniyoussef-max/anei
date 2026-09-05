@@ -24,6 +24,10 @@
 .public-experience .reference-mission-card > span { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 50%; background: var(--public-brand-navy); color: var(--public-brand-gold); }
 .public-experience .reference-mission-card strong { display: block; margin-block-end: 3px; }
 .public-experience .reference-mission-card p { margin: 0; color: var(--public-text-secondary); font-size: .76rem; line-height: 1.45; }
+.public-experience .reference-product-preview { position: absolute; z-index: 2; inset-inline-start: 22px; inset-block-start: 22px; width: min(272px, calc(100% - 44px)); overflow: hidden; border-radius: var(--public-radius-card); background: white; box-shadow: 0 12px 34px rgb(8 45 85 / 16%); }
+.public-experience .reference-product-preview-bar { display: flex; align-items: center; gap: 5px; padding: 9px 11px; border-block-end: 1px solid var(--public-border-subtle); }
+.public-experience .reference-product-preview-bar span { width: 7px; height: 7px; border-radius: 50%; background: var(--public-border-strong); }
+.public-experience .reference-product-preview img { display: block; width: 100%; height: auto; }
 .public-experience .reference-pillars { display: grid; grid-template-columns: repeat(3, 1fr); border-block-start: 1px solid var(--public-border-subtle); }
 .public-experience .reference-pillars article { min-height: 116px; display: grid; grid-template-columns: 42px 1fr; align-items: center; gap: 15px; padding: 22px 26px; border-inline-end: 1px solid var(--public-border-subtle); }
 .public-experience .reference-pillars article:last-child { border-inline-end: 0; }
@@ -212,6 +216,7 @@
   .public-experience .public-hero-photo > img { min-height: 340px; height: 340px; box-shadow: none; }
   .public-experience .reference-mission-card { inset-inline: 12px; inset-block-end: 12px; width: auto; grid-template-columns: 42px 1fr; padding: 12px; }
   .public-experience .reference-mission-card > span { width: 42px; height: 42px; }
+  .public-experience .reference-product-preview { display: none; }
   .public-experience .reference-pillars { grid-template-columns: 1fr; }
   .public-experience .reference-pillars article { min-height: 94px; padding: 18px 0; border-inline-end: 0; border-block-end: 1px solid var(--public-border-subtle); }
   .public-experience .reference-pillars article:last-child { border-block-end: 0; }

@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { isLocale } from "@/lib/i18n";
 import { requireActivePersona } from "@/server/auth/session";
-import { PersonaPortalShell } from "@/modules/personas/components/PersonaPortalShell";
+import { PersonaShell } from "@/modules/personas/components/PersonaShell";
+import "../../../(learner)/dashboard/student-dashboard.css";
 
 export const dynamic = "force-dynamic";
 
@@ -15,8 +16,16 @@ export default async function AvsPortalLayout({ children, params }: {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const session = await requireActivePersona(locale, "AVS");
-  return <PersonaPortalShell locale={locale} user={{ name: session.user.name, email: session.user.email }} profileHref={`/${locale}/avs/espace/profil`} items={[
-    { href: `/${locale}/avs/espace`, icon: "chart", fr: "Vue d’ensemble", ar: "نظرة عامة" },
-    { href: `/${locale}/avs`, icon: "users", fr: "Annuaire public", ar: "الدليل العام" },
-  ]}>{children}</PersonaPortalShell>;
+  const ar = locale === "ar";
+  return <PersonaShell
+    locale={locale}
+    roleLabel={ar ? "مساحة مرافق الحياة المدرسية" : "Espace AVS"}
+    user={{ name: session.user.name, email: session.user.email }}
+    profileHref={`/${locale}/avs/espace/profil`}
+    base={`/${locale}/avs/espace`}
+    items={[
+      { href: `/${locale}/avs/espace`, icon: "LayoutDashboard", fr: "Vue d’ensemble", ar: "نظرة عامة" },
+      { href: `/${locale}/avs`, icon: "Contact", fr: "Annuaire public", ar: "الدليل العام" },
+    ]}
+  >{children}</PersonaShell>;
 }

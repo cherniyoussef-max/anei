@@ -1,10 +1,12 @@
 import { notFound } from "next/navigation";
+import { BookOpen, Users, GraduationCap, CalendarDays, IdCard } from "lucide-react";
 import { isLocale } from "@/lib/i18n";
 import { requireActivePersona } from "@/server/auth/session";
 import { getAssignedCoursesForTeacher, getAssignedLearnerCountForTeacher, getCohortCountForTeacher } from "@/server/queries/teacher-assignments";
 import { getUpcomingAppointmentsForAssignee } from "@/server/queries/appointments";
 import { getTeacherProfileForUser } from "@/server/services/persona-profiles";
-import { Icon } from "@/components/ui/Icon";
+import { LearnerEmptyState } from "@/components/student/LearnerPages";
+import { PersonaMetricCard, PersonaPanel, PersonaRow } from "@/modules/personas/components/PersonaPages";
 
 export default async function TeacherPortalPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -21,101 +23,84 @@ export default async function TeacherPortalPage({ params }: { params: Promise<{ 
   ]);
 
   return (
-    <>
-      <div className="dashboard-heading dashboard-heading-human">
-        <div className="dashboard-heading-copy">
-          <span className="eyebrow">{ar ? "مساحة المكوّن" : "Espace formateur"}</span>
-          <h1>{ar ? `مرحبًا، ${session.user.name}` : `Bonjour, ${session.user.name}`}</h1>
-          <p>{ar ? "نظرة عامة على دوراتك والمتعلمين الموكلين إليك." : "Vue d'ensemble de vos cours attribués et des apprenants dans votre périmètre."}</p>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <span className="text-xs font-semibold uppercase tracking-wider text-[#a9752f]">{ar ? "مساحة المكوّن" : "Espace formateur"}</span>
+        <h1 className="mt-1 font-[family-name:var(--font-fraunces)] text-2xl font-semibold tracking-tight text-[#082D55] sm:text-3xl">{ar ? `مرحبًا، ${session.user.name}` : `Bonjour, ${session.user.name}`}</h1>
+        <p className="mt-1 text-sm text-[#7a7261]">{ar ? "نظرة عامة على دوراتك والمتعلمين الموكلين إليك." : "Vue d'ensemble de vos cours attribués et des apprenants dans votre périmètre."}</p>
       </div>
 
-      <div className="dashboard-kpis">
-        <div>
-          <div className="kpi-icon"><Icon name="book" size={18} /></div>
-          <div><strong>{assignedCourses.length}</strong><small>{ar ? "الدورات المسندة" : "Cours attribués"}</small></div>
-        </div>
-        <div>
-          <div className="kpi-icon"><Icon name="users" size={18} /></div>
-          <div><strong>{cohortCount}</strong><small>{ar ? "المجموعات" : "Cohortes"}</small></div>
-        </div>
-        <div>
-          <div className="kpi-icon"><Icon name="graduation" size={18} /></div>
-          <div><strong>{learnerCount}</strong><small>{ar ? "المتعلمون المصرَّح بهم" : "Apprenants autorisés"}</small></div>
-        </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <PersonaMetricCard icon={BookOpen} tone="navy" label={ar ? "الدورات المسندة" : "Cours attribués"} value={assignedCourses.length} />
+        <PersonaMetricCard icon={Users} tone="gold" label={ar ? "المجموعات" : "Cohortes"} value={cohortCount} />
+        <PersonaMetricCard icon={GraduationCap} tone="cream" label={ar ? "المتعلمون المصرَّح بهم" : "Apprenants autorisés"} value={learnerCount} />
       </div>
 
-      <div className="dashboard-grid">
-        <div className="dashboard-panel wide">
-          <div className="panel-head">
-            <h2>{ar ? "دوراتي" : "Mes cours"}</h2>
-          </div>
-          {assignedCourses.length === 0 ? (
-            <p className="dashboard-empty-copy">
-              {ar
-                ? "لا توجد دورة مسندة إليك بعد. ستظهر دوراتك ومجموعاتك هنا فور إسناد تكليف لك."
-                : "Aucun cours ne vous est encore attribué. Vos cours et groupes apparaîtront ici dès qu'une affectation sera effectuée."}
-            </p>
-          ) : (
-            <ul className="learning-list">
-              {assignedCourses.map(({ assignment, course }) => (
-                <li key={assignment.id} className="learning-row">
-                  <div className="learning-icon"><Icon name="book" size={18} /></div>
-                  <div className="learning-main">
-                    <strong>{ar ? course.titleAr : course.titleFr}</strong>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div className="lg:col-span-7">
+          <PersonaPanel title={ar ? "دوراتي" : "Mes cours"}>
+            {assignedCourses.length === 0 ? (
+              <LearnerEmptyState
+                icon={BookOpen}
+                title={ar ? "لا توجد دورة مسندة بعد" : "Aucun cours attribué pour le moment"}
+                body={ar
+                  ? "لا توجد دورة مسندة إليك بعد. ستظهر دوراتك ومجموعاتك هنا فور إسناد تكليف لك."
+                  : "Vos cours et groupes apparaîtront ici dès qu'une affectation sera effectuée."}
+              />
+            ) : (
+              <ul>
+                {assignedCourses.map(({ assignment, course }) => (
+                  <PersonaRow key={assignment.id} icon={BookOpen} title={ar ? course.titleAr : course.titleFr} />
+                ))}
+              </ul>
+            )}
+          </PersonaPanel>
         </div>
 
-        <div className="dashboard-panel">
-          <div className="panel-head">
-            <h2>{ar ? "المواعيد القادمة" : "Prochains rendez-vous"}</h2>
-          </div>
-          {upcomingAppointments.length === 0 ? (
-            <p className="dashboard-empty-copy">{ar ? "لا توجد مواعيد قادمة." : "Aucun rendez-vous à venir."}</p>
-          ) : (
-            <ul className="learning-list">
-              {upcomingAppointments.map(({ appointment, contact }) => (
-                <li key={appointment.id} className="dashboard-event">
-                  <div className="date-dot"><Icon name="calendar" size={16} /></div>
-                  <div>
-                    <strong>{contact.firstName} {contact.lastName}</strong>
-                    <small>{new Date(appointment.startAt).toLocaleString(ar ? "ar-TN" : "fr-TN", { dateStyle: "medium", timeStyle: "short" })}</small>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+        <div className="lg:col-span-5">
+          <PersonaPanel title={ar ? "المواعيد القادمة" : "Prochains rendez-vous"}>
+            {upcomingAppointments.length === 0 ? (
+              <LearnerEmptyState icon={CalendarDays} title={ar ? "لا يوجد موعد قريب" : "Aucun rendez-vous à venir"} body={ar ? "لا توجد مواعيد قادمة." : "Vos prochains rendez-vous apparaîtront ici."} />
+            ) : (
+              <ul>
+                {upcomingAppointments.map(({ appointment, contact }) => (
+                  <PersonaRow
+                    key={appointment.id}
+                    icon={CalendarDays}
+                    title={`${contact.firstName} ${contact.lastName}`}
+                    meta={new Date(appointment.startAt).toLocaleString(ar ? "ar-TN" : "fr-TN", { dateStyle: "medium", timeStyle: "short" })}
+                  />
+                ))}
+              </ul>
+            )}
+          </PersonaPanel>
         </div>
       </div>
 
       {profile && (profile.discipline || profile.qualification || profile.experienceYears != null || profile.professionalInstitution || (profile.levelsTaught?.length ?? 0) > 0) && (
-        <div className="dashboard-panel wide">
-          <div className="panel-head">
-            <h2>{ar ? "ملفي المهني" : "Profil professionnel"}</h2>
-          </div>
-          <dl className="wizard-summary">
+        <PersonaPanel title={ar ? "ملفي المهني" : "Profil professionnel"}>
+          <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {profile.discipline && (
-              <div className="wizard-summary-row"><dt>{ar ? "التخصص" : "Discipline"}</dt><dd>{profile.discipline}</dd></div>
+              <div className="flex items-start gap-3">
+                <IdCard size={18} strokeWidth={1.75} className="mt-0.5 flex-none text-[#a9752f]" />
+                <div><dt className="text-xs text-[#7a7261]">{ar ? "التخصص" : "Discipline"}</dt><dd className="text-sm font-semibold text-[#082D55]">{profile.discipline}</dd></div>
+              </div>
             )}
             {profile.qualification && (
-              <div className="wizard-summary-row"><dt>{ar ? "المؤهل" : "Qualification"}</dt><dd>{profile.qualification}</dd></div>
+              <div><dt className="text-xs text-[#7a7261]">{ar ? "المؤهل" : "Qualification"}</dt><dd className="text-sm font-semibold text-[#082D55]">{profile.qualification}</dd></div>
             )}
             {profile.experienceYears != null && (
-              <div className="wizard-summary-row"><dt>{ar ? "سنوات الخبرة" : "Expérience"}</dt><dd>{profile.experienceYears}</dd></div>
+              <div><dt className="text-xs text-[#7a7261]">{ar ? "سنوات الخبرة" : "Expérience"}</dt><dd className="text-sm font-semibold text-[#082D55]">{profile.experienceYears}</dd></div>
             )}
             {profile.levelsTaught && profile.levelsTaught.length > 0 && (
-              <div className="wizard-summary-row"><dt>{ar ? "المستويات المُدرَّسة" : "Niveaux enseignés"}</dt><dd>{profile.levelsTaught.join(", ")}</dd></div>
+              <div><dt className="text-xs text-[#7a7261]">{ar ? "المستويات المُدرَّسة" : "Niveaux enseignés"}</dt><dd className="text-sm font-semibold text-[#082D55]">{profile.levelsTaught.join(", ")}</dd></div>
             )}
             {profile.professionalInstitution && (
-              <div className="wizard-summary-row"><dt>{ar ? "المؤسسة أو الهيئة الموظِّفة" : "Établissement / Employeur"}</dt><dd>{profile.professionalInstitution}</dd></div>
+              <div><dt className="text-xs text-[#7a7261]">{ar ? "المؤسسة أو الهيئة الموظِّفة" : "Établissement / Employeur"}</dt><dd className="text-sm font-semibold text-[#082D55]">{profile.professionalInstitution}</dd></div>
             )}
           </dl>
-        </div>
+        </PersonaPanel>
       )}
-    </>
+    </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Locale } from "@/types";
 import { AdminDeleteButton } from "@/components/admin/AdminDeleteButton";
@@ -12,7 +13,7 @@ type LessonRow = {
   videoUrl?: string | null; documentUrl?: string | null;
 };
 
-export function AdminLessonRow({ locale, lesson, modules = [] }: { locale: Locale; lesson: LessonRow; modules?: Array<{ id: string; title: string }> }) {
+export function AdminLessonRow({ locale, courseId, lesson, modules = [] }: { locale: Locale; courseId: string; lesson: LessonRow; modules?: Array<{ id: string; title: string }> }) {
   const ar = locale === "ar";
   const router = useRouter();
   const [editing, setEditing] = useState(false);
@@ -54,6 +55,7 @@ export function AdminLessonRow({ locale, lesson, modules = [] }: { locale: Local
       <button type="button" className="btn btn-ghost btn-sm" disabled={state === "loading"} onClick={() => move(-1)} aria-label={ar ? "نقل لأعلى" : "Monter"}>↑</button>
       <button type="button" className="btn btn-ghost btn-sm" disabled={state === "loading"} onClick={() => move(1)} aria-label={ar ? "نقل لأسفل" : "Descendre"}>↓</button>
       <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEditing(true)}>{ar ? "تعديل" : "Modifier"}</button>
+      <Link className="btn btn-ghost btn-sm" href={`/${locale}/admin/courses/editor/${courseId}/lessons/${lesson.id}/checkpoints`}>{ar ? "نقاط التفاعل" : "Checkpoints"}</Link>
       <AdminDeleteButton locale={locale} endpoint={`/api/admin/lessons/${lesson.id}`} confirmMessage={ar ? "هل تريد حذف هذا الدرس؟" : "Supprimer cette leçon ?"} />
       {state === "error" ? <small className="form-error">{ar ? "تعذر التحريك." : "Échec du déplacement."}</small> : null}
     </div>

@@ -55,8 +55,9 @@ test("enrolled learner course circuit shows first name and publishes a real ques
   await page.goto("/fr/apprendre/fondamentaux-education-inclusive");
   await expect(page.locator(".student-app")).toBeVisible();
   await expect(page.locator(".site-header, .v5-site-footer")).toHaveCount(0);
-  await expect(page.locator(".student-profile-chip")).toContainText("Amal");
-  await expect(page.locator(".student-topbar")).not.toContainText("Mansouri");
+  const learnerProfile = page.locator('header a[href="/fr/dashboard/profil"]');
+  await expect(learnerProfile).toHaveAccessibleName(/Amal/);
+  await expect(learnerProfile).not.toHaveAccessibleName(/Mansouri/);
   await expect(page.getByRole("navigation", { name: "Sections de la formation" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Questions et réponses" })).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
@@ -76,7 +77,7 @@ test("enrolled learner course circuit shows first name and publishes a real ques
     await page.goto("/ar/apprendre/fondamentaux-education-inclusive#questions");
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
     await expect(page.getByRole("heading", { name: "الأسئلة والإجابات" })).toBeVisible();
-    await expect(page.locator(".student-profile-chip")).toContainText("Amal");
+    await expect(page.locator('header a[href="/ar/dashboard/profil"]')).toHaveAccessibleName(/Amal/);
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     if (process.env.ANEI_VISUAL_QA === "1") await page.screenshot({ path: "/tmp/anei-course-room-ar-mobile.png", fullPage: true });
   } finally {

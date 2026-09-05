@@ -53,6 +53,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
           title: ar ? "موعد متابعة" : "Rendez-vous de suivi",
           date: formatDate(appointment.startAt, locale),
           trainer: appointment.assignedToName,
+          meetingUrl: appointment.meetingUrl ?? undefined,
         })), ...data.upcomingWebinars.map(({ webinar }) => ({
           id: webinar.id,
           title: ar ? webinar.titleAr : webinar.titleFr,

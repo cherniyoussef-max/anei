@@ -90,7 +90,7 @@ export default async function CourseEditorPage({ params, searchParams }: {
     {section === "lessons" && curriculum ? <section className="admin-surface admin-editor-section" aria-labelledby="editor-lessons-title">
       <header><div><span>{curriculum.lessons.length} {ar ? "دروس" : "leçons"}</span><h2 id="editor-lessons-title">{labels.lessons}</h2></div><p>{ar ? "أدر المحتوى والوسائط ضمن سياق الوحدة." : "Gérez le contenu et les médias dans le contexte de chaque module."}</p></header>
       <details className="admin-editor-create-panel"><summary><Icon name="play" size={17}/>{ar ? "إضافة درس" : "Ajouter une leçon"}</summary><AdminLessonForm locale={locale} courses={courseOption} modules={curriculum.modules.map((module) => ({ id: module.id, courseId: module.courseId, title: ar ? module.titleAr : module.titleFr }))}/></details>
-      <div className="admin-curriculum-list">{curriculum.lessons.map((lesson) => <AdminLessonRow key={lesson.id} locale={locale} lesson={lesson} modules={curriculum.modules.map((module) => ({ id: module.id, title: ar ? module.titleAr : module.titleFr }))}/>)}</div>
+      <div className="admin-curriculum-list">{curriculum.lessons.map((lesson) => <AdminLessonRow key={lesson.id} locale={locale} courseId={course.id} lesson={lesson} modules={curriculum.modules.map((module) => ({ id: module.id, title: ar ? module.titleAr : module.titleFr }))}/>)}</div>
       {!curriculum.lessons.length ? <div className="admin-empty-state"><strong>{ar ? "لا توجد دروس بعد" : "Aucune leçon pour le moment"}</strong><p>{ar ? "أضف درساً واربطه بوحدة عند الحاجة." : "Ajoutez une leçon et rattachez-la à un module si nécessaire."}</p></div> : null}
     </section> : null}
 

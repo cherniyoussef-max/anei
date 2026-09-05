@@ -96,6 +96,7 @@ export async function getLearnerAppointments(userId: string, history = false, li
       status: appointment.status,
       assignedToUserId: appointment.assignedToUserId,
       assignedToName: user.name,
+      meetingUrl: appointment.meetingUrl,
     })
     .from(appointment)
     .innerJoin(crmContact, and(eq(appointment.contactId, crmContact.id), eq(appointment.organizationId, crmContact.organizationId)))
@@ -110,6 +111,21 @@ export async function getLearnerCoursesPage(userId: string, limit = 24) {
     enrollment: { id: enrollments.id, progressPercent: enrollments.progressPercent, status: enrollments.status },
     course: { id: courses.id, slug: courses.slug, titleFr: courses.titleFr, titleAr: courses.titleAr, category: courses.category },
   }).from(enrollments).innerJoin(courses, eq(enrollments.courseId, courses.id)).where(eq(enrollments.userId, userId)).orderBy(desc(enrollments.enrolledAt)).limit(Math.min(48, Math.max(1, limit)));
+}
+
+/**
+ * The caller's own enrollment progress for a bounded set of course ids —
+ * used to overlay a "Continue" state on catalog cards for courses the
+ * viewer is already enrolled in. Scoped by userId (never client-supplied)
+ * and an inArray over ids the catalog query itself already returned, so
+ * this can never leak another learner's enrollment.
+ */
+export async function getEnrollmentProgressForCourses(userId: string, courseIds: string[]) {
+  if (!courseIds.length) return [];
+  return db
+    .select({ courseId: enrollments.courseId, progressPercent: enrollments.progressPercent, status: enrollments.status })
+    .from(enrollments)
+    .where(and(eq(enrollments.userId, userId), inArray(enrollments.courseId, courseIds)));
 }
 
 export async function getLearnerResourcesPage(userId: string, limit = 30) {

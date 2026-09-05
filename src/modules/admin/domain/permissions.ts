@@ -22,6 +22,7 @@ export const adminPermissions = [
   "resources.read",
   "resources.manage",
   "rewards.manage",
+  "availability.manage",
   "news.read",
   "news.manage",
   "orders.read",
@@ -44,7 +45,7 @@ const adminCapabilities = new Set<AdminPermission>([
   "courses.update", "courses.publish", "enrollments.read", "cohorts.manage", "learning.read",
   "assessments.manage", "results.read",
   "certificates.read", "webinars.read", "webinars.manage", "resources.read",
-  "resources.manage", "rewards.manage", "news.read", "news.manage", "orders.read", "payments.read",
+  "resources.manage", "rewards.manage", "availability.manage", "news.read", "news.manage", "orders.read", "payments.read",
   "payments.reconcile", "contacts.read", "contacts.manage", "crm.read", "crm.manage", "audit.read", "system.read",
 ]);
 

@@ -36,6 +36,7 @@ export function AdminShell({ children, locale, user }: {
       { href: `${base}/assessments`, icon: "chart", fr: "Évaluations & résultats", ar: "التقييمات والنتائج" },
       { href: `${base}/certificates`, icon: "award", fr: "Certificats", ar: "الشهادات" },
       { href: `${base}/webinars`, icon: "calendar", fr: "Webinaires", ar: "الندوات" },
+      { href: `${base}/disponibilites`, icon: "calendar", fr: "Disponibilités", ar: "الفتحات المتاحة" },
       { href: `${base}/resources`, icon: "download", fr: "Bibliothèque", ar: "المكتبة" },
       { href: `${base}/rewards`, icon: "award", fr: "Boutique de récompenses", ar: "متجر المكافآت" },
     ]},
@@ -85,13 +86,13 @@ export function AdminShell({ children, locale, user }: {
   </nav>;
   return <div className={`admin-app ${collapsed ? "is-collapsed" : ""}`}>
     <aside className="admin-app-sidebar">
-      <div className="admin-app-brand"><span className="admin-brand-mark"><Image src="/media/anei-brand-logo.webp" width={347} height={347} alt="" priority/></span><div><strong>ANEI</strong><small>{ar ? "وحدة تحكم الإدارة" : "Console d’administration"}</small></div></div>
+      <div className="admin-app-brand"><span className="admin-brand-mark"><Image src="/media/academy-home-seal.webp" width={300} height={301} alt="" priority/></span><div><strong>ANEI</strong><small>{ar ? "وحدة تحكم الإدارة" : "Console d’administration"}</small></div></div>
       {nav}
       <div className="admin-app-profile"><span>{user.name.slice(0, 2).toUpperCase()}</span><div><strong>{user.name}</strong><small className="admin-role-badge">{user.role}</small></div></div>
     </aside>
     {mobileOpen ? <button className="admin-drawer-backdrop" aria-label={ar ? "إغلاق القائمة" : "Fermer le menu"} onClick={() => setMobileOpen(false)}/> : null}
     <aside className={`admin-mobile-drawer ${mobileOpen ? "open" : ""}`} aria-hidden={!mobileOpen} role="dialog" aria-modal="true" aria-label={ar ? "قائمة الإدارة" : "Menu d’administration"}>
-      <div className="admin-app-brand"><span className="admin-brand-mark"><Image src="/media/anei-brand-logo.webp" width={347} height={347} alt=""/></span><div><strong>ANEI</strong><small>{ar ? "وحدة تحكم الإدارة" : "Console d’administration"}</small></div>
+      <div className="admin-app-brand"><span className="admin-brand-mark"><Image src="/media/academy-home-seal.webp" width={300} height={301} alt=""/></span><div><strong>ANEI</strong><small>{ar ? "وحدة تحكم الإدارة" : "Console d’administration"}</small></div>
         <button ref={closeRef} className="admin-icon-button" onClick={() => setMobileOpen(false)} aria-label={ar ? "إغلاق" : "Fermer"}><Icon name="close"/></button>
       </div>{nav}
     </aside>

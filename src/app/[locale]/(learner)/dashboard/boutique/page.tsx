@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { desc, eq } from "drizzle-orm";
+import { Award } from "lucide-react";
 import { isLocale } from "@/lib/i18n";
 import { requireUser } from "@/server/auth/session";
 import { db } from "@/server/db";
@@ -36,6 +37,6 @@ export default async function RewardShopPage({ params }: { params: Promise<{ loc
           <RewardRedeemButton locale={locale} rewardId={item.id} affordable={affordable} />
         </div>
       </div>;
-    })}</div> : <LearnerEmptyState icon="award" title={ar ? "لا توجد مكافآت بعد" : "Aucune récompense pour le moment"} body={ar ? "عد قريبًا لاكتشاف مكافآت جديدة." : "Revenez bientôt pour découvrir de nouvelles récompenses."} />}
+    })}</div> : <LearnerEmptyState icon={Award} title={ar ? "لا توجد مكافآت بعد" : "Aucune récompense pour le moment"} body={ar ? "عد قريبًا لاكتشاف مكافآت جديدة." : "Revenez bientôt pour découvrir de nouvelles récompenses."} />}
   </div>;
 }

@@ -213,7 +213,7 @@ test("email learner session survives navigation and cannot enter admin", async (
     await page.goto(`/fr/dashboard/${route}`);
     await expect.poll(() => new URL(page.url()).pathname).toBe(`/fr/dashboard/${route}`);
     await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
-    await expect(page.locator(`.student-primary-nav a[href="/fr/dashboard/${route}"]`)).toHaveAttribute("aria-current", "page");
+    await expect(page.locator(`aside nav a[href="/fr/dashboard/${route}"]`)).toHaveAttribute("aria-current", "page");
   }
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ar/dashboard/rendez-vous");

@@ -19,5 +19,5 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (result.kind === "not_found") return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
   if (result.kind === "invalid_transition") return NextResponse.json({ error: "INVALID_TRANSITION" }, { status: 409 });
   if (result.kind !== "ok") return NextResponse.json({ error: "SLOT_UNAVAILABLE" }, { status: 409 });
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, meetingUrl: result.meetingUrl });
 }

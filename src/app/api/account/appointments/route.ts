@@ -17,6 +17,7 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ error: "INVALID_REQUEST" }, { status: 400 });
   const result = await bookLearnerAppointment(session.user.id, parsed.data.ruleId, new Date(parsed.data.startAt));
   if (result.kind === "forbidden") return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
+  if (result.kind === "already_booked") return NextResponse.json({ error: "ALREADY_BOOKED" }, { status: 409 });
   if (result.kind !== "ok") return NextResponse.json({ error: "SLOT_UNAVAILABLE" }, { status: 409 });
-  return NextResponse.json({ ok: true, id: result.id }, { status: 201 });
+  return NextResponse.json({ ok: true, id: result.id, meetingUrl: result.meetingUrl }, { status: 201 });
 }

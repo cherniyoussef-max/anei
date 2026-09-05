@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { Trophy } from "lucide-react";
 import { isLocale } from "@/lib/i18n";
 import { requireUser } from "@/server/auth/session";
 import { getLeaderboard, getPointsBalance } from "@/server/services/points";
@@ -25,6 +26,6 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ lo
         <td>{row.displayName}</td>
         <td className="numeric">{row.total}</td>
       </tr>)}</tbody>
-    </table></div></div> : <LearnerEmptyState icon="award" title={ar ? "لا يوجد ترتيب بعد" : "Aucun classement pour le moment"} body={ar ? "أكمل دروسًا واختبارات لتظهر في الترتيب." : "Terminez des leçons et des quiz pour apparaître dans le classement."} />}
+    </table></div></div> : <LearnerEmptyState icon={Trophy} title={ar ? "لا يوجد ترتيب بعد" : "Aucun classement pour le moment"} body={ar ? "أكمل دروسًا واختبارات لتظهر في الترتيب." : "Terminez des leçons et des quiz pour apparaître dans le classement."} />}
   </div>;
 }

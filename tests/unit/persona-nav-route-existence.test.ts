@@ -1,6 +1,6 @@
 /**
  * Route-existence contract: every href rendered by a persona portal's
- * navigation (PersonaPortalShell `items` + `profileHref`) must resolve to a
+ * navigation (PersonaShell `items` + `profileHref`) must resolve to a
  * real page.tsx. This is a static-source check (mirrors
  * persona-route-contracts.test.ts) so it never needs a running server or
  * database, and it's what should catch the next "/parent/enfants -> 404"
@@ -44,14 +44,14 @@ test("every persona portal's profileHref resolves to a real page.tsx", async () 
   for (const file of portalLayoutFiles) {
     const source = await readFile(file, "utf8");
     const match = source.match(PROFILE_HREF_PATTERN);
-    assert.ok(match, `${file} must pass a profileHref to PersonaPortalShell`);
+    assert.ok(match, `${file} must pass a profileHref to PersonaShell`);
     const pageFile = routeToPageFile(match![1]);
     assert.ok(existsSync(pageFile), `${file} profileHref "${match![1]}" but ${pageFile} does not exist`);
   }
 });
 
-test("PersonaPortalShell requires callers to pass profileHref (no implicit /dashboard/profil default)", async () => {
-  const source = await readFile("src/modules/personas/components/PersonaPortalShell.tsx", "utf8");
+test("PersonaShell requires callers to pass profileHref (no implicit /dashboard/profil default)", async () => {
+  const source = await readFile("src/modules/personas/components/PersonaShell.tsx", "utf8");
   assert.equal(source.includes("profileHref: string"), true);
   assert.equal(source.includes("href={profileHref}"), true);
 });

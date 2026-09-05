@@ -1,21 +1,22 @@
 :root {
-  --brand-navy-950: #061f3d;
-  --brand-navy-900: #082d55;
-  --brand-cobalt-600: #2559d6;
-  --brand-cobalt-700: #1745b8;
-  --brand-gold-500: #d89b4a;
-  --surface-page: #f6f8fb;
+  --brand-navy-950: #082d55;
+  --brand-navy-900: #061f3d;
+  --brand-cobalt-600: #c9913f;
+  --brand-cobalt-700: #a9752f;
+  --brand-gold-500: #c9913f;
+  --brand-gold-400: #d9ab66;
+  --surface-page: #fcfbf8;
   --surface-card: #ffffff;
-  --surface-subtle: #f1f4f8;
+  --surface-subtle: #f6f1e7;
   --surface-warm: #f6f3ee;
-  --text-primary: #0b172a;
-  --text-secondary: #2d3a4f;
-  --text-muted: #68758a;
+  --text-primary: #082d55;
+  --text-secondary: #4a4536;
+  --text-muted: #7a7261;
   --text-on-dark: #f7f9fc;
-  --text-on-dark-muted: #b8c5d6;
-  --border-subtle: #dfe5ee;
-  --border-strong: #c9d2df;
-  --focus-ring: #5b82ed;
+  --text-on-dark-muted: #cdbfa0;
+  --border-subtle: #e7e0d3;
+  --border-strong: #d8cdb5;
+  --focus-ring: #c9913f;
   --status-danger: #b91c1c;
   --radius-control: 8px;
   --radius-panel: 12px;
@@ -29,8 +30,6 @@
 
 .student-app {
   min-height: 100dvh;
-  display: grid;
-  grid-template-columns: 248px minmax(0, 1fr);
   background: var(--surface-page);
   color: var(--text-primary);
   font-family: Inter, "Segoe UI", Tahoma, Arial, sans-serif;
@@ -76,12 +75,12 @@
 }
 
 .student-brand-image {
-  width: 174px;
-  height: auto;
-  filter: grayscale(1) brightness(0) invert(1);
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
 }
 
-.student-mobile-brand-image { width: 116px; height: auto; }
+.student-mobile-brand-image { width: 40px; height: 40px; object-fit: contain; }
 
 .student-brand-mark {
   width: 40px;
@@ -206,7 +205,21 @@
   font-size: 0.84rem;
   font-weight: 650;
   text-align: start;
-  transition: background-color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-student);
+  transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-student);
+}
+
+.student-signout:hover:not(:disabled) {
+  background: rgb(244 63 94 / 10%);
+  color: #fb7185;
+}
+
+.student-topbar-shell .locale-switcher {
+  color: #082d55;
+}
+
+.student-topbar-shell .locale-switcher:hover {
+  background: #f6f1e7;
+  color: #082d55;
 }
 
 [dir="rtl"] .student-signout svg {
@@ -441,9 +454,9 @@
 .student-continue-copy h2,
 .student-continue-empty h2 {
   margin: 0;
-  font-family: inherit;
+  font-family: var(--font-fraunces), Georgia, serif;
   font-size: clamp(1.7rem, 3vw, 2.35rem);
-  font-weight: 740;
+  font-weight: 600;
   letter-spacing: -0.025em;
   line-height: 1.16;
 }
@@ -947,7 +960,7 @@
 /* Learner sub-pages */
 .learner-page { display: grid; gap: 28px; }
 .learner-page-header { display: flex; align-items: end; justify-content: space-between; gap: 28px; padding-block-end: 22px; border-block-end: 1px solid var(--border-subtle); }
-.learner-page-header h1 { margin: 0; font-family: inherit; font-size: clamp(1.8rem, 3vw, 2.45rem); line-height: 1.12; letter-spacing: -0.025em; }
+.learner-page-header h1 { margin: 0; font-family: var(--font-fraunces), Georgia, serif; font-weight: 600; color: var(--brand-navy-950); font-size: clamp(1.8rem, 3vw, 2.45rem); line-height: 1.12; letter-spacing: -0.025em; }
 [dir="rtl"] .learner-page-header h1 { letter-spacing: 0; }
 .learner-page-header p { max-width: 64ch; margin: 8px 0 0; color: var(--text-muted); line-height: 1.65; }
 .student-secondary-action { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 14px; border: 1px solid var(--border-strong); border-radius: var(--radius-control); background: var(--surface-card); color: var(--text-primary); font-size: 0.86rem; font-weight: 720; white-space: nowrap; transition: color var(--duration-fast) ease, border-color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-student); }
@@ -1019,7 +1032,7 @@
 .appointment-date-options button { padding: 9px 12px; font-size: .78rem; text-align: start; }
 .appointment-slot-options button { min-width: 92px; display: grid; gap: 2px; padding: 7px 10px; }
 .appointment-slot-options button small { color: var(--text-muted); font-size: .66rem; }
-.appointment-date-options button.is-selected, .appointment-slot-options button.is-selected { border-color: var(--brand-cobalt-600); background: #edf3ff; color: var(--brand-cobalt-700); }
+.appointment-date-options button.is-selected, .appointment-slot-options button.is-selected { border-color: var(--brand-cobalt-600); background: #f6f1e7; color: var(--brand-cobalt-700); }
 .appointment-confirmation { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-block-start: 22px; padding: 18px; border-radius: var(--radius-panel); background: var(--surface-subtle); }
 .appointment-confirmation dl { display: flex; flex-wrap: wrap; gap: 12px 24px; margin: 0; }
 .appointment-confirmation dl > div { display: grid; gap: 2px; }
@@ -1029,6 +1042,8 @@
 .appointment-feedback { margin: 14px 0 0; padding: 11px 13px; border-radius: var(--radius-control); font-size: .82rem; }
 .appointment-feedback.is-success { background: #eaf6f1; color: #0f6049; }
 .appointment-feedback.is-error { background: #fdefef; color: var(--status-danger); }
+.appointment-confirmed-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+.appointment-confirmed-links > a { min-height: 40px; }
 .appointment-cancel { min-height: 40px; margin-block-start: 12px; border: 1px solid #e4bcbc; border-radius: var(--radius-control); padding: 7px 11px; background: white; color: var(--status-danger); font: inherit; font-size: .75rem; font-weight: 700; }
 .appointment-cancel-confirm { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin-block-start: 11px; color: var(--text-secondary); font-size: .75rem; }
 .appointment-cancel-confirm button { min-height: 38px; border: 1px solid var(--border-strong); border-radius: var(--radius-control); padding-inline: 10px; background: white; color: var(--text-primary); font: inherit; font-size: .73rem; }
@@ -1171,8 +1186,8 @@
   .student-icon-action:hover,
   .student-catalog-link:hover,
   .student-profile-chip:hover { border-color: var(--brand-cobalt-600); color: var(--brand-cobalt-600); }
-  .student-primary-action:hover { background: #f2f5fb; }
-  .student-course-list article > a:hover { background: #e5ebf5; }
+  .student-primary-action:hover { background: #f6f1e7; }
+  .student-course-list article > a:hover { background: #f6f1e7; }
   .student-session-list article > a:hover,
   .student-asset-list article > a:hover { background: var(--surface-subtle); }
 }
@@ -1182,10 +1197,9 @@
 }
 
 @media (max-width: 1100px) {
-  .student-app { grid-template-columns: 88px minmax(0, 1fr); }
   .student-sidebar { align-items: center; padding-inline: 12px; }
   .student-brand { padding-inline: 0; }
-  .student-brand-image { width: 54px; }
+  .student-brand-image { width: 48px; height: 48px; }
   .student-brand-copy,
   .student-identity-copy,
   .student-primary-nav a span,
@@ -1211,7 +1225,6 @@
 }
 
 @media (max-width: 767px) {
-  .student-app { display: block; }
   .student-sidebar { display: none; }
   .student-workspace { position: relative; }
   .student-mobile-brand-row { position: absolute; z-index: 22; inset-block-start: 0; inset-inline-start: 16px; height: 64px; display: flex; align-items: center; pointer-events: none; }
@@ -1219,7 +1232,7 @@
   .student-topbar { min-height: 64px; padding-inline: 148px 16px; }
   [dir="rtl"] .student-topbar { padding-inline: 16px 148px; }
   .student-mobile-brand { display: flex; }
-  .student-mobile-brand-image { width: 116px; }
+  .student-mobile-brand-image { width: 40px; height: 40px; }
   .student-topbar-context { display: none; }
   .student-topbar-actions { margin-inline-start: auto; }
   .student-assistant-action { width: 44px; padding: 0; justify-content: center; }

@@ -1,7 +1,7 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { Locale } from "@/types";
 import { t } from "@/lib/i18n";
-import { Logo } from "@/components/ui/Logo";
 import { Icon } from "@/components/ui/Icon";
 import { NewsletterForm } from "@/components/interactive/NewsletterForm";
 import { env } from "@/server/env";
@@ -18,7 +18,13 @@ export function SiteFooter({ locale }: { locale: Locale }) {
     <footer className="site-footer v5-site-footer">
       <div className="v5-container footer-grid">
         <div className="footer-brand">
-          <Logo locale={locale} />
+          <Link href={`/${locale}`} className="footer-crest" aria-label={c.academy}>
+            <Image className="footer-crest-seal" src="/media/academy-home-seal.webp" alt="" width={300} height={301} unoptimized />
+            <span className="footer-crest-text">
+              <span className="footer-crest-name">Academy Learning</span>
+              <span className="footer-crest-sub">ANEI</span>
+            </span>
+          </Link>
           <p>{ar ? "تكوين مهني وموارد ومرافقة من أجل تربية دامجة قابلة للتطبيق." : en ? "Professional learning, resources and support for inclusive education in practice." : "Formations, ressources et accompagnement pour une éducation inclusive mise en pratique."}</p>
           <address className="footer-contact-list">
             <a href={`mailto:${env.CONTACT_EMAIL}`}><Icon name="mail" size={17}/><span>{env.CONTACT_EMAIL}</span></a>

@@ -190,13 +190,34 @@
   border-top: 1px solid rgb(255 255 255 / 12%);
 }
 
-.v5-site-footer .footer-brand .logo {
-  width: 210px;
-  min-height: 64px;
-  padding: 8px 10px;
-  border: 1px solid rgb(255 255 255 / 16%);
-  border-radius: var(--public-radius-control);
-  background: var(--public-surface-page);
+.footer-crest {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.footer-crest-seal {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  flex: none;
+}
+.footer-crest-text {
+  display: flex;
+  flex-direction: column;
+}
+.footer-crest-name {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #fff;
+}
+.footer-crest-sub {
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--public-brand-gold);
+  margin-top: 1px;
 }
 
 .v5-site-footer .brand-logo-image {
@@ -527,4 +548,49 @@
   .v5-site-footer .newsletter-box {
     border: 1px solid ButtonText;
   }
+}
+
+/* Signature crest bar: institution icon + shield wordmark + ANEI seal,
+   shown above the nav on every public page (same header everywhere). */
+.crest-bar {
+  background: rgb(252 251 248 / 92%);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--public-border-subtle);
+  padding: 10px 16px;
+}
+.crest-bar-inner {
+  width: min(calc(100% - 40px), 1260px);
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.crest-icon { width: 30px; height: 30px; color: var(--public-brand-navy); flex: none; transition: transform .2s var(--public-ease-out); }
+.crest-icon:hover { transform: scale(1.05); }
+.crest-brand { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.crest-shield { width: 24px; height: 29px; flex: none; }
+.crest-brand-text { display: flex; flex-direction: column; min-width: 0; }
+.crest-brand-name-row { display: flex; align-items: baseline; }
+.crest-brand-name { font-family: var(--font-fraunces), Georgia, serif; font-weight: 700; font-size: .95rem; letter-spacing: -.01em; color: var(--public-brand-navy); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.crest-brand-tm { font-size: .48rem; font-weight: 700; color: var(--public-brand-gold-strong); margin-inline-start: 2px; }
+.crest-brand-sub { font-size: .42rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--public-brand-gold-strong); margin-top: -2px; }
+.crest-seal { width: 36px; height: 36px; object-fit: contain; flex: none; }
+.crest-nav.site-header { position: sticky; top: 0; }
+
+@media (min-width: 640px) {
+  .crest-bar { padding: 12px 32px; }
+  .crest-icon { width: 40px; height: 40px; }
+  .crest-shield { width: 34px; height: 41px; }
+  .crest-brand-name { font-size: 1.35rem; }
+  .crest-seal { width: 56px; height: 56px; }
+}
+@media (min-width: 1024px) {
+  .crest-bar { padding: 14px 56px; }
+  .crest-icon { width: 46px; height: 46px; }
+  .crest-shield { width: 42px; height: 50px; }
+  .crest-brand-name { font-size: 1.7rem; }
+  .crest-brand-tm { font-size: .6rem; }
+  .crest-brand-sub { font-size: .64rem; letter-spacing: .3em; }
+  .crest-seal { width: 72px; height: 72px; }
 }

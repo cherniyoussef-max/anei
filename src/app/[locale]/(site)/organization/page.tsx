@@ -1,10 +1,12 @@
 import { notFound } from "next/navigation";
+import { Users, BookOpen } from "lucide-react";
 import { isLocale } from "@/lib/i18n";
 import { requireActivePersona } from "@/server/auth/session";
 import { getUserOrganizationMemberships, getOrganizationMembers } from "@/server/queries/organizations";
 import { listCohorts } from "@/server/queries/cohorts";
 import { organizationRoleAtLeast } from "@/modules/relationships/domain/permissions";
-import { Icon } from "@/components/ui/Icon";
+import { LearnerEmptyState } from "@/components/student/LearnerPages";
+import { PersonaMetricCard, PersonaPanel, PersonaRow } from "@/modules/personas/components/PersonaPages";
 
 export default async function OrganizationPortalPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -25,64 +27,45 @@ export default async function OrganizationPortalPage({ params }: { params: Promi
   );
 
   return (
-    <>
-      <div className="dashboard-heading dashboard-heading-human">
-        <div className="dashboard-heading-copy">
-          <span className="eyebrow">{ar ? "مساحة المؤسسة" : "Espace organisation"}</span>
-          <h1>{ar ? `مرحبًا، ${session.user.name}` : `Bonjour, ${session.user.name}`}</h1>
-          <p>{ar ? "نظرة عامة على مؤسساتك وفق دورك في كل منها." : "Vue d'ensemble de vos organisations, selon votre rôle dans chacune."}</p>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <span className="text-xs font-semibold uppercase tracking-wider text-[#a9752f]">{ar ? "مساحة المؤسسة" : "Espace organisation"}</span>
+        <h1 className="mt-1 font-[family-name:var(--font-fraunces)] text-2xl font-semibold tracking-tight text-[#082D55] sm:text-3xl">{ar ? `مرحبًا، ${session.user.name}` : `Bonjour, ${session.user.name}`}</h1>
+        <p className="mt-1 text-sm text-[#7a7261]">{ar ? "نظرة عامة على مؤسساتك وفق دورك في كل منها." : "Vue d'ensemble de vos organisations, selon votre rôle dans chacune."}</p>
       </div>
 
       {orgDetails.length === 0 ? (
-        <div className="dashboard-panel wide">
-          <p className="dashboard-empty-copy">
-            {ar
-              ? "لا توجد بيانات تشغيلية متاحة بعد لهذه المؤسسة."
-              : "Aucune donnée opérationnelle n'est encore disponible pour cette organisation."}
-          </p>
-        </div>
+        <PersonaPanel title={ar ? "المؤسسات" : "Organisations"}>
+          <LearnerEmptyState
+            icon={Users}
+            title={ar ? "لا توجد بيانات بعد" : "Aucune donnée pour le moment"}
+            body={ar ? "لا توجد بيانات تشغيلية متاحة بعد لهذه المؤسسة." : "Aucune donnée opérationnelle n'est encore disponible pour cette organisation."}
+          />
+        </PersonaPanel>
       ) : (
         orgDetails.map(({ membership, organization, members, cohorts, canSeeRoster }) => (
-          <div className="dashboard-panel wide dashboard-panel-spaced" key={membership.id}>
-            <div className="panel-head">
-              <h2>{organization.name}</h2>
-              <small>{ar ? "دوري" : "Mon rôle"}: {membership.role}</small>
-            </div>
-
-            <div className="dashboard-kpis">
-              {canSeeRoster && (
-                <div>
-                  <div className="kpi-icon"><Icon name="users" size={18} /></div>
-                  <div><strong>{members.length}</strong><small>{ar ? "الأعضاء" : "Membres"}</small></div>
-                </div>
-              )}
-              <div>
-                <div className="kpi-icon"><Icon name="book" size={18} /></div>
-                <div><strong>{cohorts.length}</strong><small>{ar ? "المجموعات" : "Cohortes"}</small></div>
-              </div>
+          <PersonaPanel
+            key={membership.id}
+            title={organization.name}
+            action={<span className="text-xs font-semibold text-[#7a7261]">{ar ? "دوري" : "Mon rôle"} · {membership.role}</span>}
+          >
+            <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {canSeeRoster && <PersonaMetricCard icon={Users} tone="navy" label={ar ? "الأعضاء" : "Membres"} value={members.length} />}
+              <PersonaMetricCard icon={BookOpen} tone="gold" label={ar ? "المجموعات" : "Cohortes"} value={cohorts.length} />
             </div>
 
             {cohorts.length === 0 ? (
-              <p className="dashboard-empty-copy">
-                {ar ? "لا توجد بيانات تشغيلية متاحة بعد لهذه المؤسسة." : "Aucune donnée opérationnelle n'est encore disponible pour cette organisation."}
-              </p>
+              <LearnerEmptyState icon={BookOpen} title={ar ? "لا توجد بيانات بعد" : "Aucune donnée pour le moment"} body={ar ? "لا توجد بيانات تشغيلية متاحة بعد لهذه المؤسسة." : "Aucune donnée opérationnelle n'est encore disponible pour cette organisation."} />
             ) : (
-              <ul className="learning-list">
+              <ul>
                 {cohorts.slice(0, 5).map(({ cohort, course }) => (
-                  <li key={cohort.id} className="learning-row">
-                    <div className="learning-icon"><Icon name="book" size={18} /></div>
-                    <div className="learning-main">
-                      <strong>{cohort.name}</strong>
-                      <small>{ar ? course.titleAr : course.titleFr}</small>
-                    </div>
-                  </li>
+                  <PersonaRow key={cohort.id} icon={BookOpen} title={cohort.name} meta={ar ? course.titleAr : course.titleFr} />
                 ))}
               </ul>
             )}
-          </div>
+          </PersonaPanel>
         ))
       )}
-    </>
+    </div>
   );
 }

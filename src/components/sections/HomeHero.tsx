@@ -13,6 +13,7 @@ type HeroContent = {
   searchPlaceholder: string;
   searchAction: string;
   imageAlt: string;
+  productPreviewAlt: string;
   missionTitle: string;
   missionBody: string;
   pillarsLabel: string;
@@ -30,6 +31,7 @@ const heroContent: Record<Locale, HeroContent> = {
     searchPlaceholder: "What skill do you want to develop?",
     searchAction: "Search",
     imageAlt: "Education professionals taking part in an ANEI training session",
+    productPreviewAlt: "Preview of the ANEI course catalog",
     missionTitle: "Our mission",
     missionBody: "Make inclusive education applicable every day.",
     pillarsLabel: "ANEI commitments",
@@ -49,6 +51,7 @@ const heroContent: Record<Locale, HeroContent> = {
     searchPlaceholder: "Quelle compétence souhaitez-vous développer ?",
     searchAction: "Rechercher",
     imageAlt: "Équipe éducative participant à une session de formation ANEI",
+    productPreviewAlt: "Aperçu du catalogue de formations ANEI",
     missionTitle: "Notre mission",
     missionBody: "Rendre l’éducation inclusive applicable, chaque jour.",
     pillarsLabel: "Engagements ANEI",
@@ -68,6 +71,7 @@ const heroContent: Record<Locale, HeroContent> = {
     searchPlaceholder: "ما المهارة التي تريد تطويرها؟",
     searchAction: "بحث",
     imageAlt: "مهنيات في التربية يشاركن في جلسة تكوين لدى ANEI",
+    productPreviewAlt: "لقطة من كتالوج دورات ANEI",
     missionTitle: "مهمتنا",
     missionBody: "جعل التربية الدامجة قابلة للتطبيق كل يوم.",
     pillarsLabel: "التزامات ANEI",
@@ -118,6 +122,16 @@ export function HomeHero({ locale }: { locale: Locale }) {
               <span><Icon name="spark" size={23} /></span>
               <div><strong>{content.missionTitle}</strong><p>{content.missionBody}</p></div>
             </figcaption>
+            <div className="reference-product-preview">
+              <div className="reference-product-preview-bar" aria-hidden="true"><span /><span /><span /></div>
+              <Image
+                src="/media/anei-product-preview.webp"
+                alt={content.productPreviewAlt}
+                width={960}
+                height={472}
+                sizes="272px"
+              />
+            </div>
           </div>
         </figure>
       </div>

@@ -19,6 +19,7 @@ export type CatalogCourse = {
   level: string;
   startAt: string | null;
   featured: boolean;
+  enrollment?: { progressPercent: number; completed: boolean } | null;
 };
 
 export function CourseFilter({
@@ -113,7 +114,22 @@ export function CourseFilter({
                 {course.startAt ? <span><Icon name="calendar" size={15} />{formatDate(course.startAt, locale)}</span> : null}
               </div>
               <div className="trainer-row"><span className="mini-avatar">{course.trainerName.split(" ").slice(-2).map((part) => part[0]).join("")}</span><span>{course.trainerName}</span></div>
-              <div className="card-footer"><strong>{formatMillimes(course.priceMillimes, locale)}</strong><Link className="text-link" href={`/${locale}/formations/${course.slug}`}>{c.actions.details}<Icon name="arrow" size={16} /></Link></div>
+              {course.enrollment ? (
+                <div className="progress slim" role="status" aria-label={`${ar ? "التقدم" : en ? "Progress" : "Progression"} ${course.enrollment.progressPercent}%`}>
+                  <span style={{ width: `${Math.min(100, Math.max(0, course.enrollment.progressPercent))}%` }} />
+                </div>
+              ) : null}
+              <div className="card-footer">
+                <strong>{formatMillimes(course.priceMillimes, locale)}</strong>
+                {course.enrollment ? (
+                  <Link className="text-link" href={`/${locale}/apprendre/${course.slug}`}>
+                    {course.enrollment.completed ? (ar ? "مراجعة الدورة" : en ? "Review course" : "Revoir la formation") : (ar ? "متابعة التعلم" : en ? "Continue learning" : "Continuer la formation")}
+                    <Icon name="arrow" size={16} />
+                  </Link>
+                ) : (
+                  <Link className="text-link" href={`/${locale}/formations/${course.slug}`}>{c.actions.details}<Icon name="arrow" size={16} /></Link>
+                )}
+              </div>
             </div>
           </article>
         ))}

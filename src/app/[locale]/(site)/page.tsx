@@ -1,11 +1,10 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { HomeHero } from "@/components/sections/HomeHero";
-import { HomeSections } from "@/components/sections/HomeSections";
+import { AcademyHome } from "@/components/sections/AcademyHome";
 import { isLocale } from "@/lib/i18n";
-import { listHomeAvs, listHomeCourses, listHomeResources, listHomeWebinars } from "@/server/queries/catalog";
-import { listHomeNews } from "@/server/queries/news";
+import { listHomeAvs, listHomeCourses, listHomeWebinars } from "@/server/queries/catalog";
 import { logger } from "@/server/security/logger";
+import "./academy-home.css";
 
 export const dynamic = "force-dynamic";
 
@@ -34,21 +33,13 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
-  const sources = ["courses", "webinars", "avs", "resources", "news"] as const;
-  const results = await Promise.allSettled([
-    listHomeCourses(),
-    listHomeWebinars(),
-    listHomeAvs(),
-    listHomeResources(),
-    listHomeNews(),
-  ]);
-  const unavailable = results.flatMap((result, index) => result.status === "rejected" ? [sources[index]] : []);
+  const sources = ["courses", "webinars", "avs"] as const;
+  const results = await Promise.allSettled([listHomeCourses(), listHomeWebinars(), listHomeAvs()]);
+  const unavailable = results.flatMap((result, index) => (result.status === "rejected" ? [sources[index]] : []));
   if (unavailable.length) logger.warn("homepage.content_degraded", { sources: unavailable });
-  const [courseResult, webinarResult, avsResult, resourceResult, newsResult] = results;
+  const [courseResult, webinarResult, avsResult] = results;
   const courses = courseResult.status === "fulfilled" ? courseResult.value : [];
   const webinars = webinarResult.status === "fulfilled" ? webinarResult.value : [];
   const avsProfiles = avsResult.status === "fulfilled" ? avsResult.value : [];
-  const resources = resourceResult.status === "fulfilled" ? resourceResult.value : [];
-  const news = newsResult.status === "fulfilled" ? newsResult.value : [];
-  return <><HomeHero locale={locale}/><HomeSections locale={locale} courses={courses} webinars={webinars} avsProfiles={avsProfiles} resources={resources} news={news}/></>;
+  return <AcademyHome locale={locale} courses={courses} webinars={webinars} avsProfiles={avsProfiles} />;
 }

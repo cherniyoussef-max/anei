@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { isLocale } from "@/lib/i18n";
 import { requireActivePersona } from "@/server/auth/session";
-import { PersonaPortalShell } from "@/modules/personas/components/PersonaPortalShell";
+import { PersonaShell } from "@/modules/personas/components/PersonaShell";
+import "../../(learner)/dashboard/student-dashboard.css";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,15 @@ export default async function OrganizationLayout({ children, params }: {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const session = await requireActivePersona(locale, "ORGANIZATION");
-  return <PersonaPortalShell locale={locale} user={{ name: session.user.name, email: session.user.email }} profileHref={`/${locale}/organization/profil`} items={[
-    { href: `/${locale}/organization`, icon: "chart", fr: "Vue d’ensemble", ar: "نظرة عامة" },
-  ]}>{children}</PersonaPortalShell>;
+  const ar = locale === "ar";
+  return <PersonaShell
+    locale={locale}
+    roleLabel={ar ? "مساحة المؤسسة" : "Espace organisation"}
+    user={{ name: session.user.name, email: session.user.email }}
+    profileHref={`/${locale}/organization/profil`}
+    base={`/${locale}/organization`}
+    items={[
+      { href: `/${locale}/organization`, icon: "LayoutDashboard", fr: "Vue d’ensemble", ar: "نظرة عامة" },
+    ]}
+  >{children}</PersonaShell>;
 }
