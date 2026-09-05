@@ -64,6 +64,8 @@ const heroCopy = {
     fr: "Guide pédagogique illustrée d’ANEI accueillant les visiteurs",
     ar: "مرشدة تعليمية مصوّرة من ANEI ترحّب بالزوار",
   },
+  sceneBadgePrimary: { en: "Accessible & inclusive", fr: "Accessible & inclusif", ar: "متاح ودامج" },
+  sceneBadgeSecondary: { en: "Modern learning", fr: "Gestion moderne", ar: "تعلّم حديث" },
 };
 
 const avsCopy = {
@@ -173,26 +175,36 @@ export function AcademyHome({ locale, courses, webinars, avsProfiles }: {
 
             <div className="ah-visual-col">
               <figure className="ah-hero-stage">
-                <span className="ah-hero-dome" aria-hidden="true" />
-                <span className="ah-hero-orbit" aria-hidden="true" />
-                <span className="ah-hero-globe" aria-hidden="true">
-                  <Image src="/media/academy-home-globe.webp" alt="" width={800} height={800} sizes="(max-width: 767px) 54vw, 330px" />
+                <span className="ah-hero-scene">
+                  <span className="ah-hero-dome" aria-hidden="true" />
+                  <span className="ah-hero-orbit" aria-hidden="true" />
+                  <span className="ah-hero-globe" aria-hidden="true">
+                    <Image src="/media/academy-home-globe.webp" alt="" width={800} height={800} sizes="(max-width: 767px) 54vw, 330px" />
+                  </span>
+                  <span className="ah-hero-educator">
+                    <Image
+                      src="/media/academy-home-educator.webp"
+                      alt={tx(locale, heroCopy.avatarAlt)}
+                      width={900}
+                      height={1138}
+                      priority
+                      sizes="(max-width: 767px) 58vw, 390px"
+                    />
+                  </span>
+                  <span className="ah-hero-laptop" aria-hidden="true">
+                    <Image src="/media/academy-home-laptop.webp" alt="" width={1000} height={664} sizes="(max-width: 767px) 50vw, 350px" />
+                  </span>
+                  <span className="ah-hero-phone" aria-hidden="true">
+                    <Image src="/media/academy-home-phone.webp" alt="" width={512} height={1024} sizes="(max-width: 767px) 18vw, 118px" />
+                  </span>
                 </span>
-                <span className="ah-hero-educator">
-                  <Image
-                    src="/media/academy-home-educator.webp"
-                    alt={tx(locale, heroCopy.avatarAlt)}
-                    width={900}
-                    height={1138}
-                    priority
-                    sizes="(max-width: 767px) 58vw, 390px"
-                  />
+                <span className="ah-hero-badge is-primary" aria-hidden="true">
+                  <Icon name="check" size={14} />
+                  {tx(locale, heroCopy.sceneBadgePrimary)}
                 </span>
-                <span className="ah-hero-laptop" aria-hidden="true">
-                  <Image src="/media/academy-home-laptop.webp" alt="" width={1000} height={664} sizes="(max-width: 767px) 50vw, 350px" />
-                </span>
-                <span className="ah-hero-phone" aria-hidden="true">
-                  <Image src="/media/academy-home-phone.webp" alt="" width={512} height={1024} sizes="(max-width: 767px) 18vw, 118px" />
+                <span className="ah-hero-badge is-secondary" aria-hidden="true">
+                  <Icon name="graduation" size={14} />
+                  {tx(locale, heroCopy.sceneBadgeSecondary)}
                 </span>
               </figure>
             </div>
