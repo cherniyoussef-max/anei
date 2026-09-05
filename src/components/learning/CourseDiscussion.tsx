@@ -68,7 +68,12 @@ const copy = {
   },
 } as const;
 
-export function CourseDiscussion({ courseId, locale, items }: { courseId: string; locale: Locale; items: DiscussionItem[] }) {
+export function CourseDiscussion({ courseId, locale, items, currentUserFirstName }: {
+  courseId: string;
+  locale: Locale;
+  items: DiscussionItem[];
+  currentUserFirstName: string;
+}) {
   const c = copy[locale];
   const router = useRouter();
   const [question, setQuestion] = useState("");
@@ -76,7 +81,12 @@ export function CourseDiscussion({ courseId, locale, items }: { courseId: string
   const [reply, setReply] = useState("");
   const [pending, setPending] = useState(false);
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
-  const roots = items.filter((item) => !item.parentId);
+  const [optimisticItems, setOptimisticItems] = useState<DiscussionItem[]>([]);
+  const displayItems = [
+    ...items,
+    ...optimisticItems.filter((item) => !items.some((candidate) => candidate.id === item.id)),
+  ];
+  const roots = displayItems.filter((item) => !item.parentId);
   const dateFormatter = new Intl.DateTimeFormat(locale === "ar" ? "ar-TN" : locale === "fr" ? "fr-FR" : "en-GB", { dateStyle: "medium" });
 
   async function submit(body: string, parentId: string | null) {
@@ -93,6 +103,20 @@ export function CourseDiscussion({ courseId, locale, items }: { courseId: string
       setStatus("error");
       return;
     }
+    const payload = await response.json() as { id?: unknown };
+    if (typeof payload.id !== "string") {
+      setStatus("error");
+      return;
+    }
+    const postId = payload.id;
+    setOptimisticItems((current) => [...current, {
+      id: postId,
+      parentId,
+      body: body.trim(),
+      createdAt: new Date().toISOString(),
+      authorFirstName: currentUserFirstName,
+      own: true,
+    }]);
     setQuestion("");
     setReply("");
     setReplyTo(null);
@@ -119,7 +143,7 @@ export function CourseDiscussion({ courseId, locale, items }: { courseId: string
       <p className="course-discussion-status" aria-live="polite">{status === "success" ? c.success : status === "error" ? c.error : ""}</p>
 
       {roots.length ? <div className="course-question-list">{roots.map((item) => {
-        const replies = items.filter((candidate) => candidate.parentId === item.id);
+        const replies = displayItems.filter((candidate) => candidate.parentId === item.id);
         return <article className="course-question" key={item.id}>
           <header><span aria-hidden="true">{item.authorFirstName.charAt(0).toLocaleUpperCase(locale)}</span><div><strong>{item.own ? c.you : item.authorFirstName}</strong><time dateTime={item.createdAt}>{dateFormatter.format(new Date(item.createdAt))}</time></div></header>
           <p>{item.body}</p>

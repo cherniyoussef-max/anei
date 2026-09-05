@@ -42,10 +42,46 @@
   .academy-home .ah-hero-title { font-size: clamp(3rem, 4vw, 3.5rem); }
 }
 
-/* Documentary hero media */
+/* Illustrated hero: one authored focal sequence that connects guide and product. */
 .academy-home .ah-visual-col { position: relative; display: flex; justify-content: center; align-items: center; }
-.academy-home .ah-hero-media { width: 100%; margin: 0; overflow: hidden; border: 1px solid var(--ah-border); border-radius: 16px; background: var(--ah-surface); box-shadow: 0 24px 56px rgb(8 45 85 / 16%); }
-.academy-home .ah-hero-media img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+.academy-home .ah-hero-stage { position: relative; isolation: isolate; width: min(100%, 660px); min-height: 500px; margin: 0; overflow: hidden; }
+.academy-home .ah-hero-stage img { display: block; width: 100%; height: auto; }
+.academy-home .ah-hero-dome { position: absolute; z-index: -2; inset: 8% 3% 2%; border: 1px solid var(--ah-border); border-radius: 50% 50% 16px 16px; background: var(--ah-surface); box-shadow: 0 30px 62px rgb(8 45 85 / 14%); }
+.academy-home .ah-hero-orbit { position: absolute; z-index: -1; inset: 16% 9% 13%; border: 1px solid rgb(201 145 63 / 45%); border-radius: 50%; transform: rotate(-12deg); }
+.academy-home .ah-hero-globe,
+.academy-home .ah-hero-educator,
+.academy-home .ah-hero-laptop,
+.academy-home .ah-hero-phone { position: absolute; display: block; transform-origin: 50% 100%; }
+.academy-home .ah-hero-globe { z-index: 0; inset-block-start: 3%; inset-inline-end: 1%; width: 55%; opacity: .9; }
+.academy-home .ah-hero-educator { z-index: 2; inset-block-end: -12%; inset-inline-start: 3%; width: 57%; }
+.academy-home .ah-hero-laptop { z-index: 3; inset-block-end: 2%; inset-inline-end: -2%; width: 55%; }
+.academy-home .ah-hero-phone { z-index: 4; inset-block-end: 1%; inset-inline-end: 1%; width: 19%; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .academy-home .ah-hero-dome { animation: ah-stage-enter 640ms cubic-bezier(.16, 1, .3, 1) both; }
+  .academy-home .ah-hero-globe { animation: ah-globe-enter 720ms 80ms cubic-bezier(.16, 1, .3, 1) both, ah-globe-drift 10s 900ms ease-in-out infinite; }
+  .academy-home .ah-hero-educator { animation: ah-avatar-enter 720ms 150ms cubic-bezier(.16, 1, .3, 1) both, ah-avatar-float 6s 1s ease-in-out infinite; }
+  .academy-home .ah-hero-laptop { animation: ah-device-enter 640ms 260ms cubic-bezier(.16, 1, .3, 1) both, ah-device-float 7s 1.1s ease-in-out infinite; }
+  .academy-home .ah-hero-phone { animation: ah-device-enter 600ms 340ms cubic-bezier(.16, 1, .3, 1) both, ah-phone-float 5.5s 1.2s ease-in-out infinite; }
+}
+
+@keyframes ah-stage-enter { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: scale(1); } }
+@keyframes ah-globe-enter { from { opacity: 0; transform: translate3d(18px, 16px, 0) scale(.94); } to { opacity: .9; transform: translate3d(0, 0, 0) scale(1); } }
+@keyframes ah-avatar-enter { from { opacity: 0; transform: translate3d(0, 28px, 0) scale(.97); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
+@keyframes ah-device-enter { from { opacity: 0; transform: translate3d(20px, 18px, 0) scale(.95); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
+@keyframes ah-globe-drift { 0%, 100% { transform: translate3d(0, 0, 0) rotate(-1deg); } 50% { transform: translate3d(-5px, 5px, 0) rotate(1deg); } }
+@keyframes ah-avatar-float { 0%, 100% { transform: translate3d(0, 0, 0); } 50% { transform: translate3d(0, -5px, 0); } }
+@keyframes ah-device-float { 0%, 100% { transform: translate3d(0, 0, 0); } 50% { transform: translate3d(0, -4px, 0); } }
+@keyframes ah-phone-float { 0%, 100% { transform: translate3d(0, 0, 0) rotate(0); } 50% { transform: translate3d(0, -6px, 0) rotate(1deg); } }
+
+@media (max-width: 767px) {
+  .academy-home .ah-hero-stage { min-height: 360px; }
+  .academy-home .ah-hero-dome { inset: 8% 0 1%; }
+  .academy-home .ah-hero-globe { width: 58%; }
+  .academy-home .ah-hero-educator { inset-block-end: -11%; inset-inline-start: 1%; width: 59%; }
+  .academy-home .ah-hero-laptop { inset-inline-end: -3%; width: 57%; }
+  .academy-home .ah-hero-phone { width: 19%; }
+}
 
 /* Sections */
 .academy-home .ah-section { padding-block: 64px; }

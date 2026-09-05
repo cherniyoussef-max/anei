@@ -86,6 +86,11 @@ export default async function CourseRoomPage({ params, searchParams }: { params:
 
     {data.assessments.length ? <section className="course-room-assessments" aria-labelledby="course-assessments-title"><h2 id="course-assessments-title">{c.assessments}</h2>{data.assessments.map(({ assessment, attemptCount, bestAttempt }) => { const attemptsLeft = assessment.maxAttempts - attemptCount; return <article key={assessment.id}><div><strong>{ar ? assessment.titleAr : assessment.titleFr}</strong><small>{bestAttempt ? `${c.best}: ${bestAttempt.percentage}% (${bestAttempt.passed ? c.passed : c.failed})` : attemptsLeft > 0 ? `${attemptsLeft} ${c.attempts}` : c.noAttempts}</small></div>{attemptsLeft > 0 ? <Link className="course-room-primary" href={`/${locale}/apprendre/${slug}/quiz/${assessment.id}`}>{bestAttempt ? c.retry : c.startQuiz}</Link> : null}</article>; })}</section> : null}
 
-    <CourseDiscussion courseId={data.course.id} locale={locale} items={discussion.map((item) => ({ ...item, createdAt: item.createdAt.toISOString() }))}/>
+    <CourseDiscussion
+      courseId={data.course.id}
+      locale={locale}
+      items={discussion.map((item) => ({ ...item, createdAt: item.createdAt.toISOString() }))}
+      currentUserFirstName={session.user.name.trim().split(/\s+/)[0] || "ANEI"}
+    />
   </div>;
 }

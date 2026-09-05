@@ -59,10 +59,10 @@ const heroCopy = {
   },
   primary: { en: "Request a Demo", fr: "Demander une démo", ar: "اطلب عرضًا تجريبيًا" },
   secondary: { en: "Explore the Platform", fr: "Explorer la plateforme", ar: "استكشف المنصة" },
-  photoAlt: {
-    en: "Educators collaborating on inclusive learning resources",
-    fr: "Équipe éducative collaborant autour de ressources pédagogiques inclusives",
-    ar: "فريق تربوي يتعاون حول موارد تعليمية دامجة",
+  avatarAlt: {
+    en: "Illustrated ANEI learning guide welcoming visitors",
+    fr: "Guide pédagogique illustrée d’ANEI accueillant les visiteurs",
+    ar: "مرشدة تعليمية مصوّرة من ANEI ترحّب بالزوار",
   },
 };
 
@@ -172,15 +172,28 @@ export function AcademyHome({ locale, courses, webinars, avsProfiles }: {
             </div>
 
             <div className="ah-visual-col">
-              <figure className="ah-hero-media">
-                <Image
-                  src="/media/anei-audience-professionals.webp"
-                  alt={tx(locale, heroCopy.photoAlt)}
-                  width={1400}
-                  height={1050}
-                  priority
-                  sizes="(max-width: 1023px) calc(100vw - 32px), 58vw"
-                />
+              <figure className="ah-hero-stage">
+                <span className="ah-hero-dome" aria-hidden="true" />
+                <span className="ah-hero-orbit" aria-hidden="true" />
+                <span className="ah-hero-globe" aria-hidden="true">
+                  <Image src="/media/academy-home-globe.webp" alt="" width={800} height={800} sizes="(max-width: 767px) 54vw, 330px" />
+                </span>
+                <span className="ah-hero-educator">
+                  <Image
+                    src="/media/academy-home-educator.webp"
+                    alt={tx(locale, heroCopy.avatarAlt)}
+                    width={900}
+                    height={1138}
+                    priority
+                    sizes="(max-width: 767px) 58vw, 390px"
+                  />
+                </span>
+                <span className="ah-hero-laptop" aria-hidden="true">
+                  <Image src="/media/academy-home-laptop.webp" alt="" width={1000} height={664} sizes="(max-width: 767px) 50vw, 350px" />
+                </span>
+                <span className="ah-hero-phone" aria-hidden="true">
+                  <Image src="/media/academy-home-phone.webp" alt="" width={512} height={1024} sizes="(max-width: 767px) 18vw, 118px" />
+                </span>
               </figure>
             </div>
           </div>
