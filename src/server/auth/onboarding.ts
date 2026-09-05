@@ -28,8 +28,8 @@ export type OnboardingState =
 
 export async function resolveOnboardingState(): Promise<OnboardingState> {
   // Uses the raw, assurance-independent session (like requirePrimaryUser),
-  // never getSession()/getSessionWithAssurance() - those return a null
-  // session whenever assurance is missing, which would misclassify a real,
+  // never getSession() - it returns a null session whenever assurance is
+  // missing, which would misclassify a real,
   // authenticated-but-unassured user as UNAUTHENTICATED here and send them
   // back to login instead of through PROFILE_INCOMPLETE/ASSURANCE_REQUIRED.
   const session = await auth.api.getSession({ headers: await headers() });

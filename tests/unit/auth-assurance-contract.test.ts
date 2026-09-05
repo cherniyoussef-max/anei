@@ -7,6 +7,12 @@ test("protected session helpers enforce assurance for app access", async () => {
   assert.match(source, /getSessionWithAssurance/);
   assert.match(source, /verification-channel/);
   assert.match(source, /getCachedSessionAssurance\(current\.session\.id\)/);
+  assert.match(source, /return \{ session: current, assurance \}/, "the raw authenticated session must remain available for verification routing");
+  assert.match(source, /return assurance \? session : null/, "ordinary protected session lookup must still enforce assurance");
+
+  const requireUserStart = source.indexOf("export async function requireUser");
+  const requireUserBody = source.slice(requireUserStart, requireUserStart + 360);
+  assert.ok(requireUserBody.indexOf("if (!current)") < requireUserBody.indexOf("if (!assurance)"), "requireUser must distinguish signed-out users from authenticated users awaiting assurance");
 });
 
 test("admin onboarding requires assurance before resolving the admin as ready", async () => {

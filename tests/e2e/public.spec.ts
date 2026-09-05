@@ -203,6 +203,8 @@ test("email learner session survives navigation and cannot enter admin", async (
   await form.getByLabel("Mot de passe").fill("DemoLearner!2026");
   await form.getByRole("button", { name: "Accéder à mon espace" }).click();
   await expect.poll(() => new URL(page.url()).pathname).toBe("/fr/verification-channel");
+  await page.goto("/fr/dashboard");
+  await expect.poll(() => new URL(page.url()).pathname).toBe("/fr/verification-channel");
   await assureCurrentTestSession(page);
   await page.goto("/fr/dashboard");
   await expect.poll(() => new URL(page.url()).pathname).toBe("/fr/dashboard");

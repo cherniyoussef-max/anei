@@ -26,11 +26,12 @@ const getAssuredSessionState = cache(async () => {
   const current = await auth.api.getSession({ headers: await headers() });
   if (!current) return { session: null, assurance: null };
   const assurance = await getCachedSessionAssurance(current.session.id);
-  return { session: assurance ? current : null, assurance };
+  return { session: current, assurance };
 });
 
 export async function getSession() {
-  return (await getAssuredSessionState()).session;
+  const { session, assurance } = await getAssuredSessionState();
+  return assurance ? session : null;
 }
 
 export async function getSessionWithAssurance() {

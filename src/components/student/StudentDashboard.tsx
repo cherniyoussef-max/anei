@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Sparkles, ArrowRight, GraduationCap, Trophy, Award, PlayCircle, Clock, CalendarDays, BookOpen, Download, ChevronRight, type LucideIcon } from "lucide-react";
+import { ArrowRight, GraduationCap, Trophy, Award, PlayCircle, Clock, CalendarDays, BookOpen, Download, ChevronRight, type LucideIcon } from "lucide-react";
 import type { Locale } from "@/types";
 import { getCourseVisual } from "@/lib/visuals";
 
@@ -34,25 +34,24 @@ function RadialProgress({ value }: { value: number }) {
   const safeValue = Math.min(100, Math.max(0, value));
   return (
     <div
-      className="relative grid h-16 w-16 flex-none place-items-center rounded-full"
-      style={{ background: `conic-gradient(#082D55 ${safeValue * 3.6}deg, #EDE6D6 0deg)` }}
+      className="student-radial-progress"
+      style={{ background: `conic-gradient(var(--brand-navy-950) ${safeValue * 3.6}deg, var(--border-subtle) 0deg)` }}
       role="img"
       aria-label={`${safeValue}%`}
     >
-      <div className="grid h-12 w-12 place-items-center rounded-full bg-white text-sm font-bold text-[#082D55]" dir="ltr">{safeValue}%</div>
+      <span dir="ltr">{safeValue}%</span>
     </div>
   );
 }
 
 function MetricCard({ icon: MetricIcon, tone, label, value, sub }: { icon: LucideIcon; tone: "navy" | "gold" | "cream"; label: string; value: React.ReactNode; sub?: string }) {
-  const toneClass = tone === "gold" ? "bg-[#C9913F]/15 text-[#a9752f]" : tone === "cream" ? "bg-[#F6F1E7] text-[#082D55]" : "bg-[#082D55]/10 text-[#082D55]";
   return (
-    <div className="flex items-center gap-4 rounded-2xl border border-[#E7E0D3] bg-white p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)]">
-      <span className={`grid h-12 w-12 flex-none place-items-center rounded-xl ${toneClass}`} aria-hidden="true"><MetricIcon size={22} strokeWidth={1.75} /></span>
-      <div className="min-w-0">
-        <p className="text-xs font-medium text-[#7a7261]">{label}</p>
-        <p className="mt-0.5 text-2xl font-bold text-[#082D55]" dir="ltr">{value}</p>
-        {sub ? <p className="mt-0.5 truncate text-xs text-[#a39c8a]">{sub}</p> : null}
+    <div className="student-summary-card">
+      <span className={`student-summary-icon is-${tone}`} aria-hidden="true"><MetricIcon size={21} strokeWidth={1.75} /></span>
+      <div>
+        <p className="student-summary-label">{label}</p>
+        <p className="student-summary-value" dir="ltr">{value}</p>
+        {sub ? <p className="student-summary-detail">{sub}</p> : null}
       </div>
     </div>
   );
@@ -73,43 +72,16 @@ export function StudentDashboard({ locale, userName, continueItem, averageProgre
   const firstName = userName.trim().split(/\s+/)[0] || userName;
   const inProgressCount = courses.filter((course) => course.progress < 100).length;
   const completedCount = courses.filter((course) => course.progress >= 100).length;
-  const heroCtaHref = continueItem ? `/${locale}/apprendre/${continueItem.slug}` : `/${locale}/formations`;
-  const heroCtaLabel = continueItem ? (ar ? "متابعة التعلم" : "Continuer la formation") : (ar ? "اكتشف الدورات" : "Découvrir les formations");
-
   return (
-    <div className="space-y-6">
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#082D55] via-[#0A3D70] to-[#061F3D] px-6 py-8 text-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] sm:px-10 sm:py-10">
-        <div className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full bg-[#C9913F]/20 blur-3xl" aria-hidden="true" />
-        <div className="pointer-events-none absolute -bottom-24 -left-10 h-56 w-56 rounded-full bg-white/10 blur-3xl" aria-hidden="true" />
-        <div className="relative max-w-2xl">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-[#082D55] backdrop-blur-sm">
-            <Sparkles className="text-[#C9913F]" size={13} strokeWidth={1.75} />
-            {ar ? "مسار جديد موصى به" : "Nouveau parcours recommandé"}
-          </span>
-          <h1 className="mt-4 font-[family-name:var(--font-fraunces)] text-2xl font-semibold tracking-tight sm:text-3xl">{ar ? `مرحبًا ${firstName}، هل أنت مستعد للتعلم؟` : `Bonjour ${firstName}, prêt à apprendre ?`}</h1>
-          <p className="mt-2 text-sm text-white/70 sm:text-base">{ar ? "ابدأ بخطوتك التالية، ثم راجع مواعيدك ومواردك." : "Commencez par votre prochaine étape, puis retrouvez vos rendez-vous et vos ressources."}</p>
-          <Link
-            href={heroCtaHref}
-            className="group mt-6 inline-flex items-center gap-2 rounded-full border border-white bg-white px-5 py-3 text-sm font-semibold text-[#082D55] transition-all duration-200 ease-in-out hover:bg-transparent hover:text-white"
-          >
-            <span>{heroCtaLabel}</span>
-            <ArrowRight size={16} strokeWidth={1.75} className="transition-transform duration-200 ease-in-out group-hover:translate-x-0.5" />
-          </Link>
+    <div className="student-dashboard-home">
+      <header className="student-welcome">
+        <div>
+          <p className="student-welcome-kicker">{ar ? "مساحة التعلم الخاصة بك" : "Votre espace d’apprentissage"}</p>
+          <h1>{ar ? `مرحبًا ${firstName}` : `Bonjour ${firstName}`}</h1>
+          <p>{ar ? "واصل تقدمك، ثم راجع مواعيدك ومواردك." : "Poursuivez votre progression, puis retrouvez vos rendez-vous et vos ressources."}</p>
         </div>
-      </section>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="flex items-center gap-4 rounded-2xl border border-[#E7E0D3] bg-white p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)]">
-          <RadialProgress value={averageProgress} />
-          <div className="min-w-0">
-            <p className="text-xs font-medium text-[#7a7261]">{ar ? "التقدم الإجمالي" : "Progression globale"}</p>
-            <p className="mt-0.5 truncate text-xs text-[#a39c8a]">{ar ? "متوسط جميع الدورات النشطة" : "Moyenne de vos formations actives"}</p>
-          </div>
-        </div>
-        <MetricCard icon={GraduationCap} tone="navy" label={ar ? "دورات جارية" : "Formations en cours"} value={inProgressCount} sub={ar ? "قيد التقدم حاليًا" : "En cours actuellement"} />
-        <MetricCard icon={Trophy} tone="gold" label={ar ? "دورات مكتملة" : "Formations terminées"} value={completedCount} sub={ar ? "أُنجزت بالكامل" : "Menées à terme"} />
-        <MetricCard icon={Award} tone="cream" label={ar ? "الشهادات المحصلة" : "Certifications obtenues"} value={certificates.length} sub={ar ? "شهادات قابلة للتحقق" : "Certificats vérifiables"} />
-      </div>
+        <span className="student-welcome-status"><GraduationCap size={18} strokeWidth={1.75} />{continueItem ? (ar ? "دورة قيد التقدم" : "Formation en cours") : (ar ? "جاهز للبدء" : "Prêt à commencer")}</span>
+      </header>
 
       <section className="student-continue-section" aria-labelledby="continue-title">
         {continueItem ? (
@@ -127,7 +99,7 @@ export function StudentDashboard({ locale, userName, continueItem, averageProgre
               </div>
             </div>
             <div className="student-continue-media">
-              <Image src={getCourseVisual(continueItem.slug)} alt="" width={800} height={600} priority sizes="(max-width: 767px) 100vw, (max-width: 1100px) 36vw, 420px" />
+              <Image src={getCourseVisual(continueItem.slug)} alt="" width={800} height={600} priority loading="eager" sizes="(max-width: 767px) 100vw, (max-width: 1100px) 36vw, 420px" />
               <span aria-hidden="true"><GraduationCap size={24} strokeWidth={1.75} /></span>
             </div>
           </article>
@@ -138,6 +110,24 @@ export function StudentDashboard({ locale, userName, continueItem, averageProgre
             <Link className="student-primary-action" href={`/${locale}/formations`}>{ar ? "عرض الدورات" : "Voir les formations"}<ArrowRight className="student-directional-icon" size={17} strokeWidth={1.75} /></Link>
           </div>
         )}
+      </section>
+
+      <section className="student-summary" aria-labelledby="summary-title">
+        <div className="student-section-heading">
+          <div><h2 id="summary-title">{ar ? "نظرة على تقدمك" : "Votre progression en un coup d’œil"}</h2><p>{ar ? "ملخص واضح لنشاطك التعليمي." : "Un résumé clair de votre activité d’apprentissage."}</p></div>
+        </div>
+        <div className="student-summary-grid">
+          <div className="student-summary-card is-progress">
+            <RadialProgress value={averageProgress} />
+            <div>
+              <p className="student-summary-label">{ar ? "التقدم الإجمالي" : "Progression globale"}</p>
+              <p className="student-summary-detail">{ar ? "متوسط الدورات النشطة" : "Moyenne des formations actives"}</p>
+            </div>
+          </div>
+          <MetricCard icon={GraduationCap} tone="navy" label={ar ? "دورات جارية" : "Formations en cours"} value={inProgressCount} sub={ar ? "قيد التقدم حاليًا" : "En cours actuellement"} />
+          <MetricCard icon={Trophy} tone="gold" label={ar ? "دورات مكتملة" : "Formations terminées"} value={completedCount} sub={ar ? "أُنجزت بالكامل" : "Menées à terme"} />
+          <MetricCard icon={Award} tone="cream" label={ar ? "الشهادات المحصلة" : "Certifications obtenues"} value={certificates.length} sub={ar ? "شهادات قابلة للتحقق" : "Certificats vérifiables"} />
+        </div>
       </section>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
