@@ -3311,3 +3311,33 @@ body{background:var(--bg);color:var(--ink)}
   }
 }
 
+/* Suppress Next.js dev indicators, route announcer text, and prevent bottom white block leakage */
+nextjs-portal,
+[data-nextjs-toast],
+[data-nextjs-dev-tools],
+[data-nextjs-dev-indicators],
+[data-nextjs-route-announcer],
+#next-route-announcer,
+div[id^="__next-build-watcher"],
+div:has(> [data-nextjs-toast]),
+div:has(> [data-nextjs-dev-tools]) {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+html,
+body {
+  background-color: #fcfbf8;
+  margin: 0;
+  padding: 0;
+}
+

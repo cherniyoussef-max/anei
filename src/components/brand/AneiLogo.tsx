@@ -11,6 +11,7 @@ export interface AneiLogoProps {
   withText?: boolean;
   textClassName?: string;
   forceVariant?: boolean;
+  twoLineText?: boolean;
 }
 
 export function AneiLogo({
@@ -22,8 +23,10 @@ export function AneiLogo({
   withText = false,
   textClassName = "",
   forceVariant = false,
+  twoLineText = false,
 }: AneiLogoProps) {
   const ar = locale === "ar";
+  const en = locale === "en";
   const config = getAneiLogoConfig(locale, variant, height, withText, forceVariant);
 
   if (config.effectiveVariant === "full") {
@@ -45,7 +48,7 @@ export function AneiLogo({
 
   // Mark variant
   return (
-    <span className={`inline-flex items-center gap-2.5 flex-none ${className}`}>
+    <span className={`inline-flex items-center gap-3 flex-none ${className}`}>
       <Image
         src={config.src}
         alt={config.altText}
@@ -57,17 +60,31 @@ export function AneiLogo({
         className="object-contain flex-none block"
       />
       {config.shouldRenderText ? (
-        <span className={`flex flex-col leading-tight min-w-0 ${textClassName}`}>
-          <span
-            className="font-bold tracking-tight text-[#082d55] text-sm md:text-base font-serif"
-            style={{ fontFamily: ar ? undefined : "var(--font-fraunces), Georgia, serif" }}
-          >
-            {config.academyName}
+        twoLineText ? (
+          <span className={`flex flex-col justify-center leading-tight min-w-0 ${textClassName}`}>
+            <span
+              className="font-bold tracking-tight text-[#082d55] text-[15px] sm:text-[16.5px] leading-[1.18]"
+              style={{ fontFamily: ar ? undefined : "var(--font-fraunces), Georgia, serif" }}
+            >
+              {ar ? "الأكاديمية الوطنية" : en ? "National Academy" : "Académie Nationale"}
+            </span>
+            <span className="text-[10.5px] sm:text-[11.5px] font-semibold text-[#a66f24] tracking-wider leading-[1.2] mt-0.5">
+              {ar ? "للتربية الدامجة · ANEI" : en ? "of Inclusive Education · ANEI" : "de l’Éducation Inclusive · ANEI"}
+            </span>
           </span>
-          <span className="text-[10px] uppercase font-bold tracking-widest text-[#c9913f]">
-            ANEI
+        ) : (
+          <span className={`flex flex-col leading-tight min-w-0 ${textClassName}`}>
+            <span
+              className="font-bold tracking-tight text-[#082d55] text-sm md:text-base font-serif"
+              style={{ fontFamily: ar ? undefined : "var(--font-fraunces), Georgia, serif" }}
+            >
+              {config.academyName}
+            </span>
+            <span className="text-[10px] uppercase font-bold tracking-widest text-[#c9913f]">
+              ANEI
+            </span>
           </span>
-        </span>
+        )
       ) : null}
     </span>
   );

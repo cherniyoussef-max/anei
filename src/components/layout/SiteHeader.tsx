@@ -26,12 +26,16 @@ export function SiteHeader({ locale }: { locale: Locale }) {
   return (
     <header className="site-header v5-site-header">
       <div className="v5-container header-inner">
-        <Link href={`/${locale}`} className="site-brand-link flex items-center py-1 flex-none" aria-label={c.academy}>
+        <Link
+          href={`/${locale}`}
+          className="site-brand-link flex items-center py-1 flex-none group focus:outline-none transition-transform duration-150 active:scale-[0.99]"
+          aria-label={c.academy}
+        >
           <span className="hidden sm:inline-flex items-center">
-            <AneiLogo locale={locale} variant="full" height={44} priority forceVariant />
+            <AneiLogo locale={locale} variant="mark" height={48} priority withText twoLineText />
           </span>
           <span className="inline-flex sm:hidden items-center">
-            <AneiLogo locale={locale} variant="full" height={38} priority forceVariant />
+            <AneiLogo locale={locale} variant="mark" height={38} priority withText twoLineText />
           </span>
         </Link>
         <PublicNav locale={locale} label={navigationLabel} links={links} />
