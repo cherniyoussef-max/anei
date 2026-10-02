@@ -4,6 +4,7 @@ import { getSession } from "@/server/auth/session";
 import { getLessonForPlayback } from "@/server/queries/account";
 import { getStreamPlayback, MediaConfigurationError, MediaProviderError } from "@/server/media/cloudflare-stream";
 import { consumeRateLimit } from "@/server/security/rate-limit";
+import { isTrustedMutation } from "@/server/security/origin";
 import { logger } from "@/server/security/logger";
 
 const idSchema = z.string().uuid();
@@ -19,7 +20,8 @@ const noStore = { "Cache-Control": "private, no-store" } as const;
  * openly viewable preview lessons and embed directly from the mediaRef
  * already present on the lesson row returned to the client.
  */
-export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  if (!isTrustedMutation(request)) return NextResponse.json({ error: "UNTRUSTED_ORIGIN" }, { status: 403, headers: noStore });
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401, headers: noStore });
 

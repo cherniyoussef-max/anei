@@ -4,6 +4,7 @@ import { isLocale } from "@/lib/i18n";
 import { requireAdminPermission } from "@/server/auth/session";
 import { searchGlobalCrmContacts } from "@/server/queries/crm";
 import { AdminPageHeader } from "@/modules/admin/components/AdminPageHeader";
+import { Icon } from "@/components/ui/Icon";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +29,8 @@ export default async function AdminCrmOrganizationsPage({ params, searchParams }
   return <>
     <AdminPageHeader locale={locale} eyebrow={ar ? "إدارة العملاء" : "CRM"}
       title={ar ? "مركز جهات الاتصال" : "Centre de contacts"}
-      description={ar ? "ابحث عن متعلم بالاسم أو البريد أو الهاتف أو المرجع أو المؤسسة." : "Retrouvez un apprenant par nom, e-mail, téléphone, référence ou organisation."} />
+      description={ar ? "ابحث عن متعلم بالاسم أو البريد أو الهاتف أو المرجع أو المؤسسة." : "Retrouvez un apprenant par nom, e-mail, téléphone, référence ou organisation."}
+      actions={<Link className="btn btn-primary btn-sm" href={`/${locale}/admin/crm/whatsapp`}><Icon name="phone" size={15} />{ar ? "واتساب CRM" : "WhatsApp CRM"}</Link>} />
     <form className="admin-filter-panel" method="get" role="search">
       <label><span>{ar ? "البحث العام" : "Recherche globale"}</span><input name="q" defaultValue={q} placeholder={ar ? "الاسم، البريد، الهاتف، المؤسسة…" : "Nom, e-mail, téléphone, organisation…"} /></label>
       <button className="admin-primary-button">{ar ? "بحث" : "Rechercher"}</button>

@@ -25,7 +25,11 @@ async function countContacts() { const [r] = await db.select({ value: count() })
 async function countNews() { const [r] = await db.select({ value: count() }).from(newsPosts); return r?.value ?? 0; }
 
 export async function getAdminDashboard() {
-  const [users, courseCount, enrollmentCount, orderCount, resourceCount, webinarCount, avsCount, contactCount, newsCount] = await Promise.all([
+  const [
+    users, courseCount, enrollmentCount, orderCount, resourceCount,
+    webinarCount, avsCount, contactCount, newsCount,
+    recentOrders, recentUsers, publishedCourses, moduleRows, recentContacts, recentNews
+  ] = await Promise.all([
     countUsers(),
     countCourses(),
     countEnrollments(),
@@ -35,8 +39,6 @@ export async function getAdminDashboard() {
     countAvs(),
     countContacts(),
     countNews(),
-  ]);
-  const [recentOrders, recentUsers, publishedCourses, moduleRows, recentContacts, recentNews] = await Promise.all([
     db.select().from(orders).orderBy(desc(orders.createdAt)).limit(10),
     db.select().from(user).orderBy(desc(user.createdAt)).limit(10),
     db.select().from(courses).where(eq(courses.published, true)).orderBy(desc(courses.createdAt)).limit(10),

@@ -1,4 +1,4 @@
-import { getAdminSessionFor } from "@/server/auth/admin";
+import { getAdminSessionFor, adminMutationRateLimit } from "@/server/auth/admin";
 import { isTrustedMutation } from "@/server/security/origin";
 import { readLimitedJson } from "@/server/security/request";
 import { ingestDocument } from "@/server/ai/ingestion";
@@ -33,6 +33,14 @@ export async function POST(request: Request): Promise<Response> {
     return new Response(JSON.stringify({ error: "Admin authentication required" }), {
       status: 401,
       headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const rate = await adminMutationRateLimit(adminSession.user.id);
+  if (!rate.allowed) {
+    return new Response(JSON.stringify({ error: "Too many requests" }), {
+      status: 429,
+      headers: { "Content-Type": "application/json", "Retry-After": String(rate.retryAfterSeconds) },
     });
   }
 

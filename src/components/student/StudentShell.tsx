@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { Locale } from "@/types";
+import { AneiLogo } from "@/components/brand/AneiLogo";
 import { StudentNavigation } from "@/components/student/StudentNavigation";
 import { StudentSignOutButton } from "@/components/student/StudentSignOutButton";
 import { StudentTopbar } from "@/components/student/StudentTopbar";
@@ -24,7 +24,9 @@ export function StudentShell({ children, locale, user, pointsBalance = 0, notifi
         aria-label={ar ? "مساحة المتعلم" : en ? "Learning space" : "Espace apprenant"}
       >
         <Link className="flex h-16 items-center gap-3 border-b border-white/10 px-6" href={`/${locale}/dashboard`}>
-          <Image className="h-9 w-9 flex-none object-contain" src="/media/academy-home-seal.webp" alt="" width={300} height={301} priority sizes="36px" />
+          <span className="inline-flex items-center justify-center bg-white p-1 rounded-lg shadow-sm flex-none">
+            <AneiLogo locale={locale} variant="mark" height={24} priority />
+          </span>
           <span className="flex flex-col leading-tight">
             <strong className="text-sm font-bold uppercase tracking-wider text-white">ANEI</strong>
             <small className="text-xs font-medium text-white/50">{ar ? "مساحة المتعلم" : en ? "Learning space" : "Espace Apprenant"}</small>
@@ -55,7 +57,7 @@ export function StudentShell({ children, locale, user, pointsBalance = 0, notifi
       <div className="flex min-h-screen flex-1 flex-col md:ms-72">
         <div className="flex h-16 items-center gap-3 border-b border-[#E7E0D3] bg-[#FCFBF8] px-4 md:hidden">
           <Link className="flex items-center gap-2" href={`/${locale}/dashboard`} aria-label={ar ? "ANEI، مساحة المتعلم" : en ? "ANEI learning space" : "ANEI, espace apprenant"}>
-            <Image className="h-9 w-9 object-contain" src="/media/academy-home-seal.webp" alt="" width={300} height={301} sizes="36px" />
+            <AneiLogo locale={locale} variant="mark" height={32} />
             <strong className="font-bold tracking-wide text-[#082D55]">ANEI</strong>
           </Link>
         </div>

@@ -68,6 +68,16 @@ export async function upsertAvsProfileTx(tx: DbClient, personaMembershipId: stri
 
 export type SpecialistProfileInput = {
   specialty?: string | null;
+  subSpecialties?: string[] | null;
+  licenseNumber?: string | null;
+  languages?: string[] | null;
+  governorate?: string | null;
+  city?: string | null;
+  consultationModes?: string[] | null;
+  bioFr?: string | null;
+  bioAr?: string | null;
+  avatarUrl?: string | null;
+  address?: string | null;
   qualification?: string | null;
   experienceYears?: number | null;
   practiceStructure?: string | null;

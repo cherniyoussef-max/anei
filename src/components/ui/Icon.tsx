@@ -27,10 +27,20 @@ export type IconName =
   | "linkedin"
   | "facebook"
   | "instagram"
+  | "messenger"
   | "wallet"
   | "gift"
   | "trophy"
-  | "bag";
+  | "bag"
+  | "eye"
+  | "eye-off"
+  | "video"
+  | "google"
+  | "teams"
+  | "link"
+  | "copy"
+  | "lock"
+  | "key";
 
 const paths: Record<IconName, React.ReactNode> = {
   arrow: <><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></>,
@@ -59,10 +69,20 @@ const paths: Record<IconName, React.ReactNode> = {
   linkedin: <><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 10v7M7 7v.01M11 17v-4.5a2.5 2.5 0 0 1 5 0V17M11 10v7"/></>,
   facebook: <><path d="M15 8h-2a2 2 0 0 0-2 2v2H9v3h2v6h3v-6h2.2l.8-3H14v-1.5c0-.5.2-1 1-1h1V6.2A15 15 0 0 0 14.5 6C12.5 6 11 7.2 11 9.5V10"/><circle cx="12" cy="12" r="9"/></>,
   instagram: <><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17 7h.01"/></>,
+  messenger: <><path d="M12 2C6.5 2 2 6.1 2 11.2c0 2.9 1.4 5.5 3.7 7.2V22l3.4-1.9c.9.3 1.9.4 2.9.4 5.5 0 10-4.1 10-9.2S17.5 2 12 2Zm1 12.3-2.6-2.8-5 2.8 5.5-5.9 2.6 2.8 5.1-2.8-5.6 5.9Z"/></>,
   wallet: <><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v3H5"/><path d="M3 7v11a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1h-4a2 2 0 1 0 0 4h5"/></>,
   gift: <><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8v13M3 12h18"/><path d="M12 8c-2-3-6-3-6-.5S9 8 12 8c3 0 6-1 6-3.5S14 5 12 8Z"/></>,
   trophy: <><path d="M8 4h8v5a4 4 0 0 1-8 0Z"/><path d="M8 5H5a3 3 0 0 0 3 5M16 5h3a3 3 0 0 1-3 5"/><path d="M12 13v3M9 21h6M8.5 21c0-2 1-3.5 1.5-4h4c.5.5 1.5 2 1.5 4"/></>,
-  bag: <><path d="M6 8h12l-1 12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></>
+  bag: <><path d="M6 8h12l-1 12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></>,
+  eye: <><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></>,
+  "eye-off": <><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></>,
+  video: <><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></>,
+  google: <><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></>,
+  teams: <><rect x="3" y="4" width="12" height="16" rx="2"/><circle cx="17.5" cy="8.5" r="2.5"/><path d="M15 14h5a2 2 0 0 1 2 2v2"/></>,
+  link: <><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></>,
+  copy: <><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></>,
+  lock: <><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></>,
+  key: <><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6M15.5 7.5l3 3M18.5 4.5l3 3"/></>,
 };
 
 export function Icon({ name, size = 20, ...props }: SVGProps<SVGSVGElement> & { name: IconName; size?: number }) {

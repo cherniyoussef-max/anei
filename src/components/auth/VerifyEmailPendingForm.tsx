@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Icon } from "@/components/ui/Icon";
 import type { Locale } from "@/types";
 
 const RESEND_COOLDOWN_SECONDS = 45;
@@ -39,7 +40,8 @@ export function VerifyEmailPendingForm({ locale, email }: { locale: Locale; emai
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        const retryAfterSeconds = typeof payload.retryAfterSeconds === "number" ? payload.retryAfterSeconds : RESEND_COOLDOWN_SECONDS;
+        const retryAfterSeconds =
+          typeof payload.retryAfterSeconds === "number" ? payload.retryAfterSeconds : RESEND_COOLDOWN_SECONDS;
         setCooldown(retryAfterSeconds);
         setStatus("error");
         setError(
@@ -59,44 +61,89 @@ export function VerifyEmailPendingForm({ locale, email }: { locale: Locale; emai
   }
 
   return (
-    <div className="auth-form" aria-busy={status === "sending"}>
-      <div className="form-success" role="status">
-        <strong>{ar ? "تحقق من بريدك الإلكتروني" : "Vérifiez votre adresse e-mail"}</strong>
-        <p>
-          {ar ? "أرسلنا رابط تحقق إلى:" : "Nous avons envoyé un lien de vérification à :"}
-          <br />
-          <strong>{maskEmail(email)}</strong>
-        </p>
-        <p>{ar ? "افتح بريدك الإلكتروني واضغط على الرابط." : "Consultez votre boîte de réception et cliquez sur le lien."}</p>
+    <div className="auth-form auth-verify-flow" aria-busy={status === "sending"}>
+      <div className="form-success auth-verify-highlight-card" role="status">
+        <div className="auth-verify-icon-aura">
+          <Icon name="mail" size={26} />
+        </div>
+        <div className="auth-verify-body">
+          <strong className="auth-verify-heading">
+            {ar ? "تحقق من بريدك الإلكتروني" : "Vérifiez votre adresse e-mail"}
+          </strong>
+          <p className="auth-verify-subtext">
+            {ar ? "أرسلنا رابط تحقق إلى:" : "Nous avons envoyé un lien de vérification à :"}
+          </p>
+          <div className="auth-verify-email-pill">
+            <Icon name="shield" size={14} />
+            <strong className="masked-email">{maskEmail(email)}</strong>
+          </div>
+          <p className="auth-verify-action-hint">
+            {ar
+              ? "افتح بريدك الإلكتروني واضغط على الرابط لتأكيد هويتك والوصول إلى حسابك."
+              : "Consultez votre boîte de réception et cliquez sur le lien pour finaliser votre activation."}
+          </p>
+        </div>
       </div>
 
       <button
-        className="btn btn-primary btn-block"
+        className="btn btn-primary btn-block auth-submit-btn"
         type="button"
         onClick={resend}
         disabled={status === "sending" || cooldown > 0}
       >
-        {status === "sending"
-          ? (ar ? "جارٍ الإرسال..." : "Envoi...")
-          : status === "sent" && cooldown > 0
-            ? (ar ? "تم إرسال البريد الإلكتروني ✓" : "E-mail renvoyé ✓")
-            : (ar ? "إعادة إرسال البريد الإلكتروني" : "Renvoyer l’e-mail")}
+        {status === "sending" ? (
+          ar ? "جارٍ الإرسال..." : "Envoi en cours..."
+        ) : status === "sent" && cooldown > 0 ? (
+          ar ? "تم إرسال الرابط بنجاح ✓" : "Lien renvoyé avec succès ✓"
+        ) : cooldown > 0 ? (
+          ar ? `إعادة الإرسال متاحة (${cooldown} ث)` : `Renvoyer disponible (${cooldown} s)`
+        ) : (
+          <>
+            <span>{ar ? "إعادة إرسال البريد الإلكتروني" : "Renvoyer l’e-mail de confirmation"}</span>
+            <span aria-hidden="true">{ar ? " ←" : " →"}</span>
+          </>
+        )}
       </button>
-      {cooldown > 0 ? (
-        <small role="status">{ar ? `إعادة الإرسال متاحة خلال ${cooldown} ثانية` : `Renvoyer disponible dans ${cooldown} s`}</small>
-      ) : null}
-      {error ? <div className="form-error" role="alert">{error}</div> : null}
 
-      <div className="auth-help">
-        <p>{ar ? "لم تستلم شيئًا؟" : "Vous n’avez rien reçu ?"}</p>
-        <ul>
-          <li>{ar ? "تحقق من مجلد الرسائل غير المرغوب فيها." : "Vérifiez vos courriers indésirables."}</li>
-          <li>{ar ? "تأكد من صحة العنوان." : "Vérifiez que l’adresse est correcte."}</li>
-          <li>{ar ? "انتظر بضع لحظات." : "Attendez quelques instants."}</li>
+      {cooldown > 0 ? (
+        <div className="auth-cooldown-bar" role="status">
+          <div
+            className="auth-cooldown-progress"
+            style={{ width: `${(cooldown / RESEND_COOLDOWN_SECONDS) * 100}%` }}
+          />
+          <small>
+            {ar
+              ? `يمكنك طلب رابط جديد بعد ${cooldown} ثانية`
+              : `Nouvelle demande disponible dans ${cooldown} secondes`}
+          </small>
+        </div>
+      ) : null}
+
+      {error ? (
+        <div className="form-error" role="alert">
+          {error}
+        </div>
+      ) : null}
+
+      <div className="auth-help auth-verify-tips">
+        <p className="auth-verify-tips-title">{ar ? "لم تستلم الرسالة بعد؟" : "Vous n’avez rien reçu ?"}</p>
+        <ul className="auth-verify-tips-list">
+          <li>
+            <Icon name="clock" size={13} />
+            <span>{ar ? "تحقق من مجلد الرسائل غير المرغوب فيها (Spam)." : "Vérifiez vos courriers indésirables (Spam)."}</span>
+          </li>
+          <li>
+            <Icon name="check" size={13} />
+            <span>{ar ? "تأكد من صحة العنوان الإلكتروني المسجل أعلاه." : "Vérifiez l’exactitude de l’adresse ci-dessus."}</span>
+          </li>
+          <li>
+            <Icon name="shield" size={13} />
+            <span>{ar ? "قد يستغرق التسليم بضع دقائق بحسب مزود البريد." : "La réception peut prendre 1 à 2 minutes selon votre messagerie."}</span>
+          </li>
         </ul>
       </div>
 
-      <Link className="btn btn-secondary btn-block" href={`/${locale}/login`}>
+      <Link className="btn btn-secondary btn-block auth-secondary-btn" href={`/${locale}/login`}>
         {ar ? "استخدام حساب آخر" : "Utiliser un autre compte"}
       </Link>
     </div>

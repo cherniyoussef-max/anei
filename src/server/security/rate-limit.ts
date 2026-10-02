@@ -2,6 +2,7 @@ import "server-only";
 import crypto from "node:crypto";
 import { getRedis } from "@/server/cache/redis";
 import { env } from "@/server/env";
+import { logger } from "@/server/security/logger";
 
 type Bucket = { count: number; resetAt: number };
 const memoryBuckets = new Map<string, Bucket>();
@@ -39,12 +40,19 @@ export async function consumeRateLimit(
   key: string,
   limit: number,
   windowSeconds: number,
-  options?: { fallbackLimit?: number },
+  options?: { fallbackLimit?: number; failClosedOnOutage?: boolean },
 ) {
   const fallbackLimit = Math.min(Math.max(options?.fallbackLimit ?? limit, 1), limit);
   try {
     const client = await redisResolver();
-    if (!client) return memoryConsume(key, fallbackLimit, windowSeconds);
+    if (!client) {
+      if (options?.failClosedOnOutage) {
+        logger.warn("rate_limit.redis_outage_fail_closed", { key });
+        return { allowed: false, remaining: 0, retryAfterSeconds: windowSeconds };
+      }
+      logger.warn("rate_limit.redis_outage_fallback_memory", { key });
+      return memoryConsume(key, fallbackLimit, windowSeconds);
+    }
     const redisKey = `anei:rl:${key}`;
     const result = await client.sendCommand([
       "EVAL",
@@ -61,6 +69,11 @@ export async function consumeRateLimit(
       retryAfterSeconds: ttl > 0 ? ttl : windowSeconds,
     };
   } catch {
+    if (options?.failClosedOnOutage) {
+      logger.warn("rate_limit.redis_outage_fail_closed", { key });
+      return { allowed: false, remaining: 0, retryAfterSeconds: windowSeconds };
+    }
+    logger.warn("rate_limit.redis_outage_fallback_memory", { key });
     return memoryConsume(key, fallbackLimit, windowSeconds);
   }
 }

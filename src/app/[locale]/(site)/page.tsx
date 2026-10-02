@@ -1,9 +1,12 @@
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { AcademyHome } from "@/components/sections/AcademyHome";
 import { isLocale } from "@/lib/i18n";
 import { listHomeAvs, listHomeCourses, listHomeWebinars } from "@/server/queries/catalog";
 import { logger } from "@/server/security/logger";
+import { getSession } from "@/server/auth/session";
+import { publicDataOr } from "@/server/queries/public-fallback";
 import "./academy-home.css";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +36,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
+  const cookieStore = await cookies();
+  const hasPlayedIntro = cookieStore.has("anei_logo_played");
   const sources = ["courses", "webinars", "avs"] as const;
   const results = await Promise.allSettled([listHomeCourses(), listHomeWebinars(), listHomeAvs()]);
   const unavailable = results.flatMap((result, index) => (result.status === "rejected" ? [sources[index]] : []));
@@ -41,5 +46,17 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const courses = courseResult.status === "fulfilled" ? courseResult.value : [];
   const webinars = webinarResult.status === "fulfilled" ? webinarResult.value : [];
   const avsProfiles = avsResult.status === "fulfilled" ? avsResult.value : [];
-  return <AcademyHome locale={locale} courses={courses} webinars={webinars} avsProfiles={avsProfiles} />;
+  const session = await publicDataOr("home-session", getSession, null);
+  const initialUser = session?.user ? { id: session.user.id, role: session.user.role as string | undefined } : null;
+
+  return (
+    <AcademyHome
+      locale={locale}
+      courses={courses}
+      webinars={webinars}
+      avsProfiles={avsProfiles}
+      hasPlayedIntro={hasPlayedIntro}
+      initialUser={initialUser}
+    />
+  );
 }

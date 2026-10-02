@@ -1,0 +1,4 @@
+# Gitleaks ignore file
+# Design documentation ignore
+839f073f8350daebf3e81f93c3425ec9b9742106:docs/DESIGN_RESEARCH_V3_4.md:generic-api-key:33
+tests/security/logger-redaction.test.ts:generic-api-key:9

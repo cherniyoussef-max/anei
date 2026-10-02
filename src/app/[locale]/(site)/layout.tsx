@@ -6,6 +6,7 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import "./public-theme.css";
 import "./public-reference.css";
 import "./public-home.css";
+import "./about/about-page.css";
 
 export default async function SiteLayout({ children, params }: Readonly<{ children: React.ReactNode; params: Promise<{ locale: string }> }>) {
   const { locale } = await params;

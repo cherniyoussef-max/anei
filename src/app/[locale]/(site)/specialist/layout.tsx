@@ -24,6 +24,8 @@ export default async function SpecialistLayout({ children, params }: {
     base={`/${locale}/specialist`}
     items={[
       { href: `/${locale}/specialist`, icon: "LayoutDashboard", fr: "Vue d’ensemble", ar: "نظرة عامة" },
+      { href: `/${locale}/specialist/demandes`, icon: "Inbox", fr: "Demandes de suivi", ar: "طلبات المتابعة" },
+      { href: `/${locale}/specialist/messages`, icon: "MessageSquare", fr: "Messagerie", ar: "الرسائل" },
     ]}
   >{children}</PersonaShell>;
 }

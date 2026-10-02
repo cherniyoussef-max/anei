@@ -3,6 +3,7 @@ import { auth } from "@/server/auth";
 import { completeUserProfile } from "@/server/auth/profile";
 import { isTrustedMutation } from "@/server/security/origin";
 import { readLimitedJson } from "@/server/security/request-body";
+import { consumeRateLimit } from "@/server/security/rate-limit";
 import { getRequestId } from "@/server/auth/request-id";
 import { recordAuthEvent } from "@/server/auth/events";
 
@@ -10,6 +11,8 @@ export async function POST(request: Request) {
   if (!isTrustedMutation(request)) return NextResponse.json({ error: "UNTRUSTED_ORIGIN" }, { status: 403 });
   const session = await auth.api.getSession({ headers: request.headers, query: { disableCookieCache: true } });
   if (!session) return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
+  const rate = await consumeRateLimit(`profile-complete:${session.user.id}`, 10, 60);
+  if (!rate.allowed) return NextResponse.json({ error: "RATE_LIMITED" }, { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } });
 
   const body = await readLimitedJson(request).catch(() => null);
   const result = await completeUserProfile(session.user.id, body);

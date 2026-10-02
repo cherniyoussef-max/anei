@@ -1,0 +1,17 @@
+#!/bin/sh
+# Prevent committing credentials / API keys / secrets
+echo "Running pre-commit security check..."
+
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks protect --staged --verbose --gitleaks-ignore-path=.gitleaksignore
+  if [ $? -ne 0 ]; then
+    echo "ERROR: Gitleaks detected potential secret in staged changes! Commit aborted."
+    exit 1
+  fi
+elif command -v docker >/dev/null 2>&1; then
+  docker run --rm -v "$(pwd)":/repo zricethezav/gitleaks:latest protect --source=/repo --staged --gitleaks-ignore-path=/repo/.gitleaksignore
+  if [ $? -ne 0 ]; then
+    echo "ERROR: Gitleaks detected potential secret in staged changes! Commit aborted."
+    exit 1
+  fi
+fi

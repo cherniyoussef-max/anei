@@ -2,14 +2,14 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 const expected: Record<string, string> = {
-  next: "16.2.12",
+  next: "16.3.6",
   react: "19.2.8",
   "react-dom": "19.2.8",
-  sharp: "0.35.3",
+  sharp: "0.35.4",
   postcss: "8.5.26",
   "drizzle-kit": "0.31.10",
   eslint: "9.39.5",
-  "eslint-config-next": "16.2.12",
+  "eslint-config-next": "16.3.6",
 };
 
 type LockPackage = { version?: string };

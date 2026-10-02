@@ -48,6 +48,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false }, { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } });
   }
 
+  if (!whatsappAppSecret) {
+    logger.error("whatsapp.webhook_misconfigured_secret");
+    return NextResponse.json({ ok: false, error: "MISCONFIGURED" }, { status: 500 });
+  }
+
   const raw = await readLimitedRawBody(request, MAX_WEBHOOK_BODY_BYTES).catch(() => null);
   if (!raw) return NextResponse.json({ ok: false }, { status: 413 });
 

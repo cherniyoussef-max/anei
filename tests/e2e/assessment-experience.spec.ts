@@ -178,7 +178,7 @@ test.describe.serial("assessment experience", () => {
     await page.goto("/fr/admin/assessments");
     await expect(page.getByRole("heading", { name: "Évaluations & résultats" })).toBeVisible();
     await expect(page.getByText("Évaluation finale — Inclusion", { exact: true }).first()).toBeVisible();
-    await expect(page.getByText("Amal Mansouri", { exact: true })).toBeVisible();
+    await expect(page.getByText("Amal Mansouri", { exact: true }).first()).toBeVisible();
     await page.screenshot({ path: "/tmp/anei-assessment-results-fr-desktop.png", fullPage: true });
     await page.setViewportSize({ width: 375, height: 844 });
     await page.goto("/ar/admin/assessments");

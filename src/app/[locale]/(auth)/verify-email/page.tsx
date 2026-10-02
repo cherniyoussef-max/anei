@@ -3,6 +3,7 @@ import Link from "next/link";
 import { isLocale } from "@/lib/i18n";
 import { resolveOnboardingState, onboardingPathFor } from "@/server/auth/onboarding";
 import { VerifyEmailPendingForm } from "@/components/auth/VerifyEmailPendingForm";
+import { AuthShowcase } from "@/components/auth/AuthShowcase";
 
 export const dynamic = "force-dynamic";
 
@@ -21,31 +22,34 @@ export default async function VerifyEmailPage({
   const ar = locale === "ar";
 
   if (error && KNOWN_ERRORS.has(error)) {
+    const isExpired = error === "TOKEN_EXPIRED";
     return (
       <section className="auth-section">
         <div className="container auth-grid">
-          <div className="auth-intro">
-            <span className="eyebrow">{ar ? "التحقق" : "Vérification"}</span>
-          </div>
+          <AuthShowcase locale={locale} mode="register" stage="verify" />
           <div className="auth-card">
-            {error === "TOKEN_EXPIRED" ? (
-              <>
-                <h2>{ar ? "انتهت صلاحية رابط التحقق" : "Ce lien de vérification a expiré"}</h2>
-                {email ? (
-                  <VerifyEmailPendingForm locale={locale} email={email} />
-                ) : (
-                  <Link className="btn btn-primary btn-block" href={`/${locale}/login`}>
-                    {ar ? "العودة إلى تسجيل الدخول" : "Retour à la connexion"}
-                  </Link>
-                )}
-              </>
+            <div className="auth-card-header">
+              <div className="auth-card-badge">{ar ? "أمان الحساب" : "SÉCURITÉ DU COMPTE"}</div>
+              <h2>{isExpired ? (ar ? "انتهت صلاحية الرابط" : "Lien de vérification expiré") : (ar ? "رابط غير صالح" : "Lien non valide")}</h2>
+              <p>
+                {isExpired
+                  ? (ar
+                    ? "لحماية حسابك، تنتهي صلاحية روابط التحقق بعد فترة وجيزة. يرجى طلب رابط جديد للمتابعة."
+                    : "Pour garantir la sécurité de votre compte, les liens de vérification ont une durée limitée.")
+                  : (ar
+                    ? "هذا الرابط غير صالح أو تم استخدامه مسبقًا. يمكنك تسجيل الدخول للتحقق من حسابك."
+                    : "Ce lien est incorrect ou a déjà été utilisé. Connectez-vous pour vérifier votre statut.")}
+              </p>
+            </div>
+
+            {isExpired && email ? (
+              <VerifyEmailPendingForm locale={locale} email={email} />
             ) : (
-              <>
-                <h2>{ar ? "رابط التحقق غير صالح" : "Ce lien de vérification n’est pas valide"}</h2>
-                <Link className="btn btn-primary btn-block" href={`/${locale}/login`}>
+              <div className="auth-missing-token" style={{ padding: "8px 0" }}>
+                <Link className="btn btn-primary btn-block auth-submit-btn" href={`/${locale}/login`}>
                   {ar ? "العودة إلى تسجيل الدخول" : "Retour à la connexion"}
                 </Link>
-              </>
+              </div>
             )}
           </div>
         </div>
@@ -61,11 +65,17 @@ export default async function VerifyEmailPage({
   return (
     <section className="auth-section">
       <div className="container auth-grid">
-        <div className="auth-intro">
-          <span className="eyebrow">{ar ? "التحقق" : "Vérification"}</span>
-          <h1>{ar ? "تحقق من بريدك الإلكتروني للمتابعة" : "Vérifiez votre e-mail pour continuer"}</h1>
-        </div>
+        <AuthShowcase locale={locale} mode="register" stage="verify" />
         <div className="auth-card">
+          <div className="auth-card-header">
+            <div className="auth-card-badge">{ar ? "تأكيد الحساب" : "VÉRIFICATION DU COMPTE"}</div>
+            <h2>{ar ? "تحقق من بريدك الإلكتروني" : "Vérifiez votre boîte e-mail"}</h2>
+            <p>
+              {ar
+                ? "أرسلنا رابط تفعيل آمن لتأكيد هويتك وتمكين الوصول إلى منصة التربية الدامجة."
+                : "Un lien de confirmation sécurisé vous a été envoyé pour finaliser votre inscription."}
+            </p>
+          </div>
           <VerifyEmailPendingForm locale={locale} email={email} />
         </div>
       </div>

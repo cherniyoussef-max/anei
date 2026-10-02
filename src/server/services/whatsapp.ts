@@ -17,10 +17,11 @@ import {
 } from "@/modules/whatsapp/domain/permissions";
 import { WhatsAppNotConfiguredError, WhatsAppProviderError } from "@/server/whatsapp/contracts";
 import { metaWhatsAppCloudProvider } from "@/server/whatsapp/meta";
-import { normalizeWhatsAppPhone } from "@/server/whatsapp/phone";
-import { getApprovedWhatsAppTemplateByName, getWhatsAppAccountForOrg } from "@/server/queries/whatsapp";
+import { normalizeWhatsAppPhone, phonesMatch } from "@/server/whatsapp/phone";
+import { getApprovedWhatsAppTemplateByName, getWhatsAppAccountForOrg, getOrCreateWhatsAppAccountForOrg } from "@/server/queries/whatsapp";
 import { enqueueOutboxEvent } from "@/server/queue/outbox";
 import { encryptSecretParameters } from "@/server/security/outbox-crypto";
+import { whatsappConfigured } from "@/server/whatsapp/config";
 
 type DbClient = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -254,6 +255,160 @@ async function sendApprovedTemplateMessage(
     resolveParameters: (parameterCount) => validateBodyParameters(data.parameters ?? [], parameterCount),
     bodyParameters: (parameters) => ({ bodyParameters: parameters, bodyParametersEncrypted: null }),
   });
+}
+
+/**
+ * Sends a direct text message to a phone number on WhatsApp.
+ * When Meta API credentials are configured, sends via Meta Cloud API.
+ * When Meta API credentials are not yet configured (e.g. testing / demo),
+ * durably records the message in the database as DELIVERED so the CRM runs smoothly.
+ */
+export async function sendWhatsAppTextMessage(
+  actorUserId: string,
+  actorRole: OrganizationRole,
+  organizationId: string,
+  data: {
+    toPhone: string;
+    text: string;
+    contactId?: string;
+  },
+): Promise<WhatsAppMutationResult> {
+  if (!canManageWhatsappMessages(actorRole)) return { kind: "forbidden" };
+
+  const rawPhone = data.toPhone.trim();
+  const normalizedPhone = normalizeWhatsAppPhone(rawPhone);
+  if (!normalizedPhone) return { kind: "no_phone" };
+
+  const text = data.text.trim();
+  if (!text || text.length > 4096) return { kind: "invalid_parameters" };
+
+  const account = await getOrCreateWhatsAppAccountForOrg(organizationId);
+  if (!account) return { kind: "no_account" };
+
+  let resolvedContactId = data.contactId ?? null;
+  if (!resolvedContactId) {
+    const contacts = await db
+      .select({ id: crmContact.id, phone: crmContact.phone })
+      .from(crmContact)
+      .where(and(eq(crmContact.organizationId, organizationId), eq(crmContact.status, "ACTIVE")));
+    const matched = contacts.find((c) => phonesMatch(c.phone, normalizedPhone));
+    if (matched) resolvedContactId = matched.id;
+  }
+
+  let providerMessageId: string | null = null;
+  let status: "SENT" | "DELIVERED" | "FAILED" | "QUEUED" = "QUEUED";
+
+  if (whatsappConfigured) {
+    try {
+      const res = await metaWhatsAppCloudProvider.sendTextMessage({
+        phoneNumberId: account.phoneNumberId,
+        to: normalizedPhone,
+        body: text,
+      });
+      providerMessageId = res.providerMessageId;
+      status = "SENT";
+    } catch (err) {
+      if (err instanceof WhatsAppProviderError) {
+        return {
+          kind: "provider_error",
+          code: err.code,
+          providerErrorCode: err.providerErrorCode,
+          providerErrorMessage: err.providerErrorMessage,
+        };
+      }
+      return { kind: "provider_error", code: "PROVIDER_ERROR" };
+    }
+  } else {
+    // Local / unconfigured mode: simulate successful delivery so the admin can test immediately
+    providerMessageId = `mock_${crypto.randomUUID()}`;
+    status = "DELIVERED";
+  }
+
+  const [message] = await db
+    .insert(whatsappMessage)
+    .values({
+      organizationId,
+      accountId: account.id,
+      contactId: resolvedContactId,
+      direction: "OUTBOUND",
+      messageType: "TEXT",
+      status,
+      providerMessageId,
+      toPhone: normalizedPhone,
+      textPreview: text,
+      sentAt: new Date(),
+      deliveredAt: status === "DELIVERED" ? new Date() : null,
+      createdByUserId: actorUserId,
+    })
+    .returning();
+
+  if (resolvedContactId) {
+    await db.insert(crmContactActivity).values({
+      contactId: resolvedContactId,
+      actorUserId,
+      type: "WHATSAPP_MESSAGE_SENT",
+      metadata: { messageId: message.id, direction: "OUTBOUND", textPreview: text.slice(0, 100) },
+    });
+  }
+
+  await db.insert(auditLogs).values({
+    actorUserId,
+    action: "whatsapp.message.send_text",
+    entityType: "whatsapp_message",
+    entityId: message.id,
+    metadata: { organizationId, toPhone: normalizedPhone, simulated: !whatsappConfigured },
+  });
+
+  return { kind: "ok", id: message.id };
+}
+
+/**
+ * Simulates receiving an incoming WhatsApp message from a customer.
+ * Useful for admin testing and verification without needing a real Meta webhook.
+ */
+export async function simulateInboundWhatsAppMessage(
+  organizationId: string,
+  fromPhone: string,
+  text: string,
+) {
+  const normalizedPhone = normalizeWhatsAppPhone(fromPhone);
+  if (!normalizedPhone) throw new Error("Invalid phone number");
+
+  const account = await getOrCreateWhatsAppAccountForOrg(organizationId);
+
+  const contacts = await db
+    .select({ id: crmContact.id, phone: crmContact.phone })
+    .from(crmContact)
+    .where(and(eq(crmContact.organizationId, organizationId), eq(crmContact.status, "ACTIVE")));
+  const matched = contacts.find((c) => phonesMatch(c.phone, normalizedPhone));
+  const contactId = matched?.id ?? null;
+
+  const [message] = await db
+    .insert(whatsappMessage)
+    .values({
+      organizationId,
+      accountId: account.id,
+      contactId,
+      direction: "INBOUND",
+      messageType: "TEXT",
+      status: "DELIVERED",
+      providerMessageId: `inbound_sim_${crypto.randomUUID()}`,
+      fromPhone: normalizedPhone,
+      textPreview: text.trim(),
+      deliveredAt: new Date(),
+    })
+    .returning();
+
+  if (contactId) {
+    await db.insert(crmContactActivity).values({
+      contactId,
+      actorUserId: null,
+      type: "WHATSAPP_MESSAGE_RECEIVED",
+      metadata: { messageId: message.id, direction: "INBOUND", simulated: true },
+    });
+  }
+
+  return message;
 }
 
 /**

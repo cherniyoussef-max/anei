@@ -16,7 +16,7 @@ import {
   generateAuthOtp,
   hashAuthOtp,
 } from "@/server/security/auth-otp-crypto";
-import { sendMail } from "@/server/services/mailer";
+import { sendOtpEmail } from "@/server/services/mailer";
 import { enqueueSystemWhatsAppAuthOtp } from "@/server/services/whatsapp";
 import { consumeRateLimit } from "@/server/security/rate-limit";
 import { recordAuthEvent, type AuthChannel, type AuthPurpose } from "@/server/auth/events";
@@ -202,12 +202,12 @@ export async function requestOtp(input: {
 
   try {
     if (input.channel === "EMAIL") {
-      await sendMail({
-        to: destination,
-        subject: "ANEI verification code",
-        text: `Bonjour ${identity.name},\n\nVotre code de vérification ANEI est: ${code}\n\nExpire dans 5 minutes.`,
-        html: `<div><p>Bonjour ${identity.name},</p><p>Votre code de vérification ANEI est <strong>${code}</strong>.</p><p>Expire dans 5 minutes.</p></div>`,
-      }, "OTP");
+      await sendOtpEmail({
+        name: identity.name,
+        email: destination,
+        code,
+        locale: identity.locale === "ar" ? "ar" : "fr",
+      });
     } else {
       const organizationId = await resolvePreferredWhatsappOrganization(input.userId);
       if (!organizationId) throw new Error("missing_org_for_whatsapp_auth_otp");

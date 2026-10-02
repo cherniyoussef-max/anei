@@ -4,7 +4,7 @@
 ANEI is a bilingual professional learning platform for inclusive education. It must feel credible enough for institutions, human enough for educators and families, and focused enough for daily professional learning.
 
 ### Design principles
-1. **Human before ornamental** — use real-feeling documentary learning imagery where it adds context; never decorate with meaningless illustration.
+1. **Human before ornamental** — use 3D stylized characters (warm, respectful, adult-quality rendering, not childish), consistent across the site, never containing text, alongside authentic documentary learning imagery where it adds context; never decorate with cartoonish or meaningless illustration.
 2. **Editorial hierarchy** — typography, image crop, whitespace, and rhythm create premium perception before shadows or effects.
 3. **Learning-first** — every learner surface answers: what am I learning, where am I, and what should I do next?
 4. **Inclusive by default** — WCAG-oriented contrast, keyboard access, 44px targets, reduced motion, semantic states, and genuine RTL are mandatory.
@@ -13,20 +13,21 @@ ANEI is a bilingual professional learning platform for inclusive education. It m
 7. **No fake affordances or metrics** — every visible action and data point must map to real product behavior.
 
 ## 2. Visual direction
-**Human Editorial Institutional** = refined Swiss/editorial structure + documentary learning photography + accessible product UI + restrained enterprise density.
+**Human Editorial Institutional** = refined Swiss/editorial structure + 3D stylized characters & documentary learning photography + accessible product UI + restrained enterprise density.
 
-The memorable ANEI signature is: strong cobalt framing, warm documentary photography, compact uppercase eyebrows, editorial headlines, and precise operational surfaces.
+The memorable ANEI signature is: strong cobalt framing, warm documentary photography, 3D stylized characters (warm, respectful, adult-quality rendering, not childish), compact uppercase eyebrows, editorial headlines, and precise operational surfaces.
 
-Avoid child-oriented education styling, teal-led branding, amber global CTAs, glassmorphism, purple AI gradients, floating decorative orbs, huge radii, fake dashboards, emoji icons, and excessive motion.
+Avoid child-oriented education styling, cartoonish or childish UI (use 3D stylized characters: warm, respectful, adult-quality rendering, not childish, consistent across the site, never containing text), teal-led branding, amber global CTAs, glassmorphism, purple AI gradients, floating decorative orbs, huge radii, fake dashboards, emoji icons, and excessive motion.
 
-## 3. Photography system
-Photography is part of the product system, not filler.
-- Prefer authentic-looking professional learning moments: study, facilitation, collaboration, reflection, course participation.
+## 3. Photography and 3D character system
+Photography and 3D characters are part of the product system, not decorative filler.
+- **3D stylized characters:** Warm, respectful, adult-quality rendering (not childish), consistent across the site, never containing text, letters, or numbers (render screens and UI abstractly). Visual unity must match the established homepage educator aesthetic (Pixar-level adult stylization, soft studio rim lighting, royal navy `#0a3d70` dome backdrop, gold orbit accents).
+- **Documentary photography:** Prefer authentic-looking professional learning moments: study, facilitation, collaboration, reflection, course participation.
 - Do not visually assign generated faces to named real people, trainers, or AVS profiles.
-- Hero/editorial photos may depict anonymous learners or facilitators.
+- Hero/editorial imagery may depict anonymous learners, educators, or facilitators.
 - Crop for human focus and workspace context; keep overlays simple and readable.
 - Use local optimized WebP assets in production.
-- Photos never replace semantic information such as labels, trainer names, status, or progress.
+- Visuals never replace semantic information such as labels, trainer names, status, or progress.
 
 ## 4. Core color tokens
 - Primary cobalt: `#2559D6`
@@ -118,6 +119,8 @@ Validate at minimum: 375, 768, 1024, 1280, 1440+. No page-level horizontal scrol
 
 ## 17. Anti-patterns
 - Baloo / Comic Neue or childish typography
+- cartoonish or childish illustrations (allowed: 3D stylized characters: warm, respectful, adult-quality rendering, not childish, consistent across the site, never containing text)
+- text, letters, numbers, or fabricated brand names inside generated imagery or on device screens
 - generic SaaS bento-grid homepage
 - purple-blue AI gradients
 - glass cards and floating gradient blobs

@@ -4,6 +4,7 @@ import { mockGateway, verifyMockToken } from "@/server/payments/mock";
 import { markMockOrderPaid } from "@/server/services/checkout";
 import { env } from "@/server/env";
 import { isTrustedMutation } from "@/server/security/origin";
+import { consumeRateLimit, requestFingerprint } from "@/server/security/rate-limit";
 
 const schema = z.object({
   order: z.string().uuid(),
@@ -18,6 +19,8 @@ const schema = z.object({
 export async function POST(request: Request) {
   if (!mockGateway.isConfigured()) return new NextResponse("Not found", { status: 404 });
   if (!isTrustedMutation(request)) return NextResponse.json({ error: "UNTRUSTED_ORIGIN" }, { status: 403 });
+  const rate = await consumeRateLimit(`mock-payment-ip:${requestFingerprint(request)}`, 20, 60);
+  if (!rate.allowed) return NextResponse.json({ error: "RATE_LIMITED" }, { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } });
   const declaredLength = Number(request.headers.get("content-length") ?? "0");
   if (Number.isFinite(declaredLength) && declaredLength > 16 * 1024) return NextResponse.json({ error: "PAYLOAD_TOO_LARGE" }, { status: 413 });
 

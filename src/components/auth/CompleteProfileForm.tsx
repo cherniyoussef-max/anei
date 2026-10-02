@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import type { Locale } from "@/types";
-import { ERROR_MESSAGES, FIELD_STEP, STEP_META, type FormState, type Persona, type StepId } from "@/components/auth/onboarding/constants";
+import { ERROR_MESSAGES, FIELD_STEP, STEP_META, PERSONA_OPTIONS, type FormState, type Persona, type StepId } from "@/components/auth/onboarding/constants";
 import { normalizeTunisiaPhone } from "@/lib/tunisia/phone";
 import { PersonaStep } from "@/components/auth/onboarding/PersonaStep";
 import { IdentityStep, validateIdentityStep } from "@/components/auth/onboarding/IdentityStep";
@@ -11,6 +12,15 @@ import { ContactStep, validateContactStep } from "@/components/auth/onboarding/C
 import { SpecificStep, validateSpecificStep } from "@/components/auth/onboarding/SpecificStep";
 import { ReviewStep, validateReviewStep } from "@/components/auth/onboarding/ReviewStep";
 import { ConfirmationStep } from "@/components/auth/onboarding/ConfirmationStep";
+
+const PERSONA_FIGURINE: Record<string, string> = {
+  STUDENT: "/media/persona-student.webp",
+  PARENT: "/media/persona-parent.webp",
+  TEACHER: "/media/persona-teacher.webp",
+  AVS: "/media/persona-avs.webp",
+  SPECIALIST: "/media/persona-specialist.webp",
+  ORGANIZATION: "/media/persona-institution.webp",
+};
 
 export function CompleteProfileForm({
   locale,
@@ -64,11 +74,15 @@ export function CompleteProfileForm({
   const isStudent = data.requestedPersona === "STUDENT";
 
   const steps = useMemo<StepId[]>(() => {
-    const list: StepId[] = ["persona", "identity", "contact"];
+    const list: StepId[] = [];
+    if (!initialPersona) {
+      list.push("persona");
+    }
+    list.push("identity", "contact");
     if (!isParent) list.push("specific");
     list.push("review");
     return list;
-  }, [isParent]);
+  }, [initialPersona, isParent]);
 
   const stepIndex = Math.min(rawStepIndex, steps.length - 1);
 
@@ -241,6 +255,32 @@ export function CompleteProfileForm({
           goNext();
         }}
       >
+        {data.requestedPersona && (
+          <div className="onboarding-persona-badge-row">
+            <span className="onboarding-persona-pill">
+              {PERSONA_FIGURINE[data.requestedPersona] ? (
+                <span className="auth-selected-avatar">
+                  <Image
+                    src={PERSONA_FIGURINE[data.requestedPersona]}
+                    alt=""
+                    width={22}
+                    height={22}
+                    className="rounded-full object-cover"
+                  />
+                </span>
+              ) : (
+                <span className="pill-dot" />
+              )}
+              <span>
+                {ar ? "صفتك المختارة:" : "Profil sélectionné :"}{" "}
+                <strong>
+                  {PERSONA_OPTIONS.find((p) => p.value === data.requestedPersona)?.[ar ? "ar" : "fr"] ?? data.requestedPersona}
+                </strong>
+              </span>
+            </span>
+          </div>
+        )}
+
         <div className="wizard-step-head">
           <strong>{ar ? meta.eyebrowAr : meta.eyebrowFr}</strong>
           <h2 tabIndex={-1} ref={headingRef}>

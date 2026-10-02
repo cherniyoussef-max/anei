@@ -14,21 +14,52 @@ export function parseAdminPeriod(value?: string): AdminPeriod {
 type DashboardRedisClient = Awaited<ReturnType<typeof getRedis>>;
 let redisResolver: () => Promise<DashboardRedisClient> = getRedis;
 
+interface MemoryCacheEntry<T> {
+  data: T;
+  expiresAt: number;
+}
+
+const memoryCache = new Map<string, MemoryCacheEntry<unknown>>();
+const MEMORY_CACHE_TTL_MS = 60_000;
+
+function pruneMemoryCache() {
+  const now = Date.now();
+  for (const [key, entry] of memoryCache.entries()) {
+    if (entry.expiresAt <= now) {
+      memoryCache.delete(key);
+    }
+  }
+}
+
+export function clearAdminDashboardMemoryCacheForTests() {
+  memoryCache.clear();
+}
+
 /** Test-only seam, matching the pattern in src/server/security/rate-limit.ts. */
 export function setAdminDashboardRedisResolverForTests(resolver: (() => Promise<DashboardRedisClient>) | null) {
   redisResolver = resolver ?? getRedis;
+  memoryCache.clear();
 }
 
 /**
  * Cache-aside helper for the dashboard overview queries, matching the
- * pattern in admin-users.ts. These are heavy multi-subquery aggregations
- * hit on every /admin landing-page load; 60s TTL keeps the dashboard close
- * to real-time while avoiding a full re-aggregation on every request.
- * Redis is non-authoritative: a connection failure, get/set failure, or a
+ * pattern in admin-users.ts. Multi-tier L1 (memory) + L2 (Redis) caching:
+ * sub-millisecond in-process hits with Redis fallback across instances.
+ * 60s TTL keeps the dashboard close to real-time while avoiding repeated
+ * multi-subquery DB aggregations.
+ * Cache is non-authoritative: a connection failure, get/set failure, or a
  * corrupted cache value must all degrade to a direct DB read, not fail
  * the request.
  */
 async function withDashboardCache<T>(cacheKey: string, compute: () => Promise<T>): Promise<T> {
+  const now = Date.now();
+  if (redisResolver === getRedis) {
+    const mem = memoryCache.get(cacheKey);
+    if (mem && mem.expiresAt > now) {
+      return mem.data as T;
+    }
+  }
+
   const redis = await redisResolver().catch((error) => {
     logger.error("admin.dashboard_cache_unavailable", { cacheKey, error: String(error) });
     return null;
@@ -37,7 +68,10 @@ async function withDashboardCache<T>(cacheKey: string, compute: () => Promise<T>
     const cached = await redis.get(cacheKey).catch(() => null);
     if (cached) {
       try {
-        return JSON.parse(cached) as T;
+        const parsed = JSON.parse(cached) as T;
+        if (memoryCache.size > 200) pruneMemoryCache();
+        memoryCache.set(cacheKey, { data: parsed, expiresAt: now + MEMORY_CACHE_TTL_MS });
+        return parsed;
       } catch (error) {
         // JSON.parse's SyntaxError message can embed a snippet of the malformed
         // input, so only the error name is logged — never String(error) or the
@@ -47,6 +81,8 @@ async function withDashboardCache<T>(cacheKey: string, compute: () => Promise<T>
     }
   }
   const value = await compute();
+  if (memoryCache.size > 200) pruneMemoryCache();
+  memoryCache.set(cacheKey, { data: value, expiresAt: now + MEMORY_CACHE_TTL_MS });
   if (redis) await redis.set(cacheKey, JSON.stringify(value), { EX: 60 }).catch(() => undefined);
   return value;
 }

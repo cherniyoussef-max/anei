@@ -21,6 +21,8 @@ async function filesUnder(dir: string): Promise<string[]> {
   return result;
 }
 
+import { auditAllRoutes } from "./audit-route-handlers";
+
 async function main() {
   const files = (await Promise.all(roots.map(filesUnder))).flat();
   const findings: string[] = [];
@@ -34,12 +36,22 @@ async function main() {
     // sql.raw is allowed only with a local security justification comment.
     if (/sql\.raw\s*\(/.test(content) && !/SECURITY:\s*sql\.raw/i.test(content)) findings.push(`unreviewed sql.raw: ${file}`);
   }
+
+  const routeAudit = await auditAllRoutes();
+  if (routeAudit.gaps.length) {
+    for (const gap of routeAudit.gaps) {
+      for (const issue of gap.issues) {
+        findings.push(`route audit gap (${issue}): ${gap.file}`);
+      }
+    }
+  }
+
   if (findings.length) {
     console.error("Security audit failed:\n" + findings.map((item) => ` - ${item}`).join("\n"));
     process.exitCode = 1;
     return;
   }
-  console.log(`Security audit passed across ${files.length} source files.`);
+  console.log(`Security audit passed across ${files.length} source files and ${routeAudit.total} mutating routes.`);
 }
 
 main().catch((error) => {

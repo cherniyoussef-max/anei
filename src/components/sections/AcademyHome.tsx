@@ -2,7 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Locale } from "@/types";
 import { Icon } from "@/components/ui/Icon";
+import { AneiLogoAnimated } from "@/components/brand/AneiLogoAnimated";
 import { ContactForm } from "@/components/interactive/ContactForm";
+import { HeroCtaActions } from "@/components/sections/HeroCtaActions";
 import { courses as courseTranslations, webinars as webinarTranslations, avsProfiles as avsTranslations } from "@/lib/data";
 import { formatDate, formatMillimes } from "@/lib/i18n";
 import type { listHomeAvs, listHomeCourses, listHomeWebinars } from "@/server/queries/catalog";
@@ -57,15 +59,11 @@ const heroCopy = {
     fr: "Simplifiez la communication entre parents, enseignants et administrateurs grâce à une solution moderne, fiable et technologique.",
     ar: "بسّط التواصل بين الأولياء والمدرسين والإداريين عبر حل حديث وموثوق وتقني.",
   },
-  primary: { en: "Request a Demo", fr: "Demander une démo", ar: "اطلب عرضًا تجريبيًا" },
-  secondary: { en: "Explore the Platform", fr: "Explorer la plateforme", ar: "استكشف المنصة" },
   avatarAlt: {
     en: "Illustrated ANEI learning guide welcoming visitors",
     fr: "Guide pédagogique illustrée d’ANEI accueillant les visiteurs",
     ar: "مرشدة تعليمية مصوّرة من ANEI ترحّب بالزوار",
   },
-  sceneBadgePrimary: { en: "Accessible & inclusive", fr: "Accessible & inclusif", ar: "متاح ودامج" },
-  sceneBadgeSecondary: { en: "Modern learning", fr: "Gestion moderne", ar: "تعلّم حديث" },
 };
 
 const avsCopy = {
@@ -145,11 +143,20 @@ const contactCopy = {
   },
 };
 
-export function AcademyHome({ locale, courses, webinars, avsProfiles }: {
+export function AcademyHome({
+  locale,
+  courses,
+  webinars,
+  avsProfiles,
+  hasPlayedIntro = false,
+  initialUser,
+}: {
   locale: Locale;
   courses: CourseRow[];
   webinars: WebinarRow[];
   avsProfiles: AvsRow[];
+  hasPlayedIntro?: boolean;
+  initialUser?: { id: string; role?: string } | null;
 }) {
   const nextWebinar = webinars[0];
   const featuredCourses = courses.slice(0, 2);
@@ -159,18 +166,13 @@ export function AcademyHome({ locale, courses, webinars, avsProfiles }: {
         <div className="ah-container">
           <div className="ah-hero-grid">
             <div className="ah-hero-copy">
+              <div className="ah-hero-logo-intro w-[260px] sm:w-[320px] md:w-[360px] mb-1">
+                <AneiLogoAnimated locale={locale} priority hasPlayedIntro={hasPlayedIntro} />
+              </div>
               <h1 className="ah-hero-title">{tx(locale, heroCopy.title)}</h1>
               <p className="ah-hero-lead">{tx(locale, heroCopy.lead)}</p>
               <p className="ah-hero-sub">{tx(locale, heroCopy.sub)}</p>
-              <div className="ah-hero-actions">
-                <Link href={`/${locale}/contact`} className="ah-btn">
-                  {tx(locale, heroCopy.primary)}
-                  <Icon name="arrow" size={16} />
-                </Link>
-                <Link href={`/${locale}/formations`} className="ah-btn">
-                  {tx(locale, heroCopy.secondary)}
-                </Link>
-              </div>
+              <HeroCtaActions locale={locale} initialUser={initialUser} />
             </div>
 
             <div className="ah-visual-col">
@@ -197,14 +199,6 @@ export function AcademyHome({ locale, courses, webinars, avsProfiles }: {
                   <span className="ah-hero-phone" aria-hidden="true">
                     <Image src="/media/academy-home-phone.webp" alt="" width={512} height={1024} sizes="(max-width: 767px) 18vw, 118px" />
                   </span>
-                </span>
-                <span className="ah-hero-badge is-primary" aria-hidden="true">
-                  <Icon name="check" size={14} />
-                  {tx(locale, heroCopy.sceneBadgePrimary)}
-                </span>
-                <span className="ah-hero-badge is-secondary" aria-hidden="true">
-                  <Icon name="graduation" size={14} />
-                  {tx(locale, heroCopy.sceneBadgeSecondary)}
                 </span>
               </figure>
             </div>

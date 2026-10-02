@@ -3,7 +3,7 @@ import { z } from "zod";
 import { auth } from "@/server/auth";
 import { isTrustedMutation } from "@/server/security/origin";
 import { readLimitedJson } from "@/server/security/request-body";
-import { requestFingerprint } from "@/server/security/rate-limit";
+import { consumeRateLimit, requestFingerprint } from "@/server/security/rate-limit";
 import { requestOtp } from "@/server/auth/otp";
 import { getRequestId } from "@/server/auth/request-id";
 
@@ -13,6 +13,8 @@ export async function POST(request: Request) {
   if (!isTrustedMutation(request)) return NextResponse.json({ error: "UNTRUSTED_ORIGIN" }, { status: 403 });
   const session = await auth.api.getSession({ headers: request.headers, query: { disableCookieCache: true } });
   if (!session) return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
+  const rate = await consumeRateLimit(`assurance-send-otp:${session.user.id}`, 10, 60);
+  if (!rate.allowed) return NextResponse.json({ error: "RATE_LIMITED" }, { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } });
 
   const parsed = schema.safeParse(await readLimitedJson(request).catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "INVALID_INPUT" }, { status: 400 });

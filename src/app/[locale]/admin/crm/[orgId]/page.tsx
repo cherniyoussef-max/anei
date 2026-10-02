@@ -14,11 +14,16 @@ function value(query: Record<string, string | string[] | undefined>, key: string
   return typeof query[key] === "string" ? (query[key] as string) : undefined;
 }
 
+import AdminWhatsAppCRMPage from "@/app/[locale]/admin/crm/whatsapp/page";
+
 export default async function AdminCrmContactsPage({ params, searchParams }: {
   params: Promise<{ locale: string; orgId: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { locale, orgId } = await params;
+  if (orgId === "whatsapp") {
+    return AdminWhatsAppCRMPage({ params: Promise.resolve({ locale }) });
+  }
   if (!isLocale(locale) || !z.string().uuid().safeParse(orgId).success) notFound();
   await requireAdminPermission(locale, "crm.read");
   const ar = locale === "ar";

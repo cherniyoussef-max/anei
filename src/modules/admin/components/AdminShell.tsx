@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
+import { AneiLogo } from "@/components/brand/AneiLogo";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Icon, type IconName } from "@/components/ui/Icon";
@@ -16,18 +16,30 @@ export function AdminShell({ children, locale, user }: {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [prevPathname, setPrevPathname] = useState(pathname);
+
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
+    setIsNavigating(false);
+  }
+
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
-    Pilotage: true, Apprentissage: true, Gestion: true, Commerce: true, "Opérations": true,
+    Pilotage: true, Apprentissage: true, Commerce: true, "Opérations": true,
   });
   const closeRef = useRef<HTMLButtonElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const ar = locale === "ar";
   const base = `/${locale}/admin`;
+
   const groups: NavGroup[] = [
     { fr: "Pilotage", ar: "القيادة", items: [
       { href: base, icon: "chart", fr: "Vue d’ensemble", ar: "نظرة عامة" },
       { href: `${base}/users`, icon: "users", fr: "Utilisateurs", ar: "المستخدمون" },
       { href: `${base}/crm`, icon: "users", fr: "CRM", ar: "إدارة العملاء" },
+      { href: `${base}/crm/whatsapp`, icon: "phone", fr: "WhatsApp CRM", ar: "واتساب CRM" },
+      { href: `${base}/crm/instagram`, icon: "instagram", fr: "Instagram CRM", ar: "إنستغرام CRM" },
+      { href: `${base}/crm/messenger`, icon: "messenger", fr: "Messenger CRM", ar: "ماسنجر CRM" },
     ]},
     { fr: "Apprentissage", ar: "التعلّم", items: [
       { href: `${base}/courses`, icon: "book", fr: "Formations", ar: "الدورات" },
@@ -40,17 +52,17 @@ export function AdminShell({ children, locale, user }: {
       { href: `${base}/resources`, icon: "download", fr: "Bibliothèque", ar: "المكتبة" },
       { href: `${base}/rewards`, icon: "award", fr: "Boutique de récompenses", ar: "متجر المكافآت" },
     ]},
-    { fr: "Gestion", ar: "الإدارة", items: [
-      { href: `${base}/organizations`, icon: "map", fr: "Organisations", ar: "المؤسسات" },
-    ]},
     { fr: "Commerce", ar: "التجارة", items: [
       { href: `${base}/orders`, icon: "book", fr: "Commandes", ar: "الطلبات" },
       { href: `${base}/payments`, icon: "shield", fr: "Paiements", ar: "المدفوعات" },
     ]},
     { fr: "Opérations", ar: "العمليات", items: [
+      { href: `${base}/avs`, icon: "award", fr: "Annuaire & RDV AVS", ar: "دليل ومواعيد المرافقين" },
+      { href: `${base}/care`, icon: "users", fr: "Suivis spécialistes", ar: "متابعات المختصين" },
       { href: `${base}/audit`, icon: "shield", fr: "Journal d’audit", ar: "سجل التدقيق" },
       { href: `${base}/system`, icon: "spark", fr: "Système", ar: "النظام" },
     ]},
+
   ];
   const activeHref = groups.flatMap((group) => group.items).filter((item) => item.href === base ? pathname === base : pathname === item.href || pathname.startsWith(`${item.href}/`)).sort((a, b) => b.href.length - a.href.length)[0]?.href;
   const activeGroup = groups.find((group) => group.items.some((item) => item.href === activeHref));
@@ -77,22 +89,23 @@ export function AdminShell({ children, locale, user }: {
       <div className="admin-nav-group-items" hidden={!collapsed && openGroups[group.fr] === false}>{group.items.map((item) => {
         const active = item.href === activeHref;
         const label = ar ? item.ar : item.fr;
-        return <Link href={item.href} key={item.href} className={active ? "active" : ""} aria-current={active ? "page" : undefined}
-          title={collapsed ? label : undefined} onClick={() => setMobileOpen(false)}>
+        return <Link href={item.href} key={item.href} prefetch={true} className={active ? "active" : ""} aria-current={active ? "page" : undefined}
+          title={collapsed ? label : undefined} onClick={() => { setMobileOpen(false); if (pathname !== item.href) setIsNavigating(true); }}>
           <Icon name={item.icon} size={19}/><span>{label}</span>
         </Link>;
       })}</div>
     </div>)}
   </nav>;
   return <div className={`admin-app ${collapsed ? "is-collapsed" : ""}`}>
+    {isNavigating ? <div className="admin-nav-progress-bar" role="progressbar" aria-label="Navigation" /> : null}
     <aside className="admin-app-sidebar">
-      <div className="admin-app-brand"><span className="admin-brand-mark"><Image src="/media/academy-home-seal.webp" width={300} height={301} alt="" priority/></span><div><strong>ANEI</strong><small>{ar ? "وحدة تحكم الإدارة" : "Console d’administration"}</small></div></div>
+      <div className="admin-app-brand"><span className="admin-brand-mark"><AneiLogo locale={locale} variant="mark" height={26} priority /></span><div><strong>ANEI</strong><small>{ar ? "وحدة تحكم الإدارة" : "Console d’administration"}</small></div></div>
       {nav}
       <div className="admin-app-profile"><span>{user.name.slice(0, 2).toUpperCase()}</span><div><strong>{user.name}</strong><small className="admin-role-badge">{user.role}</small></div></div>
     </aside>
     {mobileOpen ? <button className="admin-drawer-backdrop" aria-label={ar ? "إغلاق القائمة" : "Fermer le menu"} onClick={() => setMobileOpen(false)}/> : null}
     <aside className={`admin-mobile-drawer ${mobileOpen ? "open" : ""}`} aria-hidden={!mobileOpen} role="dialog" aria-modal="true" aria-label={ar ? "قائمة الإدارة" : "Menu d’administration"}>
-      <div className="admin-app-brand"><span className="admin-brand-mark"><Image src="/media/academy-home-seal.webp" width={300} height={301} alt=""/></span><div><strong>ANEI</strong><small>{ar ? "وحدة تحكم الإدارة" : "Console d’administration"}</small></div>
+      <div className="admin-app-brand"><span className="admin-brand-mark"><AneiLogo locale={locale} variant="mark" height={26} /></span><div><strong>ANEI</strong><small>{ar ? "وحدة تحكم الإدارة" : "Console d’administration"}</small></div>
         <button ref={closeRef} className="admin-icon-button" onClick={() => setMobileOpen(false)} aria-label={ar ? "إغلاق" : "Fermer"}><Icon name="close"/></button>
       </div>{nav}
     </aside>
@@ -106,12 +119,20 @@ export function AdminShell({ children, locale, user }: {
           aria-label={ar ? "فتح القائمة" : "Ouvrir le menu"}><Icon name="menu"/></button>
         <div className="admin-topbar-context">
           <nav className="admin-breadcrumbs" aria-label={ar ? "مسار التنقل" : "Fil d’Ariane"}>
-            <Link href={base}>{ar ? "الإدارة" : "Administration"}</Link>
+            <Link href={base} prefetch={true}>{ar ? "الإدارة" : "Administration"}</Link>
             {activeGroup ? <><Icon className="admin-directional-icon" name="chevron" size={12}/><span>{ar ? activeGroup.ar : activeGroup.fr}</span></> : null}
           </nav>
           <strong>{activeItem ? (ar ? activeItem.ar : activeItem.fr) : (ar ? "وحدة تحكم الإدارة" : "Console d’administration")}</strong>
         </div>
-        <Link className="admin-locale-link" href={`/${ar ? "fr" : "ar"}${pathname.replace(/^\/(fr|ar)/, "")}`} hrefLang={ar ? "fr" : "ar"}>{ar ? "FR" : "العربية"}</Link>
+        <div className="admin-topbar-actions">
+          <Link className="admin-exit-link" href={`/${locale}`} prefetch={true} title={ar ? "العودة إلى المنصة" : "Retour à la plateforme"}>
+            <Icon name="globe" size={15}/>
+            <span>{ar ? "المنصة" : "Plateforme"}</span>
+          </Link>
+          <Link className="admin-locale-link" href={`/${ar ? "fr" : "ar"}${pathname.replace(/^\/(fr|ar)/, "")}`} hrefLang={ar ? "fr" : "ar"}>
+            {ar ? "FR" : "العربية"}
+          </Link>
+        </div>
       </header>
       <main className="admin-app-content" id="main-content" tabIndex={-1}>{children}</main>
     </div>

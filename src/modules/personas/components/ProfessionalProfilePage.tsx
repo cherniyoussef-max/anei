@@ -21,6 +21,7 @@ export function ProfessionalProfilePage({
   professionalTitle,
   professionalFacts,
   hasCredential,
+  children,
 }: {
   locale: Locale;
   roleLabel: string;
@@ -34,6 +35,7 @@ export function ProfessionalProfilePage({
   professionalTitle: string;
   professionalFacts: ProfessionalProfileFact[];
   hasCredential: boolean;
+  children?: React.ReactNode;
 }) {
   const ar = locale === "ar";
   const facts = professionalFacts.filter((fact) => fact.value !== null && fact.value !== undefined && fact.value !== "");
@@ -69,6 +71,8 @@ export function ProfessionalProfilePage({
       </div>
       {facts.length ? <dl className="professional-fact-list">{facts.map((fact) => <div key={fact.label}><dt>{fact.label}</dt><dd dir={fact.direction}>{fact.value}</dd></div>)}</dl> : <div className="professional-empty-state"><UserCheck size={22} strokeWidth={1.75}/><div><strong>{ar ? "لا توجد تفاصيل مهنية إضافية" : "Aucun détail professionnel supplémentaire"}</strong><p>{ar ? "بيانات الهوية والاتصال محفوظة، ولا توجد حقول إضافية مطلوبة لهذا الملف." : "L’identité et les coordonnées sont enregistrées ; aucun autre champ n’est requis pour ce profil."}</p></div></div>}
     </section>
+
+    {children}
 
     <AccountSecurityPanel locale={locale} name={name} email={email} phoneNumber={phoneNumber} phoneVerifiedAt={phoneVerifiedAt} hasCredential={hasCredential} showIdentityAndContact={false}/>
   </div>;

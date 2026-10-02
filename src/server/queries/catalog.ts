@@ -3,6 +3,7 @@ import { db } from "@/server/db";
 import { avsProfiles, courseModules, courses, lessons, resources, webinars } from "@/server/db/schema";
 import { env } from "@/server/env";
 import { signedMediaUrl } from "@/server/storage";
+import { getRedis } from "@/server/cache/redis";
 
 const DEFAULT_PAGE_SIZE = 12;
 const MAX_PAGE_SIZE = 48;
@@ -50,6 +51,42 @@ export type CourseSearchInput = {
   pageSize?: number;
 };
 
+let cachedCategories: { data: string[]; expiresAt: number } | null = null;
+export async function getPublicCourseCategories(): Promise<string[]> {
+  const now = Date.now();
+  if (cachedCategories && cachedCategories.expiresAt > now) {
+    return cachedCategories.data;
+  }
+  try {
+    const redis = await getRedis();
+    if (redis) {
+      const cached = await redis.get("cache:catalog:categories");
+      if (cached) {
+        const parsed = JSON.parse(cached) as string[];
+        cachedCategories = { data: parsed, expiresAt: now + 60_000 };
+        return parsed;
+      }
+    }
+  } catch {
+    // Non-blocking cache lookup failure
+  }
+
+  const rows = await db.selectDistinct({ value: courses.category }).from(courses).where(publicCourseFilter).orderBy(asc(courses.category));
+  const result = rows.map((row) => row.value).filter(Boolean);
+  cachedCategories = { data: result, expiresAt: now + 60_000 };
+
+  try {
+    const redis = await getRedis();
+    if (redis) {
+      await redis.set("cache:catalog:categories", JSON.stringify(result), { EX: 180 });
+    }
+  } catch {
+    // Non-blocking cache write failure
+  }
+
+  return result;
+}
+
 export async function searchPublishedCourses(input: CourseSearchInput = {}) {
   const { page, pageSize, offset } = pageBounds(input.page, input.pageSize);
   const q = normalizedQuery(input.q);
@@ -91,9 +128,9 @@ export async function searchPublishedCourses(input: CourseSearchInput = {}) {
   const [[{ value: total }], items, categories] = await Promise.all([
     db.select({ value: count() }).from(courses).where(where),
     db.select().from(courses).where(where).orderBy(...order).limit(pageSize).offset(offset),
-    db.selectDistinct({ value: courses.category }).from(courses).where(publicCourseFilter).orderBy(asc(courses.category)),
+    getPublicCourseCategories(),
   ]);
-  return { items, total, page, pageSize, totalPages: Math.max(1, Math.ceil(total / pageSize)), categories: categories.map((row) => row.value) };
+  return { items, total, page, pageSize, totalPages: Math.max(1, Math.ceil(total / pageSize)), categories };
 }
 
 export async function listPublishedCourses() {
@@ -225,15 +262,73 @@ export async function listResourcesAdminPage(input: { q?: string; page?: number 
 }
 
 export async function listPublishedWebinars() {
-  return db.select().from(webinars).where(eq(webinars.published, true)).orderBy(asc(webinars.startsAt)).limit(100);
+  return db
+    .select({
+      id: webinars.id,
+      slug: webinars.slug,
+      titleFr: webinars.titleFr,
+      titleAr: webinars.titleAr,
+      descriptionFr: webinars.descriptionFr,
+      descriptionAr: webinars.descriptionAr,
+      trainerName: webinars.trainerName,
+      startsAt: webinars.startsAt,
+      durationMinutes: webinars.durationMinutes,
+      meetingProvider: webinars.meetingProvider,
+      targetAudience: webinars.targetAudience,
+      maxParticipants: webinars.maxParticipants,
+      formFields: webinars.formFields,
+      requireApproval: webinars.requireApproval,
+      published: webinars.published,
+      hasReplay: sql<boolean>`(${webinars.replayUrl} IS NOT NULL AND ${webinars.replayUrl} != '')`,
+    })
+    .from(webinars)
+    .where(eq(webinars.published, true))
+    .orderBy(asc(webinars.startsAt))
+    .limit(100);
+}
+
+export async function getWebinarBySlug(slug: string) {
+  const [row] = await db
+    .select({
+      id: webinars.id,
+      slug: webinars.slug,
+      titleFr: webinars.titleFr,
+      titleAr: webinars.titleAr,
+      descriptionFr: webinars.descriptionFr,
+      descriptionAr: webinars.descriptionAr,
+      trainerName: webinars.trainerName,
+      startsAt: webinars.startsAt,
+      durationMinutes: webinars.durationMinutes,
+      meetingProvider: webinars.meetingProvider,
+      location: webinars.location,
+      targetAudience: webinars.targetAudience,
+      maxParticipants: webinars.maxParticipants,
+      formFields: webinars.formFields,
+      requireApproval: webinars.requireApproval,
+      published: webinars.published,
+      hasReplay: sql<boolean>`(${webinars.replayUrl} IS NOT NULL AND ${webinars.replayUrl} != '')`,
+    })
+    .from(webinars)
+    .where(and(eq(webinars.slug, slug), eq(webinars.published, true)))
+    .limit(1);
+  return row ?? null;
 }
 
 /** Homepage renders only the next 2 webinars, so this skips the description columns and the 100-row bound. */
 export async function listHomeWebinars() {
-  return db.select({
-    id: webinars.id, titleFr: webinars.titleFr, titleAr: webinars.titleAr, trainerName: webinars.trainerName,
-    startsAt: webinars.startsAt, replayUrl: webinars.replayUrl,
-  }).from(webinars).where(eq(webinars.published, true)).orderBy(asc(webinars.startsAt)).limit(2);
+  return db
+    .select({
+      id: webinars.id,
+      titleFr: webinars.titleFr,
+      titleAr: webinars.titleAr,
+      trainerName: webinars.trainerName,
+      startsAt: webinars.startsAt,
+      hasReplay: sql<boolean>`(${webinars.replayUrl} IS NOT NULL AND ${webinars.replayUrl} != '')`,
+    })
+    .from(webinars)
+    .where(eq(webinars.published, true))
+    .orderBy(asc(webinars.startsAt))
+    .limit(2);
 }
 
 const ADMIN_WEBINAR_PAGE_SIZE = 25;
@@ -250,7 +345,70 @@ export async function listWebinarsAdminPage(input: { q?: string; page?: number }
   return { items, total, page, pageSize, totalPages: Math.max(1, Math.ceil(total / pageSize)) };
 }
 
-export type AvsSearchInput = { q?: string; city?: string; certified?: boolean; page?: number; pageSize?: number };
+export type AvsSearchInput = {
+  q?: string;
+  city?: string;
+  governorate?: string;
+  specialty?: string;
+  availability?: string;
+  certified?: boolean;
+  page?: number;
+  pageSize?: number;
+};
+
+let cachedAvsCities: { data: string[]; expiresAt: number } | null = null;
+export async function getVisibleAvsCities(): Promise<string[]> {
+  const now = Date.now();
+  if (cachedAvsCities && cachedAvsCities.expiresAt > now) {
+    return cachedAvsCities.data;
+  }
+  try {
+    const redis = await getRedis();
+    if (redis) {
+      const cached = await redis.get("cache:catalog:avs_cities");
+      if (cached) {
+        const parsed = JSON.parse(cached) as string[];
+        cachedAvsCities = { data: parsed, expiresAt: now + 60_000 };
+        return parsed;
+      }
+    }
+  } catch {
+    // Non-blocking cache lookup failure
+  }
+
+  const cityRows = await db.select({ fr: avsProfiles.cityFr, ar: avsProfiles.cityAr }).from(avsProfiles).where(eq(avsProfiles.visible, true));
+  const result = Array.from(new Set(cityRows.flatMap((row) => [row.fr, row.ar]).filter(Boolean) as string[])).sort();
+  cachedAvsCities = { data: result, expiresAt: now + 60_000 };
+
+  try {
+    const redis = await getRedis();
+    if (redis) {
+      await redis.set("cache:catalog:avs_cities", JSON.stringify(result), { EX: 180 });
+    }
+  } catch {
+    // Non-blocking cache write failure
+  }
+
+  return result;
+}
+
+export async function getVisibleAvsGovernorates(): Promise<Array<{ fr: string; ar: string }>> {
+  const rows = await db
+    .selectDistinct({ fr: avsProfiles.governorateFr, ar: avsProfiles.governorateAr })
+    .from(avsProfiles)
+    .where(eq(avsProfiles.visible, true))
+    .orderBy(asc(avsProfiles.governorateFr));
+  return rows;
+}
+
+export async function getVisibleAvsSpecialties(): Promise<Array<{ fr: string; ar: string }>> {
+  const rows = await db
+    .selectDistinct({ fr: avsProfiles.specialtyFr, ar: avsProfiles.specialtyAr })
+    .from(avsProfiles)
+    .where(eq(avsProfiles.visible, true))
+    .orderBy(asc(avsProfiles.specialtyFr));
+  return rows;
+}
 
 export async function searchVisibleAvs(input: AvsSearchInput = {}) {
   const { page, pageSize, offset } = pageBounds(input.page, input.pageSize);
@@ -260,23 +418,72 @@ export async function searchVisibleAvs(input: AvsSearchInput = {}) {
     const pattern = `%${q}%`;
     filters.push(or(
       ilike(avsProfiles.displayName, pattern),
-      ilike(avsProfiles.cityFr, pattern), ilike(avsProfiles.cityAr, pattern),
-      ilike(avsProfiles.specialtyFr, pattern), ilike(avsProfiles.specialtyAr, pattern),
+      ilike(avsProfiles.cityFr, pattern),
+      ilike(avsProfiles.cityAr, pattern),
+      ilike(avsProfiles.governorateFr, pattern),
+      ilike(avsProfiles.governorateAr, pattern),
+      ilike(avsProfiles.specialtyFr, pattern),
+      ilike(avsProfiles.specialtyAr, pattern),
+      ilike(avsProfiles.bioFr, pattern),
+      ilike(avsProfiles.bioAr, pattern),
     )!);
+  }
+  if (input.governorate) {
+    const gov = input.governorate.slice(0, 100);
+    filters.push(or(eq(avsProfiles.governorateFr, gov), eq(avsProfiles.governorateAr, gov))!);
   }
   if (input.city) {
     const city = input.city.slice(0, 100);
-    filters.push(or(eq(avsProfiles.cityFr, city), eq(avsProfiles.cityAr, city))!);
+    filters.push(or(ilike(avsProfiles.cityFr, `%${city}%`), ilike(avsProfiles.cityAr, `%${city}%`))!);
+  }
+  if (input.specialty) {
+    const spec = input.specialty.slice(0, 100);
+    filters.push(or(
+      ilike(avsProfiles.specialtyFr, `%${spec}%`),
+      ilike(avsProfiles.specialtyAr, `%${spec}%`),
+      sql`${avsProfiles.interventionDomains}::text ILIKE ${'%' + spec + '%'}`
+    )!);
+  }
+  if (input.availability) {
+    const avail = input.availability.slice(0, 100);
+    filters.push(or(
+      ilike(avsProfiles.availabilityFr, `%${avail}%`),
+      ilike(avsProfiles.availabilityAr, `%${avail}%`)
+    )!);
   }
   if (input.certified) filters.push(eq(avsProfiles.certified, true));
   const where = and(...filters)!;
-  const [[{ value: total }], items, cityRows] = await Promise.all([
+  const [[{ value: total }], items, cities, governorates, specialties] = await Promise.all([
     db.select({ value: count() }).from(avsProfiles).where(where),
-    db.select().from(avsProfiles).where(where).orderBy(desc(avsProfiles.certified), asc(avsProfiles.displayName)).limit(pageSize).offset(offset),
-    db.select({ fr: avsProfiles.cityFr, ar: avsProfiles.cityAr }).from(avsProfiles).where(eq(avsProfiles.visible, true)),
+    db.select().from(avsProfiles).where(where).orderBy(desc(avsProfiles.certified), desc(avsProfiles.rating), asc(avsProfiles.displayName)).limit(pageSize).offset(offset),
+    getVisibleAvsCities(),
+    getVisibleAvsGovernorates(),
+    getVisibleAvsSpecialties(),
   ]);
-  const cities = Array.from(new Set(cityRows.flatMap((row) => [row.fr, row.ar]).filter(Boolean))).sort();
-  return { items, total, page, pageSize, totalPages: Math.max(1, Math.ceil(total / pageSize)), cities };
+  return {
+    items,
+    total,
+    page,
+    pageSize,
+    totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    cities,
+    governorates,
+    specialties,
+  };
+}
+
+export async function getAvsByIdOrSlug(idOrSlug: string) {
+  const [profile] = await db
+    .select()
+    .from(avsProfiles)
+    .where(
+      and(
+        eq(avsProfiles.visible, true),
+        or(eq(avsProfiles.id, idOrSlug), eq(avsProfiles.slug, idOrSlug))
+      )
+    )
+    .limit(1);
+  return profile ?? null;
 }
 
 export async function listVisibleAvs() {

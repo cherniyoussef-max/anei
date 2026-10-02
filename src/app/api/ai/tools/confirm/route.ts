@@ -2,6 +2,7 @@ import { getFreshSession } from "@/server/auth/session";
 import { getToolRegistry } from "@/server/tools/registry";
 import { isTrustedMutation } from "@/server/security/origin";
 import { readLimitedJson } from "@/server/security/request";
+import { consumeRateLimit } from "@/server/security/rate-limit";
 import { env } from "@/server/env";
 
 interface ConfirmRequest {
@@ -30,6 +31,14 @@ export async function POST(request: Request): Promise<Response> {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const rate = await consumeRateLimit(`ai-tools-confirm:${session.user.id}`, 20, 60);
+  if (!rate.allowed) {
+    return new Response(JSON.stringify({ error: "RATE_LIMITED" }), {
+      status: 429,
+      headers: { "Content-Type": "application/json", "Retry-After": String(rate.retryAfterSeconds) },
     });
   }
 

@@ -13,7 +13,12 @@ const PHONE_RE = /^[+]?[0-9]{6,15}$/;
  */
 export function normalizeWhatsAppPhone(input: string | null | undefined): string | null {
   if (!input) return null;
-  const digits = input.replace(/[^0-9]/g, "");
+  let digits = input.replace(/[^0-9]/g, "");
+  // Tunisian local numbers are 8 digits — auto-prepend country code 216
+  // (ensuring it does not already start with 216 or have an international + prefix)
+  if (digits.length === 8 && !digits.startsWith("216") && !input.includes("+")) {
+    digits = `216${digits}`;
+  }
   if (!PHONE_RE.test(digits)) return null;
   // A plausible international number needs at least a country code (>= 8 digits
   // after stripping a leading 0) — guard against obviously local-only values.

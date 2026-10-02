@@ -108,7 +108,36 @@ export default async function ParentPortalPage({ params }: { params: Promise<{ l
           </PersonaPanel>
         </div>
 
-        <div className="lg:col-span-5">
+        <div className="lg:col-span-5 space-y-6">
+          <PersonaPanel
+            title={ar ? "فريق المتابعة والتأهيل" : "Accompagnement & spécialistes"}
+            action={
+              <Link className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#082D55] hover:text-[#a9752f]" href={`/${locale}/parent/specialistes`}>
+                {ar ? "دليل الأخصائيين" : "Annuaire"}<ArrowRight size={13} strokeWidth={1.75} className="rtl:rotate-180" />
+              </Link>
+            }
+          >
+            <p className="text-xs text-[#7a7261] leading-relaxed">
+              {ar
+                ? "تواصل مع أخصائيي النطق، العلاج الحركي، والتربية الخاصة المعتمدين لمتابعة تطور طفلك."
+                : "Consultez l'annuaire des professionnels certifiés ANEI, échangez via la messagerie sécurisée et suivez les comptes-rendus de séances."}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link
+                href={`/${locale}/parent/specialistes`}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#082D55] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#061F3D] transition shadow-xs"
+              >
+                <span>{ar ? "البحث عن مختص" : "Trouver un spécialiste"}</span>
+              </Link>
+              <Link
+                href={`/${locale}/parent/messages`}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[#E7E0D3] bg-white px-3.5 py-2 text-xs font-semibold text-[#082D55] hover:bg-[#F6F1E7] transition"
+              >
+                <span>{ar ? "الرسائل" : "Messagerie"}</span>
+              </Link>
+            </div>
+          </PersonaPanel>
+
           <PersonaPanel title={ar ? "بحاجة إلى مساعدة؟" : "Besoin d'aide ?"}>
             <p className="text-sm text-[#7a7261]">
               {ar

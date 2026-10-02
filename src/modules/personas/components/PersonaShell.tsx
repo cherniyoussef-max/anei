@@ -1,9 +1,10 @@
-import Image from "next/image";
 import Link from "next/link";
+import { AneiLogo } from "@/components/brand/AneiLogo";
 import { Globe } from "lucide-react";
 import type { Locale } from "@/types";
 import { StudentSignOutButton } from "@/components/student/StudentSignOutButton";
 import { PersonaNavigation, type PersonaNavItem } from "@/modules/personas/components/PersonaNavigation";
+import { CareNotificationCenter } from "@/components/care/CareNotificationCenter";
 
 export function PersonaShell({ children, locale, roleLabel, user, items, profileHref, base }: {
   children: React.ReactNode;
@@ -25,13 +26,18 @@ export function PersonaShell({ children, locale, roleLabel, user, items, profile
         className="hidden md:fixed md:inset-y-0 md:start-0 md:z-30 md:flex md:w-72 md:flex-col bg-gradient-to-b from-[#082D55] to-[#061F3D]"
         aria-label={roleLabel}
       >
-        <Link className="flex h-16 items-center gap-3 border-b border-white/10 px-6" href={items[0]?.href ?? `/${locale}`}>
-          <Image className="h-9 w-9 flex-none object-contain" src="/media/academy-home-seal.webp" alt="" width={300} height={301} priority sizes="36px" />
-          <span className="flex flex-col leading-tight">
-            <strong className="text-sm font-bold uppercase tracking-wider text-white">ANEI</strong>
-            <small className="text-xs font-medium text-white/50">{roleLabel}</small>
-          </span>
-        </Link>
+        <div className="flex h-16 items-center justify-between border-b border-white/10 px-4">
+          <Link className="flex items-center gap-2.5 min-w-0" href={items[0]?.href ?? `/${locale}`}>
+            <span className="inline-flex items-center justify-center bg-white p-1 rounded-lg shadow-sm flex-none">
+              <AneiLogo locale={locale} variant="mark" height={22} priority />
+            </span>
+            <span className="flex flex-col leading-tight truncate">
+              <strong className="text-sm font-bold uppercase tracking-wider text-white">ANEI</strong>
+              <small className="text-[11px] font-medium text-white/50 truncate">{roleLabel}</small>
+            </span>
+          </Link>
+          <CareNotificationCenter locale={locale} preferencesHref={profileHref} variant="dark" />
+        </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           <PersonaNavigation locale={locale} items={items} base={base} variant="desktop" />
@@ -59,14 +65,17 @@ export function PersonaShell({ children, locale, roleLabel, user, items, profile
       </aside>
 
       <div className="flex min-h-screen flex-1 flex-col md:ms-72">
-        <div className="flex h-16 items-center gap-3 border-b border-[#E7E0D3] bg-[#FCFBF8] px-4 md:hidden">
+        <div className="flex h-16 items-center justify-between border-b border-[#E7E0D3] bg-[#FCFBF8] px-4 md:hidden">
           <Link className="flex items-center gap-2" href={items[0]?.href ?? `/${locale}`} aria-label={`ANEI, ${roleLabel}`}>
-            <Image className="h-9 w-9 object-contain" src="/media/academy-home-seal.webp" alt="" width={300} height={301} sizes="36px" />
+            <AneiLogo locale={locale} variant="mark" height={32} />
             <span className="flex flex-col leading-tight">
               <strong className="font-bold tracking-wide text-[#082D55]">ANEI</strong>
               <small className="text-[11px] font-medium text-[#7a7261]">{roleLabel}</small>
             </span>
           </Link>
+          <div className="flex items-center gap-2">
+            <CareNotificationCenter locale={locale} preferencesHref={profileHref} variant="light" />
+          </div>
         </div>
 
         <div className="flex-1 px-4 py-6 md:px-8 md:py-8">{children}</div>

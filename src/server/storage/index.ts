@@ -88,7 +88,7 @@ export function validateUpload(input: { contentType: string; contentLength: numb
  * content-length range bounded by the server-selected maximum.
  */
 export async function signedUploadUrl(input: {
-  category: "resource" | "course" | "avatar" | "certificate";
+  category: "resource" | "course" | "avatar" | "certificate" | "care";
   contentType: string;
   contentLength: number;
 }) {

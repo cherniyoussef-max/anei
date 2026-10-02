@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { auth } from "../src/server/auth";
 import { db, pool } from "../src/server/db";
 import { avsProfiles as avsSeed, courses as courseSeed, newsItems as newsSeed, resources as resourceSeed, webinars as webinarSeed } from "../src/lib/data";
-import { account, avsProfiles, certificates, courseModules, courses, enrollments, lessonProgress, lessons, newsPosts, notifications, orders, purchases, resources, user, userProfile, webinarRegistrations, webinars } from "../src/server/db/schema";
+import { account, avsBookingRequests, avsProfiles, certificates, courseModules, courses, enrollments, lessonProgress, lessons, newsPosts, notifications, orders, personaMembership, purchases, resources, user, userProfile, webinarRegistrations, webinars } from "../src/server/db/schema";
 
 if (process.env.NODE_ENV === "production") {
   throw new Error("Refusing demo seed in production. Use scripts/create-super-admin.ts for initial privileged access.");
@@ -37,10 +37,14 @@ async function main(){
   console.log("Seeding ANEI...");
   const admin=await upsertUser({name:"Admin ANEI",email:"admin@anei.local",password:"DemoAdmin!!2026",role:"SUPER_ADMIN",profileType:"institution"});
   const learner=await upsertUser({name:"Amal Mansouri",email:"learner@anei.local",password:"DemoLearner!2026",role:"USER",profileType:"teacher"});
+  const avsUser=await upsertUser({name:"Salma Karray",email:"avs@anei.local",password:"DemoAvs!2026Tunisie",role:"USER",profileType:"avs"});
+  const parentUser=await upsertUser({name:"Sonia Ben Salem",email:"parent@anei.local",password:"DemoParent!!2026",role:"USER",profileType:"parent"});
   const profileNow = new Date();
   for (const profile of [
     { userId: admin.id, firstName: "Admin", lastName: "ANEI", phoneNumber: "+21620000001", requestedPersona: "ORGANIZATION" },
     { userId: learner.id, firstName: "Amal", lastName: "Mansouri", phoneNumber: "+21620000002", requestedPersona: "STUDENT" },
+    { userId: avsUser.id, firstName: "Salma", lastName: "Karray", phoneNumber: "+21698123456", requestedPersona: "AVS" },
+    { userId: parentUser.id, firstName: "Sonia", lastName: "Ben Salem", phoneNumber: "+21650111222", requestedPersona: "PARENT" },
   ] as const) {
     await db.insert(userProfile).values({
       ...profile,
@@ -57,6 +61,10 @@ async function main(){
       updatedAt: profileNow,
     }).onConflictDoUpdate({ target: userProfile.userId, set: { onboardingCompletedAt: profileNow, updatedAt: profileNow } });
   }
+
+  await db.insert(personaMembership).values({ userId: avsUser.id, persona: "AVS", status: "ACTIVE", isPrimary: true }).onConflictDoUpdate({ target: [personaMembership.userId, personaMembership.persona], set: { status: "ACTIVE", isPrimary: true } });
+  await db.insert(personaMembership).values({ userId: parentUser.id, persona: "PARENT", status: "ACTIVE", isPrimary: true }).onConflictDoUpdate({ target: [personaMembership.userId, personaMembership.persona], set: { status: "ACTIVE", isPrimary: true } });
+
 
   const courseRows=[];
   for(const [index,item] of courseSeed.slice(0, 2).entries()){
@@ -91,7 +99,73 @@ async function main(){
     const [row]=await db.insert(webinars).values(values).onConflictDoUpdate({target:webinars.slug,set:values}).returning();webinarRows.push(row);
   }
 
-  for(const item of avsSeed){const [found]=await db.select().from(avsProfiles).where(eq(avsProfiles.displayName,item.name)).limit(1);if(!found)await db.insert(avsProfiles).values({displayName:item.name,cityFr:item.city.fr,cityAr:item.city.ar,specialtyFr:item.specialty.fr,specialtyAr:item.specialty.ar,availabilityFr:item.availability.fr,availabilityAr:item.availability.ar,bioFr:"Professionnel formé aux pratiques d’accompagnement inclusif.",bioAr:"مختص مكوّن في ممارسات المرافقة الدامجة.",certified:item.certified,visible:true})}
+  let salmaProfileId: string | null = null;
+  for(const item of avsSeed){
+    const slug = item.slug ?? item.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    const values = {
+      displayName: item.name,
+      slug,
+      userId: item.name === "Salma Karray" ? avsUser.id : null,
+      cityFr: item.city.fr,
+      cityAr: item.city.ar,
+      governorateFr: item.governorate?.fr ?? "Tunis",
+      governorateAr: item.governorate?.ar ?? "تونس",
+      specialtyFr: item.specialty.fr,
+      specialtyAr: item.specialty.ar,
+      availabilityFr: item.availability.fr,
+      availabilityAr: item.availability.ar,
+      interventionDomains: item.interventionDomains ?? ["Accompagnement scolaire général"],
+      pedagogicalMethods: item.pedagogicalMethods ?? ["Guidance personnalisée"],
+      schoolsCoveredFr: item.schoolsCovered?.fr ?? "Écoles primaires et collèges partenaires",
+      schoolsCoveredAr: item.schoolsCovered?.ar ?? "المدارس الابتدائية والإعدادية الشريكة",
+      hourlyRateMillimes: (item.hourlyRateTnd ?? 25) * 1000,
+      experienceYears: item.experienceYears ?? 4,
+      rating: item.rating ?? 48,
+      reviewCount: item.reviewCount ?? 15,
+      phone: item.phone ?? "+216 71 000 000",
+      email: item.email ?? "contact@anei.tn",
+      addressFr: `${item.city.fr}, Tunisie`,
+      addressAr: `${item.city.ar}، تونس`,
+      bioFr: item.bio?.fr ?? "Professionnel certifié formé aux pratiques d’accompagnement inclusif.",
+      bioAr: item.bio?.ar ?? "مختص مكوّن في ممارسات المرافقة الدامجة والتربية المختصة.",
+      certified: item.certified,
+      visible: true,
+      updatedAt: new Date(),
+    };
+    const [found] = await db.select().from(avsProfiles).where(eq(avsProfiles.displayName, item.name)).limit(1);
+    let profId: string;
+    if (!found) {
+      const [inserted] = await db.insert(avsProfiles).values(values).returning();
+      profId = inserted.id;
+    } else {
+      const [updated] = await db.update(avsProfiles).set(values).where(eq(avsProfiles.id, found.id)).returning();
+      profId = updated.id;
+    }
+    if (item.name === "Salma Karray") salmaProfileId = profId;
+  }
+
+  if (salmaProfileId) {
+    const existingReq = await db.select().from(avsBookingRequests).where(eq(avsBookingRequests.avsProfileId, salmaProfileId)).limit(1);
+    if (!existingReq.length) {
+      await db.insert(avsBookingRequests).values({
+        avsProfileId: salmaProfileId,
+        parentUserId: parentUser.id,
+        parentName: "Sonia Ben Salem",
+        parentEmail: "parent@anei.local",
+        parentPhone: "+216 50 111 222",
+        childName: "Youssef Ben Salem",
+        childAge: 7,
+        schoolName: "École Primaire Mutuelleville",
+        needDescription: "Recherche d'un accompagnement en classe (CP) pour un enfant avec troubles du spectre de l'autisme (TSA). Besoin de soutien sur la communication et la structuration des activités.",
+        interventionDomain: "Autisme (TSA)",
+        requestedDate: "2026-10-15",
+        requestedTimeSlot: "10:00 - 11:00",
+        meetingType: "IN_PERSON",
+        status: "PENDING",
+        notes: "Premier entretien de cadrage avec la famille et l'équipe pédagogique.",
+      });
+    }
+  }
 
   for(const item of newsSeed){const slug=`actualite-${item.id}`;const values={slug,tagFr:item.tag.fr,tagAr:item.tag.ar,titleFr:item.title.fr,titleAr:item.title.ar,excerptFr:item.excerpt.fr,excerptAr:item.excerpt.ar,contentFr:`${item.excerpt.fr}\n\nCette actualité de démonstration est administrable depuis le back-office ANEI. Remplacez ce contenu par le texte éditorial validé avant publication.`,contentAr:`${item.excerpt.ar}\n\nيمكن إدارة هذا الخبر التجريبي من لوحة تحكم ANEI. استبدل هذا المحتوى بالنص التحريري المعتمد قبل النشر.`,published:true,publishedAt:new Date(`${item.date}T09:00:00+01:00`)};await db.insert(newsPosts).values(values).onConflictDoUpdate({target:newsPosts.slug,set:{...values,updatedAt:new Date()}})}
 

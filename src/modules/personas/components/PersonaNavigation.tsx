@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Contact, UserCheck } from "lucide-react";
+import { LayoutDashboard, Users, Contact, UserCheck, Inbox, MessageSquare } from "lucide-react";
 import type { Locale } from "@/types";
 
 // Server Component layouts build the nav item list, but a lucide icon is a
 // function reference — React cannot serialize that across the server/client
 // boundary into this "use client" component. Items carry a name instead,
 // resolved to the actual icon component only here, entirely client-side.
-const PERSONA_ICONS = { LayoutDashboard, Users, Contact, UserCheck };
+const PERSONA_ICONS = { LayoutDashboard, Users, Contact, UserCheck, Inbox, MessageSquare };
 export type PersonaIconName = keyof typeof PERSONA_ICONS;
 export type PersonaNavItem = { href: string; icon: PersonaIconName; fr: string; ar: string };
 

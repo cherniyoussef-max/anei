@@ -124,10 +124,10 @@ export const auth = betterAuth({
     max: 120,
     storage: "database",
     customRules: {
-      "/sign-in/email": { window: 60, max: 8 },
-      "/sign-in/social": { window: 60, max: 10 },
-      "/sign-up/email": { window: 60, max: 5 },
-      "/request-password-reset": { window: 300, max: 5 },
+      "/sign-in/email": { window: 60, max: isLocalProductionSmoke ? 100 : 8 },
+      "/sign-in/social": { window: 60, max: isLocalProductionSmoke ? 100 : 10 },
+      "/sign-up/email": { window: 60, max: isLocalProductionSmoke ? 100 : 5 },
+      "/request-password-reset": { window: 300, max: isLocalProductionSmoke ? 50 : 5 },
     },
   },
   advanced: {

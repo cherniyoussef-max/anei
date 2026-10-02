@@ -15,6 +15,7 @@ import {
   vector,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import type { WebinarFormField } from "@/lib/webinars";
 
 const now = () => new Date();
 const id = () => crypto.randomUUID();
@@ -909,7 +910,15 @@ export const webinars = pgTable(
     trainerName: text("trainer_name").notNull(),
     startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
     durationMinutes: integer("duration_minutes").notNull().default(60),
+    meetingProvider: text("meeting_provider").notNull().default("google_meet"),
+    location: text("location"),
     meetingUrl: text("meeting_url"),
+    meetingId: text("meeting_id"),
+    meetingPasscode: text("meeting_passcode"),
+    targetAudience: text("target_audience").default("ALL"),
+    maxParticipants: integer("max_participants").default(250),
+    formFields: jsonb("form_fields").$type<WebinarFormField[]>().default([]),
+    requireApproval: boolean("require_approval").notNull().default(true),
     replayUrl: text("replay_url"),
     published: boolean("published").notNull().default(true),
   },
@@ -928,11 +937,28 @@ export const webinarRegistrations = pgTable(
       .notNull()
       .references(() => webinars.id, { onDelete: "cascade" }),
     userId: text("user_id")
-      .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+    guestName: text("guest_name"),
+    guestEmail: text("guest_email"),
+    guestPhone: text("guest_phone"),
+    answers: jsonb("answers").$type<Record<string, string>>().default({}),
+    status: text("status").notNull().default("PENDING_APPROVAL"),
+    joinToken: text("join_token"),
+    accessCode: text("access_code"),
+    accessCodeVersion: integer("access_code_version").notNull().default(2),
+    joinedAt: timestamp("joined_at", { withTimezone: true }),
     registeredAt: timestamp("registered_at", { withTimezone: true }).notNull().$defaultFn(now),
   },
-  (table) => [uniqueIndex("webinar_registration_unique").on(table.webinarId, table.userId)],
+  (table) => [
+    uniqueIndex("webinar_registration_unique").on(table.webinarId, table.userId),
+    uniqueIndex("webinar_registration_join_token_unique").on(table.joinToken),
+    uniqueIndex("webinar_registration_access_code_unique").on(table.accessCode),
+    uniqueIndex("webinar_registration_guest_unique").on(table.webinarId, table.guestEmail),
+    check(
+      "webinar_registrations_status_check",
+      sql`${table.status} in ('REGISTERED', 'PENDING_APPROVAL', 'ACCEPTED', 'REJECTED', 'ATTENDED', 'CANCELLED')`,
+    ),
+  ],
 );
 
 export const avsProfiles = pgTable(
@@ -941,23 +967,81 @@ export const avsProfiles = pgTable(
     id: text("id").primaryKey().$defaultFn(id),
     userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
     displayName: text("display_name").notNull(),
+    slug: text("slug"),
     cityFr: text("city_fr").notNull(),
     cityAr: text("city_ar").notNull(),
+    governorateFr: text("governorate_fr").notNull().default("Tunis"),
+    governorateAr: text("governorate_ar").notNull().default("تونس"),
     specialtyFr: text("specialty_fr").notNull(),
     specialtyAr: text("specialty_ar").notNull(),
+    interventionDomains: text("intervention_domains").array(),
+    pedagogicalMethods: text("pedagogical_methods").array(),
+    schoolsCoveredFr: text("schools_covered_fr").notNull().default(""),
+    schoolsCoveredAr: text("schools_covered_ar").notNull().default(""),
+    hourlyRateMillimes: integer("hourly_rate_millimes").notNull().default(25000),
+    experienceYears: integer("experience_years").notNull().default(3),
     availabilityFr: text("availability_fr").notNull(),
     availabilityAr: text("availability_ar").notNull(),
+    phone: text("phone"),
+    email: text("email"),
+    addressFr: text("address_fr").notNull().default(""),
+    addressAr: text("address_ar").notNull().default(""),
+    rating: integer("rating").notNull().default(49),
+    reviewCount: integer("review_count").notNull().default(12),
     bioFr: text("bio_fr").notNull().default(""),
     bioAr: text("bio_ar").notNull().default(""),
     certified: boolean("certified").notNull().default(false),
     visible: boolean("visible").notNull().default(true),
     image: text("image"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
   },
   (table) => [
     index("avs_city_idx").on(table.cityFr),
+    index("avs_governorate_idx").on(table.governorateFr),
+    uniqueIndex("avs_slug_unique").on(table.slug),
     index("avs_certified_idx").on(table.certified),
     index("avs_visible_certified_idx").on(table.visible, table.certified),
+  ],
+);
+
+export const avsBookingRequests = pgTable(
+  "avs_booking_requests",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    avsProfileId: text("avs_profile_id")
+      .notNull()
+      .references(() => avsProfiles.id, { onDelete: "cascade" }),
+    parentUserId: text("parent_user_id").references(() => user.id, { onDelete: "set null" }),
+    parentName: text("parent_name").notNull(),
+    parentEmail: text("parent_email").notNull(),
+    parentPhone: text("parent_phone").notNull(),
+    childName: text("child_name").notNull(),
+    childAge: integer("child_age"),
+    schoolName: text("school_name"),
+    needDescription: text("need_description").notNull(),
+    interventionDomain: text("intervention_domain"),
+    requestedDate: date("requested_date").notNull(),
+    requestedTimeSlot: text("requested_time_slot").notNull(),
+    meetingType: text("meeting_type").notNull().default("IN_PERSON"),
+    status: text("status").notNull().default("PENDING"),
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("avs_booking_profile_idx").on(table.avsProfileId),
+    index("avs_booking_parent_idx").on(table.parentUserId),
+    index("avs_booking_status_idx").on(table.status),
+    index("avs_booking_date_idx").on(table.requestedDate),
+    check(
+      "avs_booking_status_check",
+      sql`${table.status} in ('PENDING', 'CONFIRMED', 'DECLINED', 'COMPLETED')`,
+    ),
+    check(
+      "avs_booking_type_check",
+      sql`${table.meetingType} in ('IN_PERSON', 'ONLINE', 'HOME')`,
+    ),
   ],
 );
 
@@ -1146,17 +1230,229 @@ export const specialistStudentAssignment = pgTable(
     createdBy: text("created_by")
       .notNull()
       .references(() => user.id, { onDelete: "restrict" }),
+    requestedByUserId: text("requested_by_user_id").references(() => user.id, { onDelete: "restrict" }),
+    requestMessage: text("request_message"),
+    declineReason: text("decline_reason"),
+    consentAcceptedAt: timestamp("consent_accepted_at", { withTimezone: true }),
+    consentVersion: text("consent_version"),
+    endedByUserId: text("ended_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    endReason: text("end_reason"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
   },
   (table) => [
     uniqueIndex("specialist_student_assignment_active_unique")
       .on(table.specialistUserId, table.studentUserId)
-      .where(sql`${table.status} = 'ACTIVE'`),
+      .where(sql`${table.status} in ('PENDING', 'ACTIVE')`),
     index("specialist_student_assignment_specialist_idx").on(table.specialistUserId, table.status),
     index("specialist_student_assignment_student_idx").on(table.studentUserId),
+    index("specialist_student_assignment_requested_by_idx").on(table.requestedByUserId),
     check("specialist_student_assignment_self_check", sql`${table.specialistUserId} != ${table.studentUserId}`),
-    check("specialist_student_assignment_status_check", sql`${table.status} in ('ACTIVE','ENDED')`),
+    check("specialist_student_assignment_status_check", sql`${table.status} in ('PENDING','ACTIVE','DECLINED','ENDED')`),
+  ],
+);
+
+// Care conversation: 1:1 conversation anchored to an ACTIVE care relationship (specialistStudentAssignment).
+// Status transitions to READ_ONLY when the care relationship is ENDED.
+export const careConversation = pgTable(
+  "care_conversation",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    specialistUserId: text("specialist_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    studentUserId: text("student_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    careRelationshipId: text("care_relationship_id")
+      .notNull()
+      .references(() => specialistStudentAssignment.id, { onDelete: "restrict" }),
+    status: text("status").notNull().default("OPEN"),
+    lastMessageAt: timestamp("last_message_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("care_conversation_relationship_unique").on(table.careRelationshipId),
+    index("care_conversation_student_idx").on(table.studentUserId),
+    index("care_conversation_specialist_idx").on(table.specialistUserId, table.status),
+    check("care_conversation_status_check", sql`${table.status} in ('OPEN', 'READ_ONLY')`),
+  ],
+);
+
+// Participants in a care conversation: the specialist and the student's active linked parents.
+export const careConversationParticipant = pgTable(
+  "care_conversation_participant",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    conversationId: text("conversation_id")
+      .notNull()
+      .references(() => careConversation.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    role: text("role").notNull(),
+    lastReadAt: timestamp("last_read_at", { withTimezone: true }),
+    mutedAt: timestamp("muted_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("care_conversation_participant_unique").on(table.conversationId, table.userId),
+    index("care_conversation_participant_user_idx").on(table.userId),
+    check("care_conversation_participant_role_check", sql`${table.role} in ('SPECIALIST', 'PARENT')`),
+  ],
+);
+
+// Individual message within a careConversation.
+// Stored as plain text (max 4,000 chars), with check constraints on status and length.
+export const careMessage = pgTable(
+  "care_message",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    conversationId: text("conversation_id")
+      .notNull()
+      .references(() => careConversation.id, { onDelete: "cascade" }),
+    senderUserId: text("sender_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    content: text("content").notNull(),
+    status: text("status").notNull().default("SENT"),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("care_message_conversation_created_idx").on(table.conversationId, table.createdAt),
+    index("care_message_sender_idx").on(table.senderUserId),
+    check("care_message_status_check", sql`${table.status} in ('SENT', 'DELIVERED', 'READ')`),
+    check(
+      "care_message_content_length_check",
+      sql`char_length(${table.content}) >= 1 and char_length(${table.content}) <= 4000`,
+    ),
+  ],
+);
+
+// Specialist session note for a child.
+// Supports PRIVATE (specialist only) or SHARED (parent can read).
+// Shared notes are immutable after 24 hours; subsequent modifications are made as addendums.
+export const specialistSessionNote = pgTable(
+  "specialist_session_note",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    assignmentId: text("assignment_id")
+      .notNull()
+      .references(() => specialistStudentAssignment.id, { onDelete: "cascade" }),
+    specialistUserId: text("specialist_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    studentId: text("student_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    title: text("title").notNull(),
+    content: text("content").notNull(),
+    visibility: text("visibility").notNull().default("PRIVATE"),
+    sessionDate: timestamp("session_date", { withTimezone: true }).notNull(),
+    isAddendum: boolean("is_addendum").notNull().default(false),
+    parentNoteId: text("parent_note_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("specialist_session_note_student_created_idx").on(table.studentId, table.createdAt),
+    index("specialist_session_note_assignment_idx").on(table.assignmentId),
+    index("specialist_session_note_specialist_idx").on(table.specialistUserId),
+    index("specialist_session_note_parent_note_idx").on(table.parentNoteId),
+    check("specialist_session_note_visibility_check", sql`${table.visibility} in ('PRIVATE', 'SHARED')`),
+    check(
+      "specialist_session_note_content_check",
+      sql`char_length(${table.content}) >= 1 and char_length(${table.content}) <= 10000`,
+    ),
+  ],
+);
+
+// Care document / report shared around a child.
+export const careDocument = pgTable(
+  "care_document",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    assignmentId: text("assignment_id")
+      .notNull()
+      .references(() => specialistStudentAssignment.id, { onDelete: "cascade" }),
+    studentId: text("student_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    uploadedByUserId: text("uploaded_by_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    conversationId: text("conversation_id").references(() => careConversation.id, { onDelete: "set null" }),
+    messageId: text("message_id").references(() => careMessage.id, { onDelete: "set null" }),
+    fileName: text("file_name").notNull(),
+    objectKey: text("object_key").notNull(),
+    mimeType: text("mime_type").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    title: text("title"),
+    documentType: text("document_type").notNull().default("SESSION_REPORT"),
+    visibility: text("visibility").notNull().default("SHARED"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("care_document_student_created_idx").on(table.studentId, table.createdAt),
+    index("care_document_assignment_idx").on(table.assignmentId),
+    check("care_document_visibility_check", sql`${table.visibility} in ('PRIVATE', 'SHARED')`),
+    check(
+      "care_document_type_check",
+      sql`${table.documentType} in ('SESSION_REPORT', 'ASSESSMENT', 'RESOURCE', 'CHAT_ATTACHMENT')`,
+    ),
+    check("care_document_size_check", sql`${table.sizeBytes} > 0 and ${table.sizeBytes} <= 26214400`),
+  ],
+);
+
+// Audit access log for viewing a child's care file, notes, conversation, or documents.
+export const careAccessLog = pgTable(
+  "care_access_log",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    actorUserId: text("actor_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    studentId: text("student_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    resourceType: text("resource_type").notNull(),
+    resourceId: text("resource_id").notNull(),
+    action: text("action").notNull().default("READ"),
+    reason: text("reason"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("care_access_log_student_created_idx").on(table.studentId, table.createdAt),
+    index("care_access_log_actor_created_idx").on(table.actorUserId, table.createdAt),
+    check(
+      "care_access_log_resource_type_check",
+      sql`${table.resourceType} in ('CLIENT_FILE', 'SESSION_NOTE', 'CONVERSATION', 'DOCUMENT')`,
+    ),
+  ],
+);
+
+export const careNotificationPreference = pgTable(
+  "care_notification_preference",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    emailEnabled: boolean("email_enabled").notNull().default(true),
+    whatsappEnabled: boolean("whatsapp_enabled").notNull().default(false),
+    inAppEnabled: boolean("in_app_enabled").notNull().default(true),
+    notifyOnMessages: boolean("notify_on_messages").notNull().default(true),
+    notifyOnNotes: boolean("notify_on_notes").notNull().default(true),
+    notifyOnDocuments: boolean("notify_on_documents").notNull().default(true),
+    notifyOnRequests: boolean("notify_on_requests").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("care_notification_preference_user_idx").on(table.userId),
   ],
 );
 
@@ -1263,6 +1559,16 @@ export const specialistProfile = pgTable(
       .notNull()
       .references(() => personaMembership.id, { onDelete: "cascade" }),
     specialty: text("specialty"),
+    subSpecialties: text("sub_specialties").array(),
+    licenseNumber: text("license_number"),
+    languages: text("languages").array().$defaultFn(() => ["fr", "ar"]),
+    governorate: text("governorate"),
+    city: text("city"),
+    consultationModes: text("consultation_modes").array().$defaultFn(() => ["IN_PERSON", "ONLINE"]),
+    bioFr: text("bio_fr"),
+    bioAr: text("bio_ar"),
+    avatarUrl: text("avatar_url"),
+    address: text("address"),
     qualification: text("qualification"),
     experienceYears: integer("experience_years"),
     practiceStructure: text("practice_structure"),
@@ -1809,6 +2115,111 @@ export type WhatsappMessageRow = typeof whatsappMessage.$inferSelect;
 export type WhatsappWebhookEventRow = typeof whatsappWebhookEvent.$inferSelect;
 
 // -----------------------------------------------------------------------------
+// Social Omnichannel Messaging (Instagram Direct & Facebook Messenger)
+// -----------------------------------------------------------------------------
+
+export const socialChannelAccount = pgTable(
+  "social_channel_account",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    channel: text("channel").notNull(),
+    provider: text("provider").notNull().default("meta"),
+    externalAccountId: text("external_account_id").notNull(),
+    accountName: text("account_name").notNull(),
+    status: text("status").notNull().default("ACTIVE"),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("social_channel_account_org_external_unique").on(
+      table.organizationId,
+      table.channel,
+      table.externalAccountId,
+    ),
+    index("social_channel_account_org_idx").on(table.organizationId),
+    check("social_channel_account_channel_check", sql`${table.channel} in ('INSTAGRAM', 'MESSENGER')`),
+    check("social_channel_account_status_check", sql`${table.status} in ('ACTIVE', 'DISABLED')`),
+  ],
+);
+
+export const socialMessage = pgTable(
+  "social_message",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    accountId: text("account_id").references(() => socialChannelAccount.id, { onDelete: "set null" }),
+    contactId: text("contact_id").references(() => crmContact.id, { onDelete: "set null" }),
+    channel: text("channel").notNull(),
+    direction: text("direction").notNull(),
+    status: text("status").notNull().default("QUEUED"),
+    providerMessageId: text("provider_message_id"),
+    localRequestId: text("local_request_id"),
+    senderId: text("sender_id").notNull(),
+    recipientId: text("recipient_id").notNull(),
+    senderName: text("sender_name"),
+    senderUsername: text("sender_username"),
+    senderAvatarUrl: text("sender_avatar_url"),
+    textPreview: text("text_preview"),
+    mediaUrl: text("media_url"),
+    mediaType: text("media_type"),
+    providerErrorCode: text("provider_error_code"),
+    providerErrorMessage: text("provider_error_message"),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+    readAt: timestamp("read_at", { withTimezone: true }),
+    failedAt: timestamp("failed_at", { withTimezone: true }),
+    createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("social_message_provider_id_unique")
+      .on(table.providerMessageId)
+      .where(sql`${table.providerMessageId} is not null`),
+    uniqueIndex("social_message_local_request_unique")
+      .on(table.organizationId, table.localRequestId)
+      .where(sql`${table.localRequestId} is not null`),
+    index("social_message_org_created_idx").on(table.organizationId, table.createdAt),
+    index("social_message_contact_created_idx").on(table.contactId, table.createdAt),
+    index("social_message_channel_direction_idx").on(table.channel, table.direction, table.status),
+    index("social_message_sender_recipient_idx").on(table.senderId, table.recipientId),
+    check("social_message_channel_check", sql`${table.channel} in ('INSTAGRAM', 'MESSENGER')`),
+    check("social_message_direction_check", sql`${table.direction} in ('INBOUND', 'OUTBOUND')`),
+    check(
+      "social_message_status_check",
+      sql`${table.status} in ('QUEUED', 'SENT', 'DELIVERED', 'READ', 'FAILED')`,
+    ),
+  ],
+);
+
+export const socialWebhookEvent = pgTable(
+  "social_webhook_event",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    stableKey: text("stable_key").notNull(),
+    channel: text("channel").notNull(),
+    organizationId: text("organization_id").references(() => organization.id, { onDelete: "cascade" }),
+    receivedAt: timestamp("received_at", { withTimezone: true }).notNull().$defaultFn(now),
+    processedAt: timestamp("processed_at", { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex("social_webhook_event_stable_key_unique").on(table.stableKey),
+    index("social_webhook_event_org_received_idx").on(table.organizationId, table.receivedAt),
+    check("social_webhook_event_channel_check", sql`${table.channel} in ('INSTAGRAM', 'MESSENGER')`),
+  ],
+);
+
+export type SocialChannelAccountRow = typeof socialChannelAccount.$inferSelect;
+export type SocialMessageRow = typeof socialMessage.$inferSelect;
+export type SocialWebhookEventRow = typeof socialWebhookEvent.$inferSelect;
+
+// -----------------------------------------------------------------------------
 // Phase 9: transactional outbox. A business-mutation transaction inserts an
 // outbox_event row in the SAME transaction as the domain change it represents
 // (see src/server/queue/outbox.ts's enqueueOutboxEvent) so "mutation
@@ -2339,6 +2750,7 @@ export type LearningAnswerRow = typeof learningAnswer.$inferSelect;
 export type CourseDiscussionPostRow = typeof courseDiscussionPosts.$inferSelect;
 export type ResourceRow = typeof resources.$inferSelect;
 export type WebinarRow = typeof webinars.$inferSelect;
+export type WebinarRegistrationRow = typeof webinarRegistrations.$inferSelect;
 export type NewsPostRow = typeof newsPosts.$inferSelect;
 export type KnowledgeDocumentRow = typeof knowledgeDocument.$inferSelect;
 export type KnowledgeChunkRow = typeof knowledgeChunk.$inferSelect;
@@ -2352,3 +2764,12 @@ export type RewardRedemptionRow = typeof rewardRedemption.$inferSelect;
 export type ReferralCodeRow = typeof referralCode.$inferSelect;
 export type ReferralConversionRow = typeof referralConversion.$inferSelect;
 export type BroadcastNotificationRow = typeof broadcastNotification.$inferSelect;
+export type CareConversationRow = typeof careConversation.$inferSelect;
+export type CareConversationParticipantRow = typeof careConversationParticipant.$inferSelect;
+export type CareMessageRow = typeof careMessage.$inferSelect;
+export type SpecialistSessionNoteRow = typeof specialistSessionNote.$inferSelect;
+export type CareDocumentRow = typeof careDocument.$inferSelect;
+export type CareAccessLogRow = typeof careAccessLog.$inferSelect;
+export type CareNotificationPreferenceRow = typeof careNotificationPreference.$inferSelect;
+export type AvsProfileRow = typeof avsProfiles.$inferSelect;
+export type AvsBookingRequestRow = typeof avsBookingRequests.$inferSelect;

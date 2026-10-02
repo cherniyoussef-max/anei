@@ -80,6 +80,8 @@ const schema = z.object({
   WHATSAPP_ACCESS_TOKEN: optionalTrimmed,
   WHATSAPP_APP_SECRET: optionalTrimmed,
   WHATSAPP_VERIFY_TOKEN: optionalTrimmed,
+  META_APP_SECRET: optionalTrimmed,
+  META_WEBHOOK_ALLOW_UNSIGNED: boolString,
   WHATSAPP_API_VERSION: z.string().regex(/^v\d+\.\d+$/).default("v22.0"),
   WHATSAPP_API_BASE_URL: z.string().url().default("https://graph.facebook.com"),
   ENABLE_CLOUDFLARE_STREAM: boolString,
@@ -119,6 +121,12 @@ function isLocalDatabaseUrl(value: string) {
     return host === "localhost" || host === "127.0.0.1" || host === "::1";
   } catch {
     return false;
+  }
+}
+
+if (env.META_WEBHOOK_ALLOW_UNSIGNED) {
+  if (env.NODE_ENV !== "development" || !isLocalUrl(env.APP_URL)) {
+    throw new Error("META_WEBHOOK_ALLOW_UNSIGNED is strictly forbidden outside local development with localhost APP_URL.");
   }
 }
 
@@ -208,6 +216,12 @@ if (env.NODE_ENV === "production" && !isBuildPhase && !isLocalProductionSmoke) {
   }
   if (env.ENABLE_WHATSAPP && (!env.WHATSAPP_ACCESS_TOKEN || !env.WHATSAPP_APP_SECRET || !env.WHATSAPP_VERIFY_TOKEN)) {
     throw new Error("WhatsApp is enabled but WHATSAPP_ACCESS_TOKEN/WHATSAPP_APP_SECRET/WHATSAPP_VERIFY_TOKEN are missing.");
+  }
+  if (
+    (process.env.META_PAGE_ACCESS_TOKEN || process.env.META_INSTAGRAM_ACCESS_TOKEN) &&
+    !(env.META_APP_SECRET || env.WHATSAPP_APP_SECRET)
+  ) {
+    throw new Error("Meta messaging is enabled but META_APP_SECRET (or WHATSAPP_APP_SECRET) is missing in production.");
   }
   if (env.ENABLE_WHATSAPP_AUTO_WELCOME && !env.ENABLE_WHATSAPP) {
     throw new Error("ENABLE_WHATSAPP_AUTO_WELCOME requires ENABLE_WHATSAPP.");

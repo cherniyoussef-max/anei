@@ -5,7 +5,7 @@ import { db } from "@/server/db";
 import { user } from "@/server/db/schema";
 import { isTrustedMutation } from "@/server/security/origin";
 import { readLimitedJson } from "@/server/security/request-body";
-import { requestFingerprint } from "@/server/security/rate-limit";
+import { consumeRateLimit, requestFingerprint } from "@/server/security/rate-limit";
 import { requestOtp } from "@/server/auth/otp";
 import { getRequestId } from "@/server/auth/request-id";
 
@@ -13,6 +13,8 @@ const schema = z.object({ email: z.string().email(), channel: z.enum(["EMAIL", "
 
 export async function POST(request: Request) {
   if (!isTrustedMutation(request)) return NextResponse.json({ ok: true });
+  const rate = await consumeRateLimit(`forgot-password-ip:${requestFingerprint(request)}`, 10, 3600);
+  if (!rate.allowed) return NextResponse.json({ error: "RATE_LIMITED" }, { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } });
   const parsed = schema.safeParse(await readLimitedJson(request).catch(() => null));
   if (!parsed.success) return NextResponse.json({ ok: true });
 

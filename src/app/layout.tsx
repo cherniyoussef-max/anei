@@ -13,6 +13,30 @@ export const metadata: Metadata = {
   },
   description: "Plateforme bilingue de formation continue dédiée à l’éducation inclusive.",
   metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3000"),
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/brand/icon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon.ico", sizes: "any" },
+    ],
+    apple: [
+      { url: "/brand/icon-180.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
+  openGraph: {
+    title: "ANEI - Académie Nationale de l’Éducation Inclusive",
+    description: "Plateforme bilingue de formation continue dédiée à l’éducation inclusive.",
+    type: "website",
+    siteName: "ANEI",
+    images: [
+      {
+        url: "/brand/anei-logo-4x-on-white.png",
+        width: 1200,
+        height: 630,
+        alt: "Académie Nationale de l’Éducation Inclusive",
+      },
+    ],
+  },
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

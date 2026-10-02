@@ -39,16 +39,75 @@ const adminCourseEditorColumns = {
   updatedAt: courses.updatedAt,
 };
 
+interface LearningCacheEntry<T> {
+  data: T;
+  expiresAt: number;
+}
+const memoryCache = new Map<string, LearningCacheEntry<unknown>>();
+const LEARNING_CACHE_TTL_MS = 60_000;
+
+function pruneMemoryCache() {
+  const now = Date.now();
+  for (const [key, entry] of memoryCache.entries()) {
+    if (entry.expiresAt <= now) {
+      memoryCache.delete(key);
+    }
+  }
+}
+
+async function withLearningCache<T>(cacheKey: string, compute: () => Promise<T>): Promise<T> {
+  const now = Date.now();
+  const mem = memoryCache.get(cacheKey);
+  if (mem && mem.expiresAt > now) {
+    return mem.data as T;
+  }
+
+  try {
+    const { getRedis } = await import("@/server/cache/redis");
+    const redis = await getRedis();
+    if (redis) {
+      const cached = await redis.get(cacheKey).catch(() => null);
+      if (cached) {
+        const parsed = JSON.parse(cached) as T;
+        if (memoryCache.size > 100) pruneMemoryCache();
+        memoryCache.set(cacheKey, { data: parsed, expiresAt: now + LEARNING_CACHE_TTL_MS });
+        return parsed;
+      }
+    }
+  } catch {
+    // Non-blocking
+  }
+
+  const value = await compute();
+  if (memoryCache.size > 100) pruneMemoryCache();
+  memoryCache.set(cacheKey, { data: value, expiresAt: now + LEARNING_CACHE_TTL_MS });
+
+  try {
+    const { getRedis } = await import("@/server/cache/redis");
+    const redis = await getRedis();
+    if (redis) {
+      redis.set(cacheKey, JSON.stringify(value), { EX: 60 }).catch(() => undefined);
+    }
+  } catch {
+    // Non-blocking
+  }
+
+  return value;
+}
+
 export async function getAdminCourseList(limit = 50) {
-  const result = await db.execute<{
-    id:string;slug:string;title_fr:string;title_ar:string;category:string;level:string;mode:string;
-    price_millimes:number;published:boolean;updated_at:Date;enrollments:number;completion_rate:number;
-  }>(sql`select c.id,c.slug,c.title_fr,c.title_ar,c.category,c.level,c.mode,c.price_millimes,c.published,c.updated_at,
-    count(e.id)::int enrollments,
-    coalesce(round(avg(e.progress_percent)),0)::int completion_rate
-    from courses c left join enrollments e on e.course_id=c.id
-    group by c.id order by c.updated_at desc limit ${Math.min(100, Math.max(1, limit))}`);
-  return result.rows;
+  const boundedLimit = Math.min(100, Math.max(1, limit));
+  return withLearningCache(`admin:courses:list:${boundedLimit}`, async () => {
+    const result = await db.execute<{
+      id:string;slug:string;title_fr:string;title_ar:string;category:string;level:string;mode:string;
+      price_millimes:number;published:boolean;updated_at:Date;enrollments:number;completion_rate:number;
+    }>(sql`select c.id,c.slug,c.title_fr,c.title_ar,c.category,c.level,c.mode,c.price_millimes,c.published,c.updated_at,
+      count(e.id)::int enrollments,
+      coalesce(round(avg(e.progress_percent)),0)::int completion_rate
+      from courses c left join enrollments e on e.course_id=c.id
+      group by c.id order by c.updated_at desc limit ${boundedLimit}`);
+    return result.rows;
+  });
 }
 
 export async function getAdminCourseEditorBase(courseId: string) {

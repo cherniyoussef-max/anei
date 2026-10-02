@@ -6,9 +6,9 @@
     "node": ">=22.0.0 <23"
   },
   "scripts": {
-    "dev": "next dev",
-    "build": "ANEI_BUILD_PHASE=1 next build && tsx scripts/prepare-standalone.ts",
-    "start": "NODE_ENV=production node .next/standalone/server.js",
+    "dev": "NODE_OPTIONS='--dns-result-order=ipv4first' next dev",
+    "build": "NODE_OPTIONS='--dns-result-order=ipv4first' ANEI_BUILD_PHASE=1 next build && tsx scripts/prepare-standalone.ts",
+    "start": "NODE_OPTIONS='--dns-result-order=ipv4first' NODE_ENV=production node .next/standalone/server.js",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
@@ -22,8 +22,8 @@
     "check": "npm run typecheck && npm run lint && npm run test && npm run security:audit && npm run build",
     "db:baseline": "tsx scripts/baseline-migrations.ts",
     "db:bootstrap-admin": "tsx scripts/create-super-admin.ts",
-    "test:unit": "tsx --test tests/unit/**/*.test.ts",
-    "test:security": "tsx --test tests/security/**/*.test.ts",
+    "test:unit": "tsx --conditions=react-server --test tests/unit/**/*.test.ts",
+    "test:security": "tsx --conditions=react-server --test tests/security/**/*.test.ts",
     "test": "npm run test:unit && npm run test:security",
     "security:audit": "tsx scripts/security-audit.ts",
     "verify": "tsx scripts/verify.ts",
@@ -35,7 +35,9 @@
     "test:e2e:setup": "playwright install chromium",
     "test:e2e:headed": "playwright test --headed",
     "deps:check": "tsx scripts/dependency-doctor.ts",
-    "start:local": "tsx scripts/start-local.ts"
+    "start:local": "tsx scripts/start-local.ts",
+    "prepare": "git config core.hooksPath .githooks || true",
+    "webinars:rotate-codes": "tsx --conditions=react-server scripts/rotate-legacy-webinar-codes.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1095.0",
@@ -47,14 +49,14 @@
     "canvas-confetti": "^1.9.3",
     "drizzle-orm": "0.45.2",
     "lucide-react": "^0.545.0",
-    "next": "16.2.12",
-    "nodemailer": "9.0.3",
+    "next": "16.3.6",
+    "nodemailer": "9.1.1",
     "pg": "8.22.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "redis": "6.1.0",
     "server-only": "0.0.1",
-    "sharp": "0.35.3",
+    "sharp": "0.35.4",
     "zod": "4.4.3"
   },
   "devDependencies": {
@@ -69,7 +71,7 @@
     "dotenv": "17.4.2",
     "drizzle-kit": "0.31.10",
     "eslint": "9.39.5",
-    "eslint-config-next": "16.2.12",
+    "eslint-config-next": "16.3.6",
     "postcss": "8.5.26",
     "tailwindcss": "^4.3.0",
     "tsx": "^4.20.6",
@@ -77,6 +79,10 @@
   },
   "overrides": {
     "postcss": "8.5.26",
-    "sharp": "0.35.3"
+    "sharp": "0.35.4",
+    "fast-uri": "3.1.6",
+    "hono": "4.13.9",
+    "qs": "6.16.0",
+    "esbuild": "0.25.0"
   }
 }

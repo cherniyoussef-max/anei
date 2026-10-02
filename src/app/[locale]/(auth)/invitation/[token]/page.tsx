@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { isLocale } from "@/lib/i18n";
 import { InvitationClaimFlow } from "@/components/interactive/InvitationClaimFlow";
+import { AuthShowcase } from "@/components/auth/AuthShowcase";
 
 export const dynamic = "force-dynamic";
 
@@ -14,16 +15,11 @@ export const dynamic = "force-dynamic";
 export default async function InvitationPage({ params }: { params: Promise<{ locale: string; token: string }> }) {
   const { locale, token } = await params;
   if (!isLocale(locale) || !token || token.length < 16 || token.length > 512) notFound();
-  const ar = locale === "ar";
 
   return (
     <section className="auth-section">
       <div className="container auth-grid">
-        <div className="auth-intro">
-          <span className="eyebrow">{ar ? "دعوة ANEI" : "Invitation ANEI"}</span>
-          <h1>{ar ? "تفعيل حسابك" : "Activez votre compte"}</h1>
-          <p>{ar ? "تحقق من رقم هاتفك لمتابعة إنشاء أو ربط حسابك." : "Vérifiez votre numéro de téléphone pour continuer vers votre compte."}</p>
-        </div>
+        <AuthShowcase locale={locale} mode="register" stage="verify" />
         <InvitationClaimFlow token={token} locale={locale} />
       </div>
     </section>

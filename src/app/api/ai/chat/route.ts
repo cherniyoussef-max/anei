@@ -8,6 +8,7 @@ import { getAIUsageMeter } from "@/server/ai/usage-meter";
 import { env } from "@/server/env";
 import { readLimitedJson } from "@/server/security/request";
 import { isTrustedMutation } from "@/server/security/origin";
+import { consumeRateLimit } from "@/server/security/rate-limit";
 import crypto from "node:crypto";
 import type { AiMessage, AiRole } from "@/server/ai/contracts";
 
@@ -54,6 +55,14 @@ export async function POST(request: Request): Promise<Response> {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const rate = await consumeRateLimit(`ai-chat:${session.user.id}`, 20, 60);
+  if (!rate.allowed) {
+    return new Response(JSON.stringify({ error: "RATE_LIMITED" }), {
+      status: 429,
+      headers: { "Content-Type": "application/json", "Retry-After": String(rate.retryAfterSeconds) },
     });
   }
 

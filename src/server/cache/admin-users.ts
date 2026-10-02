@@ -1,6 +1,7 @@
 import "server-only";
 import { getRedis } from "@/server/cache/redis";
 import { logger } from "@/server/security/logger";
+import { clearAdminUsersMemoryCache } from "@/modules/admin/queries/admin-users";
 
 const LIST_PATTERN = "admin:users:list:*";
 const detailKey = (userId: string) => `admin:users:detail:${userId}`;
@@ -14,6 +15,7 @@ const detailKey = (userId: string) => `admin:users:detail:${userId}`;
  * it only means list/detail data stays stale for up to the existing 60s TTL.
  */
 export async function invalidateAdminUserCaches(userId: string) {
+  clearAdminUsersMemoryCache();
   try {
     const redis = await getRedis();
     if (!redis) return;

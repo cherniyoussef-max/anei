@@ -1,0 +1,31 @@
+import { NextResponse } from "next/server";
+import { auth } from "@/server/auth";
+import { markAllNotificationsAsRead } from "@/server/services/care-notifications";
+import { isTrustedMutation } from "@/server/security/origin";
+import { consumeRateLimit } from "@/server/security/rate-limit";
+
+export async function POST(request: Request) {
+  if (!isTrustedMutation(request)) {
+    return NextResponse.json({ error: "UNTRUSTED_ORIGIN" }, { status: 403 });
+  }
+
+  const session = await auth.api.getSession({
+    headers: request.headers,
+    query: { disableCookieCache: true },
+  });
+  if (!session) {
+    return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
+  }
+
+  const rate = await consumeRateLimit(`care-notifs-read-all:${session.user.id}`, 30, 60);
+  if (!rate.allowed) {
+    return NextResponse.json(
+      { error: "RATE_LIMITED" },
+      { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } },
+    );
+  }
+
+  const updatedCount = await markAllNotificationsAsRead(session.user.id);
+
+  return NextResponse.json({ ok: true, count: updatedCount });
+}

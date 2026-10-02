@@ -1,7 +1,7 @@
 import Link from "next/link";
-import Image from "next/image";
 import type { Locale } from "@/types";
 import { t } from "@/lib/i18n";
+import { AneiLogo } from "@/components/brand/AneiLogo";
 import { Icon } from "@/components/ui/Icon";
 import { NewsletterForm } from "@/components/interactive/NewsletterForm";
 import { env } from "@/server/env";
@@ -19,10 +19,16 @@ export function SiteFooter({ locale }: { locale: Locale }) {
       <div className="v5-container footer-grid">
         <div className="footer-brand">
           <Link href={`/${locale}`} className="footer-crest" aria-label={c.academy}>
-            <Image className="footer-crest-seal" src="/media/academy-home-seal.webp" alt="" width={300} height={301} unoptimized />
+            <span className="inline-flex items-center justify-center bg-white p-1.5 rounded-lg shadow-sm flex-none">
+              <AneiLogo locale={locale} variant="mark" height={36} />
+            </span>
             <span className="footer-crest-text">
-              <span className="footer-crest-name">Academy Learning</span>
-              <span className="footer-crest-sub">ANEI</span>
+              <span className="footer-crest-name">
+                {ar ? "الأكاديمية الوطنية" : "Académie Nationale"}
+              </span>
+              <span className="footer-crest-sub">
+                {ar ? "للتربية الدامجة · ANEI" : "de l'Éducation Inclusive · ANEI"}
+              </span>
             </span>
           </Link>
           <p>{ar ? "تكوين مهني وموارد ومرافقة من أجل تربية دامجة قابلة للتطبيق." : en ? "Professional learning, resources and support for inclusive education in practice." : "Formations, ressources et accompagnement pour une éducation inclusive mise en pratique."}</p>
