@@ -168,7 +168,7 @@ export default async function AvsPage({
         }
       />
 
-      <section className="section bg-slate-50/50 py-10">
+      <section className="bg-[#fcfbf8] py-8 lg:py-10 border-b border-slate-200/80">
         <div className="container max-w-7xl mx-auto px-4 sm:px-6">
           <AvsFilter
             locale={locale}
@@ -185,18 +185,26 @@ export default async function AvsPage({
       </section>
 
       {/* Trust & Guarantee Banner */}
-      <section className="section section-tint py-12 border-t border-slate-200">
+      <section className="bg-white py-12 lg:py-14 border-t border-slate-200/80">
         <div className="container max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="flex items-start gap-4">
+          <div className="text-center max-w-2xl mx-auto mb-8 space-y-2">
+            <span className="text-[11px] font-bold text-[#082D55] uppercase tracking-wider bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
+              {ar ? "معايير الجودة والموثوقية" : "Garanties d'accompagnement ANEI"}
+            </span>
+            <h2 className="text-xl sm:text-2xl font-bold text-[#082D55] font-[family-name:var(--font-fraunces)]">
+              {ar ? "شبكة مهنية منظمة تضمن حق طفلك في تعليم دامج" : "Un réseau rigoureusement encadré pour la réussite de l'élève"}
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-[#fcfbf8] rounded-2xl border border-slate-200/80 p-6 shadow-2xs space-y-3">
               <div className="w-12 h-12 rounded-xl bg-blue-100/80 text-[#082D55] flex items-center justify-center flex-none">
                 <Icon name="award" size={24} />
               </div>
               <div>
-                <h3 className="font-bold text-base text-[#082D55]">
+                <h3 className="font-bold text-base text-[#082D55] font-[family-name:var(--font-fraunces)]">
                   {ar ? "اعتماد ANEI الموثوق" : "Certification ANEI rigoureuse"}
                 </h3>
-                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                <p className="text-xs text-slate-600 mt-1.5 leading-relaxed">
                   {ar
                     ? "ملفات مهنية يتم تدقيق شهاداتها وخبراتها الميدانية من طرف الهيئة البيداغوجية للأكاديمية."
                     : "Diplômes, formations continues et pratiques de terrain vérifiés par la commission pédagogique de l'académie."}
@@ -204,15 +212,15 @@ export default async function AvsPage({
               </div>
             </div>
 
-            <div className="flex items-start gap-4">
+            <div className="bg-[#fcfbf8] rounded-2xl border border-slate-200/80 p-6 shadow-2xs space-y-3">
               <div className="w-12 h-12 rounded-xl bg-amber-100/80 text-amber-800 flex items-center justify-center flex-none">
                 <Icon name="calendar" size={24} />
               </div>
               <div>
-                <h3 className="font-bold text-base text-[#082D55]">
+                <h3 className="font-bold text-base text-[#082D55] font-[family-name:var(--font-fraunces)]">
                   {ar ? "حجز مباشر وتنسيق مرن" : "Rendez-vous et suivi transparent"}
                 </h3>
-                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                <p className="text-xs text-slate-600 mt-1.5 leading-relaxed">
                   {ar
                     ? "حدد موعد المقابلة الاستكشافية وفق توفر المرافق والمؤسسة التربوية مع إشعار فوري."
                     : "Planifiez des entretiens préliminaires ou d'observation selon vos créneaux et ceux de l'école."}
@@ -220,15 +228,15 @@ export default async function AvsPage({
               </div>
             </div>
 
-            <div className="flex items-start gap-4">
+            <div className="bg-[#fcfbf8] rounded-2xl border border-slate-200/80 p-6 shadow-2xs space-y-3">
               <div className="w-12 h-12 rounded-xl bg-emerald-100/80 text-emerald-800 flex items-center justify-center flex-none">
                 <Icon name="shield" size={24} />
               </div>
               <div>
-                <h3 className="font-bold text-base text-[#082D55]">
+                <h3 className="font-bold text-base text-[#082D55] font-[family-name:var(--font-fraunces)]">
                   {ar ? "حماية الخصوصية ومصلحة الطفل" : "Confidentialité & éthique"}
                 </h3>
-                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                <p className="text-xs text-slate-600 mt-1.5 leading-relaxed">
                   {ar
                     ? "معلومات التلميذ وملفه التربوي محفوظة وفق معايير الأمان وحماية المعطيات الشخصية."
                     : "Données de santé et besoins de l'enfant protégés. Aucun partage sans le consentement explicite des familles."}
