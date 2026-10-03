@@ -22,7 +22,7 @@ export function LearnerEmptyState({ icon: EmptyIcon, title, body, action }: { ic
           href={action.href}
         >
           {action.label}
-          <ArrowRight size={16} strokeWidth={1.75} />
+          <ArrowRight size={16} strokeWidth={1.75} className="rtl:rotate-180" />
         </Link>
       ) : null}
     </div>

@@ -18,6 +18,7 @@ export type AvsProfileBookingSectionProps = {
     domains?: string[];
     phone?: string | null;
     email?: string | null;
+    availability?: string | null;
   };
 };
 
@@ -59,6 +60,12 @@ export function AvsProfileBookingSection({ locale, avs }: AvsProfileBookingSecti
             ? "حدد صيغة المقابلة (حضوري على عين المكان أو عن بعد)، ثم اختر اليوم والساعة للاستكشاف أو المتابعة."
             : "Choisissez la modalité (sur place ou en ligne), puis le créneau souhaité pour votre premier échange."}
         </p>
+        {avs.availability ? (
+          <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-50 border border-emerald-200/80 text-[11px] font-bold text-emerald-800">
+            <Icon name="clock" size={13} className="text-emerald-600" />
+            <span>{avs.availability}</span>
+          </div>
+        ) : null}
       </div>
 
       {/* 1. Modality Selector: Sur place vs En ligne */}

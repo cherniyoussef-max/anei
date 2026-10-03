@@ -1,10 +1,12 @@
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
-import { certificates, courses } from "@/server/db/schema";
-import { requireUser } from "@/server/auth/session";
+import { certificates, courses, user } from "@/server/db/schema";
+import { getSession } from "@/server/auth/session";
 import { formatDate, isLocale } from "@/lib/i18n";
+import { Icon } from "@/components/ui/Icon";
 
 export const dynamic = "force-dynamic";
 
@@ -15,49 +17,132 @@ export default async function CertificatePage({
 }) {
   const { locale, code } = await params;
   if (!isLocale(locale)) notFound();
-  const session = await requireUser(locale);
+
   const [row] = await db
-    .select({ certificate: certificates, course: courses })
+    .select({ certificate: certificates, course: courses, recipient: user })
     .from(certificates)
     .innerJoin(courses, eq(certificates.courseId, courses.id))
-    .where(and(eq(certificates.code, code), eq(certificates.userId, session.user.id)))
+    .innerJoin(user, eq(certificates.userId, user.id))
+    .where(eq(certificates.code, code))
     .limit(1);
+
   if (!row) notFound();
+
+  const session = await getSession();
+  const isOwner = session?.user?.id === row.certificate.userId;
   const ar = locale === "ar";
   const altText = ar
     ? "الأكاديمية الوطنية للتربية الدامجة"
     : "Académie Nationale de l’Éducation Inclusive";
 
   return (
-    <section className="certificate-page">
-      <div className="container">
-        <div className="certificate-document">
-          <div className="certificate-seal-container mb-6 flex justify-center">
+    <section className="certificate-page py-12 px-4 bg-[#fcfbf8]">
+      <div className="max-w-2xl mx-auto space-y-6">
+        {/* Verification Status Badge */}
+        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200/90 text-emerald-900 flex items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <span className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center flex-none">
+              <Icon name="check" size={20} />
+            </span>
+            <div>
+              <div className="text-xs font-bold uppercase tracking-wider text-emerald-800">
+                {ar ? "شهادة رسمية موثقة" : "Certificat Officiel Vérifié"}
+              </div>
+              <div className="text-sm font-semibold text-emerald-950 mt-0.5">
+                {ar
+                  ? "مسجلة بالسجل الوطني للكفاءات لدى ANEI"
+                  : "Enregistré au registre national des compétences ANEI"}
+              </div>
+            </div>
+          </div>
+          <span className="text-[11px] font-mono font-bold px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-900 border border-emerald-200" dir="ltr">
+            {row.certificate.code}
+          </span>
+        </div>
+
+        {/* Certificate Card Document */}
+        <div className="bg-white rounded-3xl border border-[#e7e0d3] p-8 sm:p-12 shadow-md text-center space-y-5 relative overflow-hidden">
+          <div className="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-[#082D55] via-[#C9913F] to-[#082D55]" />
+
+          <div className="certificate-seal-container mb-4 flex justify-center">
             <Image
               src="/brand/anei-logo-4x-transparent.png"
               alt={altText}
               width={260}
               height={136}
               priority
-              className="h-24 md:h-28 w-auto object-contain mx-auto"
+              className="h-20 sm:h-24 w-auto object-contain mx-auto"
             />
           </div>
-          <span className="eyebrow">{ar ? "شهادة إتمام" : "Certificat de réussite"}</span>
-          <h1>{ar ? "الأكاديمية الوطنية للتربية الدامجة" : "Académie Nationale de l’Éducation Inclusive"}</h1>
-          <p>{ar ? "تشهد بأن" : "certifie que"}</p>
-          <h2>{session.user.name}</h2>
-          <p>{ar ? "أتم بنجاح المسار" : "a terminé avec succès le parcours"}</p>
-          <h3>{ar ? row.course.titleAr : row.course.titleFr}</h3>
-          <div className="certificate-meta">
-            <span>{formatDate(row.certificate.issuedAt,locale)}</span>
-            <span>{row.certificate.code}</span>
-          </div>
-          <p className="small-muted">
-            {ar
-              ? "يمكن طباعة هذه الصفحة أو حفظها بصيغة PDF من المتصفح."
-              : "Cette page est optimisée pour l’impression et peut être enregistrée en PDF depuis le navigateur."}
+
+          <span className="text-xs font-bold uppercase tracking-widest text-[#a66f24]">
+            {ar ? "شهادة إتمام وتأهيل مهني" : "Certificat de Réussite & Qualification"}
+          </span>
+
+          <h1 className="font-[family-name:var(--font-fraunces)] text-xl sm:text-2xl font-bold text-[#082D55]">
+            {ar ? "الأكاديمية الوطنية للتربية الدامجة" : "Académie Nationale de l’Éducation Inclusive"}
+          </h1>
+
+          <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
+            {ar ? "تشهد رسمياً بأن" : "atteste officiellement que"}
           </p>
+
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#082D55] tracking-tight">
+            {row.recipient.name}
+          </h2>
+
+          <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+            {ar
+              ? "قد أتم(ت) بنجاح جميع الوحدات والتقييمات المعتمدة للمسار التكويني المهني :"
+              : "a validé avec succès l'ensemble des modules et évaluations pratiques du parcours certifiant :"}
+          </p>
+
+          <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-200/60 max-w-lg mx-auto">
+            <h3 className="text-base sm:text-lg font-bold text-[#082D55]">
+              {ar ? row.course.titleAr : row.course.titleFr}
+            </h3>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-6 pt-4 border-t border-slate-100 text-xs text-slate-600">
+            <div>
+              <span className="block text-[10px] text-slate-400 font-semibold uppercase">{ar ? "تاريخ الإصدار" : "Date de délivrance"}</span>
+              <strong className="text-slate-800">{formatDate(row.certificate.issuedAt, locale)}</strong>
+            </div>
+            <div className="w-px h-8 bg-slate-200 hidden sm:block" />
+            <div>
+              <span className="block text-[10px] text-slate-400 font-semibold uppercase">{ar ? "الرمز التعريفي" : "Identifiant unique"}</span>
+              <strong className="font-mono text-[#a66f24]" dir="ltr">{row.certificate.code}</strong>
+            </div>
+          </div>
+
+          {/* Action: Download PDF */}
+          <div className="pt-6 border-t border-slate-100 flex flex-wrap items-center justify-center gap-3">
+            {isOwner && (
+              <a
+                href={`/api/account/certificates/${row.certificate.id}/download`}
+                download
+                className="btn btn-primary px-7 py-3 rounded-full font-bold text-xs shadow-md hover:shadow-lg inline-flex items-center gap-2"
+              >
+                <Icon name="arrow" size={15} className="rotate-90 text-amber-300" />
+                <span>{ar ? "تحميل الشهادة الرسمية (PDF A4)" : "Télécharger mon certificat officiel (PDF A4)"}</span>
+              </a>
+            )}
+            <Link
+              href={`/${locale}/formations`}
+              className="btn btn-secondary px-5 py-2.5 rounded-full font-bold text-xs inline-flex items-center gap-1.5"
+            >
+              <span>{ar ? "استكشاف المزيد من المسارات" : "Explorer les formations"}</span>
+              <Icon name="arrow" size={13} className="directional-icon" />
+            </Link>
+          </div>
         </div>
+
+        {/* Verification Guarantee Footer */}
+        <p className="text-[11px] text-slate-400 text-center leading-relaxed">
+          {ar
+            ? "هذه الشهادة وثيقة رسمية مؤمنة بختم الأكاديمية الوطنية للتربية الدامجة بتونس. التحقق متاح دائماً عبر رمز الاستجابة أو الرابط الرسمي."
+            : "Ce certificat est un titre professionnel officiel délivré par l'Académie Nationale de l'Éducation Inclusive. Toute vérification d'authenticité est garantie en ligne."}
+        </p>
       </div>
     </section>
   );

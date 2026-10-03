@@ -36,7 +36,17 @@
 }
 
 [dir="rtl"] .student-app {
-  font-family: "Noto Sans Arabic", Tahoma, Arial, sans-serif;
+  font-family: var(--font-cairo), "Segoe UI", Tahoma, Arial, sans-serif;
+}
+
+[dir="rtl"] .student-app :is(h1, h2, h3, h4, h5, h6, .student-welcome h1, .student-page-heading h1, .student-continue-copy h2, .student-section-heading h2, .learner-page-header h1) {
+  font-family: var(--font-cairo), "Segoe UI", Tahoma, Arial, sans-serif !important;
+  letter-spacing: 0 !important;
+  line-height: 1.35 !important;
+}
+
+[dir="rtl"] .student-app :is(p, .student-welcome p, .student-continue-copy p, .student-welcome-kicker, .student-summary-label, .student-summary-detail) {
+  line-height: 1.75 !important;
 }
 
 .student-app a,

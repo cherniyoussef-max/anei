@@ -267,6 +267,7 @@ export default async function AvsProfileDetailPage({
                 domains: localizedDomains,
                 phone: profile.phone,
                 email: profile.email,
+                availability: ar ? profile.availabilityAr : profile.availabilityFr,
               }}
             />
           </div>

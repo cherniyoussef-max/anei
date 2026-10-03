@@ -166,7 +166,10 @@ export async function getOwnedCertificateForDownload(userId: string, certificate
     id: certificates.id,
     code: certificates.code,
     fileUrl: certificates.fileUrl,
+    issuedAt: certificates.issuedAt,
     courseTitleFr: courses.titleFr,
+    courseTitleAr: courses.titleAr,
+    courseCategory: courses.category,
   }).from(certificates)
     .innerJoin(courses, eq(certificates.courseId, courses.id))
     .where(and(eq(certificates.id, certificateId), eq(certificates.userId, userId)))

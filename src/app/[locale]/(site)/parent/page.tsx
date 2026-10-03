@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Users, User, CalendarDays, Mail, ArrowRight } from "lucide-react";
+import { Users, User, CalendarDays, Mail, ArrowRight, Target } from "lucide-react";
 import { isLocale } from "@/lib/i18n";
 import { requireActivePersona } from "@/server/auth/session";
 import { getLinkedStudentsForParent, getLinkedStudentsProgressForParent } from "@/server/queries/relationships";
@@ -38,11 +38,12 @@ export default async function ParentPortalPage({ params }: { params: Promise<{ l
       <div>
         <span className="text-xs font-semibold uppercase tracking-wider text-[#a9752f]">{ar ? "مساحة الوالدين" : "Espace parent"}</span>
         <h1 className="mt-1 font-[family-name:var(--font-fraunces)] text-2xl font-semibold tracking-tight text-[#082D55] sm:text-3xl">{ar ? `مرحبًا، ${session.user.name}` : `Bonjour, ${session.user.name}`}</h1>
-        <p className="mt-1 text-sm text-[#7a7261]">{ar ? "تابع مسار أبنائك المرتبطين بحسابك." : "Suivez le parcours des enfants liés à votre compte."}</p>
+        <p className="mt-1 text-sm text-[#7a7261]">{ar ? "تابع مسار أبنائك المرتبطين بحسابك والخطة التربوية الفردية." : "Suivez le parcours des enfants liés à votre compte et leur projet personnalisé."}</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <PersonaMetricCard icon={Users} tone="navy" label={ar ? "الأبناء المرتبطون" : "Enfants liés"} value={linkedStudents.length} />
+        <PersonaMetricCard icon={Target} tone="gold" label={ar ? "الخطط التربوية المعتمدة (PPS)" : "Dossiers PPS actifs"} value={linkedStudents.length} />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
@@ -98,6 +99,15 @@ export default async function ParentPortalPage({ params }: { params: Promise<{ l
                               {ar ? `مع ${nextSession.assigneeName}` : `avec ${nextSession.assigneeName}`}
                             </p>
                           ) : null}
+                          <div className="pt-1">
+                            <Link
+                              href={`/${locale}/parent/enfants`}
+                              className="inline-flex items-center gap-1 text-xs font-semibold text-[#082D55] hover:text-[#a9752f]"
+                            >
+                              <Target size={12} className="text-[#a9752f]" />
+                              <span>{ar ? "الخطة التربوية الفردية ومسار المتابعة (PPS)" : "Consulter le dossier PPS & Suivi"}</span>
+                            </Link>
+                          </div>
                         </div>
                       }
                     />

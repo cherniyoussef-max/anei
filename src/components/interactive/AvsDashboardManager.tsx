@@ -14,7 +14,7 @@ export type AvsDashboardManagerProps = {
 
 export function AvsDashboardManager({ locale, profile: initialProfile, bookings: initialBookings }: AvsDashboardManagerProps) {
   const ar = locale === "ar";
-  const [activeTab, setActiveTab] = useState<"bookings" | "profile">("bookings");
+  const [activeTab, setActiveTab] = useState<"bookings" | "calendar" | "profile">("bookings");
   const [bookings, setBookings] = useState<AvsBookingRequestRow[]>(initialBookings);
   const [profile, setProfile] = useState<AvsProfileRow | null>(initialProfile);
   const [bookingFilter, setBookingFilter] = useState<"ALL" | "PENDING" | "CONFIRMED" | "DECLINED">("ALL");
@@ -23,6 +23,22 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileSuccessMsg, setProfileSuccessMsg] = useState("");
   const [profileErrorMsg, setProfileErrorMsg] = useState("");
+
+  // Calendar & Slot state
+  const [selectedWorkingDays, setSelectedWorkingDays] = useState<number[]>([1, 2, 3, 4, 5]);
+  const [consultationModes, setConsultationModes] = useState<("IN_PERSON" | "ONLINE")[]>(["IN_PERSON", "ONLINE"]);
+  const [activeSlots, setActiveSlots] = useState<string[]>([
+    "08:30 - 09:30",
+    "09:30 - 10:30",
+    "10:30 - 11:30",
+    "14:00 - 15:00",
+    "15:00 - 16:00",
+    "16:00 - 17:00",
+  ]);
+  const [customSlotInput, setCustomSlotInput] = useState("");
+  const [isSavingCalendar, setIsSavingCalendar] = useState(false);
+  const [calendarSuccessMsg, setCalendarSuccessMsg] = useState("");
+  const [calendarErrorMsg, setCalendarErrorMsg] = useState("");
 
   const [cityFr, setCityFr] = useState(profile?.cityFr || "Tunis");
   const [cityAr, setCityAr] = useState(profile?.cityAr || "تونس");
@@ -110,6 +126,121 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
     }
   }
 
+  const ALL_DAYS = [
+    { id: 1, fr: "Lundi", ar: "الإثنين" },
+    { id: 2, fr: "Mardi", ar: "الثلاثاء" },
+    { id: 3, fr: "Mercredi", ar: "الأربعاء" },
+    { id: 4, fr: "Jeudi", ar: "الخميس" },
+    { id: 5, fr: "Vendredi", ar: "الجمعة" },
+    { id: 6, fr: "Samedi", ar: "السبت" },
+  ];
+
+  function toggleWorkingDay(dayId: number) {
+    setSelectedWorkingDays((prev) =>
+      prev.includes(dayId) ? prev.filter((d) => d !== dayId) : [...prev, dayId].sort()
+    );
+  }
+
+  function toggleConsultationMode(mode: "IN_PERSON" | "ONLINE") {
+    setConsultationModes((prev) => {
+      if (prev.includes(mode)) {
+        if (prev.length === 1) return prev;
+        return prev.filter((m) => m !== mode);
+      }
+      return [...prev, mode];
+    });
+  }
+
+  function removeSlot(slot: string) {
+    setActiveSlots((prev) => prev.filter((s) => s !== slot));
+  }
+
+  function addCustomSlot() {
+    const trimmed = customSlotInput.trim();
+    if (!trimmed) return;
+    if (!activeSlots.includes(trimmed)) {
+      setActiveSlots((prev) => [...prev, trimmed].sort());
+    }
+    setCustomSlotInput("");
+  }
+
+  async function handleSaveCalendar(e: React.FormEvent) {
+    e.preventDefault();
+    setIsSavingCalendar(true);
+    setCalendarSuccessMsg("");
+    setCalendarErrorMsg("");
+
+    try {
+      const dayNamesFr = selectedWorkingDays
+        .map((d) => ALL_DAYS.find((item) => item.id === d)?.fr)
+        .filter(Boolean)
+        .join(", ");
+      const dayNamesAr = selectedWorkingDays
+        .map((d) => ALL_DAYS.find((item) => item.id === d)?.ar)
+        .filter(Boolean)
+        .join("، ");
+
+      const modeFr =
+        consultationModes.includes("IN_PERSON") && consultationModes.includes("ONLINE")
+          ? "Présentiel & En ligne"
+          : consultationModes.includes("IN_PERSON")
+          ? "Présentiel uniquement"
+          : "En ligne uniquement";
+
+      const modeAr =
+        consultationModes.includes("IN_PERSON") && consultationModes.includes("ONLINE")
+          ? "حضوري وعن بعد"
+          : consultationModes.includes("IN_PERSON")
+          ? "حضوري فقط"
+          : "عن بعد فقط";
+
+      const newAvailFr = `Disponible (${dayNamesFr}) · ${modeFr}`;
+      const newAvailAr = `متاح (${dayNamesAr}) · ${modeAr}`;
+
+      setAvailabilityFr(newAvailFr);
+      setAvailabilityAr(newAvailAr);
+
+      const res = await fetch("/api/avs/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cityFr,
+          cityAr,
+          governorateFr,
+          governorateAr,
+          specialtyFr,
+          specialtyAr,
+          availabilityFr: newAvailFr,
+          availabilityAr: newAvailAr,
+          interventionDomains: domainsInput.split(",").map((s) => s.trim()).filter(Boolean),
+          pedagogicalMethods: methodsInput.split(",").map((s) => s.trim()).filter(Boolean),
+          schoolsCoveredFr,
+          schoolsCoveredAr,
+          hourlyRateTnd: Number(hourlyRateTnd) || 25,
+          experienceYears: Number(experienceYears) || 3,
+          phone,
+          email,
+          bioFr,
+          bioAr,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || "Erreur de sauvegarde");
+
+      setProfile(data.profile);
+      setCalendarSuccessMsg(
+        ar
+          ? "تم حفظ وتحديث الأجندة والمواعيد بنجاح! تم نشر التوقيتات في الدليل العام."
+          : "Votre calendrier et vos créneaux ont été enregistrés avec succès ! Disponibilités publiées dans l'annuaire."
+      );
+    } catch (err: unknown) {
+      setCalendarErrorMsg(err instanceof Error ? err.message : "Erreur de mise à jour");
+    } finally {
+      setIsSavingCalendar(false);
+    }
+  }
+
   const pendingCount = bookings.filter((b) => b.status === "PENDING").length;
   const filteredBookings = bookings.filter((b) => {
     if (bookingFilter === "ALL") return true;
@@ -136,6 +267,19 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
               {pendingCount}
             </span>
           )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("calendar")}
+          className={`py-3 px-5 text-sm font-bold border-b-2 flex items-center gap-2 transition-all ${
+            activeTab === "calendar"
+              ? "border-[#082D55] text-[#082D55]"
+              : "border-transparent text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          <Icon name="clock" size={16} />
+          <span>{ar ? "إدارة الأجندة والمواعيد المتاحة" : "Calendrier & Créneaux de RDV"}</span>
         </button>
 
         <button
@@ -340,7 +484,274 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
         </div>
       )}
 
-      {/* TAB 2: Manage Public Directory Profile */}
+      {/* TAB 2: Calendar & Slot Management Console */}
+      {activeTab === "calendar" && (
+        <form onSubmit={handleSaveCalendar} className="bg-white rounded-2xl border border-slate-200 p-6 space-y-6 shadow-xs">
+          <div className="border-b border-slate-100 pb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="text-[11px] font-bold uppercase tracking-wider text-[#a66f24]">
+                {ar ? "تنظيم الأجندة والمواعيد" : "Gestion des disponibilités"}
+              </div>
+              <h3 className="text-base sm:text-lg font-bold text-[#082D55] mt-0.5">
+                {ar ? "أيام وساعات العمل وصيغ المقابلات" : "Jours de travail, créneaux et modalités de rencontre"}
+              </h3>
+              <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
+                {ar
+                  ? "حدد أيام حضورك، والساعات المتاحة لاستقبال الأولياء والتلاميذ، وصيغ اللقاء (حضوري بالمدرسة أو عن بعد). يتم تحديث هذه المواعيد تلقائياً في صفحة حجز المواعيد الخاصة بك."
+                  : "Définissez vos jours de présence, vos créneaux de consultation et vos modalités d'intervention (sur place ou en ligne). Ces disponibilités sont directement synchronisées avec votre profil public de réservation."}
+              </p>
+            </div>
+            {profile?.slug && (
+              <Link
+                href={`/${locale}/avs/${profile.slug}`}
+                target="_blank"
+                className="btn btn-ghost text-xs text-[#082D55] font-semibold flex items-center gap-1 border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50"
+              >
+                <span>{ar ? "معاينة صفحة الحجز" : "Voir mon formulaire public"}</span>
+                <Icon name="arrow" size={13} className="directional-icon" />
+              </Link>
+            )}
+          </div>
+
+          {calendarSuccessMsg && (
+            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
+              <Icon name="check" size={16} />
+              <span>{calendarSuccessMsg}</span>
+            </div>
+          )}
+
+          {calendarErrorMsg && (
+            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs font-semibold flex items-center gap-2">
+              <Icon name="shield" size={16} />
+              <span>{calendarErrorMsg}</span>
+            </div>
+          )}
+
+          {/* 1. Working Days */}
+          <div className="space-y-3">
+            <label className="block text-xs font-bold text-slate-800">
+              {ar ? "1. أيام العمل الأسبوعية المتاحة للأنشطة والمواعيد" : "1. Jours de disponibilité dans la semaine"}
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
+              {ALL_DAYS.map((d) => {
+                const isSelected = selectedWorkingDays.includes(d.id);
+                return (
+                  <button
+                    key={d.id}
+                    type="button"
+                    onClick={() => toggleWorkingDay(d.id)}
+                    className={`p-3 rounded-xl border text-center transition-all ${
+                      isSelected
+                        ? "border-[#082D55] bg-[#082D55] text-white shadow-xs font-bold"
+                        : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-white hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="text-sm font-semibold">{ar ? d.ar : d.fr}</div>
+                    <div className="text-[10px] mt-1 opacity-80">
+                      {isSelected ? (ar ? "متاح للعمل" : "Disponible") : (ar ? "راحة" : "Repos")}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 2. Consultation Modalities */}
+          <div className="space-y-3 pt-2">
+            <label className="block text-xs font-bold text-slate-800">
+              {ar ? "2. صيغ اللقاء المعتمدة التي يمكن للأولياء اختيارها" : "2. Modalités acceptées pour les rencontres"}
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => toggleConsultationMode("IN_PERSON")}
+                className={`p-4 rounded-xl border text-start flex items-start gap-3 transition-all ${
+                  consultationModes.includes("IN_PERSON")
+                    ? "border-[#082D55] bg-blue-50/40 text-[#082D55] ring-1 ring-[#082D55]"
+                    : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                }`}
+              >
+                <div className={`p-2 rounded-lg ${consultationModes.includes("IN_PERSON") ? "bg-[#082D55] text-white" : "bg-slate-100 text-slate-500"}`}>
+                  <Icon name="map" size={18} />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-slate-900">
+                    {ar ? "لقاء حضوري على عين المكان" : "Rencontre en présentiel (Sur place)"}
+                  </div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">
+                    {ar ? "داخل المدرسة، المركز المختص، أو مقر إقامة التلميذ" : "Dans l'établissement scolaire, le centre partenaire ou au domicile"}
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => toggleConsultationMode("ONLINE")}
+                className={`p-4 rounded-xl border text-start flex items-start gap-3 transition-all ${
+                  consultationModes.includes("ONLINE")
+                    ? "border-[#082D55] bg-blue-50/40 text-[#082D55] ring-1 ring-[#082D55]"
+                    : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                }`}
+              >
+                <div className={`p-2 rounded-lg ${consultationModes.includes("ONLINE") ? "bg-[#082D55] text-white" : "bg-slate-100 text-slate-500"}`}>
+                  <Icon name="video" size={18} />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-slate-900">
+                    {ar ? "لقاء عن بعد (عبر الفيديو)" : "Consultation à distance (En ligne)"}
+                  </div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">
+                    {ar ? "جلسة استكشاف أولية وتنسيق بيداغوجي عبر منصة آمنة" : "Échange exploratoire ou coordination pédagogique par visioconférence"}
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* 3. Time Slots */}
+          <div className="space-y-3 pt-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <label className="block text-xs font-bold text-slate-800">
+                {ar ? "3. التوقيتات اليومية المتاحة للحجز (Créneaux)" : "3. Créneaux horaires de consultation"}
+              </label>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const morning = ["08:30 - 09:30", "09:30 - 10:30", "10:30 - 11:30", "11:30 - 12:30"];
+                    setActiveSlots((prev) => Array.from(new Set([...prev, ...morning])).sort());
+                  }}
+                  className="text-[11px] font-semibold text-[#082D55] hover:underline"
+                >
+                  {ar ? "+ فترة الصباح" : "+ Créneaux matin"}
+                </button>
+                <span className="text-slate-300">·</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const afternoon = ["14:00 - 15:00", "15:00 - 16:00", "16:00 - 17:00", "17:00 - 18:00"];
+                    setActiveSlots((prev) => Array.from(new Set([...prev, ...afternoon])).sort());
+                  }}
+                  className="text-[11px] font-semibold text-[#082D55] hover:underline"
+                >
+                  {ar ? "+ فترة المساء" : "+ Créneaux après-midi"}
+                </button>
+              </div>
+            </div>
+
+            {/* Active slots pills */}
+            <div className="flex flex-wrap gap-2 p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 min-h-[58px] items-center">
+              {activeSlots.length === 0 ? (
+                <span className="text-xs text-slate-400 italic">
+                  {ar ? "لم يتم تحديد أية توقيتات بعد. أضف توقيتًا أدناه." : "Aucun créneau configuré. Ajoutez un créneau ci-dessous."}
+                </span>
+              ) : (
+                activeSlots.map((slot) => (
+                  <span
+                    key={slot}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-800 shadow-2xs group"
+                  >
+                    <Icon name="clock" size={13} className="text-[#a66f24]" />
+                    <span>{slot}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeSlot(slot)}
+                      className="text-slate-400 hover:text-red-600 transition-colors ml-1"
+                      aria-label={ar ? `حذف ${slot}` : `Supprimer ${slot}`}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))
+              )}
+            </div>
+
+            {/* Custom slot input */}
+            <div className="flex items-center gap-2 pt-1 max-w-sm">
+              <input
+                type="text"
+                value={customSlotInput}
+                onChange={(e) => setCustomSlotInput(e.target.value)}
+                placeholder={ar ? "مثال: 12:30 - 13:30" : "Ex: 12:30 - 13:30"}
+                className="px-3 py-2 rounded-xl border border-slate-300 text-xs flex-1 focus:ring-2 focus:ring-[#082D55]/20 focus:border-[#082D55]"
+              />
+              <button
+                type="button"
+                onClick={addCustomSlot}
+                className="btn btn-secondary text-xs px-4 py-2 rounded-xl font-bold"
+              >
+                {ar ? "إضافة توقيت" : "Ajouter créneau"}
+              </button>
+            </div>
+          </div>
+
+          {/* 4. Live Weekly Schedule & Booked Sessions Preview */}
+          <div className="space-y-3 pt-3 border-t border-slate-100">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold text-slate-800">
+                {ar ? "4. المعاينة المباشرة لجدول الأسبوع والمواعيد المحجوزة" : "4. Aperçu de votre semaine et réservations associées"}
+              </label>
+              <span className="text-[11px] font-semibold text-slate-500">
+                {bookings.filter((b) => b.status === "CONFIRMED").length}{" "}
+                {ar ? "موعد مؤكد" : "rendez-vous confirmés"}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {ALL_DAYS.filter((d) => selectedWorkingDays.includes(d.id)).map((d) => {
+                return (
+                  <div key={d.id} className="p-3.5 rounded-xl border border-slate-200 bg-white space-y-2">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                      <span className="text-xs font-bold text-[#082D55]">{ar ? d.ar : d.fr}</span>
+                      <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                        {activeSlots.length} {ar ? "فترة" : "créneaux"}
+                      </span>
+                    </div>
+                    <div className="space-y-1">
+                      {activeSlots.slice(0, 3).map((slot) => (
+                        <div key={slot} className="flex items-center justify-between text-[11px] text-slate-600 bg-slate-50 px-2 py-1 rounded">
+                          <span>{slot}</span>
+                          <span className="text-[10px] text-slate-400">{ar ? "متاح" : "Libre"}</span>
+                        </div>
+                      ))}
+                      {activeSlots.length > 3 && (
+                        <div className="text-[10px] text-slate-400 text-center pt-0.5">
+                          +{activeSlots.length - 3} {ar ? "توقيتات إضافية" : "autres créneaux"}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Submit action */}
+          <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+            <p className="text-xs text-slate-500">
+              {ar
+                ? "يتم تطبيق التعديلات فوراً على الدليل الوطني وحساب الأولياء."
+                : "Les modifications sont immédiatement répercutées sur votre profil public et le module de réservation."}
+            </p>
+            <button
+              type="submit"
+              disabled={isSavingCalendar}
+              className="btn btn-primary px-7 py-2.5 rounded-xl font-bold text-sm shadow-md hover:shadow-lg disabled:opacity-50 flex items-center gap-2"
+            >
+              {isSavingCalendar ? (
+                <span>{ar ? "جاري الحفظ..." : "Enregistrement..."}</span>
+              ) : (
+                <>
+                  <Icon name="check" size={16} />
+                  <span>{ar ? "حفظ وتحديث الأجندة" : "Enregistrer les disponibilités"}</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* TAB 3: Manage Public Directory Profile */}
       {activeTab === "profile" && (
         <form onSubmit={handleProfileSubmit} className="bg-white rounded-2xl border border-slate-200 p-6 space-y-6 shadow-xs">
           <div className="border-b border-slate-100 pb-4 flex items-center justify-between">
