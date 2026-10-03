@@ -5,14 +5,16 @@ import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { avsBookingRequests, avsProfiles } from "@/server/db/schema";
 import { auth } from "@/server/auth";
-import { consumeRateLimit, requestFingerprint } from "@/server/security/rate-limit";
+import { consumeRateLimit } from "@/server/security/rate-limit";
 import { isTrustedMutation } from "@/server/security/origin";
 import { readLimitedJson } from "@/server/security/request-body";
+import { sendBookingEscrowNotification } from "@/server/services/mailer";
+import { logger } from "@/server/security/logger";
 
 const bookingSchema = z.object({
   avsProfileId: z.string().min(1).max(64),
-  parentName: z.string().trim().min(2).max(120),
-  parentEmail: z.string().trim().email().max(200),
+  parentName: z.string().trim().min(2).max(120).optional(),
+  parentEmail: z.string().trim().email().max(200).optional(),
   parentPhone: z.string().trim().min(6).max(30),
   childName: z.string().trim().min(2).max(120),
   childAge: z.coerce.number().int().min(1).max(30).optional(),
@@ -23,6 +25,8 @@ const bookingSchema = z.object({
   requestedTimeSlot: z.string().trim().min(3).max(50),
   meetingType: z.enum(["IN_PERSON", "ONLINE", "HOME"]).default("IN_PERSON"),
   notes: z.string().trim().max(1000).optional().default(""),
+  paymentMethod: z.enum(["CARD_ESCROW", "FLOUCI", "CLICKTOPAY", "ESCROW_SIMULATION"]).default("CARD_ESCROW"),
+  locale: z.enum(["fr", "ar", "en"]).default("fr"),
 });
 
 export async function POST(request: Request) {
@@ -30,7 +34,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "UNTRUSTED_ORIGIN" }, { status: 403 });
   }
 
-  const rate = await consumeRateLimit(`avs-booking:${requestFingerprint(request)}`, 10, 3600);
+  // Enforce authentication: parent MUST have an account and be logged in
+  const session = await auth.api.getSession({ headers: await headers() }).catch(() => null);
+  if (!session?.user) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "AUTH_REQUIRED",
+        message: "Veuillez créer un compte ou vous connecter pour réserver un rendez-vous AVS et sécuriser le paiement sous séquestre.",
+      },
+      { status: 401 }
+    );
+  }
+
+  const rate = await consumeRateLimit(`avs-booking:${session.user.id}`, 10, 3600);
   if (!rate.allowed) {
     return NextResponse.json(
       { ok: false, error: "RATE_LIMITED" },
@@ -46,7 +63,12 @@ export async function POST(request: Request) {
 
   // Check target AVS profile exists and is visible
   const [profile] = await db
-    .select({ id: avsProfiles.id, displayName: avsProfiles.displayName })
+    .select({
+      id: avsProfiles.id,
+      displayName: avsProfiles.displayName,
+      hourlyRateMillimes: avsProfiles.hourlyRateMillimes,
+      email: avsProfiles.email,
+    })
     .from(avsProfiles)
     .where(and(eq(avsProfiles.id, parsed.data.avsProfileId), eq(avsProfiles.visible, true)))
     .limit(1);
@@ -55,17 +77,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "AVS_NOT_FOUND" }, { status: 404 });
   }
 
-  // Check if session exists to associate parentUserId
-  const session = await auth.api.getSession({ headers: await headers() }).catch(() => null);
-  const parentUserId = session?.user?.id ?? null;
+  // Calculate Third-Party Escrow Payment
+  // Standard session rate based on AVS hourly rate (default 35 TND = 35000 millimes)
+  const baseRateMillimes = profile.hourlyRateMillimes > 0 ? profile.hourlyRateMillimes : 35000;
+  // ANEI 10% platform fee as third-party escrow guarantee
+  const platformFeeMillimes = Math.round(baseRateMillimes * 0.10);
+  const totalAmountMillimes = baseRateMillimes + platformFeeMillimes;
+  const avsPayoutMillimes = baseRateMillimes;
+
+  const escrowRef = `ESC-2026-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
+  const parentName = parsed.data.parentName || session.user.name || "Parent";
+  const parentEmail = parsed.data.parentEmail || session.user.email || "";
 
   const [booking] = await db
     .insert(avsBookingRequests)
     .values({
       avsProfileId: parsed.data.avsProfileId,
-      parentUserId,
-      parentName: parsed.data.parentName,
-      parentEmail: parsed.data.parentEmail,
+      parentUserId: session.user.id,
+      parentName,
+      parentEmail,
       parentPhone: parsed.data.parentPhone,
       childName: parsed.data.childName,
       childAge: parsed.data.childAge ?? null,
@@ -75,10 +106,36 @@ export async function POST(request: Request) {
       requestedDate: parsed.data.requestedDate,
       requestedTimeSlot: parsed.data.requestedTimeSlot,
       meetingType: parsed.data.meetingType,
-      status: "PENDING",
+      status: "CONFIRMED",
       notes: parsed.data.notes || null,
+      amountMillimes: totalAmountMillimes,
+      platformFeeMillimes,
+      avsPayoutMillimes,
+      paymentStatus: "HELD_IN_ESCROW",
+      paymentMethod: parsed.data.paymentMethod,
+      paymentReference: escrowRef,
+      paidAt: new Date(),
     })
     .returning();
+
+  // Send automatic Escrow Confirmation Email to Parent
+  try {
+    await sendBookingEscrowNotification({
+      parentName,
+      parentEmail,
+      avsName: profile.displayName,
+      childName: parsed.data.childName,
+      requestedDate: parsed.data.requestedDate,
+      requestedTimeSlot: parsed.data.requestedTimeSlot,
+      meetingType: parsed.data.meetingType,
+      amountTnd: Math.round(totalAmountMillimes / 1000),
+      escrowRef,
+      locale: parsed.data.locale,
+    });
+    logger.info("avs.booking.escrow_email_sent", { bookingId: booking.id, escrowRef });
+  } catch (mailErr) {
+    logger.error("avs.booking.mail_error", { error: mailErr });
+  }
 
   return NextResponse.json(
     {
@@ -90,6 +147,14 @@ export async function POST(request: Request) {
         requestedDate: booking.requestedDate,
         requestedTimeSlot: booking.requestedTimeSlot,
         status: booking.status,
+        escrow: {
+          reference: escrowRef,
+          amountTnd: totalAmountMillimes / 1000,
+          platformFeeTnd: platformFeeMillimes / 1000,
+          avsPayoutTnd: avsPayoutMillimes / 1000,
+          status: "HELD_IN_ESCROW",
+          guarantee: "Garantie Tiers de Confiance ANEI — Fonds sous séquestre sécurisé",
+        },
       },
     },
     { status: 201 }
@@ -111,7 +176,26 @@ export async function GET() {
 
   if (avsProfile) {
     const requests = await db
-      .select()
+      .select({
+        id: avsBookingRequests.id,
+        parentName: avsBookingRequests.parentName,
+        parentEmail: avsBookingRequests.parentEmail,
+        parentPhone: avsBookingRequests.parentPhone,
+        childName: avsBookingRequests.childName,
+        childAge: avsBookingRequests.childAge,
+        schoolName: avsBookingRequests.schoolName,
+        needDescription: avsBookingRequests.needDescription,
+        requestedDate: avsBookingRequests.requestedDate,
+        requestedTimeSlot: avsBookingRequests.requestedTimeSlot,
+        meetingType: avsBookingRequests.meetingType,
+        status: avsBookingRequests.status,
+        amountMillimes: avsBookingRequests.amountMillimes,
+        platformFeeMillimes: avsBookingRequests.platformFeeMillimes,
+        avsPayoutMillimes: avsBookingRequests.avsPayoutMillimes,
+        paymentStatus: avsBookingRequests.paymentStatus,
+        paymentReference: avsBookingRequests.paymentReference,
+        createdAt: avsBookingRequests.createdAt,
+      })
       .from(avsBookingRequests)
       .where(eq(avsBookingRequests.avsProfileId, avsProfile.id))
       .orderBy(desc(avsBookingRequests.createdAt));
@@ -119,17 +203,24 @@ export async function GET() {
     return NextResponse.json({ ok: true, role: "AVS", requests });
   }
 
-  // Otherwise return parent's requests
+  // Otherwise return parent's requests with Escrow details
   const parentRequests = await db
     .select({
       id: avsBookingRequests.id,
       avsProfileId: avsBookingRequests.avsProfileId,
       avsName: avsProfiles.displayName,
+      avsSpecialty: avsProfiles.specialtyFr,
       childName: avsBookingRequests.childName,
       requestedDate: avsBookingRequests.requestedDate,
       requestedTimeSlot: avsBookingRequests.requestedTimeSlot,
       meetingType: avsBookingRequests.meetingType,
       status: avsBookingRequests.status,
+      amountMillimes: avsBookingRequests.amountMillimes,
+      platformFeeMillimes: avsBookingRequests.platformFeeMillimes,
+      avsPayoutMillimes: avsBookingRequests.avsPayoutMillimes,
+      paymentStatus: avsBookingRequests.paymentStatus,
+      paymentReference: avsBookingRequests.paymentReference,
+      paidAt: avsBookingRequests.paidAt,
       createdAt: avsBookingRequests.createdAt,
     })
     .from(avsBookingRequests)

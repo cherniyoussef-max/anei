@@ -8,6 +8,7 @@ import { WebinarRegisterButton } from "@/components/interactive/WebinarRegisterB
 import { getWebinarBySlug } from "@/server/queries/catalog";
 import { getProviderMeta } from "@/lib/webinars";
 import type { Locale } from "@/types";
+import { localizeTrainerName, localizeTrainerInitials } from "@/lib/arabic-locale";
 
 export const dynamic = "force-dynamic";
 
@@ -57,11 +58,11 @@ export default async function WebinarDetailPage({
             <Link href={`/${locale}`} style={{ color: "#94a3b8", textDecoration: "none" }}>
               {ar ? "الرئيسية" : "Accueil"}
             </Link>
-            <span>›</span>
+            <span>{ar ? "‹" : "›"}</span>
             <Link href={`/${locale}/webinaires`} style={{ color: "#94a3b8", textDecoration: "none" }}>
               {ar ? "الندوات" : "Webinaires"}
             </Link>
-            <span>›</span>
+            <span>{ar ? "‹" : "›"}</span>
             <span style={{ color: "#e2e8f0" }}>{title}</span>
           </nav>
 
@@ -126,11 +127,11 @@ export default async function WebinarDetailPage({
               <Icon name="clock" size={18} />
               {new Intl.DateTimeFormat(dateLocale, { hour: "2-digit", minute: "2-digit" }).format(webinar.startsAt)}
               {" · "}
-              {webinar.durationMinutes} min
+              {webinar.durationMinutes} {ar ? "دقيقة" : "min"}
             </span>
             <span style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
               <Icon name="user" size={18} />
-              {webinar.trainerName}
+              {localizeTrainerName(webinar.trainerName, locale)}
             </span>
             {webinar.location ? (
               <span style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
@@ -306,14 +307,14 @@ export default async function WebinarDetailPage({
                   flexShrink: 0,
                 }}
               >
-                {webinar.trainerName.charAt(0)}
+                {localizeTrainerInitials(webinar.trainerName, locale)}
               </div>
               <div>
                 <span style={{ fontSize: "0.75rem", color: "#64748b", textTransform: "uppercase", fontWeight: 600 }}>
                   {ar ? "المدرب والمحاضر" : "Intervenant expert"}
                 </span>
                 <h4 style={{ margin: "0.15rem 0 0.35rem", color: "#082d55", fontSize: "1.1rem" }}>
-                  {webinar.trainerName}
+                  {localizeTrainerName(webinar.trainerName, locale)}
                 </h4>
                 <p style={{ margin: 0, color: "#64748b", fontSize: "0.85rem" }}>
                   {ar

@@ -30,6 +30,8 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
   const [governorateAr, setGovernorateAr] = useState(profile?.governorateAr || "تونس");
   const [specialtyFr, setSpecialtyFr] = useState(profile?.specialtyFr || "Accompagnement scolaire spécialisé");
   const [specialtyAr, setSpecialtyAr] = useState(profile?.specialtyAr || "مرافقة مدرسية مختصة");
+  const [availabilityFr, setAvailabilityFr] = useState(profile?.availabilityFr || "Disponible immédiatement");
+  const [availabilityAr, setAvailabilityAr] = useState(profile?.availabilityAr || "متاح فورًا");
   const [hourlyRateTnd, setHourlyRateTnd] = useState(profile?.hourlyRateMillimes ? profile.hourlyRateMillimes / 1000 : 25);
   const [experienceYears, setExperienceYears] = useState(profile?.experienceYears || 4);
   const [phone, setPhone] = useState(profile?.phone || "+216 ");
@@ -81,8 +83,8 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
           governorateAr,
           specialtyFr,
           specialtyAr,
-          availabilityFr: profile?.availabilityFr || "Disponible en semaine",
-          availabilityAr: profile?.availabilityAr || "متاح خلال الأسبوع",
+          availabilityFr: availabilityFr.trim() || "Disponible immédiatement",
+          availabilityAr: availabilityAr.trim() || "متاح فورًا",
           interventionDomains,
           pedagogicalMethods,
           schoolsCoveredFr,
@@ -255,7 +257,23 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
                       <div>
                         <span className="text-slate-400 block">{ar ? "الموعد المطلوب" : "Date & Créneau :"}</span>
                         <strong className="text-slate-800">{b.requestedDate}</strong>
-                        <div className="text-slate-600">{b.requestedTimeSlot} ({b.meetingType})</div>
+                        <div className="text-slate-600 flex items-center gap-1.5 mt-0.5">
+                          <span>{b.requestedTimeSlot}</span>
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            b.meetingType === "ONLINE"
+                              ? "bg-purple-100 text-purple-800 border border-purple-200"
+                              : "bg-blue-100 text-blue-800 border border-blue-200"
+                          }`}>
+                            <Icon name={b.meetingType === "ONLINE" ? "video" : "map"} size={11} />
+                            <span>
+                              {b.meetingType === "ONLINE"
+                                ? ar ? "عن بعد" : "En ligne"
+                                : b.meetingType === "HOME"
+                                ? ar ? "في المنزل" : "À domicile"
+                                : ar ? "حضوري" : "Sur place"}
+                            </span>
+                          </span>
+                        </div>
                       </div>
 
                       <div>
@@ -451,6 +469,78 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
                 placeholder="مثال: طيف التوحد والتواصل المكيف"
                 className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#082D55]/20 focus:border-[#082D55]"
               />
+            </div>
+
+            {/* Availability / Disponibilité Section */}
+            <div className="md:col-span-2 p-5 rounded-2xl bg-amber-50/50 border border-amber-200/80 space-y-4">
+              <div>
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#a66f24]">
+                  <Icon name="calendar" size={15} />
+                  <span>{ar ? "أوقات التوفر وجدول العمل (Disponibilités)" : "Disponibilités & Horaires d'intervention"}</span>
+                </div>
+                <p className="text-xs text-slate-600 mt-1">
+                  {ar
+                    ? "حدد بوضوح أوقات توفرك للمرافقة لتسهيل التنسيق مع العائلات والمؤسسات التعليمية."
+                    : "Indiquez votre rythme et vos plages de disponibilité pour guider les familles dans leurs demandes."}
+                </p>
+              </div>
+
+              {/* Quick Presets */}
+              <div>
+                <span className="block text-[11px] font-semibold text-slate-500 mb-1.5">
+                  {ar ? "خيارات سريعة للاختيار المباشر :" : "Suggestions rapides :"}
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { fr: "Disponible immédiatement (Temps plein)", ar: "متاح فورًا (دوام كامل)" },
+                    { fr: "Disponible en semaine (Matinées)", ar: "متاح خلال الأسبوع (الفترة الصباحية)" },
+                    { fr: "Temps partiel (Après-midis & Samedi)", ar: "دوام جزئي (بعد الظهر والسبت)" },
+                    { fr: "Horaires flexibles selon planning scolaire", ar: "أوقات مرنة حسب جدول المدرسة" },
+                  ].map((preset) => (
+                    <button
+                      key={preset.fr}
+                      type="button"
+                      onClick={() => {
+                        setAvailabilityFr(preset.fr);
+                        setAvailabilityAr(preset.ar);
+                      }}
+                      className="px-2.5 py-1 text-xs rounded-lg border border-amber-300 bg-white hover:bg-amber-100/70 text-slate-700 transition-colors font-medium shadow-2xs"
+                    >
+                      {ar ? preset.ar : preset.fr}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    {ar ? "صيغة التوفر (فرنسية) *" : "Disponibilité affichée (FR) *"}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={availabilityFr}
+                    onChange={(e) => setAvailabilityFr(e.target.value)}
+                    placeholder="Ex: Disponible immédiatement (Temps plein)"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-[#082D55]/20 focus:border-[#082D55]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    {ar ? "صيغة التوفر (عربية) *" : "Disponibilité affichée (AR) *"}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={availabilityAr}
+                    onChange={(e) => setAvailabilityAr(e.target.value)}
+                    placeholder="مثال: متاح فورًا (دوام كامل)"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-[#082D55]/20 focus:border-[#082D55]"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Hourly Rate & Experience */}

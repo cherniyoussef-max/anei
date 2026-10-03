@@ -56,7 +56,7 @@ export function HeroCtaActions({ locale, initialUser }: HeroCtaActionsProps) {
     <div className="ah-hero-actions">
       <Link href={primaryHref} className="ah-btn ah-btn-primary">
         <span>{primaryLabel}</span>
-        <Icon name="arrow" size={16} />
+        <Icon name="arrow" size={16} className="directional-icon" />
       </Link>
       <Link href={secondaryHref} className="ah-btn ah-btn-outline">
         <span>{secondaryLabel}</span>

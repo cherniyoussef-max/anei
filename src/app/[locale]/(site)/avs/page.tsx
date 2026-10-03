@@ -3,10 +3,15 @@ import type { Metadata } from "next";
 import { isLocale } from "@/lib/i18n";
 import { PageHero } from "@/components/ui/PageHero";
 import { AvsFilter, type AvsDirectoryProfile } from "@/components/interactive/AvsFilter";
-import { Icon } from "@/components/ui/Icon";
 import { searchVisibleAvs } from "@/server/queries/catalog";
 import { avsProfiles as avsTranslations } from "@/lib/data";
 import { publicDataOr } from "@/server/queries/public-fallback";
+import {
+  localizeAvsName,
+  localizeAvsInitials,
+  localizeDomain,
+  localizeMethod,
+} from "@/lib/arabic-locale";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 function one(value: string | string[] | undefined) {
@@ -123,24 +128,20 @@ export default async function AvsPage({
 
     return {
       id: profile.id,
-      name: profile.displayName,
+      name: localizeAvsName(profile.displayName, locale),
       slug: profile.slug,
       city,
       governorate,
       specialty,
       availability,
       certified: profile.certified,
-      initials: profile.displayName
-        .split(" ")
-        .slice(0, 2)
-        .map((part) => part[0])
-        .join(""),
+      initials: localizeAvsInitials(profile.displayName, locale),
       rating: profile.rating,
       reviewCount: profile.reviewCount,
       experienceYears: profile.experienceYears,
       hourlyRateTnd,
-      interventionDomains: profile.interventionDomains ?? translated?.interventionDomains ?? [],
-      pedagogicalMethods: profile.pedagogicalMethods ?? translated?.pedagogicalMethods ?? [],
+      interventionDomains: (profile.interventionDomains ?? translated?.interventionDomains ?? []).map((dom) => localizeDomain(dom, locale)),
+      pedagogicalMethods: (profile.pedagogicalMethods ?? translated?.pedagogicalMethods ?? []).map((m) => localizeMethod(m, locale)),
       schoolsCovered,
       phone: profile.phone,
       email: profile.email,
@@ -181,69 +182,6 @@ export default async function AvsPage({
             totalPages={data.totalPages}
             total={data.total}
           />
-        </div>
-      </section>
-
-      {/* Trust & Guarantee Banner */}
-      <section className="bg-white py-12 lg:py-14 border-t border-slate-200/80">
-        <div className="container max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="text-center max-w-2xl mx-auto mb-8 space-y-2">
-            <span className="text-[11px] font-bold text-[#082D55] uppercase tracking-wider bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
-              {ar ? "معايير الجودة والموثوقية" : "Garanties d'accompagnement ANEI"}
-            </span>
-            <h2 className="text-xl sm:text-2xl font-bold text-[#082D55] font-[family-name:var(--font-fraunces)]">
-              {ar ? "شبكة مهنية منظمة تضمن حق طفلك في تعليم دامج" : "Un réseau rigoureusement encadré pour la réussite de l'élève"}
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-[#fcfbf8] rounded-2xl border border-slate-200/80 p-6 shadow-2xs space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-blue-100/80 text-[#082D55] flex items-center justify-center flex-none">
-                <Icon name="award" size={24} />
-              </div>
-              <div>
-                <h3 className="font-bold text-base text-[#082D55] font-[family-name:var(--font-fraunces)]">
-                  {ar ? "اعتماد ANEI الموثوق" : "Certification ANEI rigoureuse"}
-                </h3>
-                <p className="text-xs text-slate-600 mt-1.5 leading-relaxed">
-                  {ar
-                    ? "ملفات مهنية يتم تدقيق شهاداتها وخبراتها الميدانية من طرف الهيئة البيداغوجية للأكاديمية."
-                    : "Diplômes, formations continues et pratiques de terrain vérifiés par la commission pédagogique de l'académie."}
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-[#fcfbf8] rounded-2xl border border-slate-200/80 p-6 shadow-2xs space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-amber-100/80 text-amber-800 flex items-center justify-center flex-none">
-                <Icon name="calendar" size={24} />
-              </div>
-              <div>
-                <h3 className="font-bold text-base text-[#082D55] font-[family-name:var(--font-fraunces)]">
-                  {ar ? "حجز مباشر وتنسيق مرن" : "Rendez-vous et suivi transparent"}
-                </h3>
-                <p className="text-xs text-slate-600 mt-1.5 leading-relaxed">
-                  {ar
-                    ? "حدد موعد المقابلة الاستكشافية وفق توفر المرافق والمؤسسة التربوية مع إشعار فوري."
-                    : "Planifiez des entretiens préliminaires ou d'observation selon vos créneaux et ceux de l'école."}
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-[#fcfbf8] rounded-2xl border border-slate-200/80 p-6 shadow-2xs space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-emerald-100/80 text-emerald-800 flex items-center justify-center flex-none">
-                <Icon name="shield" size={24} />
-              </div>
-              <div>
-                <h3 className="font-bold text-base text-[#082D55] font-[family-name:var(--font-fraunces)]">
-                  {ar ? "حماية الخصوصية ومصلحة الطفل" : "Confidentialité & éthique"}
-                </h3>
-                <p className="text-xs text-slate-600 mt-1.5 leading-relaxed">
-                  {ar
-                    ? "معلومات التلميذ وملفه التربوي محفوظة وفق معايير الأمان وحماية المعطيات الشخصية."
-                    : "Données de santé et besoins de l'enfant protégés. Aucun partage sans le consentement explicite des familles."}
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
     </>

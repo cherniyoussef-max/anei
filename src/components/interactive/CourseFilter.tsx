@@ -5,6 +5,13 @@ import { formatDate, formatMillimes, t } from "@/lib/i18n";
 import { getCourseVisual } from "@/lib/visuals";
 import { Icon } from "@/components/ui/Icon";
 import { Pagination } from "@/components/ui/Pagination";
+import {
+  localizeCourseCategory,
+  localizeCourseLevel,
+  localizeCourseMode,
+  localizeTrainerName,
+  localizeTrainerInitials,
+} from "@/lib/arabic-locale";
 
 export type CatalogCourse = {
   id: string;
@@ -59,7 +66,7 @@ export function CourseFilter({
           <div className="catalog-filter-row catalog-course-filter-row">
             <label><span>{ar ? "الفئة" : en ? "Category" : "Catégorie"}</span><select name="category" defaultValue={filters.category ?? ""}>
               <option value="">{ar ? "كل الفئات" : en ? "All categories" : "Toutes les catégories"}</option>
-              {categories.map((item) => <option value={item} key={item}>{item.replaceAll("-", " ")}</option>)}
+              {categories.map((item) => <option value={item} key={item}>{localizeCourseCategory(item, locale)}</option>)}
             </select></label>
             <label><span>{ar ? "المستوى" : en ? "Level" : "Niveau"}</span><select name="level" defaultValue={filters.level ?? ""}>
               <option value="">{ar ? "كل المستويات" : en ? "All levels" : "Tous les niveaux"}</option>
@@ -102,18 +109,27 @@ export function CourseFilter({
             <div className="course-photo catalog-course-photo">
               <Image src={getCourseVisual(course.slug)} alt="" fill sizes="(max-width: 900px) 100vw, 33vw" />
               <div className="course-photo-overlay" aria-hidden="true"/>
-              <span>{course.mode === "online" ? (ar ? "عن بعد" : en ? "Online" : "En ligne") : course.mode === "hybrid" ? (ar ? "هجين" : en ? "Hybrid" : "Hybride") : (ar ? "حضوري" : en ? "On site" : "Présentiel")}</span>
+              <span>{localizeCourseMode(course.mode, locale)}</span>
               {course.featured ? <em>{ar ? "موصى به" : en ? "Recommended" : "Recommandé"}</em> : null}
             </div>
             <div className="course-card-body">
-              <div className="course-card-topline"><span className="course-category-label">{course.category.replaceAll("-", " ")}</span><span className="course-level-label">{course.level}</span></div>
+              <div className="course-card-topline">
+                <span className="course-category-label">{localizeCourseCategory(course.category, locale)}</span>
+                <span className="course-level-label">{localizeCourseLevel(course.level, locale)}</span>
+              </div>
               <h3>{course.title}</h3>
               <p>{course.summary}</p>
               <div className="meta-row">
-                <span><Icon name="clock" size={15} />{Math.max(1, Math.round(course.durationMinutes / 60))} h</span>
+                <span>
+                  <Icon name="clock" size={15} />
+                  {Math.max(1, Math.round(course.durationMinutes / 60))} {ar ? "ساعة" : "h"}
+                </span>
                 {course.startAt ? <span><Icon name="calendar" size={15} />{formatDate(course.startAt, locale)}</span> : null}
               </div>
-              <div className="trainer-row"><span className="mini-avatar">{course.trainerName.split(" ").slice(-2).map((part) => part[0]).join("")}</span><span>{course.trainerName}</span></div>
+              <div className="trainer-row">
+                <span className="mini-avatar">{localizeTrainerInitials(course.trainerName, locale)}</span>
+                <span>{localizeTrainerName(course.trainerName, locale)}</span>
+              </div>
               {course.enrollment ? (
                 <div className="progress slim" role="status" aria-label={`${ar ? "التقدم" : en ? "Progress" : "Progression"} ${course.enrollment.progressPercent}%`}>
                   <span style={{ width: `${Math.min(100, Math.max(0, course.enrollment.progressPercent))}%` }} />
@@ -124,10 +140,10 @@ export function CourseFilter({
                 {course.enrollment ? (
                   <Link className="text-link" href={`/${locale}/apprendre/${course.slug}`}>
                     {course.enrollment.completed ? (ar ? "مراجعة الدورة" : en ? "Review course" : "Revoir la formation") : (ar ? "متابعة التعلم" : en ? "Continue learning" : "Continuer la formation")}
-                    <Icon name="arrow" size={16} />
+                    <Icon className="directional-icon" name="arrow" size={16} />
                   </Link>
                 ) : (
-                  <Link className="text-link" href={`/${locale}/formations/${course.slug}`}>{c.actions.details}<Icon name="arrow" size={16} /></Link>
+                  <Link className="text-link" href={`/${locale}/formations/${course.slug}`}>{c.actions.details}<Icon className="directional-icon" name="arrow" size={16} /></Link>
                 )}
               </div>
             </div>

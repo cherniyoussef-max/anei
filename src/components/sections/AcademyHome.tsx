@@ -47,6 +47,52 @@ function initials(name: string) {
   return name.split(" ").slice(0, 2).map((part) => part[0]).join("");
 }
 
+const avsNameMap: Record<string, { ar: string; initialsAr: string }> = {
+  "Aymen Chaabane": { ar: "أيمن شعبان", initialsAr: "أ.ش" },
+  "Mohamed Ali Jebali": { ar: "محمد علي الجبالي", initialsAr: "م.ج" },
+  "Nourhene Trabelsi": { ar: "نورهان الطرابلسي", initialsAr: "ن.ط" },
+  "Salma Karray": { ar: "سلمى كراي", initialsAr: "س.ك" },
+  "Rim Ben Amor": { ar: "ريم بن عمر", initialsAr: "ر.ع" },
+  "Yassine Mansour": { ar: "ياسين منصور", initialsAr: "ي.م" },
+  "Salma Ben Youssef": { ar: "سلمى بن يوسف", initialsAr: "س.ي" },
+  "Ahmed Triki": { ar: "أحمد التريكي", initialsAr: "أ.ت" },
+};
+
+function avsName(profile: AvsRow, locale: Locale) {
+  if (locale === "ar") {
+    return avsNameMap[profile.displayName]?.ar ?? profile.displayName;
+  }
+  return profile.displayName;
+}
+
+function avsProfileInitials(profile: AvsRow, locale: Locale) {
+  if (locale === "ar") {
+    return avsNameMap[profile.displayName]?.initialsAr ?? initials(profile.displayName);
+  }
+  return initials(profile.displayName);
+}
+
+const trainerNameMap: Record<string, string> = {
+  "Dr. Amira Ben Salem": "د. أميرة بن سالم",
+  "Dr. Youssef Trabelsi": "د. يوسف الطرابلسي",
+  "Nadia Gharbi": "نادية الغربي",
+  "Meriem Khelifi": "مريم الخليفي",
+  "Sonia Ayari": "سنية العياري",
+};
+
+function courseTrainerName(trainer: string, locale: Locale) {
+  if (locale === "ar") {
+    return trainerNameMap[trainer] ?? trainer;
+  }
+  return trainer;
+}
+
+function courseDuration(minutes: number, locale: Locale) {
+  const hours = Math.max(1, Math.round(minutes / 60));
+  if (locale === "ar") return `${hours} ساعة`;
+  return `${hours}h`;
+}
+
 const heroCopy = {
   title: { en: "Tomorrow’s institution, ready today", fr: "L’institution de demain, prête aujourd’hui", ar: "مؤسسة الغد، جاهزة اليوم" },
   lead: {
@@ -166,7 +212,7 @@ export function AcademyHome({
         <div className="ah-container">
           <div className="ah-hero-grid">
             <div className="ah-hero-copy">
-              <div className="ah-hero-logo-intro w-[260px] sm:w-[320px] md:w-[360px] mb-1">
+              <div className="ah-hero-logo-intro w-[200px] sm:w-[240px] md:w-[280px] mb-1">
                 <AneiLogoAnimated locale={locale} priority hasPlayedIntro={hasPlayedIntro} />
               </div>
               <h1 className="ah-hero-title">{tx(locale, heroCopy.title)}</h1>
@@ -224,9 +270,9 @@ export function AcademyHome({
             <div className="ah-avs-profiles">
               {avsProfiles.map((profile) => (
                 <Link key={profile.id} href={`/${locale}/avs`} className="ah-avs-profile">
-                  <span className="ah-avs-profile-avatar" aria-hidden="true">{initials(profile.displayName)}</span>
+                  <span className="ah-avs-profile-avatar" aria-hidden="true">{avsProfileInitials(profile, locale)}</span>
                   <span className="ah-avs-profile-copy">
-                    <strong>{profile.displayName}</strong>
+                    <strong>{avsName(profile, locale)}</strong>
                     <small>{avsSpecialty(profile, locale)} · {avsCity(profile, locale)}</small>
                   </span>
                 </Link>
@@ -245,7 +291,7 @@ export function AcademyHome({
             </div>
             <Link href={`/${locale}/bibliotheque`} className="ah-formations-link">
               {tx(locale, formationsCopy.link)}
-              <Icon name="arrow" size={16} />
+              <Icon name="arrow" size={16} className="directional-icon" />
             </Link>
           </div>
           <div className="ah-formations-grid">
@@ -253,12 +299,15 @@ export function AcademyHome({
               ? featuredCourses.map((course) => (
                 <div className="ah-formation-card" key={course.id}>
                   <div>
-                    <span className="ah-formation-tag">{Math.max(1, Math.round(course.durationMinutes / 60))}h · {course.trainerName}</span>
+                    <span className="ah-formation-tag">
+                      {courseDuration(course.durationMinutes, locale)} · {courseTrainerName(course.trainerName, locale)}
+                    </span>
                     <h3>{courseTitle(course, locale)}</h3>
                     <p>{courseSummary(course, locale)}</p>
                   </div>
                   <Link href={`/${locale}/formations/${course.slug}`} className="ah-formation-btn">
-                    {formatMillimes(course.priceMillimes, locale)}
+                    <span>{locale === "ar" ? "اكتشف الدورة" : locale === "en" ? "Explore course" : "Découvrir la formation"}</span>
+                    <span className="ah-formation-price">{formatMillimes(course.priceMillimes, locale)}</span>
                   </Link>
                 </div>
               ))
@@ -270,7 +319,7 @@ export function AcademyHome({
                     <p>{tx(locale, card.body)}</p>
                   </div>
                   <Link href={`/${locale}/formations`} className="ah-formation-btn">
-                    {tx(locale, card.cta)}
+                    <span>{tx(locale, card.cta)}</span>
                   </Link>
                 </div>
               ))}
@@ -284,7 +333,7 @@ export function AcademyHome({
                 {webinarTitle(nextWebinar, locale)}
                 {nextWebinar.startsAt ? ` · ${formatDate(nextWebinar.startsAt, locale)}` : ""}
               </span>
-              <Icon name="arrow" size={16} />
+              <Icon name="arrow" size={16} className="directional-icon" />
             </Link>
           ) : null}
         </div>

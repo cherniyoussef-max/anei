@@ -32,7 +32,7 @@ export function NewsletterForm({ locale, idSuffix = "footer", variant = "compact
     <form className={`newsletter-form newsletter-form-${variant}`} onSubmit={submit} aria-busy={state === "loading"}>
       <label htmlFor={`newsletter-email-${locale}-${idSuffix}`}>{label}</label>
       <div className="newsletter-box">
-        <input id={`newsletter-email-${locale}-${idSuffix}`} name="email" placeholder="name@example.com" type="email" autoComplete="email" required/>
+        <input id={`newsletter-email-${locale}-${idSuffix}`} name="email" placeholder={ar ? "example@domaine.tn" : "name@example.com"} type="email" autoComplete="email" required/>
         <button type="submit" disabled={state === "loading"} aria-label={action}>
           {variant === "expanded" ? <span>{action}</span> : null}
           <Icon className="directional-icon" name="arrow" size={18}/>

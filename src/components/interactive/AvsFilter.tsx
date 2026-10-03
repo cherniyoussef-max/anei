@@ -66,7 +66,7 @@ export function AvsFilter({
 
   // Booking modal state
   const [activeBookingAvs, setActiveBookingAvs] = useState<AvsDirectoryProfile | null>(null);
-  const [selectedSlotForBooking, setSelectedSlotForBooking] = useState<{ date?: string; slot?: string }>({});
+  const [selectedSlotForBooking] = useState<{ date?: string; slot?: string }>({});
 
   // Quick filter helper
   function updateParam(key: string, value: string | undefined) {
@@ -78,52 +78,6 @@ export function AvsFilter({
     }
     next.set("page", "1");
     router.push(`/${locale}/avs?${next.toString()}`);
-  }
-
-  // Realistic per-practitioner upcoming slots generator
-  function getPractitionerSlots(profileId: string) {
-    const hash = profileId
-      .split("")
-      .reduce((acc, char, idx) => acc + char.charCodeAt(0) * (idx + 1), 0);
-
-    const today = new Date();
-
-    const offset1 = (hash % 2) + 1;
-    const d1 = new Date();
-    d1.setDate(today.getDate() + offset1);
-    const hour1 = 9 + (hash % 3);
-    const minute1 = hash % 2 === 0 ? "00" : "30";
-    const time1 = `${hour1 < 10 ? "0" + hour1 : hour1}:${minute1}`;
-
-    const offset2 = offset1 + 2 + ((hash >> 1) % 2);
-    const d2 = new Date();
-    d2.setDate(today.getDate() + offset2);
-    const hour2 = 14 + (hash % 3);
-    const minute2 = hash % 2 === 0 ? "30" : "00";
-    const time2 = `${hour2}:${minute2}`;
-
-    const formatDay = (d: Date) => {
-      return d.toLocaleDateString(ar ? "ar-TN" : "fr-TN", {
-        weekday: "short",
-        day: "numeric",
-        month: "short",
-      });
-    };
-
-    return [
-      {
-        iso: d1.toISOString().split("T")[0],
-        dayLabel: formatDay(d1),
-        time: time1,
-        fullSlot: `${time1} - ${Number(time1.split(":")[0]) + 1}:${minute1}`,
-      },
-      {
-        iso: d2.toISOString().split("T")[0],
-        dayLabel: formatDay(d2),
-        time: time2,
-        fullSlot: `${time2} - ${Number(time2.split(":")[0]) + 1}:${minute2}`,
-      },
-    ];
   }
 
   const popularSpecialties = [
@@ -239,7 +193,7 @@ export function AvsFilter({
                     key={spec.key}
                     type="button"
                     onClick={() => updateParam("specialty", isActive ? undefined : spec.key)}
-                    className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                    className={`avs-filter-pill px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
                       isActive
                         ? "bg-[#082D55] text-white border-[#082D55] shadow-2xs"
                         : "bg-white hover:bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300"
@@ -282,178 +236,118 @@ export function AvsFilter({
       </div>
 
       {/* Results Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-1 py-1">
-        <div className="flex items-center gap-2.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
-          <h2 className="text-base sm:text-lg font-bold text-[#082D55] font-[family-name:var(--font-fraunces)]">
-            {ar
-              ? `${total} مرافق(ة) مدرسي(ة) مؤهل(ة) للتواصل والمرافقة`
-              : `${total} accompagnant${total > 1 ? "s" : ""} scolaire${total > 1 ? "s" : ""} (AVS) qualifié${total > 1 ? "s" : ""}`}
-          </h2>
-        </div>
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200/80 shadow-2xs">
-          <Icon name="shield" size={13} className="text-emerald-700" />
-          <span>{ar ? "حجز مباشر وتنسيق مؤمن تحت الضمان" : "Prise de rendez-vous directe & séquestre garanti"}</span>
-        </div>
+      <div className="flex items-center gap-2.5 px-1 py-1">
+        <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
+        <h2 className="text-base sm:text-lg font-bold text-[#082D55] font-[family-name:var(--font-fraunces)]">
+          {ar
+            ? `${total} مرافق(ة) مدرسي(ة) مؤهل(ة) للتواصل والمرافقة`
+            : `${total} accompagnant${total > 1 ? "s" : ""} scolaire${total > 1 ? "s" : ""} (AVS) qualifié${total > 1 ? "s" : ""}`}
+        </h2>
       </div>
 
       {/* Practitioner Cards Grid */}
       <div className="space-y-4">
         {profiles.map((profile) => {
           const profileSlugOrId = profile.slug || profile.id;
-          const slots = getPractitionerSlots(profile.id);
           return (
             <article
               key={profile.id}
-              className="avs-card bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:border-slate-300 hover:shadow-xs transition-all overflow-hidden p-5 sm:p-6"
+              className="avs-card block bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:border-slate-300 hover:shadow-xs transition-all overflow-hidden p-5 sm:p-6"
             >
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-                {/* Left Identity Column (8 cols) */}
-                <div className="lg:col-span-8 space-y-3.5">
-                  <div className="flex items-start gap-4">
-                    {/* Avatar with status indicator */}
-                    <div className="relative flex-none">
-                      <div className="w-16 h-16 rounded-xl bg-[#082D55] text-white flex items-center justify-center font-bold text-xl font-[family-name:var(--font-fraunces)] shadow-2xs border border-white/20">
-                        {profile.initials}
-                      </div>
-                      <span
-                        className="avs-status-available absolute -bottom-1 -end-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white shadow-2xs"
-                        title={ar ? "متاح للمرافقة" : "Disponible pour accompagnement"}
-                      />
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
+                {/* Identity Column */}
+                <div className="flex items-start gap-4 sm:gap-5 flex-1 min-w-0">
+                  {/* Avatar with status indicator */}
+                  <div className="relative flex-none">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br from-[#082D55] to-[#124275] text-white flex items-center justify-center font-bold text-lg sm:text-xl font-[family-name:var(--font-fraunces)] shadow-2xs border border-white/20">
+                      {profile.initials}
                     </div>
-
-                    {/* Name, Badges & Specialty */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Link
-                          href={`/${locale}/avs/${profileSlugOrId}`}
-                          className="avs-card-name text-lg sm:text-xl font-bold text-[#082D55] hover:text-[#a66f24] transition-colors font-[family-name:var(--font-fraunces)]"
-                        >
-                          {profile.name}
-                        </Link>
-                        {profile.certified && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-300 shadow-2xs">
-                            <Icon name="award" size={12} className="text-amber-600" />
-                            <span>{ar ? "معتمد ANEI" : "Certifié ANEI"}</span>
-                          </span>
-                        )}
-                      </div>
-
-                      <p className="text-sm font-semibold text-slate-800 mt-1">{profile.specialty}</p>
-
-                      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 mt-2">
-                        <span className="inline-flex items-center gap-1 font-semibold text-slate-700">
-                          <Icon name="map" size={14} className="text-[#a66f24]" />
-                          <span>{profile.city}</span>
-                        </span>
-                        <span>•</span>
-                        <span className="inline-flex items-center gap-1 text-amber-800 font-bold">
-                          <span>★ {((profile.rating || 48) / 10).toFixed(1)}</span>
-                          <span className="text-slate-400 font-normal">
-                            ({profile.reviewCount || 15} {ar ? "تقييم" : "avis"})
-                          </span>
-                        </span>
-                        <span>•</span>
-                        <span className="font-medium text-slate-600">
-                          {profile.experienceYears || 4} {ar ? "سنوات خبرة" : "ans d'expérience"}
-                        </span>
-                      </div>
-                    </div>
+                    <span
+                      className="avs-status-available absolute -bottom-1 -end-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white shadow-2xs"
+                      title={ar ? "متاح للمرافقة" : "Disponible pour accompagnement"}
+                    />
                   </div>
 
-                  {/* Intervention Domain Pills */}
-                  {profile.interventionDomains && profile.interventionDomains.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {profile.interventionDomains.slice(0, 4).map((tag) => (
-                        <span
-                          key={tag}
-                          className="px-2.5 py-1 rounded-md bg-slate-50 text-slate-700 text-xs font-medium border border-slate-200/80"
-                        >
-                          {tag}
+                  {/* Name, Badges & Specialty */}
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Link
+                        href={`/${locale}/avs/${profileSlugOrId}`}
+                        className="avs-card-name text-lg sm:text-xl font-bold text-[#082D55] hover:text-[#a66f24] transition-colors font-[family-name:var(--font-fraunces)]"
+                      >
+                        {profile.name}
+                      </Link>
+                      {profile.certified && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-300/80 shadow-2xs whitespace-nowrap">
+                          <Icon name="award" size={12} className="text-amber-600 flex-none" />
+                          <span>{ar ? "معتمد ANEI" : "Certifié ANEI"}</span>
                         </span>
-                      ))}
+                      )}
                     </div>
-                  )}
 
-                  {/* Institutional Guarantee Snippet */}
-                  <div className="flex items-center gap-2 text-xs text-slate-500 pt-2.5 border-t border-slate-100">
-                    <Icon name="shield" size={13} className="text-emerald-700 flex-none" />
-                    <span className="leading-snug">
-                      {ar
-                        ? "مرافقة تربوية منظمة • جلسة استكشافية أولى • ضمان مالي بنظام الحساب الوسيط"
-                        : "Accompagnement pédagogique encadré • Entretien exploratoire sans engagement • Paiement sous séquestre"}
-                    </span>
+                    <p className="text-sm font-semibold text-slate-800">{profile.specialty}</p>
+
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600 pt-0.5">
+                      <span className="inline-flex items-center gap-1 font-semibold text-slate-700 whitespace-nowrap">
+                        <Icon name="map" size={13} className="text-[#a66f24] flex-none" />
+                        <span>{profile.city}</span>
+                      </span>
+                      <span className="text-slate-300">•</span>
+                      <span className="inline-flex items-center gap-1 text-amber-800 font-bold whitespace-nowrap">
+                        <span>★ {((profile.rating || 48) / 10).toFixed(1)}</span>
+                        <span className="text-slate-400 font-normal">
+                          ({profile.reviewCount || 15} {ar ? "تقييم" : "avis"})
+                        </span>
+                      </span>
+                      <span className="text-slate-300">•</span>
+                      <span className="font-medium text-slate-600 whitespace-nowrap">
+                        {profile.experienceYears || 4} {ar ? "سنوات خبرة" : "ans d'expérience"}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Right Quick Booking Console (4 cols) */}
-                <div className="lg:col-span-4 bg-slate-50/70 rounded-xl p-4 border border-slate-200/80 flex flex-col justify-between space-y-3.5">
-                  {/* Rate & Availability */}
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                        {ar ? "التعريفة المرجعية" : "Tarif indicatif"}
+                {/* Primary Action: View Profile & Book */}
+                <div className="flex-none pt-2 sm:pt-0">
+                  <Link
+                    href={`/${locale}/avs/${profileSlugOrId}`}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 py-2.5 px-5 bg-[#082D55] hover:bg-[#061f3b] text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all active:scale-[0.98] whitespace-nowrap"
+                  >
+                    <span>{ar ? "عرض الملف وحجز موعد" : "Consulter le profil & réserver"}</span>
+                    <Icon name="arrow" size={13} className="directional-icon" />
+                  </Link>
+                </div>
+              </div>
+
+              {/* Intervention Domains & Bio Snippet */}
+              <div className="mt-4 pt-3.5 border-t border-slate-100 space-y-2.5">
+                {profile.interventionDomains && profile.interventionDomains.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {profile.interventionDomains.slice(0, 5).map((tag) => (
+                      <span
+                        key={tag}
+                        className="px-2.5 py-1 rounded-md bg-slate-50 text-slate-700 text-xs font-medium border border-slate-200/80"
+                      >
+                        {tag}
                       </span>
-                      <div className="flex items-baseline gap-1 mt-0.5">
-                        <span className="text-2xl font-bold text-slate-900 font-mono tracking-tight">
-                          {profile.hourlyRateTnd || 25}
-                        </span>
-                        <span className="text-xs font-semibold text-slate-600">TND / h</span>
-                      </div>
-                    </div>
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-                      <span>{profile.availability || (ar ? "متاح" : "Disponible")}</span>
-                    </span>
+                    ))}
                   </div>
+                )}
 
-                  {/* Quick Slots */}
-                  <div className="space-y-1.5">
-                    <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                      <Icon name="calendar" size={12} className="text-[#082D55]" />
-                      <span>{ar ? "أقرب المواعيد المقترحة" : "Prochains créneaux"}</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {slots.map((sd) => (
-                        <button
-                          key={sd.iso + sd.time}
-                          type="button"
-                          onClick={() => {
-                            setSelectedSlotForBooking({ date: sd.iso, slot: sd.fullSlot });
-                            setActiveBookingAvs(profile);
-                          }}
-                          className="py-1.5 px-2 text-center rounded-lg bg-white hover:bg-blue-50/80 text-xs font-semibold text-[#082D55] border border-slate-200 hover:border-[#082D55] transition-all shadow-2xs group"
-                        >
-                          <div className="text-[10px] text-slate-500 group-hover:text-[#082D55] font-medium truncate">
-                            {sd.dayLabel}
-                          </div>
-                          <div className="font-bold text-slate-900 group-hover:text-[#082D55]">{sd.time}</div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                {profile.bio && (
+                  <p className="text-xs sm:text-sm text-slate-600 line-clamp-2 leading-relaxed">
+                    {profile.bio}
+                  </p>
+                )}
 
-                  {/* Main CTAs */}
-                  <div className="space-y-1.5 pt-0.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedSlotForBooking({ date: slots[0].iso, slot: slots[0].fullSlot });
-                        setActiveBookingAvs(profile);
-                      }}
-                      className="w-full py-2.5 px-3 bg-[#082D55] hover:bg-[#061f3b] text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 active:scale-[0.98]"
-                    >
-                      <Icon name="calendar" size={14} />
-                      <span>{ar ? "حجز موعد" : "Prendre RDV"}</span>
-                    </button>
-                    <Link
-                      href={`/${locale}/avs/${profileSlugOrId}`}
-                      className="w-full py-1.5 px-3 text-center text-xs font-semibold text-slate-700 hover:text-[#082D55] hover:bg-white rounded-lg transition-colors flex items-center justify-center gap-1 border border-slate-200/90"
-                    >
-                      <span>{ar ? "عرض الملف بالتفصيل" : "Voir profil complet"}</span>
-                      <Icon name="arrow" size={12} className="directional-icon" />
-                    </Link>
-                  </div>
+                {/* Institutional Guarantee Snippet */}
+                <div className="flex items-center gap-2 text-[11px] sm:text-xs text-slate-400 pt-1">
+                  <Icon name="shield" size={12} className="text-emerald-700 flex-none" />
+                  <span>
+                    {ar
+                      ? "مرافقة تربوية منظمة • جلسة استكشافية أولى • ضمان مالي بنظام الحساب الوسيط ANEI"
+                      : "Accompagnement pédagogique encadré • Entretien exploratoire sans engagement • Paiement sous séquestre ANEI"}
+                  </span>
                 </div>
               </div>
             </article>

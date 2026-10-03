@@ -1,6 +1,25 @@
-import { and, asc, count, desc, eq, gte, inArray, lt } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, lt, or } from "drizzle-orm";
 import { db } from "@/server/db";
-import { appointment, certificates, courseModules, courses, crmContact, enrollments, learningAssessment, learningAttempt, lessonProgress, lessons, notifications, purchases, resources, user, webinarRegistrations, webinars } from "@/server/db/schema";
+import {
+  appointment,
+  avsBookingRequests,
+  avsProfiles,
+  certificates,
+  courseModules,
+  courses,
+  crmContact,
+  enrollments,
+  learningAssessment,
+  learningAttempt,
+  lessonProgress,
+  lessons,
+  notifications,
+  purchases,
+  resources,
+  user,
+  webinarRegistrations,
+  webinars,
+} from "@/server/db/schema";
 import { env } from "@/server/env";
 import { signedMediaUrl } from "@/server/storage";
 
@@ -244,4 +263,55 @@ export async function getPurchasedResourceForDownload(userId: string, resourceId
     .where(and(eq(purchases.userId, userId), eq(resources.id, resourceId)))
     .limit(1);
   return row?.resource;
+}
+
+/**
+ * Fetch all AVS bookings for a learner / parent, scoped strictly to their authenticated userId or verified email.
+ */
+export async function getLearnerAvsBookings(userId: string, userEmail?: string | null) {
+  const condition = userEmail
+    ? or(eq(avsBookingRequests.parentUserId, userId), eq(avsBookingRequests.parentEmail, userEmail))
+    : eq(avsBookingRequests.parentUserId, userId);
+
+  return db
+    .select({
+      id: avsBookingRequests.id,
+      avsProfileId: avsBookingRequests.avsProfileId,
+      parentUserId: avsBookingRequests.parentUserId,
+      parentName: avsBookingRequests.parentName,
+      parentEmail: avsBookingRequests.parentEmail,
+      parentPhone: avsBookingRequests.parentPhone,
+      childName: avsBookingRequests.childName,
+      childAge: avsBookingRequests.childAge,
+      schoolName: avsBookingRequests.schoolName,
+      needDescription: avsBookingRequests.needDescription,
+      interventionDomain: avsBookingRequests.interventionDomain,
+      requestedDate: avsBookingRequests.requestedDate,
+      requestedTimeSlot: avsBookingRequests.requestedTimeSlot,
+      meetingType: avsBookingRequests.meetingType,
+      status: avsBookingRequests.status,
+      notes: avsBookingRequests.notes,
+      amountMillimes: avsBookingRequests.amountMillimes,
+      platformFeeMillimes: avsBookingRequests.platformFeeMillimes,
+      avsPayoutMillimes: avsBookingRequests.avsPayoutMillimes,
+      paymentStatus: avsBookingRequests.paymentStatus,
+      paymentMethod: avsBookingRequests.paymentMethod,
+      paymentReference: avsBookingRequests.paymentReference,
+      paidAt: avsBookingRequests.paidAt,
+      escrowReleasedAt: avsBookingRequests.escrowReleasedAt,
+      refundedAt: avsBookingRequests.refundedAt,
+      createdAt: avsBookingRequests.createdAt,
+      avsName: avsProfiles.displayName,
+      avsSpecialtyFr: avsProfiles.specialtyFr,
+      avsSpecialtyAr: avsProfiles.specialtyAr,
+      avsCityFr: avsProfiles.cityFr,
+      avsCityAr: avsProfiles.cityAr,
+      avsPhone: avsProfiles.phone,
+      avsSlug: avsProfiles.slug,
+      avsAvatarUrl: avsProfiles.image,
+    })
+    .from(avsBookingRequests)
+    .innerJoin(avsProfiles, eq(avsBookingRequests.avsProfileId, avsProfiles.id))
+    .where(condition)
+    .orderBy(desc(avsBookingRequests.createdAt));
 }

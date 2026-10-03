@@ -378,60 +378,6 @@
   letter-spacing: -0.01em;
 }
 
-.about-academy .ah-commitments-charter {
-  margin-top: 36px;
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding: 20px 24px;
-  border-radius: 12px;
-  background: #fcfbf8;
-  border: 1px solid #ebe5d8;
-  text-align: start;
-}
-
-.about-academy .ah-charter-seal {
-  display: inline-grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 8px;
-  background: #fbf8f2;
-  border: 1px solid #e2d7c5;
-  color: var(--ah-gold);
-  flex-shrink: 0;
-  box-shadow: 0 1px 3px rgba(8, 45, 85, 0.04);
-}
-
-.about-academy .ah-charter-content {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.about-academy .ah-charter-content strong {
-  font-size: 0.88rem;
-  font-weight: 800;
-  color: var(--ah-navy);
-  letter-spacing: -0.01em;
-}
-
-.about-academy .ah-charter-content p {
-  font-size: 0.8rem;
-  line-height: 1.5;
-  color: #556677;
-  margin: 0;
-}
-
-@media (max-width: 640px) {
-  .about-academy .ah-commitments-charter {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 18px;
-  }
-}
 
 /* ==========================================================================
    Section 2: Method Cards (From Knowledge to Action)
@@ -794,8 +740,13 @@
 /* ==========================================================================
    RTL & Arabic Optimization
    ========================================================================== */
+[dir="rtl"] .about-academy {
+  font-family: var(--font-cairo), "Segoe UI", Tahoma, sans-serif;
+}
+
 [dir="rtl"] .about-academy :is(h1, h2, h3) {
-  letter-spacing: 0;
+  font-family: var(--font-cairo), "Segoe UI", Tahoma, sans-serif;
+  letter-spacing: 0 !important;
   line-height: 1.32;
 }
 

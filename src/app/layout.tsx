@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { Fraunces } from "next/font/google";
+import { Fraunces, Cairo } from "next/font/google";
 import "./globals.css";
 
 const fraunces = Fraunces({ subsets: ["latin"], variable: "--font-fraunces", weight: ["500", "600", "700"], display: "swap" });
+const cairo = Cairo({ subsets: ["arabic", "latin"], variable: "--font-cairo", weight: ["400", "500", "600", "700", "800", "900"], display: "swap" });
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -55,7 +56,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
   const installDirectionContract = `document.currentScript?.parentNode?.insertBefore(document.createComment(${JSON.stringify(directionContract)}),document.currentScript);`;
 
   return (
-    <html lang={locale} dir={locale === "ar" ? "rtl" : "ltr"} className={fraunces.variable} data-scroll-behavior="smooth">
+    <html lang={locale} dir={locale === "ar" ? "rtl" : "ltr"} className={`${fraunces.variable} ${cairo.variable}`} data-scroll-behavior="smooth">
       <body>
         {/* Browsers intentionally hide nonce values from DOM attribute reads; suppress
             the resulting React hydration comparison while keeping CSP enforcement. */}

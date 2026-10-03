@@ -186,8 +186,6 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
       "Quatre engagements structurent nos formations, nos ressources et notre accompagnement professionnel.",
       "أربعة التزامات تنظّم دوراتنا ومواردنا ومرافقتنا المهنية.",
     ),
-    asideTitle: t("Pedagogical rigor", "Garantie Éthique & Qualité", "ضمان الأخلاقيات والجودة"),
-    asideSub: t("Institutional standards", "Normes institutionnelles ANEI", "معايير ANEI المؤسسية"),
   };
 
   const commitments = [
@@ -265,7 +263,7 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
               <div className="ah-hero-actions">
                 <Link href={`/${locale}/formations`} className="ah-btn ah-btn-primary">
                   <span>{heroCopy.primaryCta}</span>
-                  <Icon name="arrow" size={16} />
+                  <Icon name="arrow" size={16} className="directional-icon" />
                 </Link>
                 <Link href={`/${locale}/contact`} className="ah-btn ah-btn-outline">
                   {heroCopy.secondaryCta}
@@ -424,23 +422,6 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
               </article>
             ))}
           </div>
-
-          {/* Institutional Ethics & Quality Charter Bar */}
-          <div className="ah-commitments-charter">
-            <div className="ah-charter-seal" aria-hidden="true">
-              <Icon name="shield" size={20} />
-            </div>
-            <div className="ah-charter-content">
-              <strong>{commitmentsHeader.asideTitle} · {commitmentsHeader.asideSub}</strong>
-              <p>
-                {t(
-                  "All educational programmes and resources adhere to rigorous independent pedagogical standards and national professional confidentiality guidelines.",
-                  "L’ensemble des programmes et ressources pédagogiques de l’Académie fait l’objet d’un contrôle continu conforme au référentiel déontologique et aux normes institutionnelles ANEI.",
-                  "تخضع كافة المناهج والموارد التربوية في الأكاديمية لمراجعة مستمرة وضوابط صارمة للسرية المهنية والمعايير المؤسسية الوطنية لأكاديمية ANEI.",
-                )}
-              </p>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -496,7 +477,7 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
             <div className="ah-cta-actions">
               <Link href={`/${locale}/formations`} className="ah-btn ah-cta-btn-light">
                 <span>{ctaCopy.primary}</span>
-                <Icon name="arrow" size={16} />
+                <Icon name="arrow" size={16} className="directional-icon" />
               </Link>
               <Link href={`/${locale}/contact`} className="ah-btn ah-cta-btn-dark">
                 {ctaCopy.secondary}

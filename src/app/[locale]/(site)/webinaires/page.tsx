@@ -8,6 +8,7 @@ import { MeetingProviderBadge } from "@/components/ui/MeetingProviderBadge";
 import { WebinarRegisterButton } from "@/components/interactive/WebinarRegisterButton";
 import { listPublishedWebinars } from "@/server/queries/catalog";
 import { publicDataOr } from "@/server/queries/public-fallback";
+import { localizeTrainerName } from "@/lib/arabic-locale";
 
 export const dynamic = "force-dynamic";
 
@@ -80,11 +81,11 @@ export default async function WebinarsPage({ params }: { params: Promise<{ local
                         <Icon name="clock" size={16} />
                         {new Intl.DateTimeFormat(dateLocale, { hour: "2-digit", minute: "2-digit" }).format(webinar.startsAt)}
                         {" · "}
-                        {webinar.durationMinutes} min
+                        {webinar.durationMinutes} {ar ? "دقيقة" : "min"}
                       </span>
                       <span>
                         <Icon name="user" size={16} />
-                        {webinar.trainerName}
+                        {localizeTrainerName(webinar.trainerName, locale)}
                       </span>
                     </div>
                   </div>

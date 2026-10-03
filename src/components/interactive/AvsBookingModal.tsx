@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import type { Locale } from "@/types";
+import { useSession } from "@/lib/auth-client";
 
 export type AvsBookingModalProps = {
   locale: Locale;
@@ -18,6 +20,7 @@ export type AvsBookingModalProps = {
   };
   initialDate?: string;
   initialTimeSlot?: string;
+  initialMeetingType?: "IN_PERSON" | "ONLINE" | "HOME";
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
@@ -39,11 +42,14 @@ export function AvsBookingModal({
   avs,
   initialDate,
   initialTimeSlot,
+  initialMeetingType,
   isOpen,
   onClose,
   onSuccess,
 }: AvsBookingModalProps) {
   const ar = locale === "ar";
+  const { data: sessionData, isPending: isSessionPending } = useSession();
+  const user = sessionData?.user;
 
   // Calculate upcoming 7 days
   const today = new Date();
@@ -59,28 +65,37 @@ export function AvsBookingModal({
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [selectedDate, setSelectedDate] = useState<string>(initialDate || nextDays[0].iso);
   const [selectedSlot, setSelectedSlot] = useState<string>(initialTimeSlot || COMMON_SLOTS[1]);
-  const [meetingType, setMeetingType] = useState<"IN_PERSON" | "ONLINE" | "HOME">("IN_PERSON");
+  const [meetingType, setMeetingType] = useState<"IN_PERSON" | "ONLINE" | "HOME">(initialMeetingType || "IN_PERSON");
 
   const [childName, setChildName] = useState("");
   const [childAge, setChildAge] = useState("7");
   const [schoolName, setSchoolName] = useState("");
   const [interventionDomain, setInterventionDomain] = useState(avs.domains?.[0] || "");
   const [needDescription, setNeedDescription] = useState("");
-
   const [parentName, setParentName] = useState("");
   const [parentEmail, setParentEmail] = useState("");
   const [parentPhone, setParentPhone] = useState("+216 ");
   const [notes, setNotes] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"CARD_ESCROW" | "FLOUCI" | "CLICKTOPAY" | "ESCROW_SIMULATION">("CARD_ESCROW");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [confirmedBookingId, setConfirmedBookingId] = useState("");
+  const [escrowRef, setEscrowRef] = useState("");
+
+  const resolvedParentName = parentName || user?.name || "";
+  const resolvedParentEmail = parentEmail || user?.email || "";
 
   if (!isOpen) return null;
 
-  async function handleSubmit(e: React.FormEvent) {
+  // Pricing calculations
+  const sessionRateTnd = avs.hourlyRateTnd && avs.hourlyRateTnd > 0 ? avs.hourlyRateTnd : 35;
+  const platformFeeTnd = Math.round(sessionRateTnd * 0.1);
+  const totalEscrowTnd = sessionRateTnd + platformFeeTnd;
+
+  async function handlePaymentAndSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!parentName || !parentEmail || !parentPhone || !childName || !needDescription) {
+    if (!childName || !needDescription || !parentPhone) {
       setErrorMessage(
         ar ? "يرجى ملء جميع الحقول المطلوبة." : "Veuillez renseigner tous les champs obligatoires."
       );
@@ -96,8 +111,8 @@ export function AvsBookingModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           avsProfileId: avs.id,
-          parentName,
-          parentEmail,
+          parentName: resolvedParentName || "Parent",
+          parentEmail: resolvedParentEmail || "",
           parentPhone,
           childName,
           childAge: Number(childAge) || 7,
@@ -108,15 +123,25 @@ export function AvsBookingModal({
           requestedTimeSlot: selectedSlot,
           meetingType,
           notes,
+          paymentMethod,
+          locale,
         }),
       });
 
       const data = await res.json();
       if (!res.ok || !data.ok) {
+        if (data.error === "AUTH_REQUIRED") {
+          throw new Error(
+            ar
+              ? "يجب تسجيل الدخول لحجز موعد مرافقة وتأمين الضمان."
+              : "Connexion requise pour réserver et sécuriser les fonds sous séquestre."
+          );
+        }
         throw new Error(data.error || "Erreur lors de la réservation");
       }
 
       setConfirmedBookingId(data.booking.id);
+      setEscrowRef(data.booking.escrow?.reference || `ESC-2026-${Date.now().toString(36).toUpperCase()}`);
       setStep(4);
       if (onSuccess) onSuccess();
     } catch (err: unknown) {
@@ -124,13 +149,16 @@ export function AvsBookingModal({
         err instanceof Error
           ? err.message
           : ar
-          ? "حدث خطأ أثناء إرسال الموعد. يرجى المحاولة ثانية."
+          ? "حدث خطأ أثناء إتمام العملية. يرجى المحاولة ثانية."
           : "Une erreur est survenue lors de l'enregistrement de votre demande."
       );
     } finally {
       setIsSubmitting(false);
     }
   }
+
+  // Auth gate if user is not logged in
+  const isUnauthenticated = !isSessionPending && !user;
 
   return (
     <div
@@ -139,7 +167,7 @@ export function AvsBookingModal({
       aria-modal="true"
       aria-labelledby="booking-modal-title"
     >
-      <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200/80 overflow-hidden text-slate-800 max-h-[90vh] flex flex-col">
+      <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200/80 overflow-hidden text-slate-800 max-h-[92vh] flex flex-col">
         {/* Header */}
         <div className="bg-[#082D55] text-white px-6 py-5 flex items-center justify-between border-b border-white/10 flex-none">
           <div className="flex items-center gap-3">
@@ -147,8 +175,9 @@ export function AvsBookingModal({
               {avs.initials}
             </div>
             <div>
-              <div className="text-xs uppercase tracking-wider text-amber-300 font-semibold">
-                {ar ? "حجز موعد مقابلة مرافقة" : "Prendre rendez-vous avec un AVS"}
+              <div className="text-xs uppercase tracking-wider text-amber-300 font-semibold flex items-center gap-1.5">
+                <span>🛡️</span>
+                <span>{ar ? "حجز موعد مع ضمان طرف ثالث ANEI" : "Rendez-vous AVS & Tiers de Confiance ANEI"}</span>
               </div>
               <h2 id="booking-modal-title" className="text-lg font-bold text-white">
                 {avs.name}
@@ -157,12 +186,8 @@ export function AvsBookingModal({
                 <span>{avs.specialty}</span>
                 <span>•</span>
                 <span>{avs.city}</span>
-                {avs.hourlyRateTnd ? (
-                  <>
-                    <span>•</span>
-                    <span className="text-amber-200 font-semibold">{avs.hourlyRateTnd} TND / h</span>
-                  </>
-                ) : null}
+                <span>•</span>
+                <span className="text-amber-200 font-semibold">{sessionRateTnd} TND / séance</span>
               </div>
             </div>
           </div>
@@ -176,377 +201,496 @@ export function AvsBookingModal({
           </button>
         </div>
 
-        {/* Stepper Progress */}
-        {step < 4 && (
-          <div className="px-6 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs font-medium text-slate-600 flex-none">
-            <div className={`flex items-center gap-2 ${step >= 1 ? "text-[#082D55] font-bold" : ""}`}>
-              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 1 ? "bg-[#082D55] text-white" : "bg-slate-200"}`}>1</span>
-              <span>{ar ? "الموعد والتوقيت" : "Créneau & Format"}</span>
+        {/* Auth Gate Screen */}
+        {isUnauthenticated ? (
+          <div className="p-8 text-center space-y-6 overflow-y-auto">
+            <div className="w-16 h-16 bg-[#082D55]/10 text-[#082D55] rounded-full mx-auto flex items-center justify-center">
+              <Icon name="shield" size={32} />
             </div>
-            <div className="h-0.5 w-8 bg-slate-200" />
-            <div className={`flex items-center gap-2 ${step >= 2 ? "text-[#082D55] font-bold" : ""}`}>
-              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 2 ? "bg-[#082D55] text-white" : "bg-slate-200"}`}>2</span>
-              <span>{ar ? "معلومات التلميذ" : "L'Élève"}</span>
+            <div className="max-w-md mx-auto space-y-2">
+              <span className="inline-block text-[11px] font-bold uppercase tracking-wider text-[#a66f24] bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
+                {ar ? "حساب مطلوب لسلامة المعاملة" : "Authentification requise · Sécurité ANEI"}
+              </span>
+              <h3 className="text-xl font-bold text-[#082D55]">
+                {ar ? "يرجى تسجيل الدخول أو إنشاء حساب" : "Connexion obligatoire pour réserver"}
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                {ar
+                  ? "لضمان سرية المعطيات البيداغوجية، ومتابعة الطفل بدقة، وحفظ أموالكم في حساب الضمان (Séquestre) لدى الأكاديمية كطرف ثالث، يجب أن يتوفر لديكم حساب ولي أمر مسجل."
+                  : "La réservation d'un accompagnant scolaire certifié et la protection des fonds sous séquestre nécessitent un compte Famille ou Parent identifié. Veuillez vous connecter ou créer votre compte en quelques secondes."}
+              </p>
             </div>
-            <div className="h-0.5 w-8 bg-slate-200" />
-            <div className={`flex items-center gap-2 ${step >= 3 ? "text-[#082D55] font-bold" : ""}`}>
-              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 3 ? "bg-[#082D55] text-white" : "bg-slate-200"}`}>3</span>
-              <span>{ar ? "ولي الأمر والتأكيد" : "Coordonnées"}</span>
+
+            <div className="bg-[#fcfbf8] border border-[#E7E0D3] rounded-xl p-4 text-xs text-slate-700 max-w-md mx-auto text-start space-y-2">
+              <div className="flex items-center gap-2 text-[#082D55] font-bold">
+                <span>🛡️</span>
+                <span>{ar ? "لماذا يشترط إنشاء الحساب؟" : "Pourquoi un compte est-il requis ?"}</span>
+              </div>
+              <p>• {ar ? "حماية بيانات الطفل وحالته البيداغوجية في سرية تامة." : "Protection des données de santé et d'inclusion de votre enfant."}</p>
+              <p>• {ar ? "ضمان مالي رسمي: الأموال تبقى محجوزة لدى ANEI حتى تمام الحصة." : "Garantie financière tiers de confiance : fonds sous séquestre ANEI."}</p>
+              <p>• {ar ? "متابعة المواعيد وسجل الجلسات عبر لوحة تحكم الولي." : "Suivi direct de vos rendez-vous et reçus dans votre espace Parent."}</p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+              <Link
+                href={`/${locale}/login?redirect=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : `/${locale}/avs`)}`}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#082D55] hover:bg-[#061f3d] text-white px-6 py-3 rounded-xl text-sm font-bold shadow-md transition-all"
+              >
+                <Icon name="user" size={16} />
+                <span>{ar ? "تسجيل الدخول" : "Se connecter"}</span>
+              </Link>
+              <Link
+                href={`/${locale}/register?redirect=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : `/${locale}/avs`)}`}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#c9913f] hover:bg-[#b07d32] text-white px-6 py-3 rounded-xl text-sm font-bold shadow-md transition-all"
+              >
+                <span>{ar ? "إنشاء حساب جديد" : "Créer un compte"}</span>
+              </Link>
             </div>
           </div>
-        )}
-
-        {/* Content Body */}
-        <div className="p-6 overflow-y-auto flex-1">
-          {errorMessage && (
-            <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
-              <Icon name="shield" size={16} />
-              <span>{errorMessage}</span>
-            </div>
-          )}
-
-          {/* STEP 1: Date, slot & format */}
-          {step === 1 && (
-            <div className="space-y-5">
-              <div>
-                <label className="block text-sm font-semibold text-slate-900 mb-2">
-                  {ar ? "1. اختر اليوم المناسب" : "1. Choisissez le jour du rendez-vous"}
-                </label>
-                <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
-                  {nextDays.map((d) => {
-                    const isSelected = selectedDate === d.iso;
-                    return (
-                      <button
-                        key={d.iso}
-                        type="button"
-                        onClick={() => setSelectedDate(d.iso)}
-                        className={`p-2.5 rounded-xl border text-center transition-all ${
-                          isSelected
-                            ? "border-[#082D55] bg-[#082D55] text-white shadow-sm"
-                            : "border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700"
-                        }`}
-                      >
-                        <div className="text-[11px] uppercase tracking-wider opacity-80">{d.dayLabel}</div>
-                        <div className="font-bold text-sm mt-0.5">{d.dateLabel}</div>
-                      </button>
-                    );
-                  })}
+        ) : (
+          <>
+            {/* Stepper Progress */}
+            {step < 4 && (
+              <div className="px-6 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs font-medium text-slate-600 flex-none">
+                <div className={`flex items-center gap-2 ${step >= 1 ? "text-[#082D55] font-bold" : ""}`}>
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 1 ? "bg-[#082D55] text-white" : "bg-slate-200"}`}>1</span>
+                  <span>{ar ? "الموعد" : "Créneau"}</span>
+                </div>
+                <div className="h-0.5 w-6 bg-slate-200" />
+                <div className={`flex items-center gap-2 ${step >= 2 ? "text-[#082D55] font-bold" : ""}`}>
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 2 ? "bg-[#082D55] text-white" : "bg-slate-200"}`}>2</span>
+                  <span>{ar ? "الطفل" : "L'Élève"}</span>
+                </div>
+                <div className="h-0.5 w-6 bg-slate-200" />
+                <div className={`flex items-center gap-2 ${step >= 3 ? "text-[#082D55] font-bold" : ""}`}>
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 3 ? "bg-[#082D55] text-white" : "bg-slate-200"}`}>3</span>
+                  <span>{ar ? "الدفع والضمان" : "Paiement Séquestre"}</span>
                 </div>
               </div>
+            )}
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-900 mb-2">
-                  {ar ? "2. اختر التوقيت المتاح" : "2. Choisissez l'heure souhaitée"}
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {COMMON_SLOTS.map((slot) => {
-                    const isSelected = selectedSlot === slot;
-                    return (
-                      <button
-                        key={slot}
-                        type="button"
-                        onClick={() => setSelectedSlot(slot)}
-                        className={`py-2 px-3 rounded-lg border text-xs font-semibold transition-all ${
-                          isSelected
-                            ? "border-amber-600 bg-amber-50 text-amber-900 ring-2 ring-amber-500/20"
-                            : "border-slate-200 hover:bg-slate-50 text-slate-700"
-                        }`}
-                      >
-                        {slot}
-                      </button>
-                    );
-                  })}
+            {/* Content Body */}
+            <div className="p-6 overflow-y-auto flex-1">
+              {errorMessage && (
+                <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center gap-2">
+                  <Icon name="shield" size={16} />
+                  <span>{errorMessage}</span>
                 </div>
-              </div>
+              )}
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-900 mb-2">
-                  {ar ? "3. صيغة المقابلة" : "3. Modalité de la rencontre"}
-                </label>
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { key: "IN_PERSON", fr: "En établissement", ar: "بالمؤسسة التربوية" },
-                    { key: "ONLINE", fr: "En visioconférence", ar: "عن بُعد (فيديو)" },
-                    { key: "HOME", fr: "À domicile", ar: "بالمنزل" },
-                  ].map((m) => (
-                    <button
-                      key={m.key}
-                      type="button"
-                      onClick={() => setMeetingType(m.key as "IN_PERSON" | "ONLINE" | "HOME")}
-                      className={`p-3 rounded-xl border text-xs font-semibold text-center transition-all ${
-                        meetingType === m.key
-                          ? "border-[#082D55] bg-blue-50 text-[#082D55] ring-2 ring-[#082D55]/10"
-                          : "border-slate-200 hover:bg-slate-50 text-slate-600"
-                      }`}
+              {/* STEP 1: Date, slot & format */}
+              {step === 1 && (
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                      {ar ? "1. اختر اليوم المناسب" : "1. Choisissez le jour"}
+                    </label>
+                    <div className="grid grid-cols-3 sm:grid-cols-7 gap-2">
+                      {nextDays.map((d) => {
+                        const isSel = d.iso === selectedDate;
+                        return (
+                          <button
+                            key={d.iso}
+                            type="button"
+                            onClick={() => setSelectedDate(d.iso)}
+                            className={`p-2.5 rounded-xl border text-center transition-all ${
+                              isSel
+                                ? "bg-[#082D55] border-[#082D55] text-white shadow-md font-bold"
+                                : "bg-white border-slate-200 hover:border-slate-300 text-slate-700"
+                            }`}
+                          >
+                            <div className="text-[11px] uppercase opacity-80">{d.dayLabel}</div>
+                            <div className="text-sm font-bold mt-0.5">{d.dateLabel.split(" ")[0]}</div>
+                            <div className="text-[10px] opacity-75">{d.dateLabel.split(" ")[1]}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                      {ar ? "2. التوقيت المتاح" : "2. Créneau horaire"}
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {COMMON_SLOTS.map((slot) => {
+                        const isSel = slot === selectedSlot;
+                        return (
+                          <button
+                            key={slot}
+                            type="button"
+                            onClick={() => setSelectedSlot(slot)}
+                            className={`py-2 px-3 rounded-lg border text-xs font-semibold text-center transition-all ${
+                              isSel
+                                ? "bg-[#082D55] border-[#082D55] text-white shadow-sm"
+                                : "bg-white border-slate-200 hover:border-slate-300 text-slate-700"
+                            }`}
+                          >
+                            {slot}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                      {ar ? "3. صيغة اللقاء" : "3. Format de la rencontre"}
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {(
+                        [
+                          { id: "IN_PERSON", label: ar ? "حضوري بالمكتب" : "En cabinet", icon: "map" as const },
+                          { id: "HOME", label: ar ? "في المنزل" : "À domicile", icon: "map" as const },
+                          { id: "ONLINE", label: ar ? "عن بعد (فيديو)" : "En ligne", icon: "video" as const },
+                        ] as const
+                      ).map((t) => (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => setMeetingType(t.id)}
+                          className={`p-3 rounded-xl border text-xs font-semibold flex flex-col items-center gap-1.5 transition-all ${
+                            meetingType === t.id
+                              ? "bg-amber-50 border-[#c9913f] text-[#082D55] font-bold shadow-sm"
+                              : "bg-white border-slate-200 hover:border-slate-300 text-slate-700"
+                          }`}
+                        >
+                          <Icon name={t.icon} size={18} />
+                          <span>{t.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 2: Child info */}
+              {step === 2 && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        {ar ? "اسم ولقب التلميذ(ة) *" : "Nom et prénom de l'élève *"}
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={childName}
+                        onChange={(e) => setChildName(e.target.value)}
+                        placeholder={ar ? "محمد علي" : "Ex: Rayan Ben Salem"}
+                        className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#082D55]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        {ar ? "عمر التلميذ *" : "Âge de l'élève *"}
+                      </label>
+                      <input
+                        type="number"
+                        min={3}
+                        max={25}
+                        required
+                        value={childAge}
+                        onChange={(e) => setChildAge(e.target.value)}
+                        className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#082D55]"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      {ar ? "المؤسسة التربوية / المدرسة" : "Établissement scolaire"}
+                    </label>
+                    <input
+                      type="text"
+                      value={schoolName}
+                      onChange={(e) => setSchoolName(e.target.value)}
+                      placeholder={ar ? "المدرسة الابتدائية بالمنزه..." : "Ex: École primaire Hannibal, Tunis"}
+                      className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#082D55]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      {ar ? "طبيعة الحاجة والاضطراب *" : "Description du besoin / Spécificité *"}
+                    </label>
+                    <textarea
+                      required
+                      rows={3}
+                      value={needDescription}
+                      onChange={(e) => setNeedDescription(e.target.value)}
+                      placeholder={
+                        ar
+                          ? "مثال: طيف التوحد، صعوبات التعلم (عسر القراءة)، تشتت الانتباه وفرط الحركة..."
+                          : "Ex: Trouble du spectre autistique, TDAH, troubles des apprentissages (dyslexie), besoin d'autonomie en classe..."
+                      }
+                      className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#082D55]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      {ar ? "مجال التدخل الرئيسي" : "Domaine d'intervention"}
+                    </label>
+                    <select
+                      value={interventionDomain}
+                      onChange={(e) => setInterventionDomain(e.target.value)}
+                      className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#082D55] bg-white text-slate-800"
                     >
-                      {ar ? m.ar : m.fr}
+                      <option value="">{ar ? "اختر مجال التدخل (اختياري)" : "Sélectionner un domaine (optionnel)"}</option>
+                      <option value="TSA">{ar ? "طيف التوحد (TSA)" : "Troubles du spectre de l'autisme (TSA)"}</option>
+                      <option value="TDAH">{ar ? "فرط الحركة ونقص الانتباه (TDAH)" : "TDAH & Troubles de l'attention"}</option>
+                      <option value="DYS">{ar ? "صعوبات التعلم (DYS)" : "Troubles d'apprentissage (DYS)"}</option>
+                      <option value="MOTEUR">{ar ? "إعاقة حركية أو حسية" : "Accompagnement moteur ou sensoriel"}</option>
+                      <option value="AUTRE">{ar ? "مرافقة عامة / أخرى" : "Autre accompagnement scolaire"}</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 3: Third-Party Escrow Payment */}
+              {step === 3 && (
+                <form onSubmit={handlePaymentAndSubmit} className="space-y-5">
+                  {/* Escrow Guarantee Pill */}
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-start gap-3 text-xs text-emerald-900">
+                    <span className="text-xl flex-none mt-0.5">🛡️</span>
+                    <div>
+                      <strong className="block font-bold text-emerald-950 mb-0.5">
+                        {ar ? "ضمان الطرف الثالث الموثوق (ANEI Séquestre)" : "Garantie Tiers de Confiance ANEI"}
+                      </strong>
+                      <p className="text-emerald-800 leading-relaxed">
+                        {ar
+                          ? "الأكاديمية الوطنية تضمن سلامة أموالكم: يبقى المبلغ محجوزاً في حساب الضمان الآمن ولا يُصرف للمرافق إلا بعد انعقاد الحصة وتأكيدها. في حال التعذر، يُسترجع كامل المبلغ فوراً."
+                          : "L'ANEI agit comme tiers de confiance neutre et sécurisé. Vos fonds sont bloqués sur un compte séquestre et ne sont reversés à l'AVS qu'une fois la séance effectuée. Remboursement intégral garanti en cas d'annulation."}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Financial Breakdown */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2.5 text-xs">
+                    <div className="flex items-center justify-between text-slate-700">
+                      <span>{ar ? "أتعاب جلسة المرافقة (AVS) :" : "Honoraires de la séance AVS :"}</span>
+                      <strong className="font-mono text-slate-900">{sessionRateTnd}.000 TND</strong>
+                    </div>
+                    <div className="flex items-center justify-between text-slate-600">
+                      <span>{ar ? "رسوم الضمان والتأمين والمتابعة (ANEI 10%) :" : "Frais de séquestre & supervision (ANEI 10%) :"}</span>
+                      <span className="font-mono text-amber-700">+{platformFeeTnd}.000 TND</span>
+                    </div>
+                    <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-sm font-bold text-[#082D55]">
+                      <span>{ar ? "المجموع المودع تحت الضمان :" : "Total à régler sous séquestre :"}</span>
+                      <span className="font-mono text-base text-[#082D55]">{totalEscrowTnd}.000 TND</span>
+                    </div>
+                  </div>
+
+                  {/* Parent Details */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        {ar ? "ولي الأمر المسجل *" : "Parent titulaire *"}
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={resolvedParentName}
+                        onChange={(e) => setParentName(e.target.value)}
+                        className="w-full p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#082D55] font-medium"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        {ar ? "البريد الإلكتروني *" : "Email de confirmation *"}
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={resolvedParentEmail}
+                        onChange={(e) => setParentEmail(e.target.value)}
+                        className="w-full p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#082D55] font-medium"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        {ar ? "رقم الهاتف للاتصال *" : "Téléphone de contact *"}
+                      </label>
+                      <input
+                        type="tel"
+                        required
+                        value={parentPhone}
+                        onChange={(e) => setParentPhone(e.target.value)}
+                        className="w-full p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#082D55]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Payment Method Selector */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                      {ar ? "طريقة الدفع تحت الضمان" : "Mode de règlement sous séquestre"}
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {(
+                        [
+                          { id: "CARD_ESCROW", label: ar ? "بطاقة بنكية" : "Carte Bancaire", icon: "wallet" as const },
+                          { id: "FLOUCI", label: "Flouci", icon: "wallet" as const },
+                          { id: "ESCROW_SIMULATION", label: ar ? "محاكاة فورية" : "Test Séquestre", icon: "check" as const },
+                        ] as const
+                      ).map((m) => (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => setPaymentMethod(m.id)}
+                          className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                            paymentMethod === m.id
+                              ? "bg-[#082D55] border-[#082D55] text-white shadow-sm"
+                              : "bg-white border-slate-200 hover:border-slate-300 text-slate-700"
+                          }`}
+                        >
+                          <Icon name={m.icon} size={15} />
+                          <span>{m.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      {ar ? "ملاحظات وتوجيهات خاصة (اختياري)" : "Remarques ou précisions pour l'AVS (optionnel)"}
+                    </label>
+                    <input
+                      type="text"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder={ar ? "أي توجيهات لوجستية أو مواصفات خاصة..." : "Ex: Première prise de contact, documents bilans..."}
+                      className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#082D55]"
+                    />
+                  </div>
+
+                  {/* Submit Button */}
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full bg-[#082D55] hover:bg-[#061f3d] disabled:opacity-50 text-white py-3.5 px-4 rounded-xl text-sm font-bold shadow-md transition-all flex items-center justify-center gap-2"
+                    >
+                      {isSubmitting ? (
+                        <span>{ar ? "جارٍ تسجيل الدفع والضمان..." : "Sécurisation des fonds sous séquestre..."}</span>
+                      ) : (
+                        <>
+                          <span>🛡️</span>
+                          <span>
+                            {ar
+                              ? `تأكيد الدفع وحجز الموعد (${totalEscrowTnd}.000 TND)`
+                              : `Régler et Sécuriser le RDV sous Séquestre (${totalEscrowTnd}.000 TND)`}
+                          </span>
+                        </>
+                      )}
                     </button>
-                  ))}
-                </div>
-              </div>
+                  </div>
+                </form>
+              )}
 
-              <div className="pt-3 flex justify-end">
-                <button
-                  id="avs-booking-next-step"
-                  type="button"
-                  onClick={() => setStep(2)}
-                  className="btn btn-primary px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2"
-                >
-                  <span>{ar ? "التالي: بيانات التلميذ" : "Suivant : Informations de l'enfant"}</span>
-                  <Icon name="arrow" size={16} className="directional-icon" />
-                </button>
-              </div>
+              {/* STEP 4: Confirmation & Receipt */}
+              {step === 4 && (
+                <div className="text-center py-4 space-y-5">
+                  <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full mx-auto flex items-center justify-center font-bold">
+                    <Icon name="check" size={32} />
+                  </div>
+                  <div>
+                    <span className="inline-block text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full mb-2">
+                      {ar ? "🛡️ مدفوع — الأموال تحت الضمان الآمن" : "🛡️ Payé — Fonds protégés sous séquestre ANEI"}
+                    </span>
+                    <h3 className="text-xl font-bold text-[#082D55]">
+                      {ar ? "تم تأكيد موعدكم بنجاح" : "Votre rendez-vous est confirmé"}
+                    </h3>
+                    <p className="text-xs text-slate-600 mt-1">
+                      {ar
+                        ? "تم إرسال إشعار وسند الضمان إلى بريدكم الإلكتروني. الموعد متاح الآن في لوحة تحكمكم."
+                        : "Un accusé de réception et le certificat de séquestre ont été transmis à votre adresse email."}
+                    </p>
+                  </div>
+
+                  <div className="bg-[#fcfbf8] border border-[#E7E0D3] rounded-xl p-4 text-xs text-slate-700 max-w-md mx-auto text-start space-y-2">
+                    <div className="flex justify-between border-b border-slate-200 pb-2">
+                      <span className="text-slate-500">{ar ? "المرجع الآمن للضمان :" : "Réf. Séquestre :"}</span>
+                      <strong className="font-mono text-[#082D55]">{escrowRef}</strong>
+                    </div>
+                    {confirmedBookingId && (
+                      <div className="flex justify-between border-b border-slate-200 pb-2 text-[11px] text-slate-500">
+                        <span>{ar ? "معرّف الموعد :" : "N° de dossier :"}</span>
+                        <span className="font-mono text-slate-600">{confirmedBookingId.slice(0, 12)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between border-b border-slate-200 pb-2">
+                      <span className="text-slate-500">{ar ? "المرافق المدرسي :" : "Accompagnant(e) :"}</span>
+                      <strong>{avs.name}</strong>
+                    </div>
+                    <div className="flex justify-between border-b border-slate-200 pb-2">
+                      <span className="text-slate-500">{ar ? "التاريخ والتوقيت :" : "Date & Créneau :"}</span>
+                      <span>{selectedDate} ({selectedSlot})</span>
+                    </div>
+                    <div className="flex justify-between pt-1">
+                      <span className="text-slate-500">{ar ? "المبلغ المحفوظ تحت الضمان :" : "Montant sous séquestre :"}</span>
+                      <strong className="text-emerald-700 font-mono text-sm">{totalEscrowTnd}.000 TND</strong>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-3">
+                    <Link
+                      href={`/${locale}/dashboard/rendez-vous`}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#082D55] hover:bg-[#061f3d] text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-md transition-all"
+                    >
+                      <Icon name="calendar" size={15} />
+                      <span>{ar ? "عرض في مساحتي (لوحة التحكم)" : "Gérer dans mon espace Parent"}</span>
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 py-2.5 rounded-xl text-xs font-bold transition-all"
+                    >
+                      <span>{ar ? "إغلاق" : "Fermer"}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
 
-          {/* STEP 2: Child info */}
-          {step === 2 && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    {ar ? "اسم ولقب التلميذ *" : "Nom et prénom de l'élève *"}
-                  </label>
-                  <input
-                    id="avs-child-name"
-                    type="text"
-                    required
-                    value={childName}
-                    onChange={(e) => setChildName(e.target.value)}
-                    placeholder={ar ? "مثال: يوسف بن سالم" : "Ex: Adam Trabelsi"}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#082D55]/30 focus:border-[#082D55]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    {ar ? "العمر أو المستوى الدراسي *" : "Âge / Classe actuelle *"}
-                  </label>
-                  <input
-                    id="avs-child-age"
-                    type="text"
-                    required
-                    value={childAge}
-                    onChange={(e) => setChildAge(e.target.value)}
-                    placeholder={ar ? "7 سنوات - السنة الأولى" : "Ex: 7 ans (CP)"}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#082D55]/30 focus:border-[#082D55]"
-                  />
-                </div>
-              </div>
+            {/* Stepper Footer Controls */}
+            {step < 3 && (
+              <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between flex-none">
+                {step > 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => setStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3 | 4) : 1))}
+                    className="px-4 py-2 rounded-lg border border-slate-300 text-xs font-bold text-slate-700 hover:bg-white transition-colors"
+                  >
+                    {ar ? "← السابق" : "← Précédent"}
+                  </button>
+                ) : <div />}
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  {ar ? "المؤسسة التعليمية الحالية (إن وجدت)" : "Établissement scolaire actuel"}
-                </label>
-                <input
-                  type="text"
-                  value={schoolName}
-                  onChange={(e) => setSchoolName(e.target.value)}
-                  placeholder={ar ? "اسم المدرسة الابتدائية أو الإعدادية" : "Ex: École Primaire Mutuelleville"}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#082D55]/30 focus:border-[#082D55]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  {ar ? "مجال المرافقة المطلوب" : "Besoin ou diagnostic principal"}
-                </label>
-                <select
-                  value={interventionDomain}
-                  onChange={(e) => setInterventionDomain(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#082D55]/30 focus:border-[#082D55]"
-                >
-                  <option value="">{ar ? "-- اختر المجال --" : "-- Sélectionner le domaine --"}</option>
-                  <option value="Autisme (TSA)">{ar ? "طيف التوحد (TSA)" : "Autisme (TSA)"}</option>
-                  <option value="Troubles DYS">{ar ? "صعوبات واضطرابات التعلم (DYS)" : "Troubles DYS (Dyslexie, Dyspraxie)"}</option>
-                  <option value="TDAH">{ar ? "تشتت الانتباه وفرط الحركة (TDAH)" : "TDAH (Déficit de l'attention)"}</option>
-                  <option value="Trisomie 21">{ar ? "متلازمة داون / إعاقة ذهنية" : "Déficience intellectuelle / Trisomie 21"}</option>
-                  <option value="Handicap moteur">{ar ? "إعاقة حركية وتيسير بيئة القسم" : "Handicap moteur & Ergonomie"}</option>
-                  <option value="Troubles sensoriels">{ar ? "اضطرابات بصرية أو سمعية" : "Troubles sensoriels"}</option>
-                  <option value="Autonomie">{ar ? "استقلالية مدرسية وتكيف عام" : "Autonomie & Adaptation générale"}</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  {ar ? "وصف الحاجيات وسياق المرافقة *" : "Description du besoin d'accompagnement *"}
-                </label>
-                <textarea
-                  id="avs-need-description"
-                  required
-                  rows={3}
-                  value={needDescription}
-                  onChange={(e) => setNeedDescription(e.target.value)}
-                  placeholder={
-                    ar
-                      ? "وضح الصعوبات التي يواجهها التلميذ، أوقات المرافقة المرجوة، وأي ملاحظات تهم الفريق التربوي..."
-                      : "Précisez les difficultés en classe, les adaptations souhaitées, le temps d'accompagnement envisagé (temps plein/partiel)..."
-                  }
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#082D55]/30 focus:border-[#082D55]"
-                />
-              </div>
-
-              <div className="pt-3 flex justify-between">
                 <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="btn btn-ghost text-xs font-semibold px-4"
-                >
-                  {ar ? "رجوع" : "Retour"}
-                </button>
-                <button
-                  id="avs-booking-next-step"
                   type="button"
                   onClick={() => {
-                    if (!childName.trim() || !needDescription.trim()) {
-                      setErrorMessage(ar ? "يرجى كتابة اسم التلميذ ووصف الحاجيات." : "Veuillez renseigner le nom de l'enfant et le besoin.");
+                    if (step === 2 && (!childName || !needDescription)) {
+                      setErrorMessage(ar ? "يرجى كتابة اسم التلميذ ووصف الحاجة." : "Veuillez renseigner le nom de l'élève et son besoin.");
                       return;
                     }
                     setErrorMessage("");
-                    setStep(3);
+                    setStep((s) => (s < 4 ? ((s + 1) as 1 | 2 | 3 | 4) : 4));
                   }}
-                  className="btn btn-primary px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2"
+                  className="px-5 py-2.5 rounded-xl bg-[#082D55] text-white text-xs font-bold hover:bg-[#061f3d] transition-colors shadow-sm"
                 >
-                  <span>{ar ? "التالي: بيانات الاتصال" : "Suivant : Coordonnées du parent"}</span>
-                  <Icon name="arrow" size={16} className="directional-icon" />
+                  {step === 2
+                    ? ar
+                      ? "المتابعة إلى الدفع والضمان →"
+                      : "Passer au paiement sous séquestre →"
+                    : ar
+                    ? "التالي →"
+                    : "Suivant →"}
                 </button>
               </div>
-            </div>
-          )}
-
-          {/* STEP 3: Parent details & final confirm */}
-          {step === 3 && (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200 text-xs text-amber-900 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Icon name="calendar" size={16} className="text-[#a9752f]" />
-                  <span>
-                    <strong>{selectedDate}</strong> à <strong>{selectedSlot}</strong> ({meetingType})
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="text-amber-800 underline font-semibold hover:text-amber-950"
-                >
-                  {ar ? "تعديل" : "Modifier"}
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    {ar ? "اسم ولقب ولي الأمر *" : "Nom et prénom du parent / tuteur *"}
-                  </label>
-                  <input
-                    id="avs-parent-name"
-                    type="text"
-                    required
-                    value={parentName}
-                    onChange={(e) => setParentName(e.target.value)}
-                    placeholder={ar ? "مثال: منية بن سالم" : "Ex: Sonia Ben Salem"}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#082D55]/30 focus:border-[#082D55]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    {ar ? "رقم الهاتف التونسي *" : "Numéro de téléphone *" }
-                  </label>
-                  <input
-                    id="avs-parent-phone"
-                    type="tel"
-                    required
-                    value={parentPhone}
-                    onChange={(e) => setParentPhone(e.target.value)}
-                    placeholder="+216 98 123 456"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#082D55]/30 focus:border-[#082D55]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  {ar ? "البريد الإلكتروني لتأكيد الموعد *" : "Adresse email (pour la confirmation) *"}
-                </label>
-                <input
-                  id="avs-parent-email"
-                  type="email"
-                  required
-                  value={parentEmail}
-                  onChange={(e) => setParentEmail(e.target.value)}
-                  placeholder="parent@example.com"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#082D55]/30 focus:border-[#082D55]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  {ar ? "ملاحظة أو سؤال للمرافق (اختياري)" : "Message ou question pour l'AVS (facultatif)"}
-                </label>
-                <input
-                  type="text"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder={ar ? "أي معلومة إضافية تود إبلاغها..." : "Précisions sur la disponibilité, lieu exact..."}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#082D55]/30 focus:border-[#082D55]"
-                />
-              </div>
-
-              <div className="pt-3 flex justify-between items-center">
-                <button
-                  type="button"
-                  onClick={() => setStep(2)}
-                  className="btn btn-ghost text-xs font-semibold px-4"
-                >
-                  {ar ? "رجوع" : "Retour"}
-                </button>
-                <button
-                  id="avs-booking-submit"
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="btn btn-primary px-7 py-2.5 rounded-xl font-bold text-sm shadow-md hover:shadow-lg disabled:opacity-50 flex items-center gap-2"
-                >
-                  {isSubmitting ? (
-                    <span>{ar ? "جاري الإرسال..." : "Enregistrement en cours..."}</span>
-                  ) : (
-                    <>
-                      <Icon name="check" size={16} />
-                      <span>{ar ? "تأكيد طلب الموعد" : "Confirmer la demande de rendez-vous"}</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* STEP 4: Success confirmation */}
-          {step === 4 && (
-            <div className="avs-booking-success py-6 text-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 mx-auto flex items-center justify-center">
-                <Icon name="check" size={32} />
-              </div>
-              <h3 className="text-xl font-bold text-[#082D55]">
-                {ar ? "تم إرسال طلب الموعد بنجاح !" : "Demande de rendez-vous enregistrée !"}
-              </h3>
-              <p className="text-sm text-slate-600 max-w-md mx-auto">
-                {ar
-                  ? `تم إشعار المرافق(ة) ${avs.name} بطلب الموعد ليوم ${selectedDate} على الساعة ${selectedSlot}. سيتم التواصل معك هاتفيًا أو عبر البريد لتأكيد التفاصيل.`
-                  : `L'accompagnant(e) ${avs.name} a bien reçu votre demande pour le ${selectedDate} à ${selectedSlot}. Vous recevrez une confirmation et un contact direct rapidement.`}
-              </p>
-              <div className="avs-booking-ref inline-block px-4 py-2 bg-slate-100 rounded-lg text-xs font-mono text-slate-600">
-                {ar ? `رمز المرجع: ${confirmedBookingId.slice(0, 8)}` : `Réf : ${confirmedBookingId.slice(0, 8)}`}
-              </div>
-              <div className="pt-4 flex justify-center">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="btn btn-secondary px-8 py-2.5 rounded-xl font-semibold text-sm"
-                >
-                  {ar ? "تم، إغلاق" : "Terminer et fermer"}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

@@ -40,30 +40,83 @@ export function AvsProfileBookingSection({ locale, avs }: AvsProfileBookingSecti
 
   const [selectedDate, setSelectedDate] = useState(days[0].iso);
   const [selectedSlot, setSelectedSlot] = useState(SLOTS[1]);
+  const [meetingType, setMeetingType] = useState<"IN_PERSON" | "ONLINE">("IN_PERSON");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showDirectContact, setShowDirectContact] = useState(false);
 
   return (
-    <div className="avs-booking-widget bg-white rounded-2xl border border-slate-200 shadow-md p-6 space-y-6">
+    <div className="avs-booking-widget bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 sm:p-7 space-y-6">
+      {/* Header */}
       <div className="border-b border-slate-100 pb-4">
-        <div className="text-xs font-bold text-amber-700 uppercase tracking-wider">
+        <div className="text-[11px] font-bold uppercase tracking-wider text-[#a66f24]">
           {ar ? "حجز موعد فوري" : "Prise de rendez-vous en ligne"}
         </div>
-        <h3 className="text-lg font-bold text-[#082D55] mt-1">
-          {ar ? "اختر التوقيت المناسب" : "Disponibilités de l'accompagnant"}
+        <h3 className="font-[family-name:var(--font-fraunces)] text-lg sm:text-xl font-bold text-[#082D55] mt-1">
+          {ar ? "حدد صيغة اللقاء والموعد المناسب" : "Planifier une rencontre"}
         </h3>
-        <p className="text-xs text-slate-500 mt-1">
+        <p className="text-xs text-slate-500 mt-1 leading-relaxed">
           {ar
-            ? "احجز مقابلة استكشافية أو زيارة متابعة دون وسطاء."
-            : "Sélectionnez un créneau pour un entretien préliminaire ou une visite d'observation."}
+            ? "حدد صيغة المقابلة (حضوري على عين المكان أو عن بعد)، ثم اختر اليوم والساعة للاستكشاف أو المتابعة."
+            : "Choisissez la modalité (sur place ou en ligne), puis le créneau souhaité pour votre premier échange."}
         </p>
       </div>
 
-      {/* 7-day horizontal strip */}
+      {/* 1. Modality Selector: Sur place vs En ligne */}
       <div>
-        <label className="block text-xs font-bold text-slate-600 mb-2">
-          {ar ? "1. حدد اليوم" : "1. Jour souhaité"}
-        </label>
+        <div className="flex items-center justify-between text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+          <span>{ar ? "1. صيغة المقابلة" : "1. Modalité de la rencontre"}</span>
+          <span className="text-[11px] font-semibold text-[#a66f24]">
+            {meetingType === "IN_PERSON"
+              ? ar ? "حضوري" : "Sur place"
+              : ar ? "عن بعد" : "En ligne"}
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setMeetingType("IN_PERSON")}
+            className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#082D55] ${
+              meetingType === "IN_PERSON"
+                ? "border-[#082D55] bg-[#082D55] text-white shadow-xs font-bold"
+                : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-700"
+            }`}
+          >
+            <Icon name="map" size={15} className={meetingType === "IN_PERSON" ? "text-amber-300" : "text-slate-400"} />
+            <span>{ar ? "على عين المكان" : "Sur place (Présentiel)"}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMeetingType("ONLINE")}
+            className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#082D55] ${
+              meetingType === "ONLINE"
+                ? "border-[#082D55] bg-[#082D55] text-white shadow-xs font-bold"
+                : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-700"
+            }`}
+          >
+            <Icon name="video" size={15} className={meetingType === "ONLINE" ? "text-amber-300" : "text-slate-400"} />
+            <span>{ar ? "عن بعد (فيديو)" : "En ligne (Visioconférence)"}</span>
+          </button>
+        </div>
+        <div className="text-[11px] text-slate-500 mt-1.5 flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-none" />
+          <span>
+            {meetingType === "IN_PERSON"
+              ? ar
+                ? "لقاء حضوري بالمدرسة أو بالمركز أو بالمكان المتفق عليه."
+                : "Rencontre sur place (école, cabinet ou lieu convenu)."
+              : ar
+                ? "محادثة مرئية مباشرة عبر رابط استشارة مشفر وآمن."
+                : "Échange en visioconférence sécurisée via l'espace ANEI."}
+          </span>
+        </div>
+      </div>
+
+      {/* 2. Date Selector */}
+      <div>
+        <div className="flex items-center justify-between text-xs font-bold text-slate-700 uppercase tracking-wider mb-2.5">
+          <span>{ar ? "2. حدد اليوم" : "2. Jour souhaité"}</span>
+          <span className="text-[11px] font-medium text-slate-400 capitalize">{selectedDate}</span>
+        </div>
         <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
           {days.map((d) => {
             const isSelected = selectedDate === d.iso;
@@ -72,25 +125,30 @@ export function AvsProfileBookingSection({ locale, avs }: AvsProfileBookingSecti
                 key={d.iso}
                 type="button"
                 onClick={() => setSelectedDate(d.iso)}
-                className={`py-2 px-1 rounded-xl border text-center transition-all ${
+                aria-pressed={isSelected}
+                className={`py-2 px-1 rounded-xl border text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#082D55] ${
                   isSelected
                     ? "border-[#082D55] bg-[#082D55] text-white shadow-xs font-bold"
-                    : "border-slate-200 hover:bg-slate-50 text-slate-700 text-xs"
+                    : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-700"
                 }`}
               >
-                <div className="text-[10px] uppercase opacity-80">{d.dayName}</div>
-                <div className="font-semibold text-xs mt-0.5">{d.dateText}</div>
+                <div className={`text-[10px] uppercase tracking-wider font-semibold ${isSelected ? "text-slate-200" : "text-slate-400"}`}>
+                  {d.dayName}
+                </div>
+                <div className={`text-xs mt-0.5 ${isSelected ? "font-bold text-white" : "font-semibold text-slate-700"}`}>
+                  {d.dateText}
+                </div>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Slots picker */}
+      {/* 3. Time Slot Selector */}
       <div>
-        <label className="block text-xs font-bold text-slate-600 mb-2">
-          {ar ? "2. اختر ساعة المقابلة" : "2. Horaire disponible"}
-        </label>
+        <div className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2.5">
+          {ar ? "3. اختر ساعة المقابلة" : "3. Horaire disponible"}
+        </div>
         <div className="grid grid-cols-3 gap-2">
           {SLOTS.map((slot) => {
             const isSelected = selectedSlot === slot;
@@ -99,10 +157,11 @@ export function AvsProfileBookingSection({ locale, avs }: AvsProfileBookingSecti
                 key={slot}
                 type="button"
                 onClick={() => setSelectedSlot(slot)}
-                className={`py-2 px-2 rounded-lg border text-xs font-semibold text-center transition-all ${
+                aria-pressed={isSelected}
+                className={`py-2.5 px-2 rounded-xl border text-xs text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#082D55] ${
                   isSelected
-                    ? "border-amber-600 bg-amber-50 text-amber-900 ring-2 ring-amber-500/20"
-                    : "border-slate-200 hover:bg-slate-50 text-slate-700"
+                    ? "border-[#082D55] bg-[#082D55] text-white shadow-xs font-bold"
+                    : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-700 font-medium"
                 }`}
               >
                 {slot}
@@ -112,44 +171,48 @@ export function AvsProfileBookingSection({ locale, avs }: AvsProfileBookingSecti
         </div>
       </div>
 
-      {/* Main Action: Open Booking Modal */}
-      <div>
+      {/* Booking CTA Action */}
+      <div className="space-y-2.5 pt-1">
         <button
           type="button"
           onClick={() => setIsModalOpen(true)}
-          className="w-full py-3 px-4 bg-[#082D55] hover:bg-[#061f3b] text-white font-bold text-sm rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+          className="w-full py-3.5 px-4 bg-[#082D55] hover:bg-[#061f3d] text-white font-bold text-sm rounded-xl shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#082D55] focus-visible:ring-offset-2"
         >
-          <Icon name="calendar" size={17} />
+          <Icon name="calendar" size={16} />
           <span>{ar ? "تأكيد الموعد ومتابعة الطلب" : "Prendre ce rendez-vous"}</span>
         </button>
-        <div className="text-[11px] text-slate-400 text-center mt-2 flex items-center justify-center gap-1">
-          <Icon name="shield" size={12} />
-          <span>{ar ? "خدمة آمنة ومجانية لعائلات المنصة" : "Service de mise en relation vérifié ANEI"}</span>
+        <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500 text-center">
+          <Icon name="shield" size={13} className="text-emerald-600 flex-none" />
+          <span>{ar ? "خدمة مؤمّنة بضمان الترتيب المالي (Séquestre ANEI)" : "Service vérifié · Protection tiers de confiance ANEI"}</span>
         </div>
       </div>
 
-      {/* Secondary: Phone or Question Toggle */}
+      {/* Direct Contact Accordion */}
       <div className="border-t border-slate-100 pt-4 space-y-3">
         <button
           type="button"
           onClick={() => setShowDirectContact(!showDirectContact)}
-          className="w-full text-xs font-semibold text-slate-700 hover:text-[#082D55] flex items-center justify-between py-1"
+          className="w-full text-xs font-semibold text-slate-600 hover:text-[#082D55] flex items-center justify-between py-1 transition-colors group"
         >
           <span className="flex items-center gap-2">
-            <Icon name="phone" size={14} className="text-[#a9752f]" />
+            <Icon name="phone" size={14} className="text-slate-400 group-hover:text-[#082D55]" />
             <span>{ar ? "معلومات الاتصال المباشر" : "Coordonnées de l'accompagnant"}</span>
           </span>
-          <Icon name="chevron" size={14} className={`transition-transform ${showDirectContact ? "rotate-180" : ""}`} />
+          <Icon
+            name="chevron"
+            size={14}
+            className={`text-slate-400 transition-transform duration-200 ${showDirectContact ? "rotate-180" : ""}`}
+          />
         </button>
 
         {showDirectContact && (
-          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-xs animate-in fade-in duration-150">
+          <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200/80 space-y-2 text-xs animate-in fade-in duration-150">
             {avs.phone ? (
               <a
                 href={`tel:${avs.phone}`}
                 className="flex items-center gap-2 text-emerald-800 font-bold hover:underline"
               >
-                <Icon name="phone" size={14} />
+                <Icon name="phone" size={14} className="text-emerald-600" />
                 <span>{avs.phone}</span>
               </a>
             ) : null}
@@ -158,7 +221,7 @@ export function AvsProfileBookingSection({ locale, avs }: AvsProfileBookingSecti
                 href={`mailto:${avs.email}`}
                 className="flex items-center gap-2 text-slate-700 hover:underline"
               >
-                <Icon name="mail" size={14} />
+                <Icon name="mail" size={14} className="text-slate-400" />
                 <span>{avs.email}</span>
               </a>
             ) : null}
@@ -177,6 +240,7 @@ export function AvsProfileBookingSection({ locale, avs }: AvsProfileBookingSecti
         avs={avs}
         initialDate={selectedDate}
         initialTimeSlot={`${selectedSlot} - 1h`}
+        initialMeetingType={meetingType}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       />

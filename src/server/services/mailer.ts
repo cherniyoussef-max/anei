@@ -16,7 +16,15 @@ const transporter = nodemailer.createTransport({
 
 type Mail = { to: string; subject: string; text: string; html: string };
 type AuthMailInput = { name: string; email: string; url: string; locale: Locale };
-export type MailType = "EMAIL_VERIFICATION" | "PASSWORD_RESET" | "OTP" | "WEBINAR_ACCESS_PASS" | "CARE_ALERT";
+export type MailType =
+  | "EMAIL_VERIFICATION"
+  | "PASSWORD_RESET"
+  | "OTP"
+  | "WEBINAR_ACCESS_PASS"
+  | "CARE_ALERT"
+  | "CONTACT_INQUIRY"
+  | "CONTACT_CONFIRMATION"
+  | "BOOKING_ESCROW";
 
 /**
  * Sanitized failure category, safe to log and safe to report externally.
@@ -291,6 +299,172 @@ export async function sendCareAlertEmail(input: CareAlertMailInput) {
       </div>`,
     },
     "CARE_ALERT",
+  );
+}
+
+export type ContactInquiryMailInput = {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  locale?: Locale;
+};
+
+export async function sendContactInquiryNotification(input: ContactInquiryMailInput) {
+  const name = escapeHtml(input.name);
+  const email = escapeHtml(input.email);
+  const subject = escapeHtml(input.subject);
+  const message = escapeHtml(input.message).replace(/\n/g, "<br/>");
+  const timestamp = new Date().toLocaleString("fr-FR", { timeZone: "Africa/Tunis" });
+
+  await sendMail(
+    {
+      to: env.CONTACT_EMAIL,
+      subject: `[Support ANEI] Nouveau message de ${input.name}: ${input.subject}`,
+      text: `Nouveau message reçu via le formulaire de contact ANEI:\n\nNom: ${input.name}\nEmail: ${input.email}\nSujet: ${input.subject}\nDate: ${timestamp}\n\nMessage:\n${input.message}\n\nRépondre directement à: ${input.email}`,
+      html: `<div dir="ltr" style="font-family:Arial,sans-serif;max-width:600px;margin:auto;color:#082d55;line-height:1.6;padding:24px;border:1px solid #e2e8f0;border-top:4px solid #c9913f;border-radius:12px;background:#ffffff">
+        <div style="margin-bottom:16px">
+          <span style="font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#c9913f;background:#fdfbf7;border:1px solid #f3e8d2;padding:4px 10px;border-radius:999px">SUPPORT & CONTACT ANEI</span>
+        </div>
+        <h2 style="color:#082d55;margin:0 0 16px 0;font-size:20px;font-weight:700">Demande de contact reçue</h2>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin-bottom:20px">
+          <p style="margin:0 0 8px 0;font-size:14px"><strong>Expéditeur :</strong> ${name} &lt;<a href="mailto:${email}">${email}</a>&gt;</p>
+          <p style="margin:0 0 8px 0;font-size:14px"><strong>Objet :</strong> ${subject}</p>
+          <p style="margin:0;font-size:13px;color:#64748b"><strong>Date de réception :</strong> ${timestamp} (Heure Tunis)</p>
+        </div>
+        <h3 style="font-size:15px;color:#082d55;margin:0 0 8px 0">Message transmis :</h3>
+        <div style="background:#ffffff;border:1px solid #cbd5e1;border-radius:8px;padding:16px;font-size:14px;color:#334155;line-height:1.7;white-space:pre-wrap">
+${message}
+        </div>
+        <div style="margin:24px 0;text-align:center">
+          <a style="display:inline-block;background:#082d55;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:14px" href="mailto:${email}?subject=${encodeURIComponent(`Re: [ANEI] ${input.subject}`)}">Répondre à ${name}</a>
+        </div>
+        <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0" />
+        <p style="font-size:12px;color:#94a3b8;margin:0">Notification automatique générée par la plateforme de l'Académie Nationale de l'Éducation Inclusive.</p>
+      </div>`,
+    },
+    "CONTACT_INQUIRY"
+  );
+}
+
+export async function sendContactAcknowledgmentEmail(input: ContactInquiryMailInput) {
+  const ar = input.locale === "ar";
+  const name = escapeHtml(input.name);
+  const subject = escapeHtml(input.subject);
+
+  await sendMail(
+    {
+      to: input.email,
+      subject: ar
+        ? `تأكيد استلام رسالتكم — ANEI`
+        : `Accusé de réception de votre message — ANEI`,
+      text: ar
+        ? `مرحباً ${input.name}،\n\nلقد استلمنا رسالتكم بخصوص « ${input.subject} ».\nيقوم فريق الأكاديمية بدراسة طلبكم وسيقوم بالرد في أقرب وقت.\n\nالأكاديمية الوطنية للتربية الدامجة`
+        : `Bonjour ${input.name},\n\nNous avons bien reçu votre demande concernant « ${input.subject} ».\nL’équipe de l’Académie Nationale de l’Éducation Inclusive traite votre message et vous répondra sous 24 à 48 heures ouvrées.\n\nCordialement,\nL’équipe ANEI`,
+      html: `<div dir="${ar ? "rtl" : "ltr"}" style="font-family:Arial,sans-serif;max-width:580px;margin:auto;color:#082d55;line-height:1.6;padding:24px;border:1px solid #e2e8f0;border-top:4px solid #082d55;border-radius:12px;background:#ffffff">
+        <div style="margin-bottom:16px;text-align:${ar ? "right" : "left"}">
+          <img src="${env.APP_URL}/brand/anei-logo-2x-transparent.png" alt="${ar ? "الأكاديمية الوطنية للتربية الدامجة" : "Académie Nationale de l’Éducation Inclusive"}" width="160" style="display:inline-block;width:160px;height:auto;max-width:100%;border:0" />
+        </div>
+        <h2 style="color:#082d55;margin:0 0 12px 0;font-size:20px;font-weight:700">
+          ${ar ? "تم استلام رسالتكم بنجاح" : "Nous avons bien reçu votre demande"}
+        </h2>
+        <p style="font-size:15px;margin:0 0 12px 0">
+          ${ar ? `مرحباً <strong>${name}</strong>،` : `Bonjour <strong>${name}</strong>,`}
+        </p>
+        <p style="font-size:14px;color:#334155;line-height:1.6">
+          ${
+            ar
+              ? `نشكركم على تواصلكم مع الأكاديمية الوطنية للتربية الدامجة بخصوص « <strong>${subject}</strong> ». تم تسجيل طلبكم وسيقوم الفريق المعني بالرد عليكم في غضون 24 إلى 48 ساعة عمل.`
+              : `Nous vous remercions d’avoir contacté l’Académie Nationale de l’Éducation Inclusive au sujet de « <strong>${subject}</strong> ». Votre demande a été enregistrée et notre pôle d’orientation vous répondra sous 24 à 48 heures ouvrées.`
+          }
+        </p>
+        <div style="background:#fdfbf7;border:1px solid #f3e8d2;border-radius:8px;padding:14px;margin:20px 0">
+          <strong style="display:block;color:#a66f24;font-size:13px;margin-bottom:6px">
+            ${ar ? "معلومات الاتصال المباشر بمقر الأكاديمية :" : "Permanence & Campus ANEI :"}
+          </strong>
+          <span style="display:block;font-size:13px;color:#475569">
+            ${ar ? "📍 تونس، المركز العمراني الشمالي — تونس" : "📍 Avenue Habib Bourguiba, Centre Urbain Nord, Tunis"}
+          </span>
+          <span style="display:block;font-size:13px;color:#475569">
+            ${ar ? "⏱️ أوقات العمل: الإثنين إلى الجمعة من 08:30 إلى 17:30" : "⏱️ Accueil public : Du Lundi au Vendredi de 08h30 à 17h30"}
+          </span>
+        </div>
+        <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0" />
+        <p style="font-size:12px;color:#94a3b8;margin:0">
+          ${ar ? "الأكاديمية الوطنية للتربية الدامجة (ANEI) — تجربة تعليمية شاملة وإنسانية." : "Académie Nationale de l’Éducation Inclusive (ANEI) — Pour une école et une société accessibles à tous."}
+        </p>
+      </div>`,
+    },
+    "CONTACT_CONFIRMATION"
+  );
+}
+
+export type BookingEscrowMailInput = {
+  parentName: string;
+  parentEmail: string;
+  avsName: string;
+  childName: string;
+  requestedDate: string;
+  requestedTimeSlot: string;
+  meetingType: string;
+  amountTnd: number;
+  escrowRef: string;
+  locale?: Locale;
+};
+
+export async function sendBookingEscrowNotification(input: BookingEscrowMailInput) {
+  const ar = input.locale === "ar";
+  const parentName = escapeHtml(input.parentName);
+  const avsName = escapeHtml(input.avsName);
+  const childName = escapeHtml(input.childName);
+
+  await sendMail(
+    {
+      to: input.parentEmail,
+      subject: ar
+        ? `تأكيد حجز موعد المرافقة وسداد الضمان — ANEI (${input.escrowRef})`
+        : `Confirmation de rendez-vous AVS & Garantie Séquestre — ANEI (${input.escrowRef})`,
+      text: `Rendez-vous AVS confirmé.\nRéf Séquestre: ${input.escrowRef}\nMontant: ${input.amountTnd} TND (Fonds sous séquestre tiers de confiance ANEI).\nAVS: ${input.avsName}\nDate: ${input.requestedDate} à ${input.requestedTimeSlot}`,
+      html: `<div dir="${ar ? "rtl" : "ltr"}" style="font-family:Arial,sans-serif;max-width:580px;margin:auto;color:#082d55;line-height:1.6;padding:24px;border:1px solid #e2e8f0;border-top:4px solid #082d55;border-radius:12px;background:#ffffff">
+        <div style="margin-bottom:16px;text-align:${ar ? "right" : "left"}">
+          <img src="${env.APP_URL}/brand/anei-logo-2x-transparent.png" alt="ANEI" width="160" style="display:inline-block;width:160px;height:auto;max-width:100%;border:0" />
+        </div>
+        <div style="margin-bottom:12px">
+          <span style="display:inline-block;font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#059669;background:#ecfdf5;border:1px solid #a7f3d0;padding:4px 10px;border-radius:999px">
+            ${ar ? "🛡️ مدفوع — ضمان طرف ثالث ANEI" : "🛡️ PAYÉ — GARANTIE TIERS DE CONFIANCE ANEI"}
+          </span>
+        </div>
+        <h2 style="color:#082d55;margin:0 0 12px 0;font-size:20px;font-weight:700">
+          ${ar ? "تم تأكيد حجز موعد المرافقة المدرسية" : "Rendez-vous AVS confirmé"}
+        </h2>
+        <p style="font-size:15px;margin:0 0 16px 0">
+          ${ar ? `مرحباً <strong>${parentName}</strong>،` : `Bonjour <strong>${parentName}</strong>,`}
+        </p>
+        <p style="font-size:14px;color:#334155;line-height:1.6">
+          ${
+            ar
+              ? `تم تسجيل وسداد موعدكم مع المرافق المدرسي <strong>${avsName}</strong> لصالح التلميذ(ة) <strong>${childName}</strong> بنجاح. تم حفظ المبلغ تحت حساب الضمان المحمي (Séquestre) لدى الأكاديمية.`
+              : `Votre rendez-vous avec l'accompagnant(e) scolaire <strong>${avsName}</strong> pour l'élève <strong>${childName}</strong> a été validé et réglé avec succès. Les fonds sont sécurisés sous séquestre par l'ANEI.`
+          }
+        </p>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:20px 0">
+          <p style="margin:0 0 8px 0;font-size:14px"><strong>${ar ? "المرجع الآمن للضمان :" : "Réf. Séquestre :"}</strong> <code style="color:#082d55;font-weight:bold">${input.escrowRef}</code></p>
+          <p style="margin:0 0 8px 0;font-size:14px"><strong>${ar ? "التاريخ والتوقيت :" : "Date & Créneau :"}</strong> ${input.requestedDate} (${input.requestedTimeSlot})</p>
+          <p style="margin:0 0 8px 0;font-size:14px"><strong>${ar ? "المبلغ المودع تحت الضمان :" : "Montant sous séquestre :"}</strong> ${input.amountTnd}.000 TND</p>
+          <p style="margin:0;font-size:13px;color:#059669"><strong>${ar ? "الحالة :" : "Statut :"}</strong> ${ar ? "الأموال محفوظة لدى ANEI حتى إتمام الجلسة" : "Fonds conservés par l'ANEI jusqu'à la tenue de la séance"}</p>
+        </div>
+        <div style="text-align:center;margin:24px 0">
+          <a style="display:inline-block;background:#082d55;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:14px" href="${env.APP_URL}/${input.locale || "fr"}/dashboard/rendez-vous">
+            ${ar ? "متابعة الموعد في لوحة التحكم" : "Gérer mon rendez-vous dans l'espace Parent"}
+          </a>
+        </div>
+        <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0" />
+        <p style="font-size:12px;color:#94a3b8;margin:0">
+          ${ar ? "الأكاديمية الوطنية للتربية الدامجة — حماية الأسرة والمرافق المدرسي." : "ANEI — Tiers de confiance pour l'accompagnement scolaire inclusif."}
+        </p>
+      </div>`,
+    },
+    "BOOKING_ESCROW"
   );
 }
 

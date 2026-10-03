@@ -529,22 +529,27 @@
   transform: scale(.98);
 }
 
+[dir="rtl"] .news-v7 {
+  font-family: var(--font-cairo), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  letter-spacing: 0 !important;
+}
+
 [dir="rtl"] .news-v7 :is(.news-v7-intro h1, .news-v7-lead-copy h2, .news-v7-feed > header h2, .news-v7-empty h2) {
-  letter-spacing: 0;
-  line-height: 1.35;
+  letter-spacing: 0 !important;
+  line-height: 1.35 !important;
 }
 
 [dir="rtl"] .news-v7 :is(.news-v7-intro > p, .news-v7-lead-copy > p, .news-v7-item-copy p, .news-v7-feed > header p, .news-v7-empty p) {
-  line-height: 1.9;
+  line-height: 1.9 !important;
 }
 
 [dir="rtl"] .news-v7-article-heading h1 {
-  letter-spacing: 0;
-  line-height: 1.35;
+  letter-spacing: 0 !important;
+  line-height: 1.35 !important;
 }
 
 [dir="rtl"] .news-v7 :is(.news-v7-article-heading > p, .news-v7-article-body) {
-  line-height: 1.9;
+  line-height: 1.9 !important;
 }
 
 @media (max-width: 1023px) {
