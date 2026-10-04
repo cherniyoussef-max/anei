@@ -33,10 +33,6 @@ test.describe("About Page Redesign (FR & AR)", () => {
       const heroTeamLoaded = await heroTeamImg.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0);
       expect(heroTeamLoaded).toBe(true);
 
-      // Hero editorial caption
-      const heroCaption = page.locator(".ah-editorial-caption");
-      await expect(heroCaption).toBeVisible();
-
       // CTA buttons
       const heroFormationsBtn = page.locator(".ah-hero-actions a[href*='/formations']");
       const heroContactBtn = page.locator(".ah-hero-actions a[href*='/contact']");

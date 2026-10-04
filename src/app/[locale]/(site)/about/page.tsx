@@ -67,11 +67,6 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
       "Équipe éducative inclusive pluridisciplinaire collaborant autour d’une table avec deux enfants",
       "فريق تربوي دامج متعدد التخصصات يتعاون حول طاولة عمل مع طفلين",
     ),
-    caption: t(
-      "Multidisciplinary care team collaborating on the individualized educational plan.",
-      "Équipe éducative et d’accompagnement réunie autour du projet personnalisé de l’élève.",
-      "فريق تربوي ومرافقون يجتمعون لمتابعة المشروع التعليمي المخصص للطفل.",
-    ),
   };
 
   const methodHeader = {
@@ -286,10 +281,6 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
                   />
                   <span className="ah-editorial-gold-rule" aria-hidden="true" />
                 </div>
-                <figcaption className="ah-editorial-caption">
-                  <Icon name="users" size={15} />
-                  <span>{heroCopy.caption}</span>
-                </figcaption>
               </figure>
             </div>
           </div>
