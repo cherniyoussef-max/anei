@@ -277,12 +277,16 @@ export function ResetPasswordForm({ locale }: { locale: Locale }) {
           </div>
           <div className="auth-password-rules">
             <span className={`rule-item ${lengthValid ? "is-met" : ""}`}>
-              <Icon name={lengthValid ? "check" : "shield"} size={11} />
-              <span>{ar ? "15 حرفًا أو أكثر" : "15 caractères ou plus"}</span>
+              <span className="rule-bullet" aria-hidden="true">
+                <Icon name="check" size={10} />
+              </span>
+              <span>{ar ? "15 حرفًا أو أكثر" : en ? "15+ characters" : "15 caractères ou plus"}</span>
             </span>
             <span className={`rule-item ${charsValid ? "is-met" : ""}`}>
-              <Icon name={charsValid ? "check" : "shield"} size={11} />
-              <span>{ar ? "أرقام أو رموز" : "Chiffres ou symboles"}</span>
+              <span className="rule-bullet" aria-hidden="true">
+                <Icon name="check" size={10} />
+              </span>
+              <span>{ar ? "أرقام أو رموز" : en ? "Numbers or symbols" : "Chiffres ou symboles"}</span>
             </span>
           </div>
         </div>

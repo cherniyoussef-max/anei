@@ -23,7 +23,6 @@ export default async function RegisterPage({ params }: { params: Promise<{ local
 
         <div className="auth-card">
           <div className="auth-card-header">
-            <div className="auth-card-badge">{ar ? "حساب جديد" : en ? "NEW ACCOUNT" : "NOUVEAU COMPTE"}</div>
             <h2>{ar ? "إنشاء حساب جديد" : en ? "Create an Account" : "Créer un compte"}</h2>
             <p>
               {ar
