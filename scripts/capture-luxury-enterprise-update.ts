@@ -23,7 +23,7 @@ async function main() {
   // 1. Auth Showcase - Register FR Desktop & Mobile
   const frRegDesk = await desktopCtx.newPage();
   await frRegDesk.goto(`${BASE_URL}/fr/register`, { waitUntil: "networkidle" });
-  await frRegDesk.waitForSelector(".auth-showcase-accreditation");
+  await frRegDesk.waitForSelector(".auth-simple-showcase");
   const showcaseElemFr = await frRegDesk.$(".auth-simple-showcase");
   if (showcaseElemFr) {
     await showcaseElemFr.screenshot({
@@ -35,7 +35,7 @@ async function main() {
   // Auth Showcase - Register AR Desktop
   const arRegDesk = await desktopCtx.newPage();
   await arRegDesk.goto(`${BASE_URL}/ar/register`, { waitUntil: "networkidle" });
-  await arRegDesk.waitForSelector(".auth-showcase-accreditation");
+  await arRegDesk.waitForSelector(".auth-simple-showcase");
   const showcaseElemAr = await arRegDesk.$(".auth-simple-showcase");
   if (showcaseElemAr) {
     await showcaseElemAr.screenshot({

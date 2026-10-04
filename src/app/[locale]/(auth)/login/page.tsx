@@ -23,7 +23,6 @@ export default async function LoginPage({ params }: { params: Promise<{ locale: 
 
         <div className="auth-card">
           <div className="auth-card-header">
-            <div className="auth-card-badge">{ar ? "أكاديمية ANEI" : en ? "ANEI ACADEMY" : "ACADÉMIE ANEI"}</div>
             <h2>{ar ? "مرحبًا بعودتك" : en ? "Sign in to ANEI" : "Bon retour parmi nous"}</h2>
             <p>
               {ar

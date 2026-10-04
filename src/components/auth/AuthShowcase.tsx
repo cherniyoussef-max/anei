@@ -1,5 +1,4 @@
 import Image from "next/image";
-import { Icon } from "@/components/ui/Icon";
 import { AneiLogo } from "@/components/brand/AneiLogo";
 import type { Locale } from "@/types";
 
@@ -121,35 +120,6 @@ export function AuthShowcase({
             sizes="(max-width: 768px) 140px, 220px"
             className="auth-clean-avatar-img"
           />
-        </div>
-      </div>
-
-      {/* Official Institutional Accreditation & Assurance */}
-      <div className="auth-showcase-accreditation">
-        <div className="auth-accreditation-seal" aria-hidden="true">
-          <Icon name="award" size={17} />
-        </div>
-        <div className="auth-accreditation-content">
-          <strong className="auth-accreditation-org">
-            {ar
-              ? "الأكاديمية الوطنية للتربية الدامجة"
-              : en
-              ? "National Academy of Inclusive Education"
-              : "Académie Nationale de l’Éducation Inclusive"}
-          </strong>
-          <p className="auth-accreditation-statement">
-            {mode === "recovery" || stage === "verify"
-              ? (ar
-                  ? "بروتوكول تحقق رسمي وتشفير متقدم لحماية السجلات والشهادات."
-                  : en
-                  ? "Official security protocol with institutional credential protection."
-                  : "Protocole de sécurité officiel et chiffrement institutionnel des accès.")
-              : (ar
-                  ? "منصة مرجعية معتمدة · شهادات موثقة رقمياً ومسارات تكوينية رسمية."
-                  : en
-                  ? "Accredited institutional platform · Verifiable credentials & certified curricula."
-                  : "Plateforme institutionnelle · Certifications officielles vérifiables et parcours certifiants.")}
-          </p>
         </div>
       </div>
     </aside>
