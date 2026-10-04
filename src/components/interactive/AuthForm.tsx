@@ -447,17 +447,6 @@ export function AuthForm({
           {ar ? "← العودة لاختيار الصفة" : en ? "← Back to role selection" : "← Modifier mon rôle"}
         </button>
       )}
-
-      <div className="security-note-row">
-        <Icon name="shield" size={14} />
-        <small className="security-note">
-          {ar
-            ? "اتصال آمن ومشفر 256-bit. لا يتم تخزين كلمة المرور بصيغة قابلة للقراءة."
-            : en
-              ? "Encrypted 256-bit connection. Passwords are never stored in plain text."
-              : "Connexion chiffrée 256-bit. Les mots de passe ne sont jamais stockés en clair."}
-        </small>
-      </div>
     </form>
   );
 }
