@@ -117,6 +117,7 @@ export function VideoLessonPlayer({
           };
           if (result.lessonCompleted || markCompleted) {
             setCompleted(true);
+            router.refresh();
           }
           if (result.courseCompleted) {
             setCourseComplete({ certificateCode: result.certificateCode ?? null });
@@ -127,7 +128,7 @@ export function VideoLessonPlayer({
         setSaving(false);
       }
     },
-    [completed, lessonId]
+    [completed, lessonId, router]
   );
 
   const togglePlay = useCallback(() => {
@@ -188,6 +189,7 @@ export function VideoLessonPlayer({
 
   // Fast-forward & complete video action ("Passer la vidéo")
   async function passVideoAndComplete() {
+    if (saving) return;
     if (video.current) {
       video.current.pause();
       if (duration > 0) {
@@ -210,6 +212,12 @@ export function VideoLessonPlayer({
       });
     } else {
       confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
+      router.refresh();
+      if (effectiveNextHref) {
+        setTimeout(() => {
+          router.push(effectiveNextHref);
+        }, 400);
+      }
     }
   }
 
@@ -230,6 +238,7 @@ export function VideoLessonPlayer({
       });
     } else {
       confetti({ particleCount: 140, spread: 75, origin: { y: 0.6 } });
+      router.refresh();
     }
   }
 

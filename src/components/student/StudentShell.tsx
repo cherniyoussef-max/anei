@@ -20,32 +20,32 @@ export function StudentShell({ children, locale, user, pointsBalance = 0, notifi
   return (
     <div className="student-app min-h-screen bg-[#F8FAFC] md:flex">
       <aside
-        className="hidden md:fixed md:inset-y-0 md:start-0 md:z-30 md:flex md:w-72 md:flex-col bg-gradient-to-b from-[#0A2540] via-[#091E3A] to-[#061629] border-e border-white/10 shadow-lg"
+        className="hidden md:fixed md:inset-y-0 md:start-0 md:z-30 md:flex md:w-64 md:flex-col bg-white border-e border-[#E2E8F0] shadow-xs"
         aria-label={ar ? "مساحة المتعلم" : en ? "Learning space" : "Espace apprenant"}
       >
-        <Link className="flex h-16 items-center gap-3 border-b border-white/10 px-6 transition-opacity hover:opacity-95" href={`/${locale}/dashboard`}>
-          <span className="inline-flex items-center justify-center bg-white p-1 rounded-lg shadow-sm flex-none">
-            <AneiLogo locale={locale} variant="mark" height={24} priority />
-          </span>
-          <span className="flex flex-col leading-tight">
-            <strong className="text-sm font-bold uppercase tracking-wider text-white">ANEI</strong>
-            <small className="text-xs font-semibold text-[#93C5FD]">{ar ? "مساحة المتعلّم" : en ? "Learning Space" : "Espace Apprenant"}</small>
-          </span>
-        </Link>
+        <div className="flex h-16 items-center border-b border-[#E2E8F0] px-5">
+          <Link className="flex items-center gap-2.5 transition-opacity hover:opacity-90" href={`/${locale}/dashboard`} aria-label={ar ? "ANEI، مساحة المتعلم" : en ? "ANEI learning space" : "ANEI, espace apprenant"}>
+            <AneiLogo locale={locale} variant="mark" height={32} priority />
+            <div className="flex flex-col leading-tight">
+              <strong className="text-base font-bold tracking-tight text-[#082D55]">ANEI</strong>
+              <span className="text-[11px] font-semibold text-[#0056D2]">{ar ? "مساحة المتعلّم" : en ? "Learning Space" : "Espace Apprenant"}</span>
+            </div>
+          </Link>
+        </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           <StudentNavigation locale={locale} variant="desktop" />
         </nav>
 
-        <div className="border-t border-white/10 p-3 bg-black/10">
+        <div className="border-t border-[#E2E8F0] p-3 bg-[#F8FAFC]">
           <Link
             href={`/${locale}/dashboard/profil`}
-            className="flex items-center gap-3 rounded-xl p-2 transition-all duration-200 ease-in-out hover:bg-white/10 group"
+            className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-white hover:shadow-xs group"
           >
-            <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-[#0056D2] text-sm font-bold text-white shadow-sm ring-2 ring-white/20 group-hover:ring-[#388BFF]" aria-hidden="true">{initial}</span>
+            <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-[#0056D2] text-sm font-bold text-white shadow-xs" aria-hidden="true">{initial}</span>
             <span className="flex min-w-0 flex-col leading-tight">
-              <strong className="truncate text-sm font-semibold text-white">{user.name}</strong>
-              <small className="truncate text-xs font-medium text-[#93C5FD]">{ar ? "متعلّم معتمد" : en ? "Certified Learner" : "Apprenant certifié"}</small>
+              <strong className="truncate text-xs font-semibold text-[#1F2937] group-hover:text-[#0056D2]">{user.name}</strong>
+              <small className="truncate text-[11px] font-medium text-[#64748B]">{ar ? "متعلّم معتمد" : en ? "Certified Learner" : "Apprenant certifié"}</small>
             </span>
           </Link>
           <div className="mt-1">
@@ -54,7 +54,7 @@ export function StudentShell({ children, locale, user, pointsBalance = 0, notifi
         </div>
       </aside>
 
-      <div className="flex min-h-screen flex-1 flex-col md:ms-72">
+      <div className="flex min-h-screen flex-1 flex-col md:ms-64">
         <div className="flex h-16 items-center gap-3 border-b border-[#E2E8F0] bg-white px-4 md:hidden">
           <Link className="flex items-center gap-2" href={`/${locale}/dashboard`} aria-label={ar ? "ANEI، مساحة المتعلم" : en ? "ANEI learning space" : "ANEI, espace apprenant"}>
             <AneiLogo locale={locale} variant="mark" height={32} />

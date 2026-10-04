@@ -192,7 +192,7 @@ export function StudentDashboard({
             {ar ? "مساحة التعلّم · مسار التطوير المهني" : en ? "Learning Space · Professional Track" : "Espace Apprenant · Parcours Professionnel"}
           </p>
           <h1 className="student-welcome-title">
-            {ar ? `مرحبًا، ${firstName} 👋` : `Bonjour, ${firstName} 👋`}
+            {ar ? `مرحبًا، ${firstName}` : `Bonjour, ${firstName}`}
           </h1>
           <p className="student-welcome-subtitle">
             {ar
@@ -201,13 +201,6 @@ export function StudentDashboard({
               ? "Here is your learning momentum and your next actionable steps."
               : "Voici l'état de votre progression et vos prochaines étapes d'apprentissage."}
           </p>
-        </div>
-
-        <div className="student-welcome-badges">
-          <div className="student-badge-streak" title={ar ? "حساب متعلم موثق" : "Compte certifié"}>
-            <ShieldCheck size={16} className="text-[#0056D2]" />
-            <span>{ar ? "حساب متعلم موثق" : en ? "Verified Learner" : "Compte certifié"}</span>
-          </div>
         </div>
       </header>
 

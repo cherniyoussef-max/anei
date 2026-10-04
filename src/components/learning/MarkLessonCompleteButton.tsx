@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
 import { CheckCircle2, ArrowRight } from "lucide-react";
 import type { Locale } from "@/types";
@@ -19,6 +20,7 @@ export function MarkLessonCompleteButton({
   nextHref?: string;
   hasNextLesson?: boolean;
 }) {
+  const router = useRouter();
   const ar = locale === "ar";
   const [completed, setCompleted] = useState(initiallyCompleted);
   const [loading, setLoading] = useState(false);
@@ -45,6 +47,7 @@ export function MarkLessonCompleteButton({
         if (result.courseCompleted) {
           confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 } });
         }
+        router.refresh();
       }
     } finally {
       setLoading(false);
