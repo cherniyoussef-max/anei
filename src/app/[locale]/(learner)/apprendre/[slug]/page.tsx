@@ -1,15 +1,25 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CourseDiscussion } from "@/components/learning/CourseDiscussion";
 import { StreamLessonPlayer } from "@/components/learning/StreamLessonPlayer";
 import { VideoLessonPlayer } from "@/components/learning/VideoLessonPlayer";
 import { YoutubeLessonPlayer } from "@/components/learning/YoutubeLessonPlayer";
-import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Clock, UserCheck, PlayCircle, Check, BookOpen, Download, Award } from "lucide-react";
+import { MarkLessonCompleteButton } from "@/components/learning/MarkLessonCompleteButton";
+import {
+  ArrowLeft,
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  PlayCircle,
+  Check,
+  BookOpen,
+  Download,
+  Award,
+} from "lucide-react";
 import { courses as courseTranslations } from "@/lib/data";
 import { isLocale } from "@/lib/i18n";
-import { getCourseVisual } from "@/lib/visuals";
 import { requireUser } from "@/server/auth/session";
 import { getLearningCourse } from "@/server/queries/account";
 import { getCourseDiscussion } from "@/server/services/course-discussion";
@@ -20,14 +30,108 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 const labels = {
-  en: { back: "My courses", room: "Course room", overview: "Overview", programme: "Programme", lessons: "Lessons", questions: "Questions", continue: "Continue learning", completed: "completed", progress: "Course progress", about: "About this course", aboutBody: "Use this space to follow the programme, complete each lesson and ask practical questions as you progress.", programmeTitle: "Course programme", lesson: "Lesson", extra: "Additional lessons", document: "Attached document", textLesson: "Document lesson", previous: "Previous", next: "Next", end: "End of course", assessments: "Assessments", best: "Best score", passed: "Passed", failed: "Not passed", attempts: "attempt(s) remaining", noAttempts: "No attempts remaining", retry: "Try again", startQuiz: "Start assessment", hours: "hours", trainer: "Trainer" },
-  fr: { back: "Mes formations", room: "Espace de formation", overview: "Vue d’ensemble", programme: "Programme", lessons: "Leçons", questions: "Questions", continue: "Continuer la formation", completed: "terminé", progress: "Progression du parcours", about: "À propos de ce parcours", aboutBody: "Retrouvez ici le programme, vos leçons et un espace de questions pratiques pour avancer avec des repères clairs.", programmeTitle: "Programme de la formation", lesson: "Leçon", extra: "Leçons complémentaires", document: "Document associé", textLesson: "Leçon documentaire", previous: "Précédent", next: "Suivant", end: "Fin du parcours", assessments: "Évaluations", best: "Meilleur score", passed: "Réussi", failed: "Non réussi", attempts: "tentative(s) restante(s)", noAttempts: "Plus de tentative disponible", retry: "Retenter", startQuiz: "Commencer l’évaluation", hours: "heures", trainer: "Formateur" },
-  ar: { back: "دوراتي", room: "مساحة الدورة", overview: "نظرة عامة", programme: "البرنامج", lessons: "الدروس", questions: "الأسئلة", continue: "متابعة التعلم", completed: "مكتمل", progress: "تقدم الدورة", about: "عن هذه الدورة", aboutBody: "تابع البرنامج والدروس واطرح أسئلتك العملية من مساحة واحدة تساعدك على التقدم بوضوح.", programmeTitle: "برنامج الدورة", lesson: "الدرس", extra: "دروس إضافية", document: "الوثيقة المرفقة", textLesson: "درس وثائقي", previous: "السابق", next: "التالي", end: "نهاية الدورة", assessments: "التقييمات", best: "أفضل نتيجة", passed: "ناجح", failed: "غير ناجح", attempts: "محاولات متبقية", noAttempts: "لا توجد محاولات متبقية", retry: "إعادة المحاولة", startQuiz: "بدء التقييم", hours: "ساعات", trainer: "المكوّن" },
+  en: {
+    back: "My courses",
+    room: "Course room",
+    overview: "Overview",
+    programme: "Course outline",
+    lessons: "Lessons",
+    questions: "Questions & Answers",
+    continue: "Continue learning",
+    completed: "completed",
+    progress: "Course progress",
+    about: "About this course",
+    aboutBody: "Follow your learning programme, master each skill, and ask questions to the community.",
+    programmeTitle: "Course outline",
+    lesson: "Lesson",
+    extra: "Additional lessons",
+    document: "Course resources & attachments",
+    textLesson: "Document lesson",
+    previous: "Previous",
+    next: "Next",
+    end: "End of course",
+    assessments: "Assessments",
+    best: "Best score",
+    passed: "Passed",
+    failed: "Not passed",
+    attempts: "attempt(s) remaining",
+    noAttempts: "No attempts remaining",
+    retry: "Try again",
+    startQuiz: "Start assessment",
+    hours: "hours",
+    trainer: "Instructor",
+  },
+  fr: {
+    back: "Mes formations",
+    room: "Espace de formation",
+    overview: "Vue d’ensemble",
+    programme: "Programme",
+    lessons: "Leçons",
+    questions: "Questions et réponses",
+    continue: "Continuer la formation",
+    completed: "terminé",
+    progress: "Progression du parcours",
+    about: "À propos de ce parcours",
+    aboutBody: "Retrouvez ici le programme, vos leçons et un espace d'échange pratique pour progresser efficacement.",
+    programmeTitle: "Programme de la formation",
+    lesson: "Leçon",
+    extra: "Leçons complémentaires",
+    document: "Ressource & document associé",
+    textLesson: "Leçon documentaire",
+    previous: "Précédent",
+    next: "Suivant",
+    end: "Fin du parcours",
+    assessments: "Évaluations",
+    best: "Meilleur score",
+    passed: "Réussi",
+    failed: "Non réussi",
+    attempts: "tentative(s) restante(s)",
+    noAttempts: "Plus de tentative disponible",
+    retry: "Retenter",
+    startQuiz: "Commencer l’évaluation",
+    hours: "heures",
+    trainer: "Formateur",
+  },
+  ar: {
+    back: "دوراتي",
+    room: "مساحة الدورة",
+    overview: "نظرة عامة",
+    programme: "البرنامج",
+    lessons: "الدروس",
+    questions: "الأسئلة والإجابات",
+    continue: "متابعة التعلم",
+    completed: "مكتمل",
+    progress: "تقدم الدورة",
+    about: "عن هذه الدورة",
+    aboutBody: "تابع البرنامج والدروس واطرح أسئلتك العملية من مساحة واحدة تساعدك على التقدم بوضوح.",
+    programmeTitle: "منهاج الدورة",
+    lesson: "الدرس",
+    extra: "دروس إضافية",
+    document: "الموارد والوثيقة المرفقة",
+    textLesson: "درس وثائقي",
+    previous: "السابق",
+    next: "التالي",
+    end: "نهاية الدورة",
+    assessments: "التقييمات",
+    best: "أفضل نتيجة",
+    passed: "ناجح",
+    failed: "غير ناجح",
+    attempts: "محاولات متبقية",
+    noAttempts: "لا توجد محاولات متبقية",
+    retry: "إعادة المحاولة",
+    startQuiz: "بدء التقييم",
+    hours: "ساعات",
+    trainer: "المكوّن",
+  },
 } as const;
 
-import { MarkLessonCompleteButton } from "@/components/learning/MarkLessonCompleteButton";
-
-export default async function CourseRoomPage({ params, searchParams }: { params: Promise<{ locale: string; slug: string }>; searchParams: Promise<{ lesson?: string }> }) {
+export default async function CourseRoomPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string; slug: string }>;
+  searchParams: Promise<{ lesson?: string }>;
+}) {
   const { locale, slug } = await params;
   const { lesson: requestedLessonId } = await searchParams;
   if (!isLocale(locale)) notFound();
@@ -44,94 +148,370 @@ export default async function CourseRoomPage({ params, searchParams }: { params:
   const title = ar ? data.course.titleAr : en ? translated?.title.en ?? data.course.titleFr : data.course.titleFr;
   const description = ar ? data.course.descriptionAr : en ? translated?.description.en ?? data.course.descriptionFr : data.course.descriptionFr;
   const progress = new Map(data.progress.map((item) => [item.lessonId, item] as const));
-  const modules = data.modules.map((courseModule) => ({ module: courseModule, lessons: data.lessons.filter((lesson) => lesson.moduleId === courseModule.id) })).filter((group) => group.lessons.length > 0);
-  const ungrouped = data.lessons.filter((lesson) => !lesson.moduleId || !data.modules.some((courseModule) => courseModule.id === lesson.moduleId));
+  const modules = data.modules
+    .map((courseModule) => ({
+      module: courseModule,
+      lessons: data.lessons.filter((lesson) => lesson.moduleId === courseModule.id),
+    }))
+    .filter((group) => group.lessons.length > 0);
+  const ungrouped = data.lessons.filter(
+    (lesson) => !lesson.moduleId || !data.modules.some((courseModule) => courseModule.id === lesson.moduleId)
+  );
   const groups = [...modules, ...(ungrouped.length ? [{ module: null, lessons: ungrouped }] : [])];
   const firstIncomplete = data.lessons.find((lesson) => !progress.get(lesson.id)?.completed) ?? data.lessons[0];
   const activeLesson = data.lessons.find((lesson) => lesson.id === requestedLessonId) ?? firstIncomplete;
   const activeLessonIndex = activeLesson ? data.lessons.findIndex((lesson) => lesson.id === activeLesson.id) : -1;
   const previousLesson = activeLessonIndex > 0 ? data.lessons[activeLessonIndex - 1] : null;
-  const nextLesson = activeLessonIndex >= 0 && activeLessonIndex < data.lessons.length - 1 ? data.lessons[activeLessonIndex + 1] : null;
-  const activeGroup = activeLesson ? groups.find((group) => group.lessons.some((lesson) => lesson.id === activeLesson.id)) : null;
+  const nextLesson =
+    activeLessonIndex >= 0 && activeLessonIndex < data.lessons.length - 1 ? data.lessons[activeLessonIndex + 1] : null;
+  const activeGroup = activeLesson
+    ? groups.find((group) => group.lessons.some((lesson) => lesson.id === activeLesson.id))
+    : null;
   const activeProgress = activeLesson ? progress.get(activeLesson.id) : null;
   const lessonHref = (lessonId: string) => `/${locale}/apprendre/${slug}?lesson=${lessonId}#lessons`;
   const firstAssessment = data.assessments[0]?.assessment;
   const assessmentHref = firstAssessment ? `/${locale}/apprendre/${slug}/quiz/${firstAssessment.id}` : undefined;
-  const isNativeVideoLesson = Boolean(activeLesson && !(activeLesson.mediaProvider === "youtube" && activeLesson.mediaRef) && !(activeLesson.mediaProvider === "cloudflare_stream" && activeLesson.mediaRef) && activeLesson.videoUrl);
-  const checkpoints = isNativeVideoLesson && activeLesson ? await getCheckpointsForLearner(activeLesson.id, data.enrollment.id) : [];
+  const isNativeVideoLesson = Boolean(
+    activeLesson &&
+      !(activeLesson.mediaProvider === "youtube" && activeLesson.mediaRef) &&
+      !(activeLesson.mediaProvider === "cloudflare_stream" && activeLesson.mediaRef) &&
+      activeLesson.videoUrl
+  );
+  const checkpoints =
+    isNativeVideoLesson && activeLesson ? await getCheckpointsForLearner(activeLesson.id, data.enrollment.id) : [];
+  const completedLessonsCount = data.lessons.filter((l) => progress.get(l.id)?.completed).length;
 
-  return <div className="course-room">
-    <header className="course-room-hero" id="overview">
-      <div className="course-room-hero-copy">
-        <Link className="course-room-back" href={`/${locale}/dashboard/formations`}><ArrowLeft className="course-room-back-icon" size={17} strokeWidth={1.75}/>{c.back}</Link>
-        <p className="course-room-context">{c.room}</p>
-        <h1>{title}</h1>
-        <p className="course-room-lead">{description}</p>
-        <div className="course-room-meta"><span><Clock size={17} strokeWidth={1.75}/>{Math.max(1, Math.round(data.course.durationMinutes / 60))} {c.hours}</span><span><UserCheck size={17} strokeWidth={1.75}/>{c.trainer}: {data.course.trainerName}</span></div>
-        {firstIncomplete ? <Link className="course-room-primary" href={lessonHref(firstIncomplete.id)}><PlayCircle size={17} strokeWidth={1.75}/>{c.continue}</Link> : null}
-      </div>
-      <div className="course-room-progress-panel">
-        <Image src={getCourseVisual(data.course.slug)} alt="" fill priority sizes="(max-width: 767px) 100vw, 360px"/>
-        <div className="course-room-progress-copy"><span>{c.progress}</span><strong>{data.enrollment.progressPercent}%</strong><progress max={100} value={data.enrollment.progressPercent} aria-label={`${c.progress}: ${data.enrollment.progressPercent}%`}>{data.enrollment.progressPercent}%</progress><small>{data.enrollment.progressPercent}% {c.completed}</small></div>
-      </div>
-    </header>
+  return (
+    <div className="course-room coursera-style">
+      {/* 1. COURSERA MINIMAL TOP BAR */}
+      <header className="course-top-strip" id="overview-bar">
+        <div className="course-top-strip-left">
+          <Link className="course-top-back-btn" href={`/${locale}/dashboard/formations`}>
+            <ArrowLeft size={16} className="rtl:rotate-180" />
+            <span>{c.back}</span>
+          </Link>
+          <span className="course-top-sep" aria-hidden="true">/</span>
+          <span className="course-top-course-title truncate" title={title}>
+            {title}
+          </span>
+        </div>
+        <div className="course-top-strip-right">
+          <div className="course-top-progress-info">
+            <span className="course-top-progress-text">
+              {c.lesson} {activeLessonIndex + 1}/{data.lessons.length} • {data.enrollment.progressPercent}% {c.completed}
+            </span>
+            <div className="course-top-progress-bar" role="progressbar" aria-valuenow={data.enrollment.progressPercent} aria-valuemin={0} aria-valuemax={100} aria-label={`${c.progress}: ${data.enrollment.progressPercent}%`}>
+              <div
+                className="course-top-progress-fill"
+                style={{ width: `${Math.min(100, Math.max(0, data.enrollment.progressPercent))}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      </header>
 
-    <nav className="course-room-tabs" aria-label={ar ? "أقسام الدورة" : en ? "Course sections" : "Sections de la formation"}>
-      <a href="#overview">{c.overview}</a><a href="#programme">{c.programme}</a><a href="#lessons">{c.lessons}</a>{data.assessments.length ? <a href="#assessments">{c.assessments}</a> : null}<a href="#questions">{c.questions}</a>
-    </nav>
-
-    <section className="course-room-introduction" aria-labelledby="course-about-title"><div><h2 id="course-about-title">{c.about}</h2><p>{c.aboutBody}</p></div><dl><div><dt>{c.lessons}</dt><dd>{data.lessons.length}</dd></div><div><dt>{c.programme}</dt><dd>{groups.length}</dd></div><div><dt>{c.trainer}</dt><dd>{data.course.trainerName}</dd></div></dl></section>
-
-    <div className="course-room-learning-layout">
-      <aside className="course-room-programme" id="programme" aria-labelledby="course-programme-title">
-        <header><h2 id="course-programme-title">{c.programmeTitle}</h2><small>{data.lessons.length} {c.lessons.toLocaleLowerCase(locale)}</small></header>
-        {groups.map((group) => <section key={group.module?.id ?? "ungrouped"}><h3>{group.module ? (ar ? group.module.titleAr : group.module.titleFr) : c.extra}</h3>{group.lessons.map((lesson) => { const item = progress.get(lesson.id); const current = activeLesson?.id === lesson.id; return <Link href={lessonHref(lesson.id)} key={lesson.id} className={`${item?.completed ? "is-complete" : ""}${current ? " is-current" : ""}`} aria-current={current ? "true" : undefined}><span>{item?.completed ? <Check size={14} strokeWidth={1.75}/> : lesson.position}</span><div><strong>{ar ? lesson.titleAr : lesson.titleFr}</strong><small>{Math.max(1, Math.round(lesson.durationSeconds / 60))} min</small></div></Link>; })}</section>)}
-        {data.assessments.length ? (
-          <section className="border-t border-[#E7E0D3] pt-3">
-            <h3 className="flex items-center gap-1.5 text-[#082D55] font-bold">
-              <Award size={15} className="text-[#C9913F]" />
-              <span>{c.assessments}</span>
-            </h3>
-            {data.assessments.map(({ assessment, attemptCount, bestAttempt }) => {
-              const attemptsLeft = assessment.maxAttempts - attemptCount;
-              return (
-                <Link
-                  key={assessment.id}
-                  href={`/${locale}/apprendre/${slug}/quiz/${assessment.id}`}
-                  className="mt-2 flex items-center justify-between gap-2 rounded-xl border border-[#E7E0D3] bg-[#FCFBF8] p-2.5 text-xs transition hover:border-[#C9913F] hover:bg-[#F6F1E7]"
-                >
-                  <div className="min-w-0">
-                    <strong className="block truncate text-[#082D55]">
-                      {ar ? assessment.titleAr : assessment.titleFr}
-                    </strong>
-                    <small className="text-[#7A7261]">
-                      {bestAttempt
-                        ? `${c.best}: ${bestAttempt.percentage}% (${bestAttempt.passed ? c.passed : c.failed})`
-                        : attemptsLeft > 0
-                        ? `${attemptsLeft} ${c.attempts}`
-                        : c.noAttempts}
-                    </small>
+      {/* 2. MAIN 2-COLUMN LEARNING WORKSPACE */}
+      <div className="course-workspace-grid">
+        {/* MAIN STAGE (72%) */}
+        <main className="course-main-stage" id="lessons">
+          {activeLesson ? (
+            <article className="course-player-card">
+              {/* VIDEO / MEDIA PLAYER AT TOP */}
+              <div className="course-player-container">
+                {activeLesson.mediaProvider === "youtube" && activeLesson.mediaRef ? (
+                  <YoutubeLessonPlayer
+                    videoId={activeLesson.mediaRef}
+                    title={ar ? activeLesson.titleAr : activeLesson.titleFr}
+                    locale={locale}
+                  />
+                ) : activeLesson.mediaProvider === "cloudflare_stream" && activeLesson.mediaRef ? (
+                  <StreamLessonPlayer
+                    lessonId={activeLesson.id}
+                    title={ar ? activeLesson.titleAr : activeLesson.titleFr}
+                    locale={locale}
+                  />
+                ) : activeLesson.videoUrl ? (
+                  <VideoLessonPlayer
+                    lessonId={activeLesson.id}
+                    videoUrl={activeLesson.videoUrl}
+                    title={ar ? activeLesson.titleAr : activeLesson.titleFr}
+                    initialSeconds={activeProgress?.watchedSeconds ?? 0}
+                    initiallyCompleted={activeProgress?.completed ?? false}
+                    locale={locale}
+                    checkpoints={checkpoints}
+                    nextLessonHref={nextLesson ? lessonHref(nextLesson.id) : undefined}
+                    previousLessonHref={previousLesson ? lessonHref(previousLesson.id) : undefined}
+                    assessmentHref={assessmentHref}
+                    hideMetaBar={true}
+                  />
+                ) : (
+                  <div className="course-room-placeholder">
+                    <BookOpen size={36} strokeWidth={1.5} className="text-[#0056D2]" />
+                    <span>{c.textLesson}</span>
                   </div>
-                  <span className="rounded-lg bg-[#082D55] px-2.5 py-1 text-[11px] font-semibold text-white flex-none">
-                    {bestAttempt ? c.retry : c.startQuiz}
+                )}
+              </div>
+
+              {/* COURSERA-STYLE STEP ACTION BAR */}
+              <div className="course-step-action-bar">
+                <div className="course-step-prev">
+                  {previousLesson ? (
+                    <Link href={lessonHref(previousLesson.id)} className="course-btn-nav-prev">
+                      <ChevronLeft size={16} className="rtl:rotate-180" />
+                      <span>{c.previous}</span>
+                    </Link>
+                  ) : null}
+                </div>
+
+                <div className="course-step-center">
+                  <MarkLessonCompleteButton
+                    lessonId={activeLesson.id}
+                    initiallyCompleted={activeProgress?.completed ?? false}
+                    locale={locale}
+                    nextHref={nextLesson ? lessonHref(nextLesson.id) : assessmentHref}
+                    hasNextLesson={Boolean(nextLesson)}
+                  />
+                </div>
+
+                <div className="course-step-next">
+                  {nextLesson ? (
+                    <Link href={lessonHref(nextLesson.id)} className="course-btn-nav-next">
+                      <span className="truncate max-w-[200px]">{c.next}: {ar ? nextLesson.titleAr : nextLesson.titleFr}</span>
+                      <ChevronRight size={16} className="rtl:rotate-180 flex-none" />
+                    </Link>
+                  ) : assessmentHref ? (
+                    <Link href={assessmentHref} className="course-btn-nav-assessment">
+                      <span>{ar ? "بدء التقييم النهائي" : "Passer à l’évaluation finale"}</span>
+                      <ArrowRight size={16} className="rtl:rotate-180 flex-none" />
+                    </Link>
+                  ) : (
+                    <span className="course-btn-nav-end">
+                      <Award size={16} />
+                      <span>{c.end}</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* LESSON DETAILS HEADER */}
+              <div className="course-lesson-header">
+                <div className="course-lesson-header-top">
+                  <span className="course-lesson-module-tag">
+                    {activeGroup?.module
+                      ? ar
+                        ? activeGroup.module.titleAr
+                        : activeGroup.module.titleFr
+                      : c.programme}{" "}
+                    • {c.lesson} {activeLesson.position}
                   </span>
-                </Link>
-              );
-            })}
+                  <span className="course-lesson-duration-badge">
+                    <Clock size={13} />
+                    <span>{Math.max(1, Math.round(activeLesson.durationSeconds / 60))} min</span>
+                  </span>
+                </div>
+
+                <h1 className="course-lesson-heading">
+                  {ar ? activeLesson.titleAr : activeLesson.titleFr}
+                </h1>
+
+                {(ar ? activeLesson.descriptionAr : activeLesson.descriptionFr) ? (
+                  <p className="course-lesson-description">
+                    {ar ? activeLesson.descriptionAr : activeLesson.descriptionFr}
+                  </p>
+                ) : null}
+
+                {activeLesson.documentUrl ? (
+                  <div className="course-lesson-attachment">
+                    <a className="course-btn-document" href={activeLesson.documentUrl} target="_blank" rel="noreferrer">
+                      <Download size={15} />
+                      <span>{c.document}</span>
+                    </a>
+                  </div>
+                ) : null}
+              </div>
+            </article>
+          ) : (
+            <div className="course-room-placeholder">
+              <BookOpen size={36} strokeWidth={1.5} className="text-[#0056D2]" />
+              <span>{c.textLesson}</span>
+            </div>
+          )}
+
+          {/* TABS NAVIGATION (Required by tests: navigation named "Sections de la formation") */}
+          <nav
+            className="course-room-tabs"
+            aria-label={ar ? "أقسام الدورة" : en ? "Course sections" : "Sections de la formation"}
+          >
+            <a href="#overview">{c.overview}</a>
+            <a href="#programme" className="course-tab-mobile-only">{c.programme}</a>
+            <a href="#questions">{c.questions}</a>
+            {data.assessments.length ? <a href="#assessments">{c.assessments}</a> : null}
+          </nav>
+
+          {/* TAB SECTION: OVERVIEW / ABOUT */}
+          <section className="course-section-card" id="overview" aria-labelledby="course-about-title">
+            <div className="course-overview-header">
+              <h2 id="course-about-title">{c.about}</h2>
+              <p>{description}</p>
+            </div>
+            <div className="course-overview-grid">
+              <div className="course-overview-stat">
+                <span className="course-stat-label">{c.trainer}</span>
+                <strong className="course-stat-val">{data.course.trainerName}</strong>
+              </div>
+              <div className="course-overview-stat">
+                <span className="course-stat-label">{c.hours}</span>
+                <strong className="course-stat-val">
+                  {Math.max(1, Math.round(data.course.durationMinutes / 60))} h
+                </strong>
+              </div>
+              <div className="course-overview-stat">
+                <span className="course-stat-label">{c.lessons}</span>
+                <strong className="course-stat-val">
+                  {data.lessons.length} {c.lessons.toLocaleLowerCase(locale)}
+                </strong>
+              </div>
+              <div className="course-overview-stat">
+                <span className="course-stat-label">{c.progress}</span>
+                <strong className="course-stat-val">{data.enrollment.progressPercent}%</strong>
+              </div>
+            </div>
           </section>
-        ) : null}
-      </aside>
 
-      <main className="course-room-lessons" id="lessons">{activeLesson ? <section className="course-room-module">{activeGroup?.module ? <header><span>{c.programme}</span><h2>{ar ? activeGroup.module.titleAr : activeGroup.module.titleFr}</h2>{(ar ? activeGroup.module.descriptionAr : activeGroup.module.descriptionFr) ? <p>{ar ? activeGroup.module.descriptionAr : activeGroup.module.descriptionFr}</p> : null}</header> : null}<article id={`lesson-${activeLesson.id}`} className="course-room-lesson"><div className="course-room-lesson-title"><span>{activeProgress?.completed ? <Check size={14} strokeWidth={1.75}/> : activeLesson.position}</span><div><small>{c.lesson} {activeLesson.position}</small><h2>{ar ? activeLesson.titleAr : activeLesson.titleFr}</h2>{(ar ? activeLesson.descriptionAr : activeLesson.descriptionFr) ? <p>{ar ? activeLesson.descriptionAr : activeLesson.descriptionFr}</p> : null}</div></div>{activeLesson.mediaProvider === "youtube" && activeLesson.mediaRef ? <div className="space-y-3"><YoutubeLessonPlayer videoId={activeLesson.mediaRef} title={ar ? activeLesson.titleAr : activeLesson.titleFr} locale={locale}/><MarkLessonCompleteButton lessonId={activeLesson.id} initiallyCompleted={activeProgress?.completed ?? false} locale={locale} nextHref={nextLesson ? lessonHref(nextLesson.id) : assessmentHref} hasNextLesson={Boolean(nextLesson)}/></div> : activeLesson.mediaProvider === "cloudflare_stream" && activeLesson.mediaRef ? <div className="space-y-3"><StreamLessonPlayer lessonId={activeLesson.id} title={ar ? activeLesson.titleAr : activeLesson.titleFr} locale={locale}/><MarkLessonCompleteButton lessonId={activeLesson.id} initiallyCompleted={activeProgress?.completed ?? false} locale={locale} nextHref={nextLesson ? lessonHref(nextLesson.id) : assessmentHref} hasNextLesson={Boolean(nextLesson)}/></div> : activeLesson.videoUrl ? <VideoLessonPlayer lessonId={activeLesson.id} videoUrl={activeLesson.videoUrl} title={ar ? activeLesson.titleAr : activeLesson.titleFr} initialSeconds={activeProgress?.watchedSeconds ?? 0} initiallyCompleted={activeProgress?.completed ?? false} locale={locale} checkpoints={checkpoints} nextLessonHref={nextLesson ? lessonHref(nextLesson.id) : undefined} previousLessonHref={previousLesson ? lessonHref(previousLesson.id) : undefined} assessmentHref={assessmentHref}/> : <div className="space-y-4"><div className="course-room-placeholder"><BookOpen size={24} strokeWidth={1.75}/><span>{c.textLesson}</span></div><MarkLessonCompleteButton lessonId={activeLesson.id} initiallyCompleted={activeProgress?.completed ?? false} locale={locale} nextHref={nextLesson ? lessonHref(nextLesson.id) : assessmentHref} hasNextLesson={Boolean(nextLesson)}/></div>}{activeLesson.documentUrl ? <a className="course-room-secondary mt-3" href={activeLesson.documentUrl} target="_blank" rel="noreferrer"><Download size={16} strokeWidth={1.75}/>{c.document}</a> : null}<nav className="course-room-step-nav" aria-label={ar ? "التنقل بين الدروس" : en ? "Lesson navigation" : "Navigation entre les leçons"}>{previousLesson ? <Link href={lessonHref(previousLesson.id)}><ChevronLeft size={15} strokeWidth={1.75}/>{c.previous}</Link> : <span/>}{nextLesson ? <Link href={lessonHref(nextLesson.id)}>{c.next}<ChevronRight size={15} strokeWidth={1.75}/></Link> : assessmentHref ? <Link href={assessmentHref} className="inline-flex items-center gap-1.5 rounded-xl bg-[#C9913F] px-4 py-2 text-xs font-semibold text-[#082D55] hover:bg-[#e2bd7d]"><span>{ar ? "بدء التقييم النهائي" : "Passer à l’évaluation finale"}</span><ArrowRight size={15} strokeWidth={1.75} className="rtl:rotate-180"/></Link> : <span><Award size={16} strokeWidth={1.75}/>{c.end}</span>}</nav></article></section> : <div className="course-room-placeholder"><BookOpen size={24} strokeWidth={1.75}/><span>{c.textLesson}</span></div>}</main>
+          {/* TAB SECTION: QUESTIONS & DISCUSSION */}
+          <section id="questions">
+            <CourseDiscussion
+              courseId={data.course.id}
+              locale={locale}
+              items={discussion.map((item) => ({ ...item, createdAt: item.createdAt.toISOString() }))}
+              currentUserFirstName={session.user.name.trim().split(/\s+/)[0] || "ANEI"}
+            />
+          </section>
+
+          {/* TAB SECTION: ASSESSMENTS (IF PRESENT) */}
+          {data.assessments.length ? (
+            <section
+              className="course-section-card course-room-assessments"
+              id="assessments"
+              aria-labelledby="course-assessments-title"
+            >
+              <h2 id="course-assessments-title">{c.assessments}</h2>
+              <div className="course-assessments-list">
+                {data.assessments.map(({ assessment, attemptCount, bestAttempt }) => {
+                  const attemptsLeft = assessment.maxAttempts - attemptCount;
+                  return (
+                    <article key={assessment.id} className="course-assessment-card">
+                      <div className="course-assessment-info">
+                        <strong>{ar ? assessment.titleAr : assessment.titleFr}</strong>
+                        <small>
+                          {bestAttempt
+                            ? `${c.best}: ${bestAttempt.percentage}% (${bestAttempt.passed ? c.passed : c.failed})`
+                            : attemptsLeft > 0
+                            ? `${attemptsLeft} ${c.attempts}`
+                            : c.noAttempts}
+                        </small>
+                      </div>
+                      {attemptsLeft > 0 ? (
+                        <Link
+                          className="course-btn-primary"
+                          href={`/${locale}/apprendre/${slug}/quiz/${assessment.id}`}
+                        >
+                          {bestAttempt ? c.retry : c.startQuiz}
+                        </Link>
+                      ) : null}
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+        </main>
+
+        {/* SIDEBAR SYLLABUS DRAWER (28%) */}
+        <aside className="course-syllabus-drawer" id="programme" aria-labelledby="course-programme-title">
+          <header className="course-syllabus-header">
+            <div>
+              <h2 id="course-programme-title">{c.programmeTitle}</h2>
+              <small>
+                {completedLessonsCount}/{data.lessons.length} {c.completed}
+              </small>
+            </div>
+            <div className="course-syllabus-pill">
+              {data.enrollment.progressPercent}%
+            </div>
+          </header>
+
+          <div className="course-syllabus-modules">
+            {groups.map((group) => (
+              <div key={group.module?.id ?? "ungrouped"} className="course-syllabus-group">
+                <h3 className="course-syllabus-group-title">
+                  {group.module ? (ar ? group.module.titleAr : group.module.titleFr) : c.extra}
+                </h3>
+                <div className="course-syllabus-group-items">
+                  {group.lessons.map((lesson) => {
+                    const item = progress.get(lesson.id);
+                    const current = activeLesson?.id === lesson.id;
+                    const isComplete = item?.completed;
+                    return (
+                      <Link
+                        href={lessonHref(lesson.id)}
+                        key={lesson.id}
+                        className={`course-syllabus-item ${isComplete ? "is-complete" : ""} ${current ? "is-current" : ""}`}
+                        aria-current={current ? "true" : undefined}
+                      >
+                        <span className="course-syllabus-item-status">
+                          {isComplete ? (
+                            <Check size={13} strokeWidth={2.5} />
+                          ) : current ? (
+                            <PlayCircle size={14} className="text-[#0056D2]" />
+                          ) : (
+                            lesson.position
+                          )}
+                        </span>
+                        <div className="course-syllabus-item-copy">
+                          <strong className="course-syllabus-item-title">{ar ? lesson.titleAr : lesson.titleFr}</strong>
+                          <span className="course-syllabus-item-meta">{Math.max(1, Math.round(lesson.durationSeconds / 60))} min</span>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+
+            {data.assessments.length ? (
+              <div className="course-syllabus-group border-t border-[#E2E8F0] pt-3">
+                <h3 className="course-syllabus-group-title flex items-center gap-1.5 text-[#0056D2]">
+                  <Award size={14} />
+                  <span>{c.assessments}</span>
+                </h3>
+                <div className="course-syllabus-group-items">
+                  {data.assessments.map(({ assessment, attemptCount, bestAttempt }) => {
+                    const attemptsLeft = assessment.maxAttempts - attemptCount;
+                    return (
+                      <Link
+                        key={assessment.id}
+                        href={`/${locale}/apprendre/${slug}/quiz/${assessment.id}`}
+                        className="course-syllabus-item is-assessment"
+                      >
+                        <span className="course-syllabus-item-status is-quiz">
+                          <Award size={13} />
+                        </span>
+                        <div className="course-syllabus-item-copy">
+                          <strong className="course-syllabus-item-title">{ar ? assessment.titleAr : assessment.titleFr}</strong>
+                          <span className="course-syllabus-item-meta">
+                            {bestAttempt ? `${bestAttempt.percentage}%` : `${attemptsLeft} ${c.attempts}`}
+                          </span>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </aside>
+      </div>
     </div>
-
-    {data.assessments.length ? <section className="course-room-assessments" id="assessments" aria-labelledby="course-assessments-title"><h2 id="course-assessments-title">{c.assessments}</h2>{data.assessments.map(({ assessment, attemptCount, bestAttempt }) => { const attemptsLeft = assessment.maxAttempts - attemptCount; return <article key={assessment.id}><div><strong>{ar ? assessment.titleAr : assessment.titleFr}</strong><small>{bestAttempt ? `${c.best}: ${bestAttempt.percentage}% (${bestAttempt.passed ? c.passed : c.failed})` : attemptsLeft > 0 ? `${attemptsLeft} ${c.attempts}` : c.noAttempts}</small></div>{attemptsLeft > 0 ? <Link className="course-room-primary" href={`/${locale}/apprendre/${slug}/quiz/${assessment.id}`}>{bestAttempt ? c.retry : c.startQuiz}</Link> : null}</article>; })}</section> : null}
-
-    <CourseDiscussion
-      courseId={data.course.id}
-      locale={locale}
-      items={discussion.map((item) => ({ ...item, createdAt: item.createdAt.toISOString() }))}
-      currentUserFirstName={session.user.name.trim().split(/\s+/)[0] || "ANEI"}
-    />
-  </div>;
+  );
 }

@@ -79,7 +79,7 @@ function ProgressRing({ value, size = 50, strokeWidth = 4 }: { value: number; si
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#E7E0D3"
+          stroke="#E2E8F0"
           strokeWidth={strokeWidth}
         />
         <circle
@@ -87,7 +87,7 @@ function ProgressRing({ value, size = 50, strokeWidth = 4 }: { value: number; si
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#C9913F"
+          stroke="#0056D2"
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
           strokeDashoffset={offset}
@@ -95,7 +95,7 @@ function ProgressRing({ value, size = 50, strokeWidth = 4 }: { value: number; si
           className="transition-all duration-700 ease-out"
         />
       </svg>
-      <span className="absolute text-[11px] font-bold text-[#082D55] font-mono tracking-tighter" dir="ltr">
+      <span className="absolute text-[11px] font-bold text-[#1F1F1F] font-mono tracking-tighter" dir="ltr">
         {safeValue}%
       </span>
     </div>
@@ -205,7 +205,7 @@ export function StudentDashboard({
 
         <div className="student-welcome-badges">
           <div className="student-badge-streak" title={ar ? "حساب متعلم موثق" : "Compte certifié"}>
-            <ShieldCheck size={16} className="text-[#C9913F]" />
+            <ShieldCheck size={16} className="text-[#0056D2]" />
             <span>{ar ? "حساب متعلم موثق" : en ? "Verified Learner" : "Compte certifié"}</span>
           </div>
         </div>
@@ -233,7 +233,7 @@ export function StudentDashboard({
               {/* Context Module / Lesson Stepper */}
               <div className="student-hero-context">
                 <div className="student-context-row">
-                  <BookOpen size={16} className="text-[#C9913F] flex-none" />
+                  <BookOpen size={16} className="text-[#0056D2] flex-none" />
                   <span className="truncate">
                     {continueItem.moduleTitle || (ar ? "الوحدة الدراسية الجارية" : "Module en cours")}
                   </span>
@@ -311,7 +311,7 @@ export function StudentDashboard({
                 className="student-hero-img"
               />
               <div className="student-hero-media-badge">
-                <ShieldCheck size={16} className="text-[#C9913F]" />
+                <ShieldCheck size={16} className="text-[#0056D2]" />
                 <span>{ar ? "شهادة رسمية معتمدة" : "Certification ANEI"}</span>
               </div>
             </div>
@@ -321,7 +321,7 @@ export function StudentDashboard({
             <div className="student-empty-hero-copy">
               <div className="student-hero-eyebrow">
                 <span className="student-active-tag">
-                  <Sparkles size={14} className="text-[#C9913F]" />
+                  <Sparkles size={14} className="text-[#0056D2]" />
                   {ar ? "ابدأ مسارك التعليمي" : "Démarrez votre parcours"}
                 </span>
               </div>
@@ -335,15 +335,15 @@ export function StudentDashboard({
               </p>
               <div className="student-empty-hero-highlights">
                 <div className="student-highlight-item">
-                  <CheckCircle2 size={16} className="text-[#C9913F]" />
+                  <CheckCircle2 size={16} className="text-[#0056D2]" />
                   <span>{ar ? "شهادات معترف بها وقابلة للتحقق" : "Certifications vérifiables"}</span>
                 </div>
                 <div className="student-highlight-item">
-                  <CheckCircle2 size={16} className="text-[#C9913F]" />
+                  <CheckCircle2 size={16} className="text-[#0056D2]" />
                   <span>{ar ? "مرافقة بيداغوجية مع خبراء ANEI" : "Tutorat pédagogique dédié"}</span>
                 </div>
                 <div className="student-highlight-item">
-                  <CheckCircle2 size={16} className="text-[#C9913F]" />
+                  <CheckCircle2 size={16} className="text-[#0056D2]" />
                   <span>{ar ? "أدوات عملية وجداول رصد قابلة للتحميل" : "Boîte à outils téléchargeable"}</span>
                 </div>
               </div>
@@ -571,7 +571,7 @@ export function StudentDashboard({
                       </span>
                       <h3 className="student-agenda-name">{session.title}</h3>
                       <p className="student-agenda-trainer">
-                        <UserCheck size={14} className="text-[#C9913F]" />
+                        <UserCheck size={14} className="text-[#0056D2]" />
                         <span>{session.trainer}</span>
                       </p>
                     </div>
@@ -708,7 +708,7 @@ export function StudentDashboard({
           ) : (
             <div className="student-cert-milestone-card">
               <div className="student-cert-milestone-seal">
-                <Award size={30} strokeWidth={1.75} className="text-[#C9913F]" />
+                <Award size={30} strokeWidth={1.75} className="text-[#0056D2]" />
               </div>
               <div className="student-cert-milestone-body">
                 <h3>{ar ? "مسار الحصول على الشهادة الرسمية" : "Parcours de certification officielle"}</h3>
@@ -737,7 +737,7 @@ export function StudentDashboard({
       {/* 6. BOTTOM PEDAGOGICAL HELP & AI ASSISTANT BANNER */}
       <section className="student-bottom-banner" aria-label={ar ? "المساعدة والدعم" : "Aide et accompagnement"}>
         <div className="student-bottom-banner-icon" aria-hidden="true">
-          <Sparkles size={24} className="text-[#C9913F]" />
+          <Sparkles size={24} className="text-[#0056D2]" />
         </div>
         <div className="student-bottom-banner-content">
           <h3>

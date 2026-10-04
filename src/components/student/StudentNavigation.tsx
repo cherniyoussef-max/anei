@@ -32,7 +32,10 @@ export function StudentNavigation({ locale, variant }: { locale: Locale; variant
   const base = `/${locale}/dashboard`;
   const items = learnerItems(locale);
 
-  if (variant === "mobile") return <StudentMobileNavigation locale={locale} items={items} pathname={pathname} />;
+  if (variant === "mobile") {
+    if (pathname.includes("/apprendre/")) return null;
+    return <StudentMobileNavigation locale={locale} items={items} pathname={pathname} />;
+  }
 
   return <nav className="flex flex-col gap-1" aria-label={ar ? "التنقل في مساحة المتعلم" : en ? "Learning space navigation" : "Navigation de l’espace apprenant"}>
     {items.map((item) => {
@@ -43,7 +46,7 @@ export function StudentNavigation({ locale, variant }: { locale: Locale; variant
         key={item.href}
         aria-current={active ? "page" : undefined}
         className={active
-          ? "flex items-center gap-3 rounded-xl border-s-4 border-[#C9913F] bg-white/10 py-2.5 ps-3 pe-3 text-sm font-semibold text-white shadow-sm backdrop-blur-sm transition-all duration-150"
+          ? "flex items-center gap-3 rounded-xl border-s-4 border-[#388BFF] bg-white/10 py-2.5 ps-3 pe-3 text-sm font-semibold text-white shadow-sm backdrop-blur-sm transition-all duration-150"
           : "flex items-center gap-3 rounded-xl border-s-4 border-transparent py-2.5 ps-3 pe-3 text-sm text-white/60 transition-all duration-150 hover:bg-white/5 hover:text-white"}
       >
         <ItemIcon size={19} strokeWidth={1.75} />

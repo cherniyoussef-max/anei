@@ -18,9 +18,9 @@ export function StudentShell({ children, locale, user, pointsBalance = 0, notifi
   const initial = user.name.trim().charAt(0).toUpperCase() || "A";
 
   return (
-    <div className="student-app min-h-screen bg-[#FCFBF8] md:flex">
+    <div className="student-app min-h-screen bg-[#F8FAFC] md:flex">
       <aside
-        className="hidden md:fixed md:inset-y-0 md:start-0 md:z-30 md:flex md:w-72 md:flex-col bg-gradient-to-b from-[#082D55] via-[#09325D] to-[#061F3D] border-e border-white/10 shadow-lg"
+        className="hidden md:fixed md:inset-y-0 md:start-0 md:z-30 md:flex md:w-72 md:flex-col bg-gradient-to-b from-[#0A2540] via-[#091E3A] to-[#061629] border-e border-white/10 shadow-lg"
         aria-label={ar ? "مساحة المتعلم" : en ? "Learning space" : "Espace apprenant"}
       >
         <Link className="flex h-16 items-center gap-3 border-b border-white/10 px-6 transition-opacity hover:opacity-95" href={`/${locale}/dashboard`}>
@@ -29,7 +29,7 @@ export function StudentShell({ children, locale, user, pointsBalance = 0, notifi
           </span>
           <span className="flex flex-col leading-tight">
             <strong className="text-sm font-bold uppercase tracking-wider text-white">ANEI</strong>
-            <small className="text-xs font-semibold text-[#E2BD7D]">{ar ? "مساحة المتعلّم" : en ? "Learning Space" : "Espace Apprenant"}</small>
+            <small className="text-xs font-semibold text-[#93C5FD]">{ar ? "مساحة المتعلّم" : en ? "Learning Space" : "Espace Apprenant"}</small>
           </span>
         </Link>
 
@@ -42,10 +42,10 @@ export function StudentShell({ children, locale, user, pointsBalance = 0, notifi
             href={`/${locale}/dashboard/profil`}
             className="flex items-center gap-3 rounded-xl p-2 transition-all duration-200 ease-in-out hover:bg-white/10 group"
           >
-            <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-[#C9913F] text-sm font-bold text-[#082D55] shadow-sm ring-2 ring-white/20 group-hover:ring-[#C9913F]" aria-hidden="true">{initial}</span>
+            <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-[#0056D2] text-sm font-bold text-white shadow-sm ring-2 ring-white/20 group-hover:ring-[#388BFF]" aria-hidden="true">{initial}</span>
             <span className="flex min-w-0 flex-col leading-tight">
               <strong className="truncate text-sm font-semibold text-white">{user.name}</strong>
-              <small className="truncate text-xs font-medium text-[#E2BD7D]">{ar ? "متعلّم معتمد" : en ? "Certified Learner" : "Apprenant certifié"}</small>
+              <small className="truncate text-xs font-medium text-[#93C5FD]">{ar ? "متعلّم معتمد" : en ? "Certified Learner" : "Apprenant certifié"}</small>
             </span>
           </Link>
           <div className="mt-1">
@@ -55,7 +55,7 @@ export function StudentShell({ children, locale, user, pointsBalance = 0, notifi
       </aside>
 
       <div className="flex min-h-screen flex-1 flex-col md:ms-72">
-        <div className="flex h-16 items-center gap-3 border-b border-[#E7E0D3] bg-[#FCFBF8] px-4 md:hidden">
+        <div className="flex h-16 items-center gap-3 border-b border-[#E2E8F0] bg-white px-4 md:hidden">
           <Link className="flex items-center gap-2" href={`/${locale}/dashboard`} aria-label={ar ? "ANEI، مساحة المتعلم" : en ? "ANEI learning space" : "ANEI, espace apprenant"}>
             <AneiLogo locale={locale} variant="mark" height={32} />
             <strong className="font-bold tracking-wide text-[#082D55]">ANEI</strong>

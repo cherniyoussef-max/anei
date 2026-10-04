@@ -32,20 +32,20 @@ export function StudentTopbar({ locale, userName, notificationCount = 0, assista
   const spaceLabel = ar ? "مساحتي" : en ? "My space" : "Mon espace";
 
   return (
-    <header className="student-topbar-shell sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-[#E7E0D3] bg-[#FCFBF8]/90 px-4 backdrop-blur-md md:px-8">
+    <header className="student-topbar-shell sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-[#E2E8F0] bg-white/95 px-4 backdrop-blur-md md:px-8">
       <div className="flex min-w-0 items-center gap-1.5 text-sm">
-        <span className="hidden text-[#7a7261] sm:inline">{spaceLabel}</span>
-        <ChevronRight className="hidden text-[#c9bfa8] rtl:rotate-180 sm:inline" size={14} strokeWidth={1.75} />
-        <strong className="truncate font-semibold text-[#082D55]">{pageLabel}</strong>
+        <span className="hidden text-[#5E6E82] sm:inline">{spaceLabel}</span>
+        <ChevronRight className="hidden text-[#CBD5E1] rtl:rotate-180 sm:inline" size={14} strokeWidth={1.75} />
+        <strong className="truncate font-semibold text-[#1F1F1F]">{pageLabel}</strong>
       </div>
 
       <div className="flex flex-none items-center gap-2 md:gap-3">
         {assistantEnabled ? (
           <Link
-            className="hidden items-center gap-1.5 rounded-full border border-[#E7E0D3] bg-white px-3 py-1.5 text-sm font-medium text-[#082D55] transition-all duration-200 ease-in-out hover:border-[#C9913F] sm:flex"
+            className="hidden items-center gap-1.5 rounded-full border border-[#E2E8F0] bg-white px-3 py-1.5 text-sm font-medium text-[#1F1F1F] transition-all duration-200 ease-in-out hover:border-[#0056D2] sm:flex"
             href={`/${locale}/dashboard?assistant=open`}
           >
-            <Sparkles className="text-[#C9913F]" size={16} strokeWidth={1.75} />
+            <Sparkles className="text-[#0056D2]" size={16} strokeWidth={1.75} />
             <span>{ar ? "مساعد ANEI" : "Assistant ANEI"}</span>
           </Link>
         ) : null}
@@ -57,16 +57,16 @@ export function StudentTopbar({ locale, userName, notificationCount = 0, assista
         <Link
           href={`/${locale}/dashboard/notifications`}
           aria-label={ar ? `${notificationCount} إشعارات غير مقروءة` : en ? `${notificationCount} unread notifications` : `${notificationCount} notifications non lues`}
-          className="relative grid h-10 w-10 flex-none place-items-center rounded-full text-[#082D55]/70 transition-all duration-200 ease-in-out hover:bg-[#F6F1E7] hover:text-[#082D55]"
+          className="relative grid h-10 w-10 flex-none place-items-center rounded-full text-[#1F1F1F]/70 transition-all duration-200 ease-in-out hover:bg-[#F0F6FF] hover:text-[#0056D2]"
         >
           <Bell size={19} strokeWidth={1.75} />
-          {notificationCount > 0 ? <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#C9913F]" aria-hidden="true" /> : null}
+          {notificationCount > 0 ? <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#0056D2]" aria-hidden="true" /> : null}
         </Link>
 
         <Link
           href={`/${locale}/dashboard/profil`}
           aria-label={ar ? `الملف الشخصي، ${firstName}` : en ? `${firstName}, profile and security` : `${firstName}, profil et sécurité`}
-          className="grid h-10 w-10 flex-none place-items-center rounded-full bg-[#082D55] text-sm font-bold text-white ring-2 ring-white transition-all duration-200 ease-in-out hover:ring-[#C9913F]"
+          className="grid h-10 w-10 flex-none place-items-center rounded-full bg-[#0056D2] text-sm font-bold text-white ring-2 ring-white transition-all duration-200 ease-in-out hover:ring-[#00419E]"
         >
           <span aria-hidden="true">{firstName.charAt(0).toLocaleUpperCase(locale)}</span>
         </Link>

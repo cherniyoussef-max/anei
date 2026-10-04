@@ -42,6 +42,7 @@ type Props = {
   nextLessonHref?: string;
   previousLessonHref?: string;
   assessmentHref?: string;
+  hideMetaBar?: boolean;
 };
 
 export function VideoLessonPlayer({
@@ -55,6 +56,7 @@ export function VideoLessonPlayer({
   nextLessonHref,
   previousLessonHref,
   assessmentHref,
+  hideMetaBar = false,
 }: Props) {
   const video = useRef<HTMLVideoElement>(null);
   const container = useRef<HTMLDivElement>(null);
@@ -589,93 +591,95 @@ export function VideoLessonPlayer({
       ) : null}
 
       {/* Meta Bar below player */}
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#E7E0D3] bg-[#FCFBF8] p-4">
-        <div>
-          <h2 className="font-semibold text-[#082D55] text-base">{title}</h2>
-          <p className="text-xs text-[#7A7261] mt-0.5">
-            {saving
-              ? ar
-                ? "جارٍ حفظ التقدم..."
-                : en
-                ? "Saving progress..."
-                : "Enregistrement du parcours..."
-              : completed
-              ? ar
-                ? "تم إكمال الدرس بنجاح ✓"
-                : "Leçon validée ✓"
-              : ar
-              ? "يُحفظ التقدم تلقائيًا عند المشاهدة"
-              : "La progression est enregistrée automatiquement"}
-          </p>
+      {!hideMetaBar ? (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#E7E0D3] bg-[#FCFBF8] p-4">
+          <div>
+            <h2 className="font-semibold text-[#082D55] text-base">{title}</h2>
+            <p className="text-xs text-[#7A7261] mt-0.5">
+              {saving
+                ? ar
+                  ? "جارٍ حفظ التقدم..."
+                  : en
+                  ? "Saving progress..."
+                  : "Enregistrement du parcours..."
+                : completed
+                ? ar
+                  ? "تم إكمال الدرس بنجاح ✓"
+                  : "Leçon validée ✓"
+                : ar
+                ? "يُحفظ التقدم تلقائيًا عند المشاهدة"
+                : "La progression est enregistrée automatiquement"}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {!completed ? (
+              <button
+                type="button"
+                onClick={passVideoAndComplete}
+                disabled={saving}
+                className="inline-flex items-center gap-2 rounded-xl border border-[#082D55] bg-[#082D55] px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-[#061F3D]"
+              >
+                <FastForward size={14} className="text-[#C9913F]" />
+                <span>
+                  {checkpointState.length > 0
+                    ? ar
+                      ? "تجاوز الفيديو إلى الاختبار"
+                      : "Passer au quiz"
+                    : ar
+                    ? "تجاوز الفيديو وإكمال الدرس"
+                    : "Marquer comme terminé"}
+                </span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-1.5 text-xs font-semibold text-emerald-800">
+                  <CheckCircle2 size={14} className="text-emerald-600" />
+                  <span>{ar ? "مكتمل" : "Terminé"}</span>
+                </span>
+
+                {checkpointState.length > 0 && !postVideo.started ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPostVideo({
+                        started: true,
+                        queue: checkpointState,
+                        index: 0,
+                        score: 0,
+                        total: checkpointState.filter((cp) => cp.kind === "QUIZ").length,
+                        done: false,
+                      })
+                    }
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-[#E7E0D3] bg-white px-3 py-1.5 text-xs font-semibold text-[#082D55] shadow-xs hover:border-[#C9913F]"
+                  >
+                    <BookOpen size={14} className="text-[#C9913F]" />
+                    <span>{ar ? "إعادة الاختبار" : "Revoir le quiz"}</span>
+                  </button>
+                ) : null}
+
+                {effectiveNextHref ? (
+                  <Link
+                    href={effectiveNextHref}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-[#C9913F] bg-[#C9913F] px-4 py-1.5 text-xs font-semibold text-[#082D55] shadow-xs hover:bg-[#e2bd7d]"
+                  >
+                    <span>
+                      {nextLessonHref
+                        ? ar
+                          ? "الدرس التالي"
+                          : "Leçon suivante"
+                        : ar
+                        ? "بدء التقييم النهائي"
+                        : "Passer à l'évaluation"}
+                    </span>
+                    <ArrowRight size={14} className="rtl:rotate-180" />
+                  </Link>
+                ) : null}
+              </div>
+            )}
+          </div>
         </div>
-
-        <div className="flex items-center gap-2">
-          {!completed ? (
-            <button
-              type="button"
-              onClick={passVideoAndComplete}
-              disabled={saving}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#082D55] bg-[#082D55] px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-[#061F3D]"
-            >
-              <FastForward size={14} className="text-[#C9913F]" />
-              <span>
-                {checkpointState.length > 0
-                  ? ar
-                    ? "تجاوز الفيديو إلى الاختبار"
-                    : "Passer au quiz"
-                  : ar
-                  ? "تجاوز الفيديو وإكمال الدرس"
-                  : "Marquer comme terminé"}
-              </span>
-            </button>
-          ) : (
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800">
-                <CheckCircle2 size={14} className="text-emerald-600" />
-                <span>{ar ? "مكتمل" : "Terminé"}</span>
-              </span>
-
-              {checkpointState.length > 0 && !postVideo.started ? (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setPostVideo({
-                      started: true,
-                      queue: checkpointState,
-                      index: 0,
-                      score: 0,
-                      total: checkpointState.filter((cp) => cp.kind === "QUIZ").length,
-                      done: false,
-                    })
-                  }
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-[#E7E0D3] bg-white px-3 py-1.5 text-xs font-semibold text-[#082D55] shadow-xs hover:border-[#C9913F]"
-                >
-                  <BookOpen size={14} className="text-[#C9913F]" />
-                  <span>{ar ? "إعادة الاختبار" : "Revoir le quiz"}</span>
-                </button>
-              ) : null}
-
-              {effectiveNextHref ? (
-                <Link
-                  href={effectiveNextHref}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-[#C9913F] bg-[#C9913F] px-4 py-1.5 text-xs font-semibold text-[#082D55] shadow-xs hover:bg-[#e2bd7d]"
-                >
-                  <span>
-                    {nextLessonHref
-                      ? ar
-                        ? "الدرس التالي"
-                        : "Leçon suivante"
-                      : ar
-                      ? "بدء التقييم النهائي"
-                      : "Passer à l'évaluation"}
-                  </span>
-                  <ArrowRight size={14} className="rtl:rotate-180" />
-                </Link>
-              ) : null}
-            </div>
-          )}
-        </div>
-      </div>
+      ) : null}
     </div>
   );
 }

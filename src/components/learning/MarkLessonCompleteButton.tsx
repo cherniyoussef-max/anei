@@ -58,9 +58,9 @@ export function MarkLessonCompleteButton({
           type="button"
           onClick={handleComplete}
           disabled={loading}
-          className="inline-flex items-center gap-2 rounded-xl border border-[#082D55] bg-[#082D55] px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-[#061F3D] disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-lg border border-[#0056D2] bg-white px-4 py-2 text-xs font-bold text-[#0056D2] shadow-xs transition hover:bg-[#F0F6FF] disabled:opacity-60"
         >
-          <CheckCircle2 size={15} className="text-[#C9913F]" />
+          <CheckCircle2 size={15} className="text-[#0056D2]" />
           <span>
             {loading
               ? ar
@@ -68,20 +68,20 @@ export function MarkLessonCompleteButton({
                 : "Validation..."
               : ar
               ? "تأكيد إكمال الدرس والمتابعة"
-              : "Marquer comme terminé et continuer"}
+              : "Marquer comme terminée"}
           </span>
         </button>
       ) : (
         <div className="flex flex-wrap items-center gap-2.5">
-          <span className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-1.5 text-xs font-semibold text-emerald-800">
-            <CheckCircle2 size={14} className="text-emerald-600" />
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-[#BCE6B5] bg-[#E0F4DC] px-3.5 py-1.5 text-xs font-bold text-[#197D12]">
+            <CheckCircle2 size={14} className="text-[#197D12]" />
             <span>{ar ? "تم إكمال الدرس بنجاح" : "Leçon validée ✓"}</span>
           </span>
 
           {nextHref ? (
             <Link
               href={nextHref}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-[#C9913F] bg-[#C9913F] px-4 py-1.5 text-xs font-semibold text-[#082D55] shadow-xs hover:bg-[#e2bd7d]"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#0056D2] bg-[#0056D2] px-4 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#00419E]"
             >
               <span>
                 {hasNextLesson
