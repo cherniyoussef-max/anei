@@ -1948,37 +1948,46 @@ body{background:var(--bg);color:var(--ink)}
 }
 
 .auth-card-header {
-  margin-bottom: 20px;
+  margin-bottom: 22px;
   text-align: start;
 }
 
 .auth-card-badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   font-size: 0.68rem;
-  font-weight: 850;
-  letter-spacing: 0.08em;
+  font-weight: 750;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #c9913f;
-  background: #faf6ee;
-  border: 1px solid rgba(201, 145, 63, 0.3);
+  color: #a66f24;
+  background: #fbf7ef;
+  border: 1px solid rgba(201, 145, 63, 0.25);
   border-radius: 6px;
   padding: 3px 8px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .auth-card-header h2 {
-  font-family: var(--font-fraunces), Georgia, serif;
-  font-size: 1.45rem;
+  font-family: inherit;
+  font-size: 1.625rem;
   font-weight: 800;
+  letter-spacing: -0.025em;
   color: #082d55;
+  line-height: 1.25;
   margin: 0 0 6px;
 }
 
+[dir="rtl"] .auth-card-header h2 {
+  font-family: var(--font-cairo), system-ui, sans-serif;
+  letter-spacing: normal;
+  line-height: 1.35;
+}
+
 .auth-card-header p {
-  font-size: 0.88rem;
-  color: #64748b;
+  font-size: 0.92rem;
+  color: #52657e;
   margin: 0;
-  line-height: 1.45;
+  line-height: 1.5;
 }
 
 /* Step-by-Step UI Components */
@@ -1993,13 +2002,13 @@ body{background:var(--bg);color:var(--ink)}
 .auth-step-indicator {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  margin-bottom: 14px;
+  gap: 7px;
+  margin-bottom: 18px;
 }
 
 .auth-step-track {
-  height: 5px;
-  background: #eee7d8;
+  height: 4px;
+  background: #eef2f6;
   border-radius: 999px;
   overflow: hidden;
 }
@@ -2007,17 +2016,27 @@ body{background:var(--bg);color:var(--ink)}
 .auth-step-fill {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, #c9913f, #082d55);
+  background: linear-gradient(90deg, #082d55, #c9913f);
   border-radius: 999px;
-  transition: width 0.3s ease;
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[dir="rtl"] .auth-step-fill {
+  background: linear-gradient(270deg, #082d55, #c9913f);
 }
 
 .auth-step-label {
-  font-size: 0.72rem;
-  font-weight: 800;
-  color: #a66f24;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.02em;
+}
+
+.auth-step-label span {
+  color: #082d55;
 }
 
 .auth-step-head {
@@ -2043,38 +2062,41 @@ body{background:var(--bg);color:var(--ink)}
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #fdfbf7;
-  border: 1px solid #eedec4;
-  border-radius: 10px;
-  padding: 8px 12px;
-  margin-bottom: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 9px 14px;
+  margin-bottom: 14px;
 }
 
 .auth-selected-pill {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  font-size: 0.82rem;
+  gap: 8px;
+  font-size: 0.84rem;
   color: #082d55;
 }
 
 .auth-selected-pill strong {
-  color: #a66f24;
+  color: #082d55;
+  font-weight: 750;
 }
 
 .auth-change-role-btn {
   background: transparent;
   border: none;
-  font-size: 0.76rem;
-  font-weight: 800;
-  color: #082d55;
-  text-decoration: underline;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #c9913f;
   cursor: pointer;
-  padding: 0;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color 0.15s ease, background 0.15s ease;
 }
 
 .auth-change-role-btn:hover {
-  color: #c9913f;
+  color: #a66f24;
+  background: #faf6ee;
 }
 
 .auth-back-step-btn {

@@ -169,13 +169,8 @@ export function AuthForm({
             <span className="auth-step-fill" style={{ width: "50%" }} />
           </div>
           <div className="auth-step-label">
-            <span>{ar ? "الخطوة 1 من 2: اختر صفتك" : en ? "Step 1 of 2: Choose your role" : "Étape 1 sur 2 : Choisissez votre profil"}</span>
+            <span>{ar ? "الخطوة 1 من 2 : اختر صفتك" : en ? "Step 1 of 2 : Choose your role" : "Étape 1 sur 2 : Choisissez votre profil"}</span>
           </div>
-        </div>
-
-        <div className="auth-step-head">
-          <h3>{ar ? "ما هي صفتك في الأكاديمية؟" : en ? "What is your role?" : "Quel est votre rôle ?"}</h3>
-          <p>{ar ? "اختر صفتك لتخصيص لوحة التحكم والدورات المناسبة لك." : en ? "Select your profile to customize your learning space." : "Sélectionnez votre profil pour personnaliser vos parcours et votre tableau de bord."}</p>
         </div>
 
         <div className="auth-persona-grid" role="radiogroup" aria-label={ar ? "الصفة" : "Votre profil"}>
