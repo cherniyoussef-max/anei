@@ -22,7 +22,6 @@ export default async function VerificationChannelPage({ params }: { params: Prom
         <AuthShowcase locale={locale} mode="register" stage="verify" />
         <div className="auth-card">
           <div className="auth-card-header">
-            <div className="auth-card-badge">{ar ? "حماية الجلسة" : "SÉCURITÉ DE SESSION"}</div>
             <h2>{ar ? "رمز التحقق المؤقت" : "Code de vérification"}</h2>
             <p>
               {ar
