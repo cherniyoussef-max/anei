@@ -23,9 +23,9 @@ export default async function SpecialistPortalPage({ params }: { params: Promise
   return (
     <div className="space-y-6">
       <div>
-        <span className="text-xs font-semibold uppercase tracking-wider text-[#a9752f]">{ar ? "مساحة الأخصائي" : "Espace spécialiste"}</span>
-        <h1 className="mt-1 font-[family-name:var(--font-fraunces)] text-2xl font-semibold tracking-tight text-[#082D55] sm:text-3xl">{ar ? `مرحبًا، ${session.user.name}` : `Bonjour, ${session.user.name}`}</h1>
-        <p className="mt-1 text-sm text-[#7a7261]">{ar ? "نظرة عامة على المتابَعين والمواعيد القادمة." : "Vue d'ensemble des apprenants suivis et de vos prochains rendez-vous."}</p>
+        <span className="text-xs font-bold uppercase tracking-wider text-[#0056D2]">{ar ? "مساحة الأخصائي" : "Espace spécialiste"}</span>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#0F172A] sm:text-3xl">{ar ? `مرحبًا، ${session.user.name}` : `Bonjour, ${session.user.name}`}</h1>
+        <p className="mt-1 text-sm text-[#64748B]">{ar ? "نظرة عامة على المتابَعين والمواعيد القادمة." : "Vue d'ensemble des apprenants suivis et de vos prochains rendez-vous."}</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -78,21 +78,21 @@ export default async function SpecialistPortalPage({ params }: { params: Promise
           <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {profile.specialty && (
               <div className="flex items-start gap-3">
-                <IdCard size={18} strokeWidth={1.75} className="mt-0.5 flex-none text-[#a9752f]" />
-                <div><dt className="text-xs text-[#7a7261]">{ar ? "التخصص الدقيق" : "Spécialité"}</dt><dd className="text-sm font-semibold text-[#082D55]">{profile.specialty}</dd></div>
+                <IdCard size={18} strokeWidth={1.75} className="mt-0.5 flex-none text-[#0056D2]" />
+                <div><dt className="text-xs text-[#64748B]">{ar ? "التخصص الدقيق" : "Spécialité"}</dt><dd className="text-sm font-semibold text-[#0F172A]">{profile.specialty}</dd></div>
               </div>
             )}
             {profile.qualification && (
-              <div><dt className="text-xs text-[#7a7261]">{ar ? "المؤهل" : "Qualification"}</dt><dd className="text-sm font-semibold text-[#082D55]">{profile.qualification}</dd></div>
+              <div><dt className="text-xs text-[#64748B]">{ar ? "المؤهل" : "Qualification"}</dt><dd className="text-sm font-semibold text-[#0F172A]">{profile.qualification}</dd></div>
             )}
             {profile.experienceYears != null && (
-              <div><dt className="text-xs text-[#7a7261]">{ar ? "سنوات الخبرة" : "Expérience"}</dt><dd className="text-sm font-semibold text-[#082D55]">{profile.experienceYears}</dd></div>
+              <div><dt className="text-xs text-[#64748B]">{ar ? "سنوات الخبرة" : "Expérience"}</dt><dd className="text-sm font-semibold text-[#0F172A]">{profile.experienceYears}</dd></div>
             )}
             {profile.practiceStructure && (
-              <div><dt className="text-xs text-[#7a7261]">{ar ? "إطار الممارسة" : "Structure d'exercice"}</dt><dd className="text-sm font-semibold text-[#082D55]">{profile.practiceStructure}</dd></div>
+              <div><dt className="text-xs text-[#64748B]">{ar ? "إطار الممارسة" : "Structure d'exercice"}</dt><dd className="text-sm font-semibold text-[#0F172A]">{profile.practiceStructure}</dd></div>
             )}
             {profile.interventionDomains && profile.interventionDomains.length > 0 && (
-              <div><dt className="text-xs text-[#7a7261]">{ar ? "مجالات التدخل" : "Domaines d'intervention"}</dt><dd className="text-sm font-semibold text-[#082D55]">{profile.interventionDomains.join(", ")}</dd></div>
+              <div><dt className="text-xs text-[#64748B]">{ar ? "مجالات التدخل" : "Domaines d'intervention"}</dt><dd className="text-sm font-semibold text-[#0F172A]">{profile.interventionDomains.join(", ")}</dd></div>
             )}
           </dl>
         </PersonaPanel>

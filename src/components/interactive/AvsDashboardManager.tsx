@@ -256,14 +256,14 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
           onClick={() => setActiveTab("bookings")}
           className={`py-3 px-5 text-sm font-bold border-b-2 flex items-center gap-2 transition-all ${
             activeTab === "bookings"
-              ? "border-[#082D55] text-[#082D55]"
+              ? "border-[#0056D2] text-[#0056D2]"
               : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
           <Icon name="calendar" size={16} />
           <span>{ar ? "طلبات المواعيد الواردة" : "Demandes de rendez-vous"}</span>
           {pendingCount > 0 && (
-            <span className="px-2 py-0.5 rounded-full text-xs bg-amber-500 text-white font-bold">
+            <span className="px-2 py-0.5 rounded-full text-xs bg-[#0056D2] text-white font-bold">
               {pendingCount}
             </span>
           )}
@@ -274,7 +274,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
           onClick={() => setActiveTab("calendar")}
           className={`py-3 px-5 text-sm font-bold border-b-2 flex items-center gap-2 transition-all ${
             activeTab === "calendar"
-              ? "border-[#082D55] text-[#082D55]"
+              ? "border-[#0056D2] text-[#0056D2]"
               : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
@@ -287,7 +287,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
           onClick={() => setActiveTab("profile")}
           className={`py-3 px-5 text-sm font-bold border-b-2 flex items-center gap-2 transition-all ${
             activeTab === "profile"
-              ? "border-[#082D55] text-[#082D55]"
+              ? "border-[#0056D2] text-[#0056D2]"
               : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
@@ -314,7 +314,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
                   onClick={() => setBookingFilter(f.key as "ALL" | "PENDING" | "CONFIRMED" | "DECLINED")}
                   className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
                     bookingFilter === f.key
-                      ? "bg-[#082D55] text-white border-[#082D55]"
+                      ? "bg-[#0056D2] text-white border-[#0056D2]"
                       : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                   }`}
                 >
@@ -354,11 +354,11 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
                   >
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 pb-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 text-[#082D55] font-bold flex items-center justify-center text-sm">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 text-[#0056D2] font-bold flex items-center justify-center text-sm">
                           {b.parentName.split(" ").slice(0, 2).map((p) => p[0]).join("")}
                         </div>
                         <div>
-                          <div className="font-bold text-sm text-[#082D55]">{b.parentName}</div>
+                          <div className="font-bold text-sm text-[#0F172A]">{b.parentName}</div>
                           <div className="text-xs text-slate-500 flex items-center gap-2">
                             <span>{b.parentPhone}</span>
                             <span>•</span>
@@ -489,10 +489,10 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
         <form onSubmit={handleSaveCalendar} className="bg-white rounded-2xl border border-slate-200 p-6 space-y-6 shadow-xs">
           <div className="border-b border-slate-100 pb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <div className="text-[11px] font-bold uppercase tracking-wider text-[#a66f24]">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-[#0056D2]">
                 {ar ? "تنظيم الأجندة والمواعيد" : "Gestion des disponibilités"}
               </div>
-              <h3 className="text-base sm:text-lg font-bold text-[#082D55] mt-0.5">
+              <h3 className="text-base sm:text-lg font-bold text-[#0F172A] mt-0.5">
                 {ar ? "أيام وساعات العمل وصيغ المقابلات" : "Jours de travail, créneaux et modalités de rencontre"}
               </h3>
               <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
@@ -505,7 +505,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
               <Link
                 href={`/${locale}/avs/${profile.slug}`}
                 target="_blank"
-                className="btn btn-ghost text-xs text-[#082D55] font-semibold flex items-center gap-1 border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50"
+                className="btn btn-ghost text-xs text-[#0056D2] font-semibold flex items-center gap-1 border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50"
               >
                 <span>{ar ? "معاينة صفحة الحجز" : "Voir mon formulaire public"}</span>
                 <Icon name="arrow" size={13} className="directional-icon" />
@@ -542,7 +542,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
                     onClick={() => toggleWorkingDay(d.id)}
                     className={`p-3 rounded-xl border text-center transition-all ${
                       isSelected
-                        ? "border-[#082D55] bg-[#082D55] text-white shadow-xs font-bold"
+                        ? "border-[#0056D2] bg-[#0056D2] text-white shadow-xs font-bold"
                         : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-white hover:border-slate-300"
                     }`}
                   >
@@ -567,11 +567,11 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
                 onClick={() => toggleConsultationMode("IN_PERSON")}
                 className={`p-4 rounded-xl border text-start flex items-start gap-3 transition-all ${
                   consultationModes.includes("IN_PERSON")
-                    ? "border-[#082D55] bg-blue-50/40 text-[#082D55] ring-1 ring-[#082D55]"
+                    ? "border-[#0056D2] bg-blue-50/50 text-[#0056D2] ring-1 ring-[#0056D2]"
                     : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
                 }`}
               >
-                <div className={`p-2 rounded-lg ${consultationModes.includes("IN_PERSON") ? "bg-[#082D55] text-white" : "bg-slate-100 text-slate-500"}`}>
+                <div className={`p-2 rounded-lg ${consultationModes.includes("IN_PERSON") ? "bg-[#0056D2] text-white" : "bg-slate-100 text-slate-500"}`}>
                   <Icon name="map" size={18} />
                 </div>
                 <div>
@@ -589,11 +589,11 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
                 onClick={() => toggleConsultationMode("ONLINE")}
                 className={`p-4 rounded-xl border text-start flex items-start gap-3 transition-all ${
                   consultationModes.includes("ONLINE")
-                    ? "border-[#082D55] bg-blue-50/40 text-[#082D55] ring-1 ring-[#082D55]"
+                    ? "border-[#0056D2] bg-blue-50/50 text-[#0056D2] ring-1 ring-[#0056D2]"
                     : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
                 }`}
               >
-                <div className={`p-2 rounded-lg ${consultationModes.includes("ONLINE") ? "bg-[#082D55] text-white" : "bg-slate-100 text-slate-500"}`}>
+                <div className={`p-2 rounded-lg ${consultationModes.includes("ONLINE") ? "bg-[#0056D2] text-white" : "bg-slate-100 text-slate-500"}`}>
                   <Icon name="video" size={18} />
                 </div>
                 <div>
@@ -621,7 +621,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
                     const morning = ["08:30 - 09:30", "09:30 - 10:30", "10:30 - 11:30", "11:30 - 12:30"];
                     setActiveSlots((prev) => Array.from(new Set([...prev, ...morning])).sort());
                   }}
-                  className="text-[11px] font-semibold text-[#082D55] hover:underline"
+                  className="text-[11px] font-semibold text-[#0056D2] hover:underline"
                 >
                   {ar ? "+ فترة الصباح" : "+ Créneaux matin"}
                 </button>
@@ -632,7 +632,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
                     const afternoon = ["14:00 - 15:00", "15:00 - 16:00", "16:00 - 17:00", "17:00 - 18:00"];
                     setActiveSlots((prev) => Array.from(new Set([...prev, ...afternoon])).sort());
                   }}
-                  className="text-[11px] font-semibold text-[#082D55] hover:underline"
+                  className="text-[11px] font-semibold text-[#0056D2] hover:underline"
                 >
                   {ar ? "+ فترة المساء" : "+ Créneaux après-midi"}
                 </button>
@@ -651,7 +651,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
                     key={slot}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-800 shadow-2xs group"
                   >
-                    <Icon name="clock" size={13} className="text-[#a66f24]" />
+                    <Icon name="clock" size={13} className="text-[#0056D2]" />
                     <span>{slot}</span>
                     <button
                       type="button"
@@ -673,7 +673,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
                 value={customSlotInput}
                 onChange={(e) => setCustomSlotInput(e.target.value)}
                 placeholder={ar ? "مثال: 12:30 - 13:30" : "Ex: 12:30 - 13:30"}
-                className="px-3 py-2 rounded-xl border border-slate-300 text-xs flex-1 focus:ring-2 focus:ring-[#082D55]/20 focus:border-[#082D55]"
+                className="px-3 py-2 rounded-xl border border-slate-300 text-xs flex-1 focus:ring-2 focus:ring-[#0056D2]/20 focus:border-[#0056D2]"
               />
               <button
                 type="button"
@@ -702,7 +702,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
                 return (
                   <div key={d.id} className="p-3.5 rounded-xl border border-slate-200 bg-white space-y-2">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
-                      <span className="text-xs font-bold text-[#082D55]">{ar ? d.ar : d.fr}</span>
+                      <span className="text-xs font-bold text-[#0F172A]">{ar ? d.ar : d.fr}</span>
                       <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
                         {activeSlots.length} {ar ? "فترة" : "créneaux"}
                       </span>
@@ -756,7 +756,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
         <form onSubmit={handleProfileSubmit} className="bg-white rounded-2xl border border-slate-200 p-6 space-y-6 shadow-xs">
           <div className="border-b border-slate-100 pb-4 flex items-center justify-between">
             <div>
-              <h3 className="text-base font-bold text-[#082D55]">
+              <h3 className="text-base font-bold text-[#0F172A]">
                 {ar ? "معلومات الظهور في الدليل الوطني للمرافقين" : "Configuration de votre profil public"}
               </h3>
               <p className="text-xs text-slate-500 mt-1">
@@ -769,7 +769,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
               <Link
                 href={`/${locale}/avs/${profile.slug}`}
                 target="_blank"
-                className="btn btn-ghost text-xs text-[#082D55] font-semibold flex items-center gap-1"
+                className="btn btn-ghost text-xs text-[#0056D2] font-semibold flex items-center gap-1"
               >
                 <span>{ar ? "معاينة الصفحة العامة" : "Aperçu du profil public"}</span>
                 <Icon name="arrow" size={13} className="directional-icon" />
@@ -803,7 +803,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
                 value={governorateFr}
                 onChange={(e) => setGovernorateFr(e.target.value)}
                 placeholder="Ex: Tunis"
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#082D55]/20 focus:border-[#082D55]"
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#0056D2]/20 focus:border-[#0056D2]"
               />
             </div>
 
@@ -818,7 +818,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
                 value={governorateAr}
                 onChange={(e) => setGovernorateAr(e.target.value)}
                 placeholder="مثال: تونس"
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#082D55]/20 focus:border-[#082D55]"
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#0056D2]/20 focus:border-[#0056D2]"
               />
             </div>
 
@@ -833,7 +833,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
                 value={cityFr}
                 onChange={(e) => setCityFr(e.target.value)}
                 placeholder="Ex: Tunis (Centre-ville & Menzah)"
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#082D55]/20 focus:border-[#082D55]"
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#0056D2]/20 focus:border-[#0056D2]"
               />
             </div>
 
@@ -848,7 +848,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
                 value={cityAr}
                 onChange={(e) => setCityAr(e.target.value)}
                 placeholder="مثال: تونس (وسط العاصمة والمنزه)"
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#082D55]/20 focus:border-[#082D55]"
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#0056D2]/20 focus:border-[#0056D2]"
               />
             </div>
 
@@ -863,7 +863,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
                 value={specialtyFr}
                 onChange={(e) => setSpecialtyFr(e.target.value)}
                 placeholder="Ex: TSA & communication adaptée"
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#082D55]/20 focus:border-[#082D55]"
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#0056D2]/20 focus:border-[#0056D2]"
               />
             </div>
 
@@ -878,14 +878,14 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
                 value={specialtyAr}
                 onChange={(e) => setSpecialtyAr(e.target.value)}
                 placeholder="مثال: طيف التوحد والتواصل المكيف"
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#082D55]/20 focus:border-[#082D55]"
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#0056D2]/20 focus:border-[#0056D2]"
               />
             </div>
 
             {/* Availability / Disponibilité Section */}
-            <div className="md:col-span-2 p-5 rounded-2xl bg-amber-50/50 border border-amber-200/80 space-y-4">
+            <div className="md:col-span-2 p-5 rounded-2xl bg-[#F0F6FF]/70 border border-[#BFDBFE] space-y-4">
               <div>
-                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#a66f24]">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#0056D2]">
                   <Icon name="calendar" size={15} />
                   <span>{ar ? "أوقات التوفر وجدول العمل (Disponibilités)" : "Disponibilités & Horaires d'intervention"}</span>
                 </div>
@@ -934,7 +934,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
                     value={availabilityFr}
                     onChange={(e) => setAvailabilityFr(e.target.value)}
                     placeholder="Ex: Disponible immédiatement (Temps plein)"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-[#082D55]/20 focus:border-[#082D55]"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-[#0056D2]/20 focus:border-[#0056D2]"
                   />
                 </div>
 
@@ -948,7 +948,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
                     value={availabilityAr}
                     onChange={(e) => setAvailabilityAr(e.target.value)}
                     placeholder="مثال: متاح فورًا (دوام كامل)"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-[#082D55]/20 focus:border-[#082D55]"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-[#0056D2]/20 focus:border-[#0056D2]"
                   />
                 </div>
               </div>
@@ -965,7 +965,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
                 max="200"
                 value={hourlyRateTnd}
                 onChange={(e) => setHourlyRateTnd(Number(e.target.value))}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#082D55]/20 focus:border-[#082D55]"
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#0056D2]/20 focus:border-[#0056D2]"
               />
             </div>
 
@@ -979,7 +979,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
                 max="50"
                 value={experienceYears}
                 onChange={(e) => setExperienceYears(Number(e.target.value))}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#082D55]/20 focus:border-[#082D55]"
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#0056D2]/20 focus:border-[#0056D2]"
               />
             </div>
 
@@ -993,7 +993,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+216 98 123 456"
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#082D55]/20 focus:border-[#082D55]"
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#0056D2]/20 focus:border-[#0056D2]"
               />
             </div>
 
@@ -1006,7 +1006,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="contact@exemple.tn"
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#082D55]/20 focus:border-[#082D55]"
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#0056D2]/20 focus:border-[#0056D2]"
               />
             </div>
           </div>
@@ -1021,7 +1021,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
               value={domainsInput}
               onChange={(e) => setDomainsInput(e.target.value)}
               placeholder="Autisme (TSA), Troubles DYS, TDAH, Handicap moteur"
-              className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#082D55]/20 focus:border-[#082D55]"
+              className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#0056D2]/20 focus:border-[#0056D2]"
             />
           </div>
 
@@ -1035,7 +1035,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
               value={methodsInput}
               onChange={(e) => setMethodsInput(e.target.value)}
               placeholder="PECS, TEACCH, ABA fonctionnel, Montessori adapté"
-              className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#082D55]/20 focus:border-[#082D55]"
+              className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#0056D2]/20 focus:border-[#0056D2]"
             />
           </div>
 
@@ -1050,7 +1050,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
                 value={schoolsCoveredFr}
                 onChange={(e) => setSchoolsCoveredFr(e.target.value)}
                 placeholder="Ex: Écoles primaires et collèges du Grand Tunis"
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#082D55]/20 focus:border-[#082D55]"
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#0056D2]/20 focus:border-[#0056D2]"
               />
             </div>
             <div>
@@ -1062,7 +1062,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
                 value={schoolsCoveredAr}
                 onChange={(e) => setSchoolsCoveredAr(e.target.value)}
                 placeholder="مثال: المدارس الابتدائية والإعدادية بتونس الكبرى"
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#082D55]/20 focus:border-[#082D55]"
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#0056D2]/20 focus:border-[#0056D2]"
               />
             </div>
           </div>
@@ -1079,7 +1079,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
                 value={bioFr}
                 onChange={(e) => setBioFr(e.target.value)}
                 placeholder="Décrivez votre expérience, vos formations et votre méthode de travail avec l'enfant..."
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#082D55]/20 focus:border-[#082D55]"
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#0056D2]/20 focus:border-[#0056D2]"
               />
             </div>
             <div>
@@ -1092,7 +1092,7 @@ export function AvsDashboardManager({ locale, profile: initialProfile, bookings:
                 value={bioAr}
                 onChange={(e) => setBioAr(e.target.value)}
                 placeholder="صف خبراتك وتكوينك وأسلوب مرافقتك للتلميذ داخل القسم..."
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#082D55]/20 focus:border-[#082D55]"
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#0056D2]/20 focus:border-[#0056D2]"
               />
             </div>
           </div>

@@ -29,9 +29,9 @@ export default async function OrganizationPortalPage({ params }: { params: Promi
   return (
     <div className="space-y-6">
       <div>
-        <span className="text-xs font-semibold uppercase tracking-wider text-[#a9752f]">{ar ? "مساحة المؤسسة" : "Espace organisation"}</span>
-        <h1 className="mt-1 font-[family-name:var(--font-fraunces)] text-2xl font-semibold tracking-tight text-[#082D55] sm:text-3xl">{ar ? `مرحبًا، ${session.user.name}` : `Bonjour, ${session.user.name}`}</h1>
-        <p className="mt-1 text-sm text-[#7a7261]">{ar ? "نظرة عامة على مؤسساتك وفق دورك في كل منها." : "Vue d'ensemble de vos organisations, selon votre rôle dans chacune."}</p>
+        <span className="text-xs font-bold uppercase tracking-wider text-[#0056D2]">{ar ? "مساحة المؤسسة" : "Espace organisation"}</span>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#0F172A] sm:text-3xl">{ar ? `مرحبًا، ${session.user.name}` : `Bonjour, ${session.user.name}`}</h1>
+        <p className="mt-1 text-sm text-[#64748B]">{ar ? "نظرة عامة على مؤسساتك وفق دورك في كل منها." : "Vue d'ensemble de vos organisations, selon votre rôle dans chacune."}</p>
       </div>
 
       {orgDetails.length === 0 ? (
@@ -47,7 +47,7 @@ export default async function OrganizationPortalPage({ params }: { params: Promi
           <PersonaPanel
             key={membership.id}
             title={organization.name}
-            action={<span className="text-xs font-semibold text-[#7a7261]">{ar ? "دوري" : "Mon rôle"} · {membership.role}</span>}
+            action={<span className="text-xs font-semibold text-[#64748B]">{ar ? "دوري" : "Mon rôle"} · {membership.role}</span>}
           >
             <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
               {canSeeRoster && <PersonaMetricCard icon={Users} tone="navy" label={ar ? "الأعضاء" : "Membres"} value={members.length} />}

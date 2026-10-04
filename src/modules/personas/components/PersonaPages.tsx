@@ -1,24 +1,50 @@
 import type { LucideIcon } from "lucide-react";
 
-export function PersonaMetricCard({ icon: MetricIcon, tone, label, value, sub }: { icon: LucideIcon; tone: "navy" | "gold" | "cream"; label: string; value: React.ReactNode; sub?: string }) {
-  const toneClass = tone === "gold" ? "bg-[#C9913F]/15 text-[#a9752f]" : tone === "cream" ? "bg-[#F6F1E7] text-[#082D55]" : "bg-[#082D55]/10 text-[#082D55]";
+export function PersonaMetricCard({
+  icon: MetricIcon,
+  tone: _tone,
+  label,
+  value,
+  sub,
+}: {
+  icon: LucideIcon;
+  tone?: "navy" | "gold" | "cream" | "blue" | "emerald";
+  label: string;
+  value: React.ReactNode;
+  sub?: string;
+}) {
   return (
-    <div className="flex items-center gap-4 rounded-2xl border border-[#E7E0D3] bg-white p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)]">
-      <span className={`grid h-12 w-12 flex-none place-items-center rounded-xl ${toneClass}`} aria-hidden="true"><MetricIcon size={22} strokeWidth={1.75} /></span>
+    <div className="flex items-center gap-4 rounded-xl border border-[#E2E8F0] bg-white p-5 shadow-xs transition-shadow hover:shadow-sm">
+      <span
+        className="grid h-11 w-11 flex-none place-items-center rounded-xl bg-[#F0F6FF] text-[#0056D2] border border-[#BFDBFE]"
+        aria-hidden="true"
+      >
+        <MetricIcon size={20} strokeWidth={2} />
+      </span>
       <div className="min-w-0">
-        <p className="text-xs font-medium text-[#7a7261]">{label}</p>
-        <p className="mt-0.5 text-2xl font-bold text-[#082D55]" dir="ltr">{value}</p>
-        {sub ? <p className="mt-0.5 truncate text-xs text-[#a39c8a]">{sub}</p> : null}
+        <p className="text-xs font-semibold uppercase tracking-wider text-[#64748B]">{label}</p>
+        <p className="mt-0.5 text-2xl font-bold tracking-tight text-[#0F172A]" dir="ltr">
+          {value}
+        </p>
+        {sub ? <p className="mt-0.5 truncate text-xs text-[#94A3B8]">{sub}</p> : null}
       </div>
     </div>
   );
 }
 
-export function PersonaPanel({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
+export function PersonaPanel({
+  title,
+  action,
+  children,
+}: {
+  title: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
-    <section className="rounded-2xl border border-[#E7E0D3] bg-white p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] sm:p-6">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="font-[family-name:var(--font-fraunces)] text-lg font-semibold text-[#082D55]">{title}</h2>
+    <section className="rounded-xl border border-[#E2E8F0] bg-white p-5 sm:p-6 shadow-xs">
+      <div className="mb-4 flex items-center justify-between gap-3 border-b border-[#F1F5F9] pb-3">
+        <h2 className="text-base font-bold text-[#0F172A]">{title}</h2>
         {action}
       </div>
       {children}
@@ -26,13 +52,28 @@ export function PersonaPanel({ title, action, children }: { title: string; actio
   );
 }
 
-export function PersonaRow({ icon: RowIcon, title, meta, trailing }: { icon: LucideIcon; title: React.ReactNode; meta?: React.ReactNode; trailing?: React.ReactNode }) {
+export function PersonaRow({
+  icon: RowIcon,
+  title,
+  meta,
+  trailing,
+}: {
+  icon: LucideIcon;
+  title: React.ReactNode;
+  meta?: React.ReactNode;
+  trailing?: React.ReactNode;
+}) {
   return (
-    <li className="flex items-start gap-3 border-t border-[#E7E0D3] py-4 first:border-t-0 first:pt-0">
-      <span className="grid h-11 w-11 flex-none place-items-center rounded-xl bg-[#F6F1E7] text-[#082D55]" aria-hidden="true"><RowIcon size={19} strokeWidth={1.75} /></span>
+    <li className="flex items-start gap-3 border-t border-[#F1F5F9] py-3.5 first:border-t-0 first:pt-0">
+      <span
+        className="grid h-10 w-10 flex-none place-items-center rounded-lg bg-[#F0F6FF] text-[#0056D2]"
+        aria-hidden="true"
+      >
+        <RowIcon size={18} strokeWidth={1.8} />
+      </span>
       <div className="min-w-0 flex-1">
-        <strong className="block truncate text-sm font-semibold text-[#082D55]">{title}</strong>
-        {meta ? <div className="mt-1 text-xs text-[#7a7261]">{meta}</div> : null}
+        <strong className="block truncate text-sm font-semibold text-[#0F172A]">{title}</strong>
+        {meta ? <div className="mt-0.5 text-xs text-[#64748B]">{meta}</div> : null}
       </div>
       {trailing}
     </li>

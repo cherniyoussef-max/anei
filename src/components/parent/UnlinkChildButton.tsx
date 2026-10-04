@@ -56,15 +56,15 @@ export function UnlinkChildButton({
 
       {isOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#082D55]/60 p-4 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs"
           role="dialog"
           aria-modal="true"
         >
-          <div className="w-full max-w-sm rounded-2xl border border-[#E7E0D3] bg-[#FCFBF8] p-5 shadow-xl">
-            <h3 className="font-[family-name:var(--font-fraunces)] text-base font-bold text-[#082D55]">
+          <div className="w-full max-w-sm rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-xl">
+            <h3 className="text-base font-bold text-[#0F172A]">
               {ar ? "تأكيد إلغاء الربط" : "Confirmer la dissociation"}
             </h3>
-            <p className="mt-2 text-xs text-[#7a7261] leading-relaxed">
+            <p className="mt-2 text-xs text-[#64748B] leading-relaxed">
               {ar
                 ? `هل أنت متأكد من رغبتك في إلغاء ربط حساب الطفل (${childName})؟ لن تتمكن من متابعة ملفه التربوي حتى يعاد ربطه.`
                 : `Êtes-vous sûr de vouloir dissocier le compte de l'enfant (${childName}) ? Vous ne pourrez plus consulter son dossier PPS jusqu'à une nouvelle association.`}
@@ -82,7 +82,7 @@ export function UnlinkChildButton({
                 type="button"
                 disabled={loading}
                 onClick={() => setIsOpen(false)}
-                className="rounded-lg border border-[#E7E0D3] bg-white px-3 py-1.5 text-xs font-semibold text-[#082D55] hover:bg-[#F6F1E7]"
+                className="rounded-lg border border-[#E2E8F0] bg-white px-3 py-1.5 text-xs font-semibold text-[#0F172A] hover:bg-[#F8FAFC]"
               >
                 {ar ? "إلغاء" : "Annuler"}
               </button>

@@ -23,17 +23,17 @@ export function AddChildButton({
 
   const variantClasses =
     variant === "primary"
-      ? "bg-[#082D55] text-white hover:bg-[#061F3D] shadow-xs"
+      ? "bg-[#0056D2] text-white hover:bg-[#00419E] shadow-xs"
       : variant === "secondary"
-        ? "bg-[#a9752f] text-white hover:bg-[#8f6225] shadow-xs"
-        : "border border-[#082D55] text-[#082D55] bg-white hover:bg-[#F6F1E7]";
+        ? "bg-[#F8FAFC] border border-[#E2E8F0] text-[#0F172A] hover:bg-[#F1F5F9]"
+        : "border border-[#E2E8F0] text-[#0056D2] bg-white hover:bg-[#F0F6FF]";
 
   return (
     <>
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition cursor-pointer ${variantClasses} ${className}`}
+        className={`inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-semibold transition cursor-pointer ${variantClasses} ${className}`}
       >
         <UserPlus size={16} strokeWidth={2} />
         <span>{label ?? defaultLabel}</span>

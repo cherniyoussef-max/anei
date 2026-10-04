@@ -29,7 +29,7 @@ export function PersonaNavigation({ locale, items, base, variant }: { locale: Lo
 
   if (variant === "mobile") {
     return (
-      <nav className="flex items-center gap-1 overflow-x-auto border-t border-[#E7E0D3] bg-[#FCFBF8] px-2 py-2 md:hidden" aria-label={ar ? "التنقل" : "Navigation"}>
+      <nav className="flex items-center gap-1 overflow-x-auto border-t border-[#E2E8F0] bg-white px-2 py-2 md:hidden shadow-lg sticky bottom-0 z-30" aria-label={ar ? "التنقل" : "Navigation"}>
         {items.map((item) => {
           const active = isCurrent(pathname, item.href, base);
           const ItemIcon = PERSONA_ICONS[item.icon];
@@ -39,10 +39,10 @@ export function PersonaNavigation({ locale, items, base, variant }: { locale: Lo
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={active
-                ? "flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl bg-[#F6F1E7] px-2 py-2 text-[11px] font-semibold text-[#082D55]"
-                : "flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-2 py-2 text-[11px] font-medium text-[#7a7261]"}
+                ? "flex min-w-0 flex-1 flex-col items-center gap-1 rounded-lg bg-[#F0F6FF] px-2 py-2 text-[11px] font-bold text-[#0056D2]"
+                : "flex min-w-0 flex-1 flex-col items-center gap-1 rounded-lg px-2 py-2 text-[11px] font-medium text-[#64748B] hover:text-[#0F172A]"}
             >
-              <ItemIcon size={19} strokeWidth={1.75} />
+              <ItemIcon size={19} strokeWidth={active ? 2.2 : 1.75} className={active ? "text-[#0056D2]" : "text-[#718096]"} />
               <span className="max-w-full truncate">{ar ? item.ar : item.fr}</span>
             </Link>
           );
@@ -62,10 +62,10 @@ export function PersonaNavigation({ locale, items, base, variant }: { locale: Lo
             key={item.href}
             aria-current={active ? "page" : undefined}
             className={active
-              ? "flex items-center gap-3 rounded-xl border-s-4 border-[#C9913F] bg-white/10 py-2.5 ps-3 pe-3 text-sm font-semibold text-white shadow-sm backdrop-blur-sm transition-all duration-150"
-              : "flex items-center gap-3 rounded-xl border-s-4 border-transparent py-2.5 ps-3 pe-3 text-sm text-white/60 transition-all duration-150 hover:bg-white/5 hover:text-white"}
+              ? "flex items-center gap-3 rounded-lg border-s-4 border-[#0056D2] bg-[#F0F6FF] py-2.5 ps-3 pe-3 text-sm font-semibold text-[#0056D2] transition-colors shadow-xs"
+              : "flex items-center gap-3 rounded-lg border-s-4 border-transparent py-2.5 ps-3 pe-3 text-sm font-medium text-[#64748B] transition-colors hover:bg-[#F8FAFC] hover:text-[#0F172A]"}
           >
-            <ItemIcon size={19} strokeWidth={1.75} />
+            <ItemIcon size={19} strokeWidth={active ? 2.2 : 1.75} className={active ? "text-[#0056D2]" : "text-[#64748B]"} />
             <span>{ar ? item.ar : item.fr}</span>
           </Link>
         );

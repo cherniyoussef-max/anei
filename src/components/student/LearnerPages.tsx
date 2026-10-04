@@ -10,19 +10,19 @@ export function LearnerPageHeader({ title, description, action }: { title: strin
 
 export function LearnerEmptyState({ icon: EmptyIcon, title, body, action }: { icon: LucideIcon; title: string; body: string; action?: { href: string; label: string } }) {
   return (
-    <div className="flex flex-col items-center gap-4 rounded-3xl border-2 border-dashed border-[#E7E0D3] bg-white p-12 text-center">
-      <span className="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-[#FCFBF8] to-[#F0E4CC] text-[#082D55]" aria-hidden="true"><EmptyIcon size={28} strokeWidth={1.75} /></span>
+    <div className="flex flex-col items-center gap-3.5 rounded-2xl border-2 border-dashed border-[#E2E8F0] bg-white p-10 text-center">
+      <span className="grid h-14 w-14 place-items-center rounded-2xl bg-[#F0F6FF] text-[#0056D2]" aria-hidden="true"><EmptyIcon size={26} strokeWidth={1.75} /></span>
       <div className="max-w-md">
-        <h2 className="font-[family-name:var(--font-fraunces)] text-lg font-semibold text-[#082D55]">{title}</h2>
-        <p className="mt-1.5 text-sm text-[#7a7261]">{body}</p>
+        <h2 className="text-base font-bold text-[#0F172A]">{title}</h2>
+        <p className="mt-1 text-xs text-[#64748B] leading-relaxed">{body}</p>
       </div>
       {action ? (
         <Link
-          className="mt-1 inline-flex items-center gap-2 rounded-full border border-[#082D55] bg-white px-5 py-2.5 text-sm font-semibold text-[#082D55] transition-all duration-200 ease-in-out hover:bg-[#082D55] hover:text-white"
+          className="mt-2 inline-flex items-center gap-2 rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-xs font-semibold text-[#0056D2] transition hover:bg-[#F0F6FF]"
           href={action.href}
         >
           {action.label}
-          <ArrowRight size={16} strokeWidth={1.75} className="rtl:rotate-180" />
+          <ArrowRight size={15} strokeWidth={1.75} className="rtl:rotate-180" />
         </Link>
       ) : null}
     </div>

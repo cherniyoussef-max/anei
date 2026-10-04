@@ -24,13 +24,13 @@ export default async function ParentChildrenPage({
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <span className="text-xs font-semibold uppercase tracking-wider text-[#a9752f]">
+          <span className="text-xs font-bold uppercase tracking-wider text-[#0056D2]">
             {ar ? "مساحة الوالدين" : "Espace parent"}
           </span>
-          <h1 className="mt-1 font-[family-name:var(--font-fraunces)] text-2xl font-semibold tracking-tight text-[#082D55] sm:text-3xl">
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#0F172A] sm:text-3xl">
             {ar ? "أبنائي ومسار المتابعة" : "Mes enfants & suivi"}
           </h1>
-          <p className="mt-1 text-sm text-[#7a7261]">
+          <p className="mt-1 text-sm text-[#64748B]">
             {ar
               ? "فريق المتابعة المختص، الملاحظات الإكلينيكية المشتركة، والوثائق التأهيلية لأبنائكم."
               : "Équipe soignante, observations de séances et documents partagés pour vos enfants."}

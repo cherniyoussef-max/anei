@@ -169,25 +169,25 @@ export function AvsBookingModal({
     >
       <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200/80 overflow-hidden text-slate-800 max-h-[92vh] flex flex-col">
         {/* Header */}
-        <div className="bg-[#082D55] text-white px-6 py-5 flex items-center justify-between border-b border-white/10 flex-none">
+        <div className="bg-[#0056D2] text-white px-6 py-5 flex items-center justify-between border-b border-white/10 flex-none">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center font-bold text-amber-300 border border-white/20">
+            <div className="w-11 h-11 rounded-full bg-white/15 flex items-center justify-center font-bold text-white border border-white/20">
               {avs.initials}
             </div>
             <div>
-              <div className="text-xs uppercase tracking-wider text-amber-300 font-semibold flex items-center gap-1.5">
+              <div className="text-xs uppercase tracking-wider text-blue-100 font-semibold flex items-center gap-1.5">
                 <span>🛡️</span>
                 <span>{ar ? "حجز موعد مع ضمان طرف ثالث ANEI" : "Rendez-vous AVS & Tiers de Confiance ANEI"}</span>
               </div>
               <h2 id="booking-modal-title" className="text-lg font-bold text-white">
                 {avs.name}
               </h2>
-              <div className="text-xs text-slate-300 flex items-center gap-2">
+              <div className="text-xs text-blue-100 flex items-center gap-2">
                 <span>{avs.specialty}</span>
                 <span>•</span>
                 <span>{avs.city}</span>
                 <span>•</span>
-                <span className="text-amber-200 font-semibold">{sessionRateTnd} TND / séance</span>
+                <span className="text-white font-semibold">{sessionRateTnd} TND / séance</span>
               </div>
             </div>
           </div>
@@ -204,14 +204,14 @@ export function AvsBookingModal({
         {/* Auth Gate Screen */}
         {isUnauthenticated ? (
           <div className="p-8 text-center space-y-6 overflow-y-auto">
-            <div className="w-16 h-16 bg-[#082D55]/10 text-[#082D55] rounded-full mx-auto flex items-center justify-center">
+            <div className="w-16 h-16 bg-[#F0F6FF] text-[#0056D2] rounded-full mx-auto flex items-center justify-center">
               <Icon name="shield" size={32} />
             </div>
             <div className="max-w-md mx-auto space-y-2">
-              <span className="inline-block text-[11px] font-bold uppercase tracking-wider text-[#a66f24] bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
+              <span className="inline-block text-[11px] font-bold uppercase tracking-wider text-[#0056D2] bg-[#F0F6FF] border border-[#BFDBFE] px-3 py-1 rounded-full">
                 {ar ? "حساب مطلوب لسلامة المعاملة" : "Authentification requise · Sécurité ANEI"}
               </span>
-              <h3 className="text-xl font-bold text-[#082D55]">
+              <h3 className="text-xl font-bold text-[#0F172A]">
                 {ar ? "يرجى تسجيل الدخول أو إنشاء حساب" : "Connexion obligatoire pour réserver"}
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
@@ -221,8 +221,8 @@ export function AvsBookingModal({
               </p>
             </div>
 
-            <div className="bg-[#fcfbf8] border border-[#E7E0D3] rounded-xl p-4 text-xs text-slate-700 max-w-md mx-auto text-start space-y-2">
-              <div className="flex items-center gap-2 text-[#082D55] font-bold">
+            <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 text-xs text-slate-700 max-w-md mx-auto text-start space-y-2">
+              <div className="flex items-center gap-2 text-[#0056D2] font-bold">
                 <span>🛡️</span>
                 <span>{ar ? "لماذا يشترط إنشاء الحساب؟" : "Pourquoi un compte est-il requis ?"}</span>
               </div>
@@ -234,14 +234,14 @@ export function AvsBookingModal({
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
               <Link
                 href={`/${locale}/login?redirect=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : `/${locale}/avs`)}`}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#082D55] hover:bg-[#061f3d] text-white px-6 py-3 rounded-xl text-sm font-bold shadow-md transition-all"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#0056D2] hover:bg-[#00419E] text-white px-6 py-3 rounded-xl text-sm font-bold shadow-xs transition-all"
               >
                 <Icon name="user" size={16} />
                 <span>{ar ? "تسجيل الدخول" : "Se connecter"}</span>
               </Link>
               <Link
                 href={`/${locale}/register?redirect=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : `/${locale}/avs`)}`}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#c9913f] hover:bg-[#b07d32] text-white px-6 py-3 rounded-xl text-sm font-bold shadow-md transition-all"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-[#0056D2] bg-white hover:bg-[#F0F6FF] text-[#0056D2] px-6 py-3 rounded-xl text-sm font-bold shadow-xs transition-all"
               >
                 <span>{ar ? "إنشاء حساب جديد" : "Créer un compte"}</span>
               </Link>
@@ -252,18 +252,18 @@ export function AvsBookingModal({
             {/* Stepper Progress */}
             {step < 4 && (
               <div className="px-6 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs font-medium text-slate-600 flex-none">
-                <div className={`flex items-center gap-2 ${step >= 1 ? "text-[#082D55] font-bold" : ""}`}>
-                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 1 ? "bg-[#082D55] text-white" : "bg-slate-200"}`}>1</span>
+                <div className={`flex items-center gap-2 ${step >= 1 ? "text-[#0056D2] font-bold" : ""}`}>
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 1 ? "bg-[#0056D2] text-white" : "bg-slate-200"}`}>1</span>
                   <span>{ar ? "الموعد" : "Créneau"}</span>
                 </div>
                 <div className="h-0.5 w-6 bg-slate-200" />
-                <div className={`flex items-center gap-2 ${step >= 2 ? "text-[#082D55] font-bold" : ""}`}>
-                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 2 ? "bg-[#082D55] text-white" : "bg-slate-200"}`}>2</span>
+                <div className={`flex items-center gap-2 ${step >= 2 ? "text-[#0056D2] font-bold" : ""}`}>
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 2 ? "bg-[#0056D2] text-white" : "bg-slate-200"}`}>2</span>
                   <span>{ar ? "الطفل" : "L'Élève"}</span>
                 </div>
                 <div className="h-0.5 w-6 bg-slate-200" />
-                <div className={`flex items-center gap-2 ${step >= 3 ? "text-[#082D55] font-bold" : ""}`}>
-                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 3 ? "bg-[#082D55] text-white" : "bg-slate-200"}`}>3</span>
+                <div className={`flex items-center gap-2 ${step >= 3 ? "text-[#0056D2] font-bold" : ""}`}>
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 3 ? "bg-[#0056D2] text-white" : "bg-slate-200"}`}>3</span>
                   <span>{ar ? "الدفع والضمان" : "Paiement Séquestre"}</span>
                 </div>
               </div>
@@ -295,7 +295,7 @@ export function AvsBookingModal({
                             onClick={() => setSelectedDate(d.iso)}
                             className={`p-2.5 rounded-xl border text-center transition-all ${
                               isSel
-                                ? "bg-[#082D55] border-[#082D55] text-white shadow-md font-bold"
+                                ? "bg-[#0056D2] border-[#0056D2] text-white shadow-xs font-bold"
                                 : "bg-white border-slate-200 hover:border-slate-300 text-slate-700"
                             }`}
                           >
@@ -322,7 +322,7 @@ export function AvsBookingModal({
                             onClick={() => setSelectedSlot(slot)}
                             className={`py-2 px-3 rounded-lg border text-xs font-semibold text-center transition-all ${
                               isSel
-                                ? "bg-[#082D55] border-[#082D55] text-white shadow-sm"
+                                ? "bg-[#0056D2] border-[#0056D2] text-white shadow-xs"
                                 : "bg-white border-slate-200 hover:border-slate-300 text-slate-700"
                             }`}
                           >
@@ -351,7 +351,7 @@ export function AvsBookingModal({
                           onClick={() => setMeetingType(t.id)}
                           className={`p-3 rounded-xl border text-xs font-semibold flex flex-col items-center gap-1.5 transition-all ${
                             meetingType === t.id
-                              ? "bg-amber-50 border-[#c9913f] text-[#082D55] font-bold shadow-sm"
+                              ? "bg-[#F0F6FF] border-[#0056D2] text-[#0056D2] font-bold shadow-xs"
                               : "bg-white border-slate-200 hover:border-slate-300 text-slate-700"
                           }`}
                         >
@@ -378,7 +378,7 @@ export function AvsBookingModal({
                         value={childName}
                         onChange={(e) => setChildName(e.target.value)}
                         placeholder={ar ? "محمد علي" : "Ex: Rayan Ben Salem"}
-                        className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#082D55]"
+                        className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#0056D2]"
                       />
                     </div>
                     <div>
@@ -392,7 +392,7 @@ export function AvsBookingModal({
                         required
                         value={childAge}
                         onChange={(e) => setChildAge(e.target.value)}
-                        className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#082D55]"
+                        className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#0056D2]"
                       />
                     </div>
                   </div>
@@ -406,7 +406,7 @@ export function AvsBookingModal({
                       value={schoolName}
                       onChange={(e) => setSchoolName(e.target.value)}
                       placeholder={ar ? "المدرسة الابتدائية بالمنزه..." : "Ex: École primaire Hannibal, Tunis"}
-                      className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#082D55]"
+                      className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#0056D2]"
                     />
                   </div>
 
@@ -424,7 +424,7 @@ export function AvsBookingModal({
                           ? "مثال: طيف التوحد، صعوبات التعلم (عسر القراءة)، تشتت الانتباه وفرط الحركة..."
                           : "Ex: Trouble du spectre autistique, TDAH, troubles des apprentissages (dyslexie), besoin d'autonomie en classe..."
                       }
-                      className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#082D55]"
+                      className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#0056D2]"
                     />
                   </div>
 
@@ -435,7 +435,7 @@ export function AvsBookingModal({
                     <select
                       value={interventionDomain}
                       onChange={(e) => setInterventionDomain(e.target.value)}
-                      className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#082D55] bg-white text-slate-800"
+                      className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#0056D2] bg-white text-slate-800"
                     >
                       <option value="">{ar ? "اختر مجال التدخل (اختياري)" : "Sélectionner un domaine (optionnel)"}</option>
                       <option value="TSA">{ar ? "طيف التوحد (TSA)" : "Troubles du spectre de l'autisme (TSA)"}</option>
@@ -474,11 +474,11 @@ export function AvsBookingModal({
                     </div>
                     <div className="flex items-center justify-between text-slate-600">
                       <span>{ar ? "رسوم الضمان والتأمين والمتابعة (ANEI 10%) :" : "Frais de séquestre & supervision (ANEI 10%) :"}</span>
-                      <span className="font-mono text-amber-700">+{platformFeeTnd}.000 TND</span>
+                      <span className="font-mono text-[#0056D2]">+{platformFeeTnd}.000 TND</span>
                     </div>
-                    <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-sm font-bold text-[#082D55]">
+                    <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-sm font-bold text-[#0F172A]">
                       <span>{ar ? "المجموع المودع تحت الضمان :" : "Total à régler sous séquestre :"}</span>
-                      <span className="font-mono text-base text-[#082D55]">{totalEscrowTnd}.000 TND</span>
+                      <span className="font-mono text-base text-[#0056D2]">{totalEscrowTnd}.000 TND</span>
                     </div>
                   </div>
 
@@ -493,7 +493,7 @@ export function AvsBookingModal({
                         required
                         value={resolvedParentName}
                         onChange={(e) => setParentName(e.target.value)}
-                        className="w-full p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#082D55] font-medium"
+                        className="w-full p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#0056D2] font-medium"
                       />
                     </div>
                     <div>
@@ -505,7 +505,7 @@ export function AvsBookingModal({
                         required
                         value={resolvedParentEmail}
                         onChange={(e) => setParentEmail(e.target.value)}
-                        className="w-full p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#082D55] font-medium"
+                        className="w-full p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#0056D2] font-medium"
                       />
                     </div>
                     <div>
@@ -517,7 +517,7 @@ export function AvsBookingModal({
                         required
                         value={parentPhone}
                         onChange={(e) => setParentPhone(e.target.value)}
-                        className="w-full p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#082D55]"
+                        className="w-full p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#0056D2]"
                       />
                     </div>
                   </div>
@@ -541,7 +541,7 @@ export function AvsBookingModal({
                           onClick={() => setPaymentMethod(m.id)}
                           className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
                             paymentMethod === m.id
-                              ? "bg-[#082D55] border-[#082D55] text-white shadow-sm"
+                              ? "bg-[#0056D2] border-[#0056D2] text-white shadow-xs"
                               : "bg-white border-slate-200 hover:border-slate-300 text-slate-700"
                           }`}
                         >
@@ -561,7 +561,7 @@ export function AvsBookingModal({
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       placeholder={ar ? "أي توجيهات لوجستية أو مواصفات خاصة..." : "Ex: Première prise de contact, documents bilans..."}
-                      className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#082D55]"
+                      className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#0056D2]"
                     />
                   </div>
 
@@ -570,7 +570,7 @@ export function AvsBookingModal({
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full bg-[#082D55] hover:bg-[#061f3d] disabled:opacity-50 text-white py-3.5 px-4 rounded-xl text-sm font-bold shadow-md transition-all flex items-center justify-center gap-2"
+                      className="w-full bg-[#0056D2] hover:bg-[#00419E] disabled:opacity-50 text-white py-3.5 px-4 rounded-xl text-sm font-bold shadow-xs transition-all flex items-center justify-center gap-2"
                     >
                       {isSubmitting ? (
                         <span>{ar ? "جارٍ تسجيل الدفع والضمان..." : "Sécurisation des fonds sous séquestre..."}</span>
@@ -599,7 +599,7 @@ export function AvsBookingModal({
                     <span className="inline-block text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full mb-2">
                       {ar ? "🛡️ مدفوع — الأموال تحت الضمان الآمن" : "🛡️ Payé — Fonds protégés sous séquestre ANEI"}
                     </span>
-                    <h3 className="text-xl font-bold text-[#082D55]">
+                    <h3 className="text-xl font-bold text-[#0F172A]">
                       {ar ? "تم تأكيد موعدكم بنجاح" : "Votre rendez-vous est confirmé"}
                     </h3>
                     <p className="text-xs text-slate-600 mt-1">
@@ -609,10 +609,10 @@ export function AvsBookingModal({
                     </p>
                   </div>
 
-                  <div className="bg-[#fcfbf8] border border-[#E7E0D3] rounded-xl p-4 text-xs text-slate-700 max-w-md mx-auto text-start space-y-2">
+                  <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 text-xs text-slate-700 max-w-md mx-auto text-start space-y-2">
                     <div className="flex justify-between border-b border-slate-200 pb-2">
                       <span className="text-slate-500">{ar ? "المرجع الآمن للضمان :" : "Réf. Séquestre :"}</span>
-                      <strong className="font-mono text-[#082D55]">{escrowRef}</strong>
+                      <strong className="font-mono text-[#0056D2]">{escrowRef}</strong>
                     </div>
                     {confirmedBookingId && (
                       <div className="flex justify-between border-b border-slate-200 pb-2 text-[11px] text-slate-500">
@@ -637,7 +637,7 @@ export function AvsBookingModal({
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-3">
                     <Link
                       href={`/${locale}/dashboard/rendez-vous`}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#082D55] hover:bg-[#061f3d] text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-md transition-all"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#0056D2] hover:bg-[#00419E] text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-xs transition-all"
                     >
                       <Icon name="calendar" size={15} />
                       <span>{ar ? "عرض في مساحتي (لوحة التحكم)" : "Gérer dans mon espace Parent"}</span>
@@ -677,7 +677,7 @@ export function AvsBookingModal({
                     setErrorMessage("");
                     setStep((s) => (s < 4 ? ((s + 1) as 1 | 2 | 3 | 4) : 4));
                   }}
-                  className="px-5 py-2.5 rounded-xl bg-[#082D55] text-white text-xs font-bold hover:bg-[#061f3d] transition-colors shadow-sm"
+                  className="px-5 py-2.5 rounded-xl bg-[#0056D2] text-white text-xs font-bold hover:bg-[#00419E] transition-colors shadow-xs"
                 >
                   {step === 2
                     ? ar

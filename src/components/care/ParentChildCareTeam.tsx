@@ -66,14 +66,14 @@ export function ParentChildCareTeam({
 
   if (childrenSummaries.length === 0) {
     return (
-      <div className="rounded-2xl border border-[#E7E0D3] bg-[#FCFBF8] p-12 text-center shadow-xs">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#F6F1E7] text-[#a9752f]">
-          <Users size={32} />
+      <div className="rounded-xl border border-[#E2E8F0] bg-white p-12 text-center shadow-xs">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-[#F0F6FF] text-[#0056D2]">
+          <Users size={28} />
         </div>
-        <h3 className="mt-4 font-[family-name:var(--font-fraunces)] text-xl font-semibold text-[#082D55]">
+        <h3 className="mt-4 text-xl font-bold text-[#0F172A]">
           {ar ? "لا يوجد أطفال مرتبطون بحسابك حالياً" : "Aucun enfant associé à votre compte"}
         </h3>
-        <p className="mt-2 text-sm text-[#7a7261] max-w-md mx-auto leading-relaxed">
+        <p className="mt-2 text-sm text-[#64748B] max-w-md mx-auto leading-relaxed">
           {ar
             ? "أضف ملف طفلك الآن لمتابعة مشروعه التربوي المخصص (PPS)، والوصول المباشر إلى فريق الدعم والمختصين التربويين."
             : "Ajoutez le profil de votre enfant pour activer son Projet Personnalisé de Scolarisation (PPS) et coordonner son équipe d'accompagnement."}
@@ -190,16 +190,16 @@ export function ParentChildCareTeam({
 
       {/* Child selector (if more than 1 child) */}
       {childrenSummaries.length > 1 && (
-        <div className="flex flex-wrap gap-2 border-b border-[#E7E0D3] pb-3 print:hidden">
+        <div className="flex flex-wrap gap-2 border-b border-[#E2E8F0] pb-3 print:hidden">
           {childrenSummaries.map((s, idx) => (
             <button
               key={s.child.id}
               type="button"
               onClick={() => setActiveChildIndex(idx)}
-              className={`rounded-xl px-4 py-2 text-xs font-semibold transition ${
+              className={`rounded-lg px-4 py-2 text-xs font-semibold transition ${
                 idx === activeChildIndex
-                  ? "bg-[#082D55] text-white shadow-xs"
-                  : "bg-white text-[#7a7261] border border-[#E7E0D3] hover:bg-[#F6F1E7]"
+                  ? "bg-[#0056D2] text-white shadow-xs"
+                  : "bg-white text-[#64748B] border border-[#E2E8F0] hover:bg-[#F8FAFC]"
               }`}
             >
               {s.child.firstName}
@@ -210,26 +210,26 @@ export function ParentChildCareTeam({
       )}
 
       {/* Active Child Dossier Header */}
-      <div className="rounded-2xl border border-[#E7E0D3] bg-[#FCFBF8] p-6 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="rounded-xl border border-[#E2E8F0] bg-white p-6 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2.5">
-            <h2 className="font-[family-name:var(--font-fraunces)] text-2xl font-bold text-[#082D55]">
+            <h2 className="text-2xl font-bold tracking-tight text-[#0F172A]">
               {currentChild.child.name}
             </h2>
             {currentChild.child.age !== null && (
-              <span className="rounded-md bg-[#F6F1E7] px-2 py-0.5 text-xs font-semibold text-[#7a7261]">
+              <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">
                 {currentChild.child.age} {ar ? "سنوات" : "ans"}
               </span>
             )}
-            <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+            <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-[#0056D2]">
               {currentChild.relationshipType}
             </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 border border-emerald-200">
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 border border-emerald-200">
               <CheckCircle2 size={12} />
               {ar ? "خطة تربوية معتمدة (PPS)" : "PPS Actif & Validé"}
             </span>
           </div>
-          <p className="mt-1 text-xs text-[#7a7261]">
+          <p className="mt-1 text-xs text-[#64748B]">
             {ar
               ? "الخطة التربوية الفردية (IEP)، فريق المرافقة المدرسية والتأهيل، والملاحظات الإكلينيكية المشتركة."
               : "Projet Personnalisé de Scolarisation (PPS/GEVA-Sco), équipe pluridisciplinaire et suivi des séances."}
@@ -246,24 +246,24 @@ export function ParentChildCareTeam({
           <button
             type="button"
             onClick={handlePrintIep}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-[#082D55] bg-white px-3.5 py-2 text-xs font-semibold text-[#082D55] hover:bg-[#F6F1E7] transition shadow-2xs"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#CBD5E1] bg-white px-3.5 py-2 text-xs font-semibold text-[#0F172A] hover:bg-[#F8FAFC] transition shadow-xs"
             title={ar ? "طباعة ملخص الخطة التربوية الفردية" : "Imprimer la synthèse du PPS"}
           >
-            <Printer size={14} className="text-[#a9752f]" />
+            <Printer size={14} className="text-[#0056D2]" />
             <span>{ar ? "طباعة ملف PPS" : "Imprimer la fiche PPS"}</span>
           </button>
 
           <Link
             href={`/${locale}/parent/specialistes`}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-[#E7E0D3] bg-white px-3.5 py-2 text-xs font-semibold text-[#082D55] hover:bg-[#F6F1E7] transition shadow-2xs"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#CBD5E1] bg-white px-3.5 py-2 text-xs font-semibold text-[#0F172A] hover:bg-[#F8FAFC] transition shadow-xs"
           >
-            <PlusCircle size={14} className="text-[#a9752f]" />
+            <PlusCircle size={14} className="text-[#0056D2]" />
             <span>{ar ? "البحث عن مختص" : "Trouver un spécialiste"}</span>
           </Link>
 
           <Link
             href={`/${locale}/parent/messages`}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[#082D55] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#061F3D] transition shadow-xs"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#0056D2] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#00419E] transition shadow-xs"
           >
             <MessageSquare size={14} />
             <span>{ar ? "الرسائل" : "Messagerie"}</span>
@@ -272,17 +272,17 @@ export function ParentChildCareTeam({
       </div>
 
       {/* Tabs navigation */}
-      <div className="flex border-b border-[#E7E0D3] overflow-x-auto print:hidden">
+      <div className="flex border-b border-[#E2E8F0] overflow-x-auto print:hidden">
         <button
           type="button"
           onClick={() => setActiveTab("iep")}
           className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition shrink-0 ${
             activeTab === "iep"
-              ? "border-[#082D55] text-[#082D55]"
-              : "border-transparent text-[#7a7261] hover:text-[#082D55]"
+              ? "border-[#0056D2] text-[#0056D2]"
+              : "border-transparent text-[#64748B] hover:text-[#0F172A]"
           }`}
         >
-          <Target size={16} className={activeTab === "iep" ? "text-[#a9752f]" : ""} />
+          <Target size={16} className={activeTab === "iep" ? "text-[#0056D2]" : ""} />
           <span>{ar ? "الخطة التربوية الفردية (IEP / PPS)" : "Projet Personnalisé (PPS / IEP)"}</span>
           <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-800">
             {iep.objectives.length}
@@ -294,13 +294,13 @@ export function ParentChildCareTeam({
           onClick={() => setActiveTab("team")}
           className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition shrink-0 ${
             activeTab === "team"
-              ? "border-[#082D55] text-[#082D55]"
-              : "border-transparent text-[#7a7261] hover:text-[#082D55]"
+              ? "border-[#0056D2] text-[#0056D2]"
+              : "border-transparent text-[#64748B] hover:text-[#0F172A]"
           }`}
         >
           <Users size={16} />
           <span>{ar ? "فريق المتابعة وAVS" : "Équipe de suivi & AVS"}</span>
-          <span className="rounded-full bg-[#F6F1E7] px-2 py-0.5 text-xs font-bold text-[#a9752f]">
+          <span className="rounded-full bg-[#F0F6FF] px-2 py-0.5 text-xs font-bold text-[#0056D2]">
             {currentChild.careTeam.length}
           </span>
         </button>
@@ -310,13 +310,13 @@ export function ParentChildCareTeam({
           onClick={() => setActiveTab("notes")}
           className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition shrink-0 ${
             activeTab === "notes"
-              ? "border-[#082D55] text-[#082D55]"
-              : "border-transparent text-[#7a7261] hover:text-[#082D55]"
+              ? "border-[#0056D2] text-[#0056D2]"
+              : "border-transparent text-[#64748B] hover:text-[#0F172A]"
           }`}
         >
           <FileText size={16} />
           <span>{ar ? "ملاحظات المتابعة المشتركة" : "Notes de suivi partagées"}</span>
-          <span className="rounded-full bg-[#F6F1E7] px-2 py-0.5 text-xs font-bold text-[#a9752f]">
+          <span className="rounded-full bg-[#F0F6FF] px-2 py-0.5 text-xs font-bold text-[#0056D2]">
             {currentChild.sharedNotes.length}
           </span>
         </button>
@@ -326,13 +326,13 @@ export function ParentChildCareTeam({
           onClick={() => setActiveTab("documents")}
           className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition shrink-0 ${
             activeTab === "documents"
-              ? "border-[#082D55] text-[#082D55]"
-              : "border-transparent text-[#7a7261] hover:text-[#082D55]"
+              ? "border-[#0056D2] text-[#0056D2]"
+              : "border-transparent text-[#64748B] hover:text-[#0F172A]"
           }`}
         >
           <Download size={16} />
           <span>{ar ? "الملفات والتقارير" : "Documents & Bilans"}</span>
-          <span className="rounded-full bg-[#F6F1E7] px-2 py-0.5 text-xs font-bold text-[#a9752f]">
+          <span className="rounded-full bg-[#F0F6FF] px-2 py-0.5 text-xs font-bold text-[#0056D2]">
             {currentChild.sharedDocuments.length}
           </span>
         </button>
@@ -344,16 +344,16 @@ export function ParentChildCareTeam({
       {activeTab === "iep" && (
         <div className="space-y-6">
           {/* Institutional Overview Card */}
-          <div className="rounded-2xl border border-[#E7E0D3] bg-white p-6 shadow-xs space-y-4">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-[#E7E0D3] pb-4">
+          <div className="rounded-2xl border border-[#E2E8F0] bg-white p-6 shadow-xs space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-[#E2E8F0] pb-4">
               <div className="space-y-1">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#a9752f]">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#0056D2]">
                   {ar ? "ملف الإدماج المدرسي الرسمي" : "Dossier Pédagogique d'Inclusion"}
                 </span>
-                <h3 className="font-[family-name:var(--font-fraunces)] text-lg font-bold text-[#082D55]">
+                <h3 className="text-lg font-bold text-[#0F172A]">
                   {ar ? "وثيقة التوافق التربوي الفردي (PPS)" : "Projet Personnalisé de Scolarisation (PPS)"}
                 </h3>
-                <p className="text-xs text-[#7a7261]">
+                <p className="text-xs text-[#64748B]">
                   {ar
                     ? `السنة الدراسية: ${iep.academicYear} · مصادق عليه من طرف اللجنة البيداغوجية المتعددة الاختصاصات.`
                     : `Année académique : ${iep.academicYear} · Validé par l'Équipe de Suivi de Scolarisation (ESS).`}
@@ -361,22 +361,22 @@ export function ParentChildCareTeam({
               </div>
 
               <div className="flex flex-wrap gap-2 text-xs">
-                <div className="rounded-xl border border-[#E7E0D3] bg-[#FCFBF8] p-3">
-                  <div className="flex items-center gap-1.5 text-[#082D55] font-semibold">
-                    <School size={14} className="text-[#a9752f]" />
+                <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-3">
+                  <div className="flex items-center gap-1.5 text-[#0F172A] font-semibold">
+                    <School size={14} className="text-[#0056D2]" />
                     <span>{ar ? "المؤسسة التعليمية" : "Établissement"}</span>
                   </div>
-                  <p className="mt-0.5 text-[#7a7261] text-[11px]">
+                  <p className="mt-0.5 text-[#64748B] text-[11px]">
                     {currentChild.child.institutionName || iep.institutionName}
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-[#E7E0D3] bg-[#FCFBF8] p-3">
-                  <div className="flex items-center gap-1.5 text-[#082D55] font-semibold">
-                    <GraduationCap size={14} className="text-[#a9752f]" />
+                <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-3">
+                  <div className="flex items-center gap-1.5 text-[#0F172A] font-semibold">
+                    <GraduationCap size={14} className="text-[#0056D2]" />
                     <span>{ar ? "المستوى الدراسي" : "Niveau"}</span>
                   </div>
-                  <p className="mt-0.5 text-[#7a7261] text-[11px]">
+                  <p className="mt-0.5 text-[#64748B] text-[11px]">
                     {currentChild.child.educationLevel || iep.educationLevel}
                   </p>
                 </div>
@@ -385,21 +385,21 @@ export function ParentChildCareTeam({
 
             {/* Referent Teacher & Multi-disciplinary committee info */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1 text-xs">
-              <div className="rounded-xl bg-[#FCFBF8] border border-[#E7E0D3] p-3">
-                <span className="text-[#a39c8a] text-[11px] block">
+              <div className="rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] p-3">
+                <span className="text-[#94A3B8] text-[11px] block">
                   {ar ? "الأستاذ(ة) المنسق(ة) للدمج (ESS)" : "Enseignant(e) Référent(e) (ESS)"}
                 </span>
-                <strong className="text-[#082D55] text-xs font-semibold block mt-0.5">
+                <strong className="text-[#0F172A] text-xs font-semibold block mt-0.5">
                   {iep.referentTeacher.name}
                 </strong>
-                <span className="text-[11px] text-[#7a7261]">{iep.referentTeacher.contact}</span>
+                <span className="text-[11px] text-[#64748B]">{iep.referentTeacher.contact}</span>
               </div>
 
-              <div className="rounded-xl bg-[#FCFBF8] border border-[#E7E0D3] p-3">
-                <span className="text-[#a39c8a] text-[11px] block">
+              <div className="rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] p-3">
+                <span className="text-[#94A3B8] text-[11px] block">
                   {ar ? "تاريخ آخر لجنة متابعة" : "Dernière commission (ESS)"}
                 </span>
-                <strong className="text-[#082D55] text-xs font-semibold block mt-0.5">
+                <strong className="text-[#0F172A] text-xs font-semibold block mt-0.5">
                   {iep.lastReviewDate}
                 </strong>
                 <span className="text-[11px] text-emerald-700 font-medium">
@@ -407,14 +407,14 @@ export function ParentChildCareTeam({
                 </span>
               </div>
 
-              <div className="rounded-xl bg-[#FCFBF8] border border-[#E7E0D3] p-3">
-                <span className="text-[#a39c8a] text-[11px] block">
+              <div className="rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] p-3">
+                <span className="text-[#94A3B8] text-[11px] block">
                   {ar ? "الموعد القادم للمراجعة" : "Prochaine évaluation"}
                 </span>
-                <strong className="text-[#082D55] text-xs font-semibold block mt-0.5">
+                <strong className="text-[#0F172A] text-xs font-semibold block mt-0.5">
                   {iep.nextReviewDate}
                 </strong>
-                <span className="text-[11px] text-[#a9752f] font-medium">
+                <span className="text-[11px] text-[#0056D2] font-medium">
                   {ar ? "جلسة تقييم منتصف الفصل" : "Bilan mi-parcours"}
                 </span>
               </div>
@@ -423,7 +423,7 @@ export function ParentChildCareTeam({
 
           {/* Strengths & Focus areas summary cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-5 space-y-3">
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5 space-y-3">
               <div className="flex items-center gap-2 text-emerald-900 font-semibold text-xs">
                 <Sparkles size={16} className="text-emerald-700" />
                 <span>{ar ? "نقاط القوة والدعائم التعليمية" : "Points d'appui & Leviers d'apprentissage"}</span>
@@ -438,7 +438,7 @@ export function ParentChildCareTeam({
               </ul>
             </div>
 
-            <div className="rounded-2xl border border-amber-200 bg-amber-50/40 p-5 space-y-3">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-5 space-y-3">
               <div className="flex items-center gap-2 text-amber-900 font-semibold text-xs">
                 <AlertCircle size={16} className="text-amber-700" />
                 <span>{ar ? "محاور اليقظة والدعم ذو الأولوية" : "Axes de vigilance & Besoins prioritaires"}</span>
@@ -455,14 +455,14 @@ export function ParentChildCareTeam({
           </div>
 
           {/* Section: Pedagogical Adaptations Matrix */}
-          <div className="rounded-2xl border border-[#E7E0D3] bg-white p-6 shadow-xs space-y-4">
+          <div className="rounded-2xl border border-[#E2E8F0] bg-white p-6 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
-                <h3 className="font-[family-name:var(--font-fraunces)] text-lg font-bold text-[#082D55] flex items-center gap-2">
-                  <BookmarkCheck size={18} className="text-[#a9752f]" />
+                <h3 className="text-lg font-bold text-[#0F172A] flex items-center gap-2">
+                  <BookmarkCheck size={18} className="text-[#0056D2]" />
                   <span>{ar ? "التكييفات والتعديلات البيداغوجية المعتمدة" : "Aménagements & Préconisations Pédagogiques"}</span>
                 </h3>
-                <p className="text-xs text-[#7a7261]">
+                <p className="text-xs text-[#64748B]">
                   {ar
                     ? "إجراءات التكييف المعتمدة رسمياً داخل القسم وفي قاعات الامتحانات لضمان تكافؤ الفرص."
                     : "Adaptations obligatoires appliquées en classe et lors des examens selon le cadre légal de l'inclusion."}
@@ -485,8 +485,8 @@ export function ParentChildCareTeam({
                     onClick={() => setAdaptationCategory(item.key)}
                     className={`rounded-lg px-2.5 py-1 font-semibold transition text-[11px] ${
                       adaptationCategory === item.key
-                        ? "bg-[#082D55] text-white"
-                        : "bg-[#F6F1E7] text-[#7a7261] hover:bg-[#E7E0D3]"
+                        ? "bg-[#0056D2] text-white"
+                        : "bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0]"
                     }`}
                   >
                     {ar ? item.labelAr : item.labelFr}
@@ -499,10 +499,10 @@ export function ParentChildCareTeam({
               {filteredAdaptations.map((adapt, idx) => (
                 <div
                   key={idx}
-                  className="rounded-2xl border border-[#E7E0D3] bg-[#FCFBF8] p-4 space-y-2 hover:border-[#a9752f]/40 transition"
+                  className="rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-4 space-y-2 hover:border-[#0056D2]/40 transition"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-800">
+                    <span className="rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-[#0056D2]">
                       {adapt.category}
                     </span>
                     <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 flex items-center gap-1">
@@ -511,11 +511,11 @@ export function ParentChildCareTeam({
                     </span>
                   </div>
 
-                  <h4 className="text-xs font-bold text-[#082D55]">
+                  <h4 className="text-xs font-bold text-[#0F172A]">
                     {ar ? adapt.titleAr : adapt.titleFr}
                   </h4>
 
-                  <p className="text-xs text-[#7a7261] leading-relaxed">
+                  <p className="text-xs text-[#64748B] leading-relaxed">
                     {ar ? adapt.descriptionAr : adapt.descriptionFr}
                   </p>
                 </div>
@@ -524,20 +524,20 @@ export function ParentChildCareTeam({
           </div>
 
           {/* Section: Individualized Educational Goals & Progress */}
-          <div className="rounded-2xl border border-[#E7E0D3] bg-white p-6 shadow-xs space-y-4">
+          <div className="rounded-2xl border border-[#E2E8F0] bg-white p-6 shadow-xs space-y-4">
             <div>
-              <h3 className="font-[family-name:var(--font-fraunces)] text-lg font-bold text-[#082D55] flex items-center gap-2">
-                <Award size={18} className="text-[#a9752f]" />
+              <h3 className="text-lg font-bold text-[#0F172A] flex items-center gap-2">
+                <Award size={18} className="text-[#0056D2]" />
                 <span>{ar ? "الأهداف التربوية الفردية ومؤشرات الاكتساب" : "Objectifs d'Apprentissage & Paliers d'Acquisition"}</span>
               </h3>
-              <p className="text-xs text-[#7a7261]">
+              <p className="text-xs text-[#64748B]">
                 {ar
                   ? "متابعة دقيقة للأهداف المحددة في الخطة التربوية ونسبة التقدم المحرز فيها بالتنسيق مع فريق المتابعة."
                   : "Indicateurs de progression mesurés en collaboration avec l'AVS, l'équipe enseignante et les rééducateurs."}
               </p>
             </div>
 
-            <div className="divide-y divide-[#E7E0D3]">
+            <div className="divide-y divide-[#E2E8F0]">
               {iep.objectives.map((goal) => {
                 let badgeStyle = "bg-blue-50 text-blue-800 border-blue-200";
                 let statusLabel = ar ? "قيد الاكتساب" : "En cours";
@@ -557,7 +557,7 @@ export function ParentChildCareTeam({
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                       <div className="space-y-0.5">
                         <div className="flex items-center gap-2">
-                          <span className="rounded-md bg-[#F6F1E7] px-2 py-0.5 text-[10px] font-bold text-[#a9752f]">
+                          <span className="rounded-md bg-[#F0F6FF] px-2 py-0.5 text-[10px] font-bold text-[#0056D2]">
                             {goal.domain}
                           </span>
                           <span
@@ -566,32 +566,32 @@ export function ParentChildCareTeam({
                             {statusLabel}
                           </span>
                         </div>
-                        <h4 className="text-xs font-bold text-[#082D55] pt-0.5">
+                        <h4 className="text-xs font-bold text-[#0F172A] pt-0.5">
                           {ar ? goal.titleAr : goal.titleFr}
                         </h4>
                       </div>
 
                       <div className="flex items-center gap-2 flex-none" dir="ltr">
-                        <div className="w-28 bg-[#E7E0D3] rounded-full h-2 overflow-hidden">
+                        <div className="w-28 bg-[#E2E8F0] rounded-full h-2 overflow-hidden">
                           <div
-                            className="bg-[#082D55] h-full rounded-full transition-all duration-500"
+                            className="bg-[#0056D2] h-full rounded-full transition-all duration-500"
                             style={{ width: `${goal.progressPercent}%` }}
                           />
                         </div>
-                        <span className="text-xs font-bold text-[#082D55] w-8 text-right">
+                        <span className="text-xs font-bold text-[#0F172A] w-8 text-right">
                           {goal.progressPercent}%
                         </span>
                       </div>
                     </div>
 
-                    <p className="text-xs text-[#7a7261]">
+                    <p className="text-xs text-[#64748B]">
                       {ar ? goal.descriptionAr : goal.descriptionFr}
                     </p>
 
-                    <div className="flex items-center justify-between text-[11px] text-[#a39c8a] pt-1">
+                    <div className="flex items-center justify-between text-[11px] text-[#94A3B8] pt-1">
                       <span>
                         {ar ? "المقيم المعتمد :" : "Évaluateur référent :"}{" "}
-                        <strong className="text-[#082D55]">
+                        <strong className="text-[#0F172A]">
                           {ar ? goal.evaluatorRoleAr : goal.evaluatorRoleFr}
                         </strong>
                       </span>
@@ -603,14 +603,14 @@ export function ParentChildCareTeam({
           </div>
 
           {/* Parental Observation Box */}
-          <div className="rounded-2xl border border-[#E7E0D3] bg-[#FCFBF8] p-6 shadow-xs space-y-3">
+          <div className="rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-6 shadow-xs space-y-3">
             <div className="flex items-center gap-2">
-              <MessageSquare size={16} className="text-[#a9752f]" />
-              <h4 className="text-xs font-bold text-[#082D55]">
+              <MessageSquare size={16} className="text-[#0056D2]" />
+              <h4 className="text-xs font-bold text-[#0F172A]">
                 {ar ? "ملاحظة أسرية لفريق المتابعة" : "Note d'observation familiale pour l'équipe"}
               </h4>
             </div>
-            <p className="text-xs text-[#7a7261]">
+            <p className="text-xs text-[#64748B]">
               {ar
                 ? "يمكنك تدوين أي ملاحظات منزلية، سلوكية أو صحية ليتم أخذها بعين الاعتبار في اجتماعات فريق المتابعة القادمة."
                 : "Partagez des remarques sur le quotidien à la maison ou des évolutions observées afin de nourrir la prochaine commission."}
@@ -626,7 +626,7 @@ export function ParentChildCareTeam({
                     ? "أدخل ملاحظتك هنا (مثل: تحسن في الاستقلالية أثناء إعداد الواجبات المنزلية، تعب في أوقات المساء...)"
                     : "Ex : Très bonne autonomie constatée lors des devoirs à la maison cette semaine..."
                 }
-                className="w-full rounded-xl border border-[#E7E0D3] bg-white p-3 text-xs text-[#082D55] placeholder:text-[#a39c8a] focus:border-[#082D55] focus:outline-none"
+                className="w-full rounded-xl border border-[#E2E8F0] bg-white p-3 text-xs text-[#0F172A] placeholder:text-[#94A3B8] focus:border-[#0056D2] focus:outline-none"
               />
 
               <div className="flex items-center justify-between">
@@ -642,7 +642,7 @@ export function ParentChildCareTeam({
                 <button
                   type="submit"
                   disabled={parentNoteSending || !parentNoteText.trim()}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#082D55] px-4 py-2 text-xs font-semibold text-white hover:bg-[#061F3D] disabled:opacity-40 transition shadow-xs"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#0056D2] px-4 py-2 text-xs font-semibold text-white hover:bg-[#00419E] disabled:opacity-40 transition shadow-xs"
                 >
                   <Send size={13} />
                   <span>
@@ -667,19 +667,19 @@ export function ParentChildCareTeam({
       {activeTab === "team" && (
         <div className="space-y-4">
           {currentChild.careTeam.length === 0 ? (
-            <div className="rounded-2xl border border-[#E7E0D3] bg-white p-12 text-center shadow-xs">
-              <Users size={36} className="mx-auto text-[#a39c8a]" />
-              <h3 className="mt-3 font-[family-name:var(--font-fraunces)] text-lg font-semibold text-[#082D55]">
+            <div className="rounded-2xl border border-[#E2E8F0] bg-white p-12 text-center shadow-xs">
+              <Users size={36} className="mx-auto text-[#94A3B8]" />
+              <h3 className="mt-3 text-lg font-bold text-[#0F172A]">
                 {ar ? "لا يوجد أخصائي أو مرافقة متابعة حالياً" : "Aucun accompagnant ou spécialiste assigné"}
               </h3>
-              <p className="mt-1 text-xs text-[#7a7261] max-w-sm mx-auto">
+              <p className="mt-1 text-xs text-[#64748B] max-w-sm mx-auto">
                 {ar
                   ? "يمكنك استكشاف دليل المرافقة المدرسية (AVS) والأخصائيين المعتمدين واختيار الفريق الأنسب لاحتياجات طفلك."
                   : "Consultez l'annuaire pour trouver des AVS certifiés, des orthophonistes ou des psychomotriciens."}
               </p>
               <Link
                 href={`/${locale}/parent/specialistes`}
-                className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[#082D55] px-4 py-2 text-xs font-semibold text-white hover:bg-[#061F3D] transition shadow-xs"
+                className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[#0056D2] px-4 py-2 text-xs font-semibold text-white hover:bg-[#00419E] transition shadow-xs"
               >
                 <PlusCircle size={14} />
                 <span>{ar ? "دليل الأخصائيين وAVS" : "Consulter l'annuaire"}</span>
@@ -692,7 +692,7 @@ export function ParentChildCareTeam({
                 return (
                   <div
                     key={member.assignmentId}
-                    className="rounded-2xl border border-[#E7E0D3] bg-white p-5 shadow-xs space-y-4"
+                    className="rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-xs space-y-4 hover:border-[#0056D2]/30 transition"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
@@ -702,20 +702,20 @@ export function ParentChildCareTeam({
                             alt={member.specialist.name}
                             width={48}
                             height={48}
-                            className="h-12 w-12 rounded-full object-cover border border-[#E7E0D3]"
+                            className="h-12 w-12 rounded-full object-cover border border-[#E2E8F0]"
                           />
                         ) : (
-                          <div className="flex h-12 w-12 flex-none items-center justify-center rounded-full bg-[#082D55]/10 text-base font-bold text-[#082D55]">
+                          <div className="flex h-12 w-12 flex-none items-center justify-center rounded-full bg-[#F0F6FF] text-base font-bold text-[#0056D2]">
                             {member.specialist.name.charAt(0).toUpperCase()}
                           </div>
                         )}
 
                         <div>
                           <div className="flex items-center gap-1.5">
-                            <strong className="text-sm font-semibold text-[#082D55]">
+                            <strong className="text-sm font-semibold text-[#0F172A]">
                               {member.specialist.name}
                             </strong>
-                            <ShieldCheck size={14} className="text-[#a9752f]" />
+                            <ShieldCheck size={14} className="text-[#0056D2]" />
                           </div>
 
                           <div className="flex items-center gap-1.5 mt-0.5">
@@ -724,14 +724,14 @@ export function ParentChildCareTeam({
                                 {ar ? "مرافقة مدرسية (AVS)" : "Accompagnant de Vie Scolaire (AVS)"}
                               </span>
                             ) : (
-                              <span className="text-xs text-[#a9752f] font-medium">
+                              <span className="text-xs text-[#0056D2] font-medium">
                                 {member.specialist.specialty || (ar ? "أخصائي معتمد" : "Spécialiste")}
                               </span>
                             )}
                           </div>
 
                           {(member.specialist.city || member.specialist.governorate) && (
-                            <p className="flex items-center gap-1 text-[11px] text-[#7a7261] mt-1">
+                            <p className="flex items-center gap-1 text-[11px] text-[#64748B] mt-1">
                               <MapPin size={11} />
                               <span>
                                 {member.specialist.city ? `${member.specialist.city}, ` : ""}
@@ -748,14 +748,14 @@ export function ParentChildCareTeam({
                     </div>
 
                     {/* Next session preview */}
-                    <div className="rounded-xl border border-[#E7E0D3] bg-[#FCFBF8] p-3 text-xs space-y-1">
-                      <span className="font-semibold text-[#082D55] flex items-center gap-1.5">
-                        <CalendarDays size={13} className="text-[#a9752f]" />
+                    <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-3 text-xs space-y-1">
+                      <span className="font-semibold text-[#0F172A] flex items-center gap-1.5">
+                        <CalendarDays size={13} className="text-[#0056D2]" />
                         {ar ? "الجلسة القادمة :" : "Prochaine séance :"}
                       </span>
                       {member.nextAppointment ? (
                         <div className="flex items-center justify-between gap-2 pt-1">
-                          <span className="text-[#7a7261]">
+                          <span className="text-[#64748B]">
                             {new Date(member.nextAppointment.startAt).toLocaleString(
                               ar ? "ar-TN" : "fr-TN",
                               { dateStyle: "medium", timeStyle: "short" },
@@ -766,7 +766,7 @@ export function ParentChildCareTeam({
                               href={member.nextAppointment.meetingUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-xs font-semibold text-[#082D55] hover:underline"
+                              className="inline-flex items-center gap-1 text-xs font-semibold text-[#0056D2] hover:underline"
                             >
                               <Video size={12} />
                               <span>{ar ? "رابط الجلسة" : "Rejoindre"}</span>
@@ -774,7 +774,7 @@ export function ParentChildCareTeam({
                           )}
                         </div>
                       ) : (
-                        <p className="text-[11px] text-[#a39c8a]">
+                        <p className="text-[11px] text-[#94A3B8]">
                           {isAvs
                             ? ar
                               ? "المرافقة منتظمة وفق الجدول المدرسي للأسبوع"
@@ -787,12 +787,12 @@ export function ParentChildCareTeam({
                     </div>
 
                     {/* Actions */}
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#E7E0D3] pt-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#E2E8F0] pt-3">
                       <div className="flex items-center gap-2">
                         {member.conversationId ? (
                           <Link
                             href={`/${locale}/parent/messages/${member.conversationId}`}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-[#082D55] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#061F3D] transition shadow-2xs"
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-[#0056D2] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#00419E] transition shadow-2xs"
                           >
                             <MessageSquare size={13} />
                             <span>{ar ? "الرسائل" : "Messagerie"}</span>
@@ -800,7 +800,7 @@ export function ParentChildCareTeam({
                         ) : (
                           <Link
                             href={`/${locale}/parent/messages`}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-[#082D55] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#061F3D] transition shadow-2xs"
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-[#0056D2] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#00419E] transition shadow-2xs"
                           >
                             <MessageSquare size={13} />
                             <span>{ar ? "الرسائل" : "Messagerie"}</span>
@@ -831,24 +831,24 @@ export function ParentChildCareTeam({
       {activeTab === "notes" && (
         <div className="space-y-4">
           {currentChild.sharedNotes.length === 0 ? (
-            <div className="rounded-2xl border border-[#E7E0D3] bg-white p-12 text-center shadow-xs">
-              <FileText size={36} className="mx-auto text-[#a39c8a]" />
-              <h3 className="mt-3 font-[family-name:var(--font-fraunces)] text-lg font-semibold text-[#082D55]">
+            <div className="rounded-2xl border border-[#E2E8F0] bg-white p-12 text-center shadow-xs">
+              <FileText size={36} className="mx-auto text-[#94A3B8]" />
+              <h3 className="mt-3 text-lg font-bold text-[#0F172A]">
                 {ar ? "لا توجد ملاحظات مشاركة بعد" : "Aucune note partagée pour le moment"}
               </h3>
-              <p className="mt-1 text-xs text-[#7a7261] max-w-sm mx-auto">
+              <p className="mt-1 text-xs text-[#64748B] max-w-sm mx-auto">
                 {ar
                   ? "الملاحظات الإكلينيكية والتوصيات التي يشاركها الأخصائي أو مرافقة AVS بعد كل جلسة ستظهر هنا بانتظام."
                   : "Les observations, points d'étape et recommandations rédigés par l'équipe soignante apparaîtront ici."}
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-[#E7E0D3] rounded-2xl border border-[#E7E0D3] bg-white shadow-xs overflow-hidden">
+            <div className="divide-y divide-[#E2E8F0] rounded-2xl border border-[#E2E8F0] bg-white shadow-xs overflow-hidden">
               {currentChild.sharedNotes.map((note) => (
                 <div key={note.id} className="p-5 space-y-2.5">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
                     <div className="flex items-center gap-2">
-                      <strong className="text-sm font-semibold text-[#082D55]">
+                      <strong className="text-sm font-semibold text-[#0F172A]">
                         {note.title}
                       </strong>
                       {note.isAddendum && (
@@ -857,7 +857,7 @@ export function ParentChildCareTeam({
                         </span>
                       )}
                     </div>
-                    <span className="text-xs text-[#a39c8a] flex items-center gap-1">
+                    <span className="text-xs text-[#94A3B8] flex items-center gap-1">
                       <Clock size={12} />
                       {new Date(note.sessionDate).toLocaleDateString(ar ? "ar-TN" : "fr-TN", {
                         dateStyle: "medium",
@@ -865,13 +865,13 @@ export function ParentChildCareTeam({
                     </span>
                   </div>
 
-                  <p className="text-xs text-[#7a7261]">
+                  <p className="text-xs text-[#64748B]">
                     {ar ? "بواسطة :" : "Par :"}{" "}
-                    <strong className="text-[#082D55]">{note.specialist.name}</strong>
+                    <strong className="text-[#0F172A]">{note.specialist.name}</strong>
                     {note.specialist.specialty ? ` (${note.specialist.specialty})` : ""}
                   </p>
 
-                  <div className="rounded-xl border border-[#E7E0D3] bg-[#FCFBF8] p-4 text-xs leading-relaxed text-[#082D55] whitespace-pre-line">
+                  <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-4 text-xs leading-relaxed text-[#0F172A] whitespace-pre-line">
                     {note.content}
                   </div>
                 </div>
@@ -887,12 +887,12 @@ export function ParentChildCareTeam({
       {activeTab === "documents" && (
         <div className="space-y-4">
           {currentChild.sharedDocuments.length === 0 ? (
-            <div className="rounded-2xl border border-[#E7E0D3] bg-white p-12 text-center shadow-xs">
-              <Download size={36} className="mx-auto text-[#a39c8a]" />
-              <h3 className="mt-3 font-[family-name:var(--font-fraunces)] text-lg font-semibold text-[#082D55]">
+            <div className="rounded-2xl border border-[#E2E8F0] bg-white p-12 text-center shadow-xs">
+              <Download size={36} className="mx-auto text-[#94A3B8]" />
+              <h3 className="mt-3 text-lg font-bold text-[#0F172A]">
                 {ar ? "لا توجد ملفات أو تقارير مشتركة" : "Aucun document partagé"}
               </h3>
-              <p className="mt-1 text-xs text-[#7a7261] max-w-sm mx-auto">
+              <p className="mt-1 text-xs text-[#64748B] max-w-sm mx-auto">
                 {ar
                   ? "التقارير الطبية، الخطط التربوية، والملفات المرفقة تظهر هنا بصيغة آمنة قابلة للتنزيل."
                   : "Les bilans psychomoteurs, bilans orthophoniques et comptes-rendus d'évaluation apparaîtront ici."}
@@ -906,28 +906,28 @@ export function ParentChildCareTeam({
                 return (
                   <div
                     key={doc.id}
-                    className="flex flex-col justify-between rounded-2xl border border-[#E7E0D3] bg-white p-4 shadow-2xs hover:shadow-xs transition"
+                    className="flex flex-col justify-between rounded-2xl border border-[#E2E8F0] bg-white p-4 shadow-2xs hover:border-[#0056D2]/30 transition"
                   >
                     <div>
                       <div className="flex items-center justify-between gap-2">
-                        <span className="rounded-md bg-[#F6F1E7] px-2 py-0.5 text-[10px] font-semibold text-[#a9752f]">
+                        <span className="rounded-md bg-[#F0F6FF] px-2 py-0.5 text-[10px] font-semibold text-[#0056D2]">
                           {doc.documentType}
                         </span>
-                        <span className="text-[10px] text-[#a39c8a]">
+                        <span className="text-[10px] text-[#94A3B8]">
                           {new Date(doc.createdAt).toLocaleDateString(ar ? "ar-TN" : "fr-TN")}
                         </span>
                       </div>
 
-                      <h4 className="mt-2 text-xs font-semibold text-[#082D55] line-clamp-1">
+                      <h4 className="mt-2 text-xs font-semibold text-[#0F172A] line-clamp-1">
                         {doc.title || doc.fileName}
                       </h4>
-                      <p className="text-[11px] text-[#7a7261]">
+                      <p className="text-[11px] text-[#64748B]">
                         {ar ? "الملف :" : "Fichier :"} {doc.fileName} ({sizeKb} Ko)
                       </p>
                     </div>
 
-                    <div className="mt-3 flex items-center justify-between border-t border-[#E7E0D3] pt-2">
-                      <span className="text-[10px] text-[#a39c8a]">
+                    <div className="mt-3 flex items-center justify-between border-t border-[#E2E8F0] pt-2">
+                      <span className="text-[10px] text-[#94A3B8]">
                         {ar ? "المختص :" : "Par :"} {doc.specialist.name}
                       </span>
 
@@ -935,7 +935,7 @@ export function ParentChildCareTeam({
                         type="button"
                         onClick={() => handleDownloadDocument(doc.id, doc.fileName)}
                         disabled={isDownloading}
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-[#082D55] hover:text-[#a9752f] disabled:opacity-40"
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-[#0056D2] hover:text-[#00419E] disabled:opacity-40"
                       >
                         <Download size={13} className={isDownloading ? "animate-pulse" : ""} />
                         <span>
@@ -960,11 +960,11 @@ export function ParentChildCareTeam({
       {/* End Relationship Modal */}
       {endTargetId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 print:hidden">
-          <div className="w-full max-w-md rounded-2xl border border-[#E7E0D3] bg-white p-6 shadow-xl space-y-4">
-            <h3 className="font-[family-name:var(--font-fraunces)] text-lg font-semibold text-[#082D55]">
+          <div className="w-full max-w-md rounded-2xl border border-[#E2E8F0] bg-white p-6 shadow-xl space-y-4">
+            <h3 className="text-lg font-bold text-[#0F172A]">
               {ar ? "تأكيد إنهاء علاقة المتابعة" : "Clôturer le suivi d'accompagnement"}
             </h3>
-            <p className="text-xs text-[#7a7261] leading-relaxed">
+            <p className="text-xs text-[#64748B] leading-relaxed">
               {ar
                 ? "عند إنهاء المتابعة، ستتحول المحادثة مع الأخصائي أو مرافقة AVS إلى وضع القراءة فقط. ستبقى الملاحظات والوثائق السابقة محفوظة في ملف طفلك بأمان."
                 : "La clôture archivera la messagerie en lecture seule. Les notes et bilans antérieurs resteront accessibles pour la traçabilité."}
@@ -972,7 +972,7 @@ export function ParentChildCareTeam({
 
             <form onSubmit={handleEndRelationship} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#082D55] mb-1">
+                <label className="block text-xs font-semibold text-[#0F172A] mb-1">
                   {ar ? "سبب إنهاء المتابعة (اختياري) :" : "Motif de fin de suivi (optionnel) :"}
                 </label>
                 <textarea
@@ -985,16 +985,16 @@ export function ParentChildCareTeam({
                       ? "مثال: انتهاء فترة التأهيل، انتقال إلى مرحلة جديدة..."
                       : "Ex: Fin de la prise en charge, déménagement..."
                   }
-                  className="w-full rounded-xl border border-[#E7E0D3] p-3 text-xs text-[#082D55] focus:border-[#082D55] focus:outline-none"
+                  className="w-full rounded-xl border border-[#E2E8F0] p-3 text-xs text-[#0F172A] placeholder:text-[#94A3B8] focus:border-[#0056D2] focus:outline-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 border-t border-[#E7E0D3] pt-3">
+              <div className="flex items-center justify-end gap-2 border-t border-[#E2E8F0] pt-3">
                 <button
                   type="button"
                   onClick={() => setEndTargetId(null)}
                   disabled={ending}
-                  className="rounded-xl border border-[#E7E0D3] px-3.5 py-1.5 text-xs font-semibold text-[#7a7261] hover:bg-[#F6F1E7]"
+                  className="rounded-xl border border-[#E2E8F0] px-3.5 py-1.5 text-xs font-semibold text-[#64748B] hover:bg-[#F1F5F9]"
                 >
                   {ar ? "إلغاء" : "Annuler"}
                 </button>

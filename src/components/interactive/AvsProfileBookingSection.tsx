@@ -46,13 +46,13 @@ export function AvsProfileBookingSection({ locale, avs }: AvsProfileBookingSecti
   const [showDirectContact, setShowDirectContact] = useState(false);
 
   return (
-    <div className="avs-booking-widget bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 sm:p-7 space-y-6">
+    <div className="avs-booking-widget bg-white rounded-2xl border border-slate-200/90 shadow-xs p-6 sm:p-7 space-y-6">
       {/* Header */}
       <div className="border-b border-slate-100 pb-4">
-        <div className="text-[11px] font-bold uppercase tracking-wider text-[#a66f24]">
+        <div className="text-[11px] font-bold uppercase tracking-wider text-[#0056D2]">
           {ar ? "حجز موعد فوري" : "Prise de rendez-vous en ligne"}
         </div>
-        <h3 className="font-[family-name:var(--font-fraunces)] text-lg sm:text-xl font-bold text-[#082D55] mt-1">
+        <h3 className="text-lg sm:text-xl font-bold text-[#0F172A] mt-1">
           {ar ? "حدد صيغة اللقاء والموعد المناسب" : "Planifier une rencontre"}
         </h3>
         <p className="text-xs text-slate-500 mt-1 leading-relaxed">
@@ -72,7 +72,7 @@ export function AvsProfileBookingSection({ locale, avs }: AvsProfileBookingSecti
       <div>
         <div className="flex items-center justify-between text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
           <span>{ar ? "1. صيغة المقابلة" : "1. Modalité de la rencontre"}</span>
-          <span className="text-[11px] font-semibold text-[#a66f24]">
+          <span className="text-[11px] font-semibold text-[#0056D2]">
             {meetingType === "IN_PERSON"
               ? ar ? "حضوري" : "Sur place"
               : ar ? "عن بعد" : "En ligne"}
@@ -82,25 +82,25 @@ export function AvsProfileBookingSection({ locale, avs }: AvsProfileBookingSecti
           <button
             type="button"
             onClick={() => setMeetingType("IN_PERSON")}
-            className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#082D55] ${
+            className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0056D2] ${
               meetingType === "IN_PERSON"
-                ? "border-[#082D55] bg-[#082D55] text-white shadow-xs font-bold"
+                ? "border-[#0056D2] bg-[#0056D2] text-white shadow-xs font-bold"
                 : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-700"
             }`}
           >
-            <Icon name="map" size={15} className={meetingType === "IN_PERSON" ? "text-amber-300" : "text-slate-400"} />
+            <Icon name="map" size={15} className={meetingType === "IN_PERSON" ? "text-blue-100" : "text-slate-400"} />
             <span>{ar ? "على عين المكان" : "Sur place (Présentiel)"}</span>
           </button>
           <button
             type="button"
             onClick={() => setMeetingType("ONLINE")}
-            className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#082D55] ${
+            className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0056D2] ${
               meetingType === "ONLINE"
-                ? "border-[#082D55] bg-[#082D55] text-white shadow-xs font-bold"
+                ? "border-[#0056D2] bg-[#0056D2] text-white shadow-xs font-bold"
                 : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-700"
             }`}
           >
-            <Icon name="video" size={15} className={meetingType === "ONLINE" ? "text-amber-300" : "text-slate-400"} />
+            <Icon name="video" size={15} className={meetingType === "ONLINE" ? "text-blue-100" : "text-slate-400"} />
             <span>{ar ? "عن بعد (فيديو)" : "En ligne (Visioconférence)"}</span>
           </button>
         </div>
@@ -133,13 +133,13 @@ export function AvsProfileBookingSection({ locale, avs }: AvsProfileBookingSecti
                 type="button"
                 onClick={() => setSelectedDate(d.iso)}
                 aria-pressed={isSelected}
-                className={`py-2 px-1 rounded-xl border text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#082D55] ${
+                className={`py-2 px-1 rounded-xl border text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0056D2] ${
                   isSelected
-                    ? "border-[#082D55] bg-[#082D55] text-white shadow-xs font-bold"
+                    ? "border-[#0056D2] bg-[#0056D2] text-white shadow-xs font-bold"
                     : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-700"
                 }`}
               >
-                <div className={`text-[10px] uppercase tracking-wider font-semibold ${isSelected ? "text-slate-200" : "text-slate-400"}`}>
+                <div className={`text-[10px] uppercase tracking-wider font-semibold ${isSelected ? "text-blue-100" : "text-slate-400"}`}>
                   {d.dayName}
                 </div>
                 <div className={`text-xs mt-0.5 ${isSelected ? "font-bold text-white" : "font-semibold text-slate-700"}`}>
@@ -165,9 +165,9 @@ export function AvsProfileBookingSection({ locale, avs }: AvsProfileBookingSecti
                 type="button"
                 onClick={() => setSelectedSlot(slot)}
                 aria-pressed={isSelected}
-                className={`py-2.5 px-2 rounded-xl border text-xs text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#082D55] ${
+                className={`py-2.5 px-2 rounded-xl border text-xs text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0056D2] ${
                   isSelected
-                    ? "border-[#082D55] bg-[#082D55] text-white shadow-xs font-bold"
+                    ? "border-[#0056D2] bg-[#0056D2] text-white shadow-xs font-bold"
                     : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-700 font-medium"
                 }`}
               >
@@ -183,7 +183,7 @@ export function AvsProfileBookingSection({ locale, avs }: AvsProfileBookingSecti
         <button
           type="button"
           onClick={() => setIsModalOpen(true)}
-          className="w-full py-3.5 px-4 bg-[#082D55] hover:bg-[#061f3d] text-white font-bold text-sm rounded-xl shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#082D55] focus-visible:ring-offset-2"
+          className="w-full py-3.5 px-4 bg-[#0056D2] hover:bg-[#00419E] text-white font-bold text-sm rounded-xl shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0056D2] focus-visible:ring-offset-2"
         >
           <Icon name="calendar" size={16} />
           <span>{ar ? "تأكيد الموعد ومتابعة الطلب" : "Prendre ce rendez-vous"}</span>
@@ -199,10 +199,10 @@ export function AvsProfileBookingSection({ locale, avs }: AvsProfileBookingSecti
         <button
           type="button"
           onClick={() => setShowDirectContact(!showDirectContact)}
-          className="w-full text-xs font-semibold text-slate-600 hover:text-[#082D55] flex items-center justify-between py-1 transition-colors group"
+          className="w-full text-xs font-semibold text-slate-600 hover:text-[#0056D2] flex items-center justify-between py-1 transition-colors group"
         >
           <span className="flex items-center gap-2">
-            <Icon name="phone" size={14} className="text-slate-400 group-hover:text-[#082D55]" />
+            <Icon name="phone" size={14} className="text-slate-400 group-hover:text-[#0056D2]" />
             <span>{ar ? "معلومات الاتصال المباشر" : "Coordonnées de l'accompagnant"}</span>
           </span>
           <Icon

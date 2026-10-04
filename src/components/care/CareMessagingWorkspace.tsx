@@ -224,29 +224,29 @@ export function CareMessagingWorkspace({
 
   return (
     <div
-      className="flex flex-col h-[calc(100vh-140px)] min-h-[550px] rounded-2xl border border-[#E7E0D3] bg-white shadow-sm overflow-hidden"
+      className="flex flex-col h-[calc(100vh-140px)] min-h-[550px] rounded-2xl border border-[#E2E8F0] bg-white shadow-xs overflow-hidden"
       dir={ar ? "rtl" : "ltr"}
     >
       <div className="grid grid-cols-1 md:grid-cols-12 h-full">
         {/* Left Pane: Conversations List */}
         <aside
-          className={`md:col-span-4 lg:col-span-4 border-e border-[#E7E0D3] flex flex-col h-full bg-[#FCFBF8] ${
+          className={`md:col-span-4 lg:col-span-4 border-e border-[#E2E8F0] flex flex-col h-full bg-[#F8FAFC] ${
             selectedId ? "hidden md:flex" : "flex"
           }`}
         >
           {/* List Header */}
-          <div className="p-4 border-b border-[#E7E0D3] bg-white space-y-3">
+          <div className="p-4 border-b border-[#E2E8F0] bg-white space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="font-[family-name:var(--font-fraunces)] text-lg font-semibold text-[#082D55]">
+              <h2 className="text-lg font-bold text-[#0F172A]">
                 {ar ? "المحادثات" : "Discussions"}
               </h2>
-              <span className="text-xs font-semibold text-[#a9752f] bg-[#F6F1E7] px-2.5 py-0.5 rounded-full">
+              <span className="text-xs font-semibold text-[#0056D2] bg-[#F0F6FF] px-2.5 py-0.5 rounded-full">
                 {conversations.length}
               </span>
             </div>
 
             <div className="relative">
-              <span className="pointer-events-none absolute inset-y-0 start-3 flex items-center text-[#7a7261]">
+              <span className="pointer-events-none absolute inset-y-0 start-3 flex items-center text-[#64748B]">
                 <Search size={14} />
               </span>
               <input
@@ -256,16 +256,16 @@ export function CareMessagingWorkspace({
                 placeholder={
                   ar ? "البحث بالاسم أو الطفل..." : "Rechercher par nom, enfant..."
                 }
-                className="w-full rounded-xl border border-[#E7E0D3] bg-[#FCFBF8] py-1.5 ps-8 pe-3 text-xs text-[#082D55] placeholder:text-[#a39c8a] focus:border-[#082D55] focus:outline-none"
+                className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] py-1.5 ps-8 pe-3 text-xs text-[#0F172A] placeholder:text-[#94A3B8] focus:border-[#0056D2] focus:outline-none"
               />
             </div>
           </div>
 
           {/* Conversations Scroll Area */}
-          <div className="flex-1 overflow-y-auto divide-y divide-[#E7E0D3]">
+          <div className="flex-1 overflow-y-auto divide-y divide-[#E2E8F0]">
             {filteredConversations.length === 0 ? (
-              <div className="p-8 text-center text-[#a39c8a] space-y-2">
-                <MessageSquare size={28} className="mx-auto text-[#a39c8a]" />
+              <div className="p-8 text-center text-[#94A3B8] space-y-2">
+                <MessageSquare size={28} className="mx-auto text-[#94A3B8]" />
                 <p className="text-xs">
                   {conversations.length === 0
                     ? ar
@@ -284,8 +284,8 @@ export function CareMessagingWorkspace({
                     key={c.id}
                     type="button"
                     onClick={() => handleSelectConversation(c.id)}
-                    className={`w-full text-start p-4 transition flex items-start gap-3 hover:bg-[#F6F1E7]/50 ${
-                      isSelected ? "bg-white border-s-4 border-s-[#082D55]" : ""
+                    className={`w-full text-start p-4 transition flex items-start gap-3 hover:bg-[#F1F5F9]/50 ${
+                      isSelected ? "bg-white border-s-4 border-s-[#0056D2]" : ""
                     }`}
                   >
                     {c.counterparty.avatarUrl ? (
@@ -294,21 +294,21 @@ export function CareMessagingWorkspace({
                         alt={c.counterparty.name}
                         width={42}
                         height={42}
-                        className="h-10 w-10 rounded-full object-cover border border-[#E7E0D3] flex-none"
+                        className="h-10 w-10 rounded-full object-cover border border-[#E2E8F0] flex-none"
                       />
                     ) : (
-                      <div className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[#082D55]/10 text-xs font-bold text-[#082D55]">
+                      <div className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[#F0F6FF] text-xs font-bold text-[#0056D2]">
                         {c.counterparty.name.charAt(0).toUpperCase()}
                       </div>
                     )}
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-1">
-                        <strong className="truncate text-xs font-semibold text-[#082D55]">
+                        <strong className="truncate text-xs font-semibold text-[#0F172A]">
                           {c.counterparty.name}
                         </strong>
                         {c.lastMessageAt && (
-                          <span className="text-[10px] text-[#a39c8a] flex-none">
+                          <span className="text-[10px] text-[#94A3B8] flex-none">
                             {new Date(c.lastMessageAt).toLocaleDateString(
                               ar ? "ar-TN" : "fr-TN",
                               { month: "short", day: "numeric" },
@@ -318,25 +318,25 @@ export function CareMessagingWorkspace({
                       </div>
 
                       <div className="mt-0.5 flex items-center gap-1.5 flex-wrap">
-                        <span className="rounded-md bg-[#F6F1E7] px-1.5 py-0.5 text-[10px] font-medium text-[#7a7261]">
+                        <span className="rounded-md bg-[#F1F5F9] px-1.5 py-0.5 text-[10px] font-medium text-[#64748B]">
                           {c.child.firstName}
                           {c.child.age !== null ? ` (${c.child.age}a)` : ""}
                         </span>
                         {c.counterparty.specialty && (
-                          <span className="truncate text-[10px] text-[#a9752f]">
+                          <span className="truncate text-[10px] text-[#0056D2]">
                             {c.counterparty.specialty}
                           </span>
                         )}
                       </div>
 
                       <div className="mt-1.5 flex items-center justify-between gap-2">
-                        <p className="truncate text-xs text-[#7a7261]">
+                        <p className="truncate text-xs text-[#64748B]">
                           {c.lastMessagePreview ||
                             (ar ? "بدء المحادثة..." : "Nouvel échange...")}
                         </p>
 
                         {c.unreadCount > 0 && (
-                          <span className="flex-none grid h-4 w-4 place-items-center rounded-full bg-[#a9752f] text-[10px] font-bold text-white">
+                          <span className="flex-none grid h-4 w-4 place-items-center rounded-full bg-[#0056D2] text-[10px] font-bold text-white">
                             {c.unreadCount}
                           </span>
                         )}
@@ -344,7 +344,7 @@ export function CareMessagingWorkspace({
                         {c.status === "READ_ONLY" && (
                           <span
                             title={ar ? "المتابعة منتهية" : "Suivi clôturé"}
-                            className="flex-none text-[#a39c8a]"
+                            className="flex-none text-[#94A3B8]"
                           >
                             <Lock size={12} />
                           </span>
@@ -367,13 +367,13 @@ export function CareMessagingWorkspace({
           {selectedConversation ? (
             <>
               {/* Thread Header */}
-              <div className="p-3.5 border-b border-[#E7E0D3] bg-white flex items-center justify-between gap-3">
+              <div className="p-3.5 border-b border-[#E2E8F0] bg-white flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 min-w-0">
                   {/* Mobile Back Button */}
                   <button
                     type="button"
                     onClick={handleBackToList}
-                    className="md:hidden p-1.5 rounded-lg text-[#7a7261] hover:bg-[#F6F1E7]"
+                    className="md:hidden p-1.5 rounded-lg text-[#64748B] hover:bg-[#F1F5F9]"
                     aria-label={ar ? "رجوع" : "Retour"}
                   >
                     {ar ? <ArrowRight size={18} /> : <ArrowLeft size={18} />}
@@ -385,28 +385,28 @@ export function CareMessagingWorkspace({
                       alt={selectedConversation.counterparty.name}
                       width={38}
                       height={38}
-                      className="h-9 w-9 rounded-full object-cover border border-[#E7E0D3] flex-none"
+                      className="h-9 w-9 rounded-full object-cover border border-[#E2E8F0] flex-none"
                     />
                   ) : (
-                    <div className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-[#082D55]/10 text-xs font-bold text-[#082D55]">
+                    <div className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-[#F0F6FF] text-xs font-bold text-[#0056D2]">
                       {selectedConversation.counterparty.name.charAt(0).toUpperCase()}
                     </div>
                   )}
 
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <strong className="truncate text-sm font-semibold text-[#082D55]">
+                      <strong className="truncate text-sm font-semibold text-[#0F172A]">
                         {selectedConversation.counterparty.name}
                       </strong>
                       {selectedConversation.counterparty.specialty && (
-                        <span className="hidden sm:inline-block text-xs text-[#a9752f]">
+                        <span className="hidden sm:inline-block text-xs text-[#0056D2]">
                           ({selectedConversation.counterparty.specialty})
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs text-[#7a7261]">
+                    <div className="flex items-center gap-1.5 text-xs text-[#64748B]">
                       <span>{ar ? "متابعة:" : "Suivi :"}</span>
-                      <strong className="text-[#082D55]">
+                      <strong className="text-[#0F172A]">
                         {selectedConversation.child.firstName}
                       </strong>
                       {selectedConversation.child.age !== null && (
@@ -420,7 +420,7 @@ export function CareMessagingWorkspace({
 
                 <div className="flex items-center gap-2">
                   {selectedConversation.status === "READ_ONLY" ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-0.5 text-[11px] font-medium text-zinc-600">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-600">
                       <Lock size={11} />
                       {ar ? "للقراءة فقط" : "Lecture seule"}
                     </span>
@@ -435,12 +435,12 @@ export function CareMessagingWorkspace({
                     type="button"
                     onClick={handleManualRefresh}
                     disabled={refreshing}
-                    className="p-1.5 rounded-lg text-[#7a7261] hover:bg-[#F6F1E7] transition"
+                    className="p-1.5 rounded-lg text-[#64748B] hover:bg-[#F1F5F9] transition"
                     title={ar ? "تحديث" : "Actualiser"}
                   >
                     <RotateCw
                       size={15}
-                      className={refreshing ? "animate-spin text-[#082D55]" : ""}
+                      className={refreshing ? "animate-spin text-[#0056D2]" : ""}
                     />
                   </button>
                 </div>
@@ -448,8 +448,8 @@ export function CareMessagingWorkspace({
 
               {/* Read-Only Banner */}
               {selectedConversation.status === "READ_ONLY" && (
-                <div className="bg-zinc-50 border-b border-zinc-200 p-2.5 text-center text-xs text-zinc-700 flex items-center justify-center gap-1.5">
-                  <Lock size={13} className="flex-none text-zinc-500" />
+                <div className="bg-slate-50 border-b border-slate-200 p-2.5 text-center text-xs text-slate-700 flex items-center justify-center gap-1.5">
+                  <Lock size={13} className="flex-none text-slate-500" />
                   <span>
                     {ar
                       ? "تم إنهاء علاقة المتابعة هذه. المحادثة محفوظة في الأرشيف للقراءة فقط لضمان التوثيق."
@@ -459,20 +459,20 @@ export function CareMessagingWorkspace({
               )}
 
               {/* Messages Area */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#FCFBF8]">
+              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#F8FAFC]">
                 {loadingMessages ? (
-                  <div className="flex items-center justify-center h-full text-xs text-[#7a7261]">
+                  <div className="flex items-center justify-center h-full text-xs text-[#64748B]">
                     {ar ? "جارٍ تحميل الرسائل..." : "Chargement des messages..."}
                   </div>
                 ) : messages.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-center p-6 space-y-2">
-                    <div className="h-12 w-12 rounded-full bg-[#082D55]/5 grid place-items-center text-[#082D55]">
+                    <div className="h-12 w-12 rounded-full bg-[#F0F6FF] grid place-items-center text-[#0056D2]">
                       <MessageSquare size={22} />
                     </div>
-                    <h4 className="font-semibold text-xs text-[#082D55]">
+                    <h4 className="font-semibold text-xs text-[#0F172A]">
                       {ar ? "بداية المحادثة الآمنة" : "Espace d'échange confidentiel"}
                     </h4>
-                    <p className="text-[11px] text-[#7a7261] max-w-xs">
+                    <p className="text-[11px] text-[#64748B] max-w-xs">
                       {ar
                         ? "يمكنكم هنا تبادل الملاحظات والتقدم التربوي لطفلكم بكل أمان."
                         : "Échangez vos observations et le suivi pédagogique de l'enfant en toute sécurité."}
@@ -493,24 +493,24 @@ export function CareMessagingWorkspace({
                         }`}
                       >
                         <div
-                          className={`max-w-[85%] sm:max-w-[70%] rounded-2xl p-3.5 text-xs leading-relaxed shadow-sm ${
+                          className={`max-w-[85%] sm:max-w-[70%] rounded-2xl p-3.5 text-xs leading-relaxed shadow-2xs ${
                             m.isMine
-                              ? "bg-[#082D55] text-white rounded-br-none"
-                              : "bg-white border border-[#E7E0D3] text-[#082D55] rounded-bl-none"
+                              ? "bg-[#0056D2] text-white rounded-br-none"
+                              : "bg-white border border-[#E2E8F0] text-[#0F172A] rounded-bl-none"
                           }`}
                         >
                           <p className="whitespace-pre-wrap break-words">{m.content}</p>
 
                           <div
                             className={`mt-1.5 flex items-center justify-end gap-1 text-[10px] ${
-                              m.isMine ? "text-white/60" : "text-[#a39c8a]"
+                              m.isMine ? "text-white/70" : "text-[#94A3B8]"
                             }`}
                           >
                             <span>{timeStr}</span>
                             {m.isMine && (
                               <span>
                                 {m.status === "READ" ? (
-                                  <CheckCheck size={13} className="text-[#a9752f]" />
+                                  <CheckCheck size={13} className="text-blue-200" />
                                 ) : (
                                   <Check size={13} />
                                 )}
@@ -526,9 +526,9 @@ export function CareMessagingWorkspace({
               </div>
 
               {/* Composer */}
-              <div className="p-3 border-t border-[#E7E0D3] bg-white">
+              <div className="p-3 border-t border-[#E2E8F0] bg-white">
                 {selectedConversation.status === "READ_ONLY" ? (
-                  <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-center text-xs text-zinc-500 flex items-center justify-center gap-2">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
                     <Lock size={14} />
                     <span>
                       {ar
@@ -538,7 +538,7 @@ export function CareMessagingWorkspace({
                   </div>
                 ) : (
                   <form onSubmit={handleSend} className="space-y-1.5">
-                    <div className="relative rounded-xl border border-[#E7E0D3] bg-[#FCFBF8] focus-within:border-[#082D55] focus-within:ring-1 focus-within:ring-[#082D55]">
+                    <div className="relative rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] focus-within:border-[#0056D2] focus-within:ring-1 focus-within:ring-[#0056D2]">
                       <textarea
                         ref={textareaRef}
                         rows={2}
@@ -551,18 +551,18 @@ export function CareMessagingWorkspace({
                             ? "اكتب رسالتك هنا... (اضغط Enter للإرسال، Shift+Enter لسطر جديد)"
                             : "Écrivez votre message... (Entrée pour envoyer, Maj+Entrée pour saut de ligne)"
                         }
-                        className="w-full resize-none border-0 bg-transparent p-3 text-xs text-[#082D55] placeholder:text-[#a39c8a] focus:outline-none"
+                        className="w-full resize-none border-0 bg-transparent p-3 text-xs text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none"
                       />
 
-                      <div className="flex items-center justify-between border-t border-[#E7E0D3]/50 px-3 py-1.5">
-                        <span className="text-[10px] text-[#a39c8a]">
+                      <div className="flex items-center justify-between border-t border-[#E2E8F0]/60 px-3 py-1.5">
+                        <span className="text-[10px] text-[#94A3B8]">
                           {inputText.length}/4000
                         </span>
 
                         <button
                           type="submit"
                           disabled={!inputText.trim() || sending}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-[#082D55] px-3.5 py-1 text-xs font-semibold text-white hover:bg-[#061F3D] disabled:opacity-40 transition"
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-[#0056D2] px-3.5 py-1 text-xs font-semibold text-white hover:bg-[#00419E] disabled:opacity-40 transition"
                         >
                           <Send size={12} />
                           <span>{ar ? "إرسال" : "Envoyer"}</span>
@@ -576,13 +576,13 @@ export function CareMessagingWorkspace({
           ) : (
             /* Empty State when no conversation selected */
             <div className="flex flex-col items-center justify-center h-full text-center p-8 space-y-3">
-              <div className="h-16 w-16 rounded-full bg-[#082D55]/5 grid place-items-center text-[#082D55]">
+              <div className="h-16 w-16 rounded-full bg-[#F0F6FF] grid place-items-center text-[#0056D2]">
                 <MessageSquare size={32} />
               </div>
-              <h3 className="font-[family-name:var(--font-fraunces)] text-lg font-semibold text-[#082D55]">
+              <h3 className="text-lg font-bold text-[#0F172A]">
                 {ar ? "مساحة الرسائل الآمنة" : "Messagerie sécurisée"}
               </h3>
-              <p className="text-xs text-[#7a7261] max-w-sm leading-relaxed">
+              <p className="text-xs text-[#64748B] max-w-sm leading-relaxed">
                 {ar
                   ? "اختر محادثة من القائمة للتواصل المباشر والآمن مع أولياء الأمور أو المختصين."
                   : "Sélectionnez une discussion dans la liste pour démarrer vos échanges professionnels et bienveillants."}

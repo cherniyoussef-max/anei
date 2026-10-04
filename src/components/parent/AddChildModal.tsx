@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  Sparkles,
   HeartHandshake,
 } from "lucide-react";
 import type { Locale } from "@/types";
@@ -138,52 +137,52 @@ export function AddChildModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#082D55]/60 p-4 backdrop-blur-xs transition-opacity"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-900/60 p-4 backdrop-blur-xs transition-opacity"
       role="dialog"
       aria-modal="true"
       aria-labelledby="add-child-title"
     >
-      <div className="relative w-full max-w-xl rounded-3xl border border-[#E7E0D3] bg-[#FCFBF8] shadow-2xl overflow-hidden my-8">
+      <div className="relative w-full max-w-xl rounded-2xl border border-[#E2E8F0] bg-white shadow-2xl overflow-hidden my-8">
         {/* Header */}
-        <div className="relative border-b border-[#E7E0D3] bg-linear-to-b from-[#F6F1E7] to-[#FCFBF8] px-6 py-5 sm:px-8">
+        <div className="relative border-b border-[#E2E8F0] bg-white px-6 py-5 sm:px-8">
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-5 right-5 rtl:right-auto rtl:left-5 inline-flex h-8 w-8 items-center justify-center rounded-full text-[#7a7261] hover:bg-[#E7E0D3]/50 hover:text-[#082D55] transition"
+            className="absolute top-5 right-5 rtl:right-auto rtl:left-5 inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#0F172A] transition"
             aria-label={ar ? "إغلاق" : "Fermer"}
           >
             <X size={18} />
           </button>
-          <div className="flex items-center gap-2.5 text-[#a9752f]">
-            <HeartHandshake size={20} strokeWidth={2} />
-            <span className="text-xs font-bold uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-[#0056D2]">
+            <HeartHandshake size={18} strokeWidth={2} />
+            <span className="text-xs font-semibold uppercase tracking-wider">
               {ar ? "مساحة الوالدين" : "Espace Famille"}
             </span>
           </div>
           <h2
             id="add-child-title"
-            className="mt-1 font-[family-name:var(--font-fraunces)] text-2xl font-bold tracking-tight text-[#082D55]"
+            className="mt-1 text-xl font-bold tracking-tight text-[#0F172A]"
           >
             {ar ? "إضافة أو ربط طفل" : "Ajouter ou associer un enfant"}
           </h2>
-          <p className="mt-1 text-xs text-[#7a7261] leading-relaxed">
+          <p className="mt-1 text-xs text-[#64748B] leading-relaxed">
             {ar
               ? "سجّل بيانات طفلك لتفعيل ملفه التربوي الفردي (PPS)، متابعة الحصص، والتواصل مع الأخصائيين."
               : "Renseignez les informations de votre enfant pour activer son dossier PPS et l'accès à son équipe soignante."}
           </p>
 
           {/* Mode Switch Tabs */}
-          <div className="mt-4 grid grid-cols-2 gap-1 rounded-xl border border-[#E7E0D3] bg-white p-1">
+          <div className="mt-4 grid grid-cols-2 gap-1 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-1">
             <button
               type="button"
               onClick={() => {
                 setMode("new");
                 setErrorMessage("");
               }}
-              className={`flex min-h-[40px] items-center justify-center gap-2 rounded-lg px-3 py-2 text-center text-xs font-semibold leading-tight transition ${
+              className={`flex min-h-[38px] items-center justify-center gap-2 rounded-lg px-3 py-2 text-center text-xs font-semibold leading-tight transition ${
                 mode === "new"
-                  ? "bg-[#082D55] text-white shadow-xs"
-                  : "text-[#7a7261] hover:text-[#082D55]"
+                  ? "bg-[#0056D2] text-white shadow-xs"
+                  : "text-[#64748B] hover:text-[#0F172A]"
               }`}
             >
               <UserPlus size={15} className="flex-none" />
@@ -195,10 +194,10 @@ export function AddChildModal({
                 setMode("existing");
                 setErrorMessage("");
               }}
-              className={`flex min-h-[40px] items-center justify-center gap-2 rounded-lg px-3 py-2 text-center text-xs font-semibold leading-tight transition ${
+              className={`flex min-h-[38px] items-center justify-center gap-2 rounded-lg px-3 py-2 text-center text-xs font-semibold leading-tight transition ${
                 mode === "existing"
-                  ? "bg-[#082D55] text-white shadow-xs"
-                  : "text-[#7a7261] hover:text-[#082D55]"
+                  ? "bg-[#0056D2] text-white shadow-xs"
+                  : "text-[#64748B] hover:text-[#0F172A]"
               }`}
             >
               <LinkIcon size={15} className="flex-none" />
@@ -228,7 +227,7 @@ export function AddChildModal({
               {/* First & Last name */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-[#082D55] mb-1">
+                  <label className="block text-xs font-semibold text-[#0F172A] mb-1">
                     {ar ? "الاسم الشخصي *" : "Prénom *"}
                   </label>
                   <input
@@ -237,11 +236,11 @@ export function AddChildModal({
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     placeholder={ar ? "مثال: يوسف" : "Ex: Adam"}
-                    className="w-full rounded-xl border border-[#E7E0D3] bg-white px-3 py-2 text-sm text-[#082D55] placeholder:text-[#a39c8a] focus:border-[#a9752f] focus:outline-hidden"
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2 text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:border-[#0056D2] focus:bg-white focus:outline-hidden transition"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[#082D55] mb-1">
+                  <label className="block text-xs font-semibold text-[#0F172A] mb-1">
                     {ar ? "اللقب (اسم العائلة) *" : "Nom de famille *"}
                   </label>
                   <input
@@ -250,7 +249,7 @@ export function AddChildModal({
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     placeholder={ar ? "مثال: الشارني" : "Ex: Ben Salem"}
-                    className="w-full rounded-xl border border-[#E7E0D3] bg-white px-3 py-2 text-sm text-[#082D55] placeholder:text-[#a39c8a] focus:border-[#a9752f] focus:outline-hidden"
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2 text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:border-[#0056D2] focus:bg-white focus:outline-hidden transition"
                   />
                 </div>
               </div>
@@ -258,7 +257,7 @@ export function AddChildModal({
               {/* Relationship & Birth date */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-[#082D55] mb-1">
+                  <label className="block text-xs font-semibold text-[#0F172A] mb-1">
                     {ar ? "صلة القرابة *" : "Lien de parenté *"}
                   </label>
                   <select
@@ -268,7 +267,7 @@ export function AddChildModal({
                         e.target.value as "MOTHER" | "FATHER" | "GUARDIAN" | "OTHER"
                       )
                     }
-                    className="w-full rounded-xl border border-[#E7E0D3] bg-white px-3 py-2 text-sm text-[#082D55] focus:border-[#a9752f] focus:outline-hidden"
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2 text-sm text-[#0F172A] focus:border-[#0056D2] focus:bg-white focus:outline-hidden transition"
                   >
                     <option value="FATHER">{ar ? "الأب" : "Père"}</option>
                     <option value="MOTHER">{ar ? "الأم" : "Mère"}</option>
@@ -279,7 +278,7 @@ export function AddChildModal({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[#082D55] mb-1">
+                  <label className="block text-xs font-semibold text-[#0F172A] mb-1">
                     {ar ? "تاريخ الولادة" : "Date de naissance"}
                   </label>
                   <div className="relative">
@@ -287,7 +286,7 @@ export function AddChildModal({
                       type="date"
                       value={birthDate}
                       onChange={(e) => setBirthDate(e.target.value)}
-                      className="w-full rounded-xl border border-[#E7E0D3] bg-white px-3 py-2 text-sm text-[#082D55] focus:border-[#a9752f] focus:outline-hidden"
+                      className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2 text-sm text-[#0F172A] focus:border-[#0056D2] focus:bg-white focus:outline-hidden transition"
                     />
                   </div>
                 </div>
@@ -296,7 +295,7 @@ export function AddChildModal({
               {/* School & Grade */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-[#082D55] mb-1">
+                  <label className="block text-xs font-semibold text-[#0F172A] mb-1">
                     {ar ? "المؤسسة التربوية" : "Établissement scolaire"}
                   </label>
                   <input
@@ -304,11 +303,11 @@ export function AddChildModal({
                     value={schoolName}
                     onChange={(e) => setSchoolName(e.target.value)}
                     placeholder={ar ? "مثال: مدرسة حنبعل، تونس" : "Ex: École Pasteur, Tunis"}
-                    className="w-full rounded-xl border border-[#E7E0D3] bg-white px-3 py-2 text-sm text-[#082D55] placeholder:text-[#a39c8a] focus:border-[#a9752f] focus:outline-hidden"
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2 text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:border-[#0056D2] focus:bg-white focus:outline-hidden transition"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[#082D55] mb-1">
+                  <label className="block text-xs font-semibold text-[#0F172A] mb-1">
                     {ar ? "المستوى الدراسي" : "Niveau scolaire"}
                   </label>
                   <input
@@ -316,14 +315,14 @@ export function AddChildModal({
                     value={educationLevel}
                     onChange={(e) => setEducationLevel(e.target.value)}
                     placeholder={ar ? "مثال: السنة الثالثة ابتدائي" : "Ex: CE2 / 3ème primaire"}
-                    className="w-full rounded-xl border border-[#E7E0D3] bg-white px-3 py-2 text-sm text-[#082D55] placeholder:text-[#a39c8a] focus:border-[#a9752f] focus:outline-hidden"
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2 text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:border-[#0056D2] focus:bg-white focus:outline-hidden transition"
                   />
                 </div>
               </div>
 
               {/* Special needs */}
               <div>
-                <label className="block text-xs font-bold text-[#082D55] mb-1">
+                <label className="block text-xs font-semibold text-[#0F172A] mb-1">
                   {ar ? "الاحتياجات التربوية أو التشخيص (اختياري)" : "Besoins spécifiques ou diagnostic (optionnel)"}
                 </label>
                 <textarea
@@ -335,13 +334,13 @@ export function AddChildModal({
                       ? "مثال: صعوبات تعلم (عسر قراءة/كتابة)، طيف توحد، تشتت انتباه، اضطراب لغوي..."
                       : "Ex: Troubles des apprentissages (Dyslexie/Dysorthographie), TDAH, TSA, retard de langage..."
                   }
-                  className="w-full rounded-xl border border-[#E7E0D3] bg-white px-3 py-2 text-sm text-[#082D55] placeholder:text-[#a39c8a] focus:border-[#a9752f] focus:outline-hidden"
+                  className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2 text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:border-[#0056D2] focus:bg-white focus:outline-hidden transition"
                 />
               </div>
 
               {/* Notes */}
               <div>
-                <label className="block text-xs font-bold text-[#082D55] mb-1">
+                <label className="block text-xs font-semibold text-[#0F172A] mb-1">
                   {ar ? "ملاحظات أو توصيات إضافية" : "Remarques complémentaires"}
                 </label>
                 <textarea
@@ -353,7 +352,7 @@ export function AddChildModal({
                       ? "أي معلومات تفيد الأخصائي أو المرافق المدرسي..."
                       : "Informations utiles pour l'AVS ou les spécialistes..."
                   }
-                  className="w-full rounded-xl border border-[#E7E0D3] bg-white px-3 py-2 text-sm text-[#082D55] placeholder:text-[#a39c8a] focus:border-[#a9752f] focus:outline-hidden"
+                  className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2 text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:border-[#0056D2] focus:bg-white focus:outline-hidden transition"
                 />
               </div>
             </>
@@ -361,7 +360,7 @@ export function AddChildModal({
             <>
               {/* Existing Student Account Email */}
               <div>
-                <label className="block text-xs font-bold text-[#082D55] mb-1">
+                <label className="block text-xs font-semibold text-[#0F172A] mb-1">
                   {ar ? "البريد الإلكتروني لحساب التلميذ *" : "Adresse email du compte élève *"}
                 </label>
                 <input
@@ -370,9 +369,9 @@ export function AddChildModal({
                   value={existingStudentEmail}
                   onChange={(e) => setExistingStudentEmail(e.target.value)}
                   placeholder="eleve@domaine.com"
-                  className="w-full rounded-xl border border-[#E7E0D3] bg-white px-3 py-2 text-sm text-[#082D55] placeholder:text-[#a39c8a] focus:border-[#a9752f] focus:outline-hidden"
+                  className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2 text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:border-[#0056D2] focus:bg-white focus:outline-hidden transition"
                 />
-                <p className="mt-1 text-[11px] text-[#7a7261]">
+                <p className="mt-1 text-[11px] text-[#64748B]">
                   {ar
                     ? "إذا كان لطفلك حساب تلميذ تم إنشاؤه مسبقاً في المنصة أو مدرسته، أدخل بريده للربط المباشر."
                     : "Si votre enfant a déjà un compte élève ANEI, renseignez son email pour lier instantanément votre profil."}
@@ -380,7 +379,7 @@ export function AddChildModal({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#082D55] mb-1">
+                <label className="block text-xs font-semibold text-[#0F172A] mb-1">
                   {ar ? "صلة القرابة *" : "Lien de parenté *"}
                 </label>
                 <select
@@ -390,7 +389,7 @@ export function AddChildModal({
                       e.target.value as "MOTHER" | "FATHER" | "GUARDIAN" | "OTHER"
                     )
                   }
-                  className="w-full rounded-xl border border-[#E7E0D3] bg-white px-3 py-2 text-sm text-[#082D55] focus:border-[#a9752f] focus:outline-hidden"
+                  className="w-full rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2 text-sm text-[#0F172A] focus:border-[#0056D2] focus:bg-white focus:outline-hidden transition"
                 >
                   <option value="FATHER">{ar ? "الأب" : "Père"}</option>
                   <option value="MOTHER">{ar ? "الأم" : "Mère"}</option>
@@ -409,14 +408,14 @@ export function AddChildModal({
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="rounded-xl border border-[#E7E0D3] bg-white px-4 py-2 text-xs font-semibold text-[#082D55] hover:bg-[#F6F1E7] transition disabled:opacity-50"
+              className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-xs font-semibold text-[#0F172A] hover:bg-[#F8FAFC] transition disabled:opacity-50"
             >
               {ar ? "إلغاء" : "Annuler"}
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#082D55] px-5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#061F3D] transition disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-lg bg-[#0056D2] px-5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#00419E] transition disabled:opacity-50"
             >
               {isSubmitting ? (
                 <>
@@ -424,18 +423,15 @@ export function AddChildModal({
                   <span>{ar ? "جارٍ الحفظ..." : "Enregistrement..."}</span>
                 </>
               ) : (
-                <>
-                  <Sparkles size={14} className="text-[#e2b76b]" />
-                  <span>
-                    {mode === "new"
-                      ? ar
-                        ? "إنشاء ملف الطفل"
-                        : "Créer le profil enfant"
-                      : ar
-                        ? "ربط الحساب الآن"
-                        : "Associer le compte"}
-                  </span>
-                </>
+                <span>
+                  {mode === "new"
+                    ? ar
+                      ? "إنشاء ملف الطفل"
+                      : "Créer le profil enfant"
+                    : ar
+                      ? "ربط الحساب الآن"
+                      : "Associer le compte"}
+                </span>
               )}
             </button>
           </div>

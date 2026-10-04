@@ -120,18 +120,18 @@ export function CareNotificationCenter({
   function getNotificationIcon(type: string) {
     switch (type) {
       case "CARE_MESSAGE_RECEIVED":
-        return <MessageSquare className="h-4 w-4 text-[#082D55]" />;
+        return <MessageSquare className="h-4 w-4 text-[#0056D2]" />;
       case "CARE_NOTE_SHARED":
       case "CARE_NOTE_ADDENDUM":
       case "CARE_DOCUMENT_SHARED":
-        return <FileText className="h-4 w-4 text-[#a9752f]" />;
+        return <FileText className="h-4 w-4 text-[#0056D2]" />;
       case "CARE_REQUEST_RECEIVED":
       case "CARE_REQUEST_ACCEPTED":
       case "CARE_REQUEST_DECLINED":
       case "CARE_RELATIONSHIP_ENDED":
-        return <Users className="h-4 w-4 text-[#166534]" />;
+        return <Users className="h-4 w-4 text-emerald-600" />;
       default:
-        return <Calendar className="h-4 w-4 text-[#082D55]" />;
+        return <Calendar className="h-4 w-4 text-[#0056D2]" />;
     }
   }
 
@@ -143,17 +143,17 @@ export function CareNotificationCenter({
           setIsOpen(!isOpen);
           if (!isOpen) fetchNotifications();
         }}
-        className={`relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[#C9913F] ${
+        className={`relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors duration-150 focus:outline-hidden focus:ring-2 focus:ring-[#0056D2] ${
           variant === "light"
-            ? "border border-[#e2d7c3] bg-white text-[#082D55] hover:bg-[#FAF7F2] shadow-sm"
+            ? "border border-[#E2E8F0] bg-white text-[#0F172A] hover:bg-[#F8FAFC] shadow-xs"
             : "border border-white/20 bg-white/10 text-white hover:bg-white/20"
         }`}
         aria-label={ar ? "مركز الإشعارات" : "Centre de notifications"}
         aria-expanded={isOpen}
       >
-        <Bell className="h-5 w-5" />
+        <Bell className="h-4.5 w-4.5" />
         {unreadCount > 0 && (
-          <span className="absolute -end-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#e11d48] px-1 text-[11px] font-bold text-white shadow-sm">
+          <span className="absolute -end-1 -top-1 flex h-4.5 min-w-[18px] items-center justify-center rounded-full bg-[#E11D48] px-1 text-[10px] font-bold text-white shadow-xs">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -162,16 +162,16 @@ export function CareNotificationCenter({
       {isOpen && (
         <div
           dir={ar ? "rtl" : "ltr"}
-          className="absolute end-0 mt-2 w-80 sm:w-96 rounded-2xl border border-[#e2d7c3] bg-white p-0 shadow-2xl z-50 overflow-hidden"
+          className="absolute end-0 mt-2 w-80 sm:w-96 rounded-2xl border border-[#E2E8F0] bg-white p-0 shadow-xl z-50 overflow-hidden"
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-[#e2d7c3]/60 bg-[#FAF7F2] px-4 py-3">
+          <div className="flex items-center justify-between border-b border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3">
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-sm text-[#082D55]">
+              <h3 className="font-bold text-sm text-[#0F172A]">
                 {ar ? "الإشعارات" : "Notifications"}
               </h3>
               {unreadCount > 0 && (
-                <span className="rounded-full bg-[#082D55]/10 px-2 py-0.5 text-[11px] font-medium text-[#082D55]">
+                <span className="rounded-full bg-[#F0F6FF] px-2 py-0.5 text-[11px] font-semibold text-[#0056D2]">
                   {unreadCount} {ar ? "جديد" : "non lue(s)"}
                 </span>
               )}
@@ -182,7 +182,7 @@ export function CareNotificationCenter({
                   type="button"
                   onClick={handleMarkAllAsRead}
                   disabled={markingAll}
-                  className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-[#a9752f] hover:bg-[#a9752f]/10 transition-colors"
+                  className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-[#0056D2] hover:bg-[#F0F6FF] transition-colors"
                   title={ar ? "تحديد الكل كمقروء" : "Tout marquer comme lu"}
                 >
                   <CheckCheck className="h-3.5 w-3.5" />
@@ -195,7 +195,7 @@ export function CareNotificationCenter({
                 <Link
                   href={preferencesHref}
                   onClick={() => setIsOpen(false)}
-                  className="rounded-lg p-1 text-[#7a7261] hover:bg-[#e2d7c3]/40 hover:text-[#082D55] transition-colors"
+                  className="rounded-lg p-1.5 text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#0F172A] transition-colors"
                   title={ar ? "تفضيلات الإشعارات" : "Préférences"}
                 >
                   <Settings className="h-4 w-4" />
@@ -205,11 +205,11 @@ export function CareNotificationCenter({
           </div>
 
           {/* List */}
-          <div className="max-h-[380px] overflow-y-auto divide-y divide-[#e2d7c3]/40">
+          <div className="max-h-[380px] overflow-y-auto divide-y divide-[#E2E8F0]">
             {notifications.length === 0 ? (
               <div className="p-8 text-center">
-                <Bell className="mx-auto h-8 w-8 text-[#7a7261]/30" />
-                <p className="mt-2 text-xs font-medium text-[#7a7261]">
+                <Bell className="mx-auto h-8 w-8 text-[#94A3B8]" />
+                <p className="mt-2 text-xs font-medium text-[#64748B]">
                   {ar ? "لا توجد إشعارات حالياً" : "Aucune notification pour le moment"}
                 </p>
               </div>
@@ -219,11 +219,11 @@ export function CareNotificationCenter({
                   key={item.id}
                   className={`flex items-start gap-3 p-3 transition-colors ${
                     item.read
-                      ? "bg-white hover:bg-[#FAF7F2]/60"
-                      : "bg-[#082D55]/[0.03] hover:bg-[#082D55]/[0.06]"
+                      ? "bg-white hover:bg-[#F8FAFC]"
+                      : "bg-[#F0F6FF]/50 hover:bg-[#F0F6FF]"
                   }`}
                 >
-                  <div className="mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-xl bg-[#FAF7F2] border border-[#e2d7c3]">
+                  <div className="mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
                     {getNotificationIcon(item.type)}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -232,7 +232,7 @@ export function CareNotificationCenter({
                         className={`text-xs truncate ${
                           item.read
                             ? "font-medium text-[#334155]"
-                            : "font-semibold text-[#082D55]"
+                            : "font-bold text-[#0F172A]"
                         }`}
                       >
                         {item.title}
@@ -241,14 +241,14 @@ export function CareNotificationCenter({
                         <button
                           type="button"
                           onClick={() => handleMarkAsRead(item.id)}
-                          className="text-[#7a7261] hover:text-[#082D55] p-0.5"
+                          className="text-[#64748B] hover:text-[#0F172A] p-0.5 transition-colors"
                           title={ar ? "تعليم كمقروء" : "Marquer comme lu"}
                         >
                           <Check className="h-3 w-3" />
                         </button>
                       )}
                     </div>
-                    <p className="mt-0.5 text-[11px] text-[#64748b] line-clamp-2 leading-relaxed">
+                    <p className="mt-0.5 text-[11px] text-[#64748B] line-clamp-2 leading-relaxed">
                       {item.body}
                     </p>
                     {item.href && (
@@ -258,7 +258,7 @@ export function CareNotificationCenter({
                           if (!item.read) handleMarkAsRead(item.id);
                           setIsOpen(false);
                         }}
-                        className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-[#a9752f] hover:underline"
+                        className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-[#0056D2] hover:underline"
                       >
                         <span>{ar ? "فتح" : "Ouvrir"}</span>
                         <ExternalLink className="h-2.5 w-2.5" />

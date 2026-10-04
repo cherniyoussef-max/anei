@@ -25,9 +25,9 @@ export default async function TeacherPortalPage({ params }: { params: Promise<{ 
   return (
     <div className="space-y-6">
       <div>
-        <span className="text-xs font-semibold uppercase tracking-wider text-[#a9752f]">{ar ? "مساحة المكوّن" : "Espace formateur"}</span>
-        <h1 className="mt-1 font-[family-name:var(--font-fraunces)] text-2xl font-semibold tracking-tight text-[#082D55] sm:text-3xl">{ar ? `مرحبًا، ${session.user.name}` : `Bonjour, ${session.user.name}`}</h1>
-        <p className="mt-1 text-sm text-[#7a7261]">{ar ? "نظرة عامة على دوراتك والمتعلمين الموكلين إليك." : "Vue d'ensemble de vos cours attribués et des apprenants dans votre périmètre."}</p>
+        <span className="text-xs font-bold uppercase tracking-wider text-[#0056D2]">{ar ? "مساحة المكوّن" : "Espace formateur"}</span>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#0F172A] sm:text-3xl">{ar ? `مرحبًا، ${session.user.name}` : `Bonjour, ${session.user.name}`}</h1>
+        <p className="mt-1 text-sm text-[#64748B]">{ar ? "نظرة عامة على دوراتك والمتعلمين الموكلين إليك." : "Vue d'ensemble de vos cours attribués et des apprenants dans votre périmètre."}</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -82,21 +82,21 @@ export default async function TeacherPortalPage({ params }: { params: Promise<{ 
           <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {profile.discipline && (
               <div className="flex items-start gap-3">
-                <IdCard size={18} strokeWidth={1.75} className="mt-0.5 flex-none text-[#a9752f]" />
-                <div><dt className="text-xs text-[#7a7261]">{ar ? "التخصص" : "Discipline"}</dt><dd className="text-sm font-semibold text-[#082D55]">{profile.discipline}</dd></div>
+                <IdCard size={18} strokeWidth={1.75} className="mt-0.5 flex-none text-[#0056D2]" />
+                <div><dt className="text-xs text-[#64748B]">{ar ? "التخصص" : "Discipline"}</dt><dd className="text-sm font-semibold text-[#0F172A]">{profile.discipline}</dd></div>
               </div>
             )}
             {profile.qualification && (
-              <div><dt className="text-xs text-[#7a7261]">{ar ? "المؤهل" : "Qualification"}</dt><dd className="text-sm font-semibold text-[#082D55]">{profile.qualification}</dd></div>
+              <div><dt className="text-xs text-[#64748B]">{ar ? "المؤهل" : "Qualification"}</dt><dd className="text-sm font-semibold text-[#0F172A]">{profile.qualification}</dd></div>
             )}
             {profile.experienceYears != null && (
-              <div><dt className="text-xs text-[#7a7261]">{ar ? "سنوات الخبرة" : "Expérience"}</dt><dd className="text-sm font-semibold text-[#082D55]">{profile.experienceYears}</dd></div>
+              <div><dt className="text-xs text-[#64748B]">{ar ? "سنوات الخبرة" : "Expérience"}</dt><dd className="text-sm font-semibold text-[#0F172A]">{profile.experienceYears}</dd></div>
             )}
             {profile.levelsTaught && profile.levelsTaught.length > 0 && (
-              <div><dt className="text-xs text-[#7a7261]">{ar ? "المستويات المُدرَّسة" : "Niveaux enseignés"}</dt><dd className="text-sm font-semibold text-[#082D55]">{profile.levelsTaught.join(", ")}</dd></div>
+              <div><dt className="text-xs text-[#64748B]">{ar ? "المستويات المُدرَّسة" : "Niveaux enseignés"}</dt><dd className="text-sm font-semibold text-[#0F172A]">{profile.levelsTaught.join(", ")}</dd></div>
             )}
             {profile.professionalInstitution && (
-              <div><dt className="text-xs text-[#7a7261]">{ar ? "المؤسسة أو الهيئة الموظِّفة" : "Établissement / Employeur"}</dt><dd className="text-sm font-semibold text-[#082D55]">{profile.professionalInstitution}</dd></div>
+              <div><dt className="text-xs text-[#64748B]">{ar ? "المؤسسة أو الهيئة الموظِّفة" : "Établissement / Employeur"}</dt><dd className="text-sm font-semibold text-[#0F172A]">{profile.professionalInstitution}</dd></div>
             )}
           </dl>
         </PersonaPanel>

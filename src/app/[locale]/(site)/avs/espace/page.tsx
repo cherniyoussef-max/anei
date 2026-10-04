@@ -37,13 +37,13 @@ export default async function AvsPortalPage({ params }: { params: Promise<{ loca
   return (
     <div className="space-y-6">
       <div>
-        <span className="text-xs font-semibold uppercase tracking-wider text-[#a9752f]">
+        <span className="text-xs font-bold uppercase tracking-wider text-[#0056D2]">
           {ar ? "مساحة مرافق الحياة المدرسية" : "Espace AVS"}
         </span>
-        <h1 className="mt-1 font-[family-name:var(--font-fraunces)] text-2xl font-semibold tracking-tight text-[#082D55] sm:text-3xl">
+        <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#0F172A] sm:text-3xl">
           {ar ? `مرحبًا، ${session.user.name}` : `Bonjour, ${session.user.name}`}
         </h1>
-        <p className="mt-1 text-sm text-[#7a7261]">
+        <p className="mt-1 text-sm text-[#64748B]">
           {ar
             ? "لوحة التحكم الخاصة بك: إدارة طلبات المواعيد من الأولياء، وتحيين ملفك في الدليل العام، ومتابعة التلاميذ."
             : "Votre tableau de bord : gestion des demandes de rendez-vous des parents, mise à jour de votre profil dans l'annuaire, et suivi des élèves."}
