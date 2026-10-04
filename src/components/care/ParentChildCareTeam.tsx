@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import type { Locale } from "@/types";
 import type { ChildCareSummary } from "@/server/queries/care-notes-documents";
+import { AddChildButton } from "@/components/parent/AddChildButton";
 
 export function ParentChildCareTeam({
   locale,
@@ -65,16 +66,21 @@ export function ParentChildCareTeam({
 
   if (childrenSummaries.length === 0) {
     return (
-      <div className="rounded-2xl border border-[#E7E0D3] bg-white p-12 text-center shadow-xs">
-        <Users size={40} className="mx-auto text-[#a39c8a]" />
+      <div className="rounded-2xl border border-[#E7E0D3] bg-[#FCFBF8] p-12 text-center shadow-xs">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#F6F1E7] text-[#a9752f]">
+          <Users size={32} />
+        </div>
         <h3 className="mt-4 font-[family-name:var(--font-fraunces)] text-xl font-semibold text-[#082D55]">
           {ar ? "لا يوجد أطفال مرتبطون بحسابك حالياً" : "Aucun enfant associé à votre compte"}
         </h3>
-        <p className="mt-2 text-sm text-[#7a7261] max-w-md mx-auto">
+        <p className="mt-2 text-sm text-[#7a7261] max-w-md mx-auto leading-relaxed">
           {ar
-            ? "تواصل مع إدارة منصة أني لربط ملفات أبنائك والاستفادة من المتابعة مع الأخصائيين المعتمدين والمرافقة المدرسية."
-            : "L'association de votre enfant s'effectue avec l'Académie ANEI pour garantir la stricte confidentialité de ses données."}
+            ? "أضف ملف طفلك الآن لمتابعة مشروعه التربوي المخصص (PPS)، والوصول المباشر إلى فريق الدعم والمختصين التربويين."
+            : "Ajoutez le profil de votre enfant pour activer son Projet Personnalisé de Scolarisation (PPS) et coordonner son équipe d'accompagnement."}
         </p>
+        <div className="mt-6 flex justify-center">
+          <AddChildButton locale={locale} label={ar ? "+ إضافة طفل الآن" : "+ Ajouter mon premier enfant"} />
+        </div>
       </div>
     );
   }
@@ -231,6 +237,12 @@ export function ParentChildCareTeam({
         </div>
 
         <div className="flex flex-wrap items-center gap-2 print:hidden">
+          <AddChildButton
+            locale={locale}
+            variant="outline"
+            label={ar ? "+ إضافة طفل" : "+ Ajouter un enfant"}
+          />
+
           <button
             type="button"
             onClick={handlePrintIep}

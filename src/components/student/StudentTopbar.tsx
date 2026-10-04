@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronRight, Sparkles, Wallet, Bell } from "lucide-react";
+import { ChevronRight, Sparkles, Bell } from "lucide-react";
 import type { Locale } from "@/types";
 import { LocaleSwitcher } from "@/components/interactive/LocaleSwitcher";
 
@@ -11,13 +11,11 @@ const PAGE_LABELS = {
   "rendez-vous": { en: "My appointments", fr: "Mes rendez-vous", ar: "مواعيدي" },
   ressources: { en: "My resources", fr: "Mes ressources", ar: "مواردي" },
   certificats: { en: "My certificates", fr: "Mes certificats", ar: "شهاداتي" },
-  classement: { en: "Leaderboard", fr: "Classement", ar: "الترتيب" },
-  boutique: { en: "Shop", fr: "Boutique", ar: "المتجر" },
   profil: { en: "Profile and security", fr: "Profil et sécurité", ar: "الملف الشخصي والأمان" },
   notifications: { en: "Notifications", fr: "Notifications", ar: "الإشعارات" },
 };
 
-export function StudentTopbar({ locale, userName, pointsBalance = 0, notificationCount = 0, assistantEnabled = false }: {
+export function StudentTopbar({ locale, userName, notificationCount = 0, assistantEnabled = false }: {
   locale: Locale;
   userName: string;
   pointsBalance?: number;
@@ -51,14 +49,6 @@ export function StudentTopbar({ locale, userName, pointsBalance = 0, notificatio
             <span>{ar ? "مساعد ANEI" : "Assistant ANEI"}</span>
           </Link>
         ) : null}
-
-        <Link
-          href={`/${locale}/dashboard/boutique`}
-          className="flex items-center gap-1.5 rounded-full border border-[#E7E0D3] bg-white px-3 py-1.5 text-sm font-semibold text-[#082D55] shadow-[0_1px_2px_rgba(0,0,0,0.06)] transition-all duration-200 ease-in-out hover:border-[#C9913F]"
-        >
-          <Wallet className="text-[#C9913F]" size={16} strokeWidth={1.75} />
-          <span>{pointsBalance} pts</span>
-        </Link>
 
         <div className="hidden sm:block">
           <LocaleSwitcher locale={locale} />

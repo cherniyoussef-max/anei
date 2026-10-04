@@ -20,16 +20,16 @@ export function StudentShell({ children, locale, user, pointsBalance = 0, notifi
   return (
     <div className="student-app min-h-screen bg-[#FCFBF8] md:flex">
       <aside
-        className="hidden md:fixed md:inset-y-0 md:start-0 md:z-30 md:flex md:w-72 md:flex-col bg-gradient-to-b from-[#082D55] to-[#061F3D]"
+        className="hidden md:fixed md:inset-y-0 md:start-0 md:z-30 md:flex md:w-72 md:flex-col bg-gradient-to-b from-[#082D55] via-[#09325D] to-[#061F3D] border-e border-white/10 shadow-lg"
         aria-label={ar ? "مساحة المتعلم" : en ? "Learning space" : "Espace apprenant"}
       >
-        <Link className="flex h-16 items-center gap-3 border-b border-white/10 px-6" href={`/${locale}/dashboard`}>
+        <Link className="flex h-16 items-center gap-3 border-b border-white/10 px-6 transition-opacity hover:opacity-95" href={`/${locale}/dashboard`}>
           <span className="inline-flex items-center justify-center bg-white p-1 rounded-lg shadow-sm flex-none">
             <AneiLogo locale={locale} variant="mark" height={24} priority />
           </span>
           <span className="flex flex-col leading-tight">
             <strong className="text-sm font-bold uppercase tracking-wider text-white">ANEI</strong>
-            <small className="text-xs font-medium text-white/50">{ar ? "مساحة المتعلم" : en ? "Learning space" : "Espace Apprenant"}</small>
+            <small className="text-xs font-semibold text-[#E2BD7D]">{ar ? "مساحة المتعلّم" : en ? "Learning Space" : "Espace Apprenant"}</small>
           </span>
         </Link>
 
@@ -37,15 +37,15 @@ export function StudentShell({ children, locale, user, pointsBalance = 0, notifi
           <StudentNavigation locale={locale} variant="desktop" />
         </nav>
 
-        <div className="border-t border-white/10 p-3">
+        <div className="border-t border-white/10 p-3 bg-black/10">
           <Link
             href={`/${locale}/dashboard/profil`}
-            className="flex items-center gap-3 rounded-xl px-2 py-2 transition-all duration-200 ease-in-out hover:bg-white/5"
+            className="flex items-center gap-3 rounded-xl p-2 transition-all duration-200 ease-in-out hover:bg-white/10 group"
           >
-            <span className="grid h-9 w-9 flex-none place-items-center rounded-full bg-[#C9913F] text-sm font-bold text-[#082D55]" aria-hidden="true">{initial}</span>
+            <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-[#C9913F] text-sm font-bold text-[#082D55] shadow-sm ring-2 ring-white/20 group-hover:ring-[#C9913F]" aria-hidden="true">{initial}</span>
             <span className="flex min-w-0 flex-col leading-tight">
-              <strong className="truncate text-sm text-white">{user.name}</strong>
-              <small className="truncate text-xs text-white/50" dir="ltr">{user.email}</small>
+              <strong className="truncate text-sm font-semibold text-white">{user.name}</strong>
+              <small className="truncate text-xs font-medium text-[#E2BD7D]">{ar ? "متعلّم معتمد" : en ? "Certified Learner" : "Apprenant certifié"}</small>
             </span>
           </Link>
           <div className="mt-1">
@@ -65,7 +65,9 @@ export function StudentShell({ children, locale, user, pointsBalance = 0, notifi
         <StudentTopbar locale={locale} userName={user.name} pointsBalance={pointsBalance} notificationCount={notificationCount} assistantEnabled={assistantEnabled} />
 
         <div className="flex-1 px-4 py-6 md:px-8 md:py-8">{children}</div>
-        <StudentNavigation locale={locale} variant="mobile" />
+        <div className="md:hidden">
+          <StudentNavigation locale={locale} variant="mobile" />
+        </div>
       </div>
     </div>
   );

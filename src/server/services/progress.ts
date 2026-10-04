@@ -9,7 +9,7 @@ import { grantPoints, POINT_VALUES } from "@/server/services/points";
  * not DRM; it is a business-rule boundary that prevents trivial `completed:true`
  * request forgery from issuing certificates.
  */
-export async function updateLessonProgress(input: { userId: string; lessonId: string; watchedSeconds: number }) {
+export async function updateLessonProgress(input: { userId: string; lessonId: string; watchedSeconds: number; completed?: boolean }) {
   return db.transaction(async (tx) => {
     const [owned] = await tx
       .select({ enrollment: enrollments, lesson: lessons })
@@ -25,11 +25,14 @@ export async function updateLessonProgress(input: { userId: string; lessonId: st
       .where(and(eq(lessonProgress.enrollmentId, owned.enrollment.id), eq(lessonProgress.lessonId, input.lessonId)))
       .limit(1);
 
-    const bounded = Math.max(0, Math.min(input.watchedSeconds, owned.lesson.durationSeconds || input.watchedSeconds));
-    const watchedSeconds = Math.max(previous?.watchedSeconds ?? 0, bounded);
-    const lessonCompleted = owned.lesson.durationSeconds > 0
+    const targetDuration = owned.lesson.durationSeconds || input.watchedSeconds;
+    const bounded = Math.max(0, Math.min(input.watchedSeconds, targetDuration));
+    const watchedSeconds = input.completed
+      ? (targetDuration || 1)
+      : Math.max(previous?.watchedSeconds ?? 0, bounded);
+    const lessonCompleted = Boolean(input.completed) || (owned.lesson.durationSeconds > 0
       ? watchedSeconds >= Math.ceil(owned.lesson.durationSeconds * 0.9)
-      : Boolean(previous?.completed);
+      : Boolean(previous?.completed));
 
     await tx
       .insert(lessonProgress)

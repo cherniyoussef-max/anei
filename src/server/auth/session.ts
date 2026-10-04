@@ -112,6 +112,7 @@ export async function requireAdminPermission(locale: Locale, permission: AdminPe
  */
 export async function requireActivePersona(locale: Locale, persona: Persona) {
   const current = await requireUser(locale);
+  if (["ADMIN", "SUPER_ADMIN"].includes(String(current.user.role))) return current;
   const memberships = await getUserPersonas(current.user.id);
   const membership = memberships.find((row) => row.persona === persona);
   if (!membership) redirect(`/${locale}/dashboard`);

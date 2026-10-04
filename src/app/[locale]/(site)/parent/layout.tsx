@@ -22,6 +22,8 @@ export default async function ParentLayout({ children, params }: {
     items={[
       { href: `/${locale}/parent`, icon: "LayoutDashboard", fr: "Vue d’ensemble", ar: "نظرة عامة" },
       { href: `/${locale}/parent/enfants`, icon: "Users", fr: "Mes enfants", ar: "أبنائي" },
+      { href: `/${locale}/parent/formations`, icon: "GraduationCap", fr: "Formations", ar: "الدورات والورشات" },
+      { href: `/${locale}/parent/bibliotheque`, icon: "BookOpen", fr: "Bibliothèque", ar: "المكتبة التربوية" },
       { href: `/${locale}/parent/specialistes`, icon: "Users", fr: "Spécialistes", ar: "المختصون" },
       { href: `/${locale}/parent/messages`, icon: "MessageSquare", fr: "Messagerie", ar: "الرسائل" },
     ]}

@@ -24,7 +24,7 @@ import { env } from "@/server/env";
 import { signedMediaUrl } from "@/server/storage";
 
 export async function getDashboardData(userId: string) {
-  const [enrollmentRows, purchaseRows, certificateRows, upcomingWebinars] = await Promise.all([
+  const [enrollmentRows, purchaseRows, certificateRows, upcomingWebinars, completedLessonsRow] = await Promise.all([
     db
       .select({
         enrollment: {
@@ -90,9 +90,20 @@ export async function getDashboardData(userId: string) {
       .where(and(eq(webinarRegistrations.userId, userId), gte(webinars.startsAt, new Date())))
       .orderBy(asc(webinars.startsAt))
       .limit(4),
+    db
+      .select({ count: count() })
+      .from(lessonProgress)
+      .innerJoin(enrollments, eq(lessonProgress.enrollmentId, enrollments.id))
+      .where(and(eq(enrollments.userId, userId), eq(lessonProgress.completed, true))),
   ]);
 
-  return { enrollmentRows, purchaseRows, certificateRows, upcomingWebinars };
+  return {
+    enrollmentRows,
+    purchaseRows,
+    certificateRows,
+    upcomingWebinars,
+    completedLessonsTotal: completedLessonsRow[0]?.count ?? 0,
+  };
 }
 
 export async function getUnreadNotificationCount(userId: string) {

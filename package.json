@@ -21,7 +21,7 @@
     "smtp:verify": "tsx scripts/verify-smtp.ts",
     "check": "npm run typecheck && npm run lint && npm run test && npm run security:audit && npm run build",
     "db:baseline": "tsx scripts/baseline-migrations.ts",
-    "db:bootstrap-admin": "tsx scripts/create-super-admin.ts",
+    "db:bootstrap-admin": "tsx --conditions=react-server scripts/create-super-admin.ts",
     "test:unit": "tsx --conditions=react-server --test tests/unit/**/*.test.ts",
     "test:security": "tsx --conditions=react-server --test tests/security/**/*.test.ts",
     "test": "npm run test:unit && npm run test:security",

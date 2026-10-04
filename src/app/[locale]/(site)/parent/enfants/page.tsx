@@ -4,6 +4,7 @@ import { requireActivePersona } from "@/server/auth/session";
 import { getLinkedStudentsForParent } from "@/server/queries/relationships";
 import { getParentAllChildrenCareSummary } from "@/server/queries/care-notes-documents";
 import { ParentChildCareTeam } from "@/components/care/ParentChildCareTeam";
+import { AddChildButton } from "@/components/parent/AddChildButton";
 
 export const dynamic = "force-dynamic";
 
@@ -21,18 +22,25 @@ export default async function ParentChildrenPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <span className="text-xs font-semibold uppercase tracking-wider text-[#a9752f]">
-          {ar ? "مساحة الوالدين" : "Espace parent"}
-        </span>
-        <h1 className="mt-1 font-[family-name:var(--font-fraunces)] text-2xl font-semibold tracking-tight text-[#082D55] sm:text-3xl">
-          {ar ? "أبنائي ومسار المتابعة" : "Mes enfants & suivi"}
-        </h1>
-        <p className="mt-1 text-sm text-[#7a7261]">
-          {ar
-            ? "فريق المتابعة المختص، الملاحظات الإكلينيكية المشتركة، والوثائق التأهيلية لأبنائكم."
-            : "Équipe soignante, observations de séances et documents partagés pour vos enfants."}
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <span className="text-xs font-semibold uppercase tracking-wider text-[#a9752f]">
+            {ar ? "مساحة الوالدين" : "Espace parent"}
+          </span>
+          <h1 className="mt-1 font-[family-name:var(--font-fraunces)] text-2xl font-semibold tracking-tight text-[#082D55] sm:text-3xl">
+            {ar ? "أبنائي ومسار المتابعة" : "Mes enfants & suivi"}
+          </h1>
+          <p className="mt-1 text-sm text-[#7a7261]">
+            {ar
+              ? "فريق المتابعة المختص، الملاحظات الإكلينيكية المشتركة، والوثائق التأهيلية لأبنائكم."
+              : "Équipe soignante, observations de séances et documents partagés pour vos enfants."}
+          </p>
+        </div>
+
+        <AddChildButton
+          locale={locale}
+          label={ar ? "+ إضافة طفل" : "+ Ajouter un enfant"}
+        />
       </div>
 
       <ParentChildCareTeam

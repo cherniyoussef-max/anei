@@ -28,6 +28,20 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  async redirects() {
+    return [
+      {
+        source: "/:locale(fr|ar|en)/dashboard/boutique",
+        destination: "/:locale/dashboard",
+        permanent: true,
+      },
+      {
+        source: "/:locale(fr|ar|en)/dashboard/classement",
+        destination: "/:locale/dashboard",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

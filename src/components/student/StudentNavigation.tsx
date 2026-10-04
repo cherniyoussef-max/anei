@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { PlayCircle, GraduationCap, CalendarDays, BookOpen, Award, Trophy, ShoppingBag, UserCheck, Menu, X, ChevronRight, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, GraduationCap, CalendarDays, BookOpen, Award, UserCheck, Menu, X, ChevronRight, type LucideIcon } from "lucide-react";
 import type { Locale } from "@/types";
 import { StudentSignOutButton } from "@/components/student/StudentSignOutButton";
 
@@ -12,13 +12,11 @@ type StudentNavItem = { href: string; icon: LucideIcon; en: string; fr: string; 
 function learnerItems(locale: Locale): StudentNavItem[] {
   const base = `/${locale}/dashboard`;
   return [
-    { href: base, icon: PlayCircle, en: "Continue", fr: "Continuer", ar: "متابعة التعلم", shortEn: "Continue", shortFr: "Continuer", shortAr: "متابعة" },
+    { href: base, icon: LayoutDashboard, en: "Dashboard", fr: "Tableau de bord", ar: "لوحة التحكم", shortEn: "Dashboard", shortFr: "Accueil", shortAr: "الرئيسية" },
     { href: `${base}/formations`, icon: GraduationCap, en: "My courses", fr: "Mes formations", ar: "دوراتي", shortEn: "Courses", shortFr: "Formations", shortAr: "دوراتي" },
     { href: `${base}/rendez-vous`, icon: CalendarDays, en: "My appointments", fr: "Mes rendez-vous", ar: "مواعيدي", shortEn: "Appointments", shortFr: "Rendez-vous", shortAr: "مواعيدي" },
     { href: `${base}/ressources`, icon: BookOpen, en: "My resources", fr: "Mes ressources", ar: "مواردي", shortEn: "Resources", shortFr: "Ressources", shortAr: "مواردي" },
     { href: `${base}/certificats`, icon: Award, en: "My certificates", fr: "Mes certificats", ar: "شهاداتي", shortEn: "Certificates", shortFr: "Certificats", shortAr: "شهاداتي" },
-    { href: `${base}/classement`, icon: Trophy, en: "Leaderboard", fr: "Classement", ar: "الترتيب", shortEn: "Leaderboard", shortFr: "Classement", shortAr: "الترتيب" },
-    { href: `${base}/boutique`, icon: ShoppingBag, en: "Shop", fr: "Boutique", ar: "المتجر", shortEn: "Shop", shortFr: "Boutique", shortAr: "المتجر" },
     { href: `${base}/profil`, icon: UserCheck, en: "Profile", fr: "Profil", ar: "الملف الشخصي", shortEn: "Profile", shortFr: "Profil", shortAr: "الملف" },
   ];
 }

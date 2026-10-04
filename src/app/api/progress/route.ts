@@ -6,7 +6,11 @@ import { isTrustedMutation } from "@/server/security/origin";
 import { consumeRateLimit } from "@/server/security/rate-limit";
 import { readLimitedJson } from "@/server/security/request-body";
 
-const schema = z.object({ lessonId: z.string().uuid(), watchedSeconds: z.number().int().nonnegative().max(24 * 60 * 60) });
+const schema = z.object({
+  lessonId: z.string().uuid(),
+  watchedSeconds: z.number().int().nonnegative().max(24 * 60 * 60),
+  completed: z.boolean().optional(),
+});
 
 export async function PUT(request: Request) {
   if (!isTrustedMutation(request)) return NextResponse.json({ error: "UNTRUSTED_ORIGIN" }, { status: 403 });

@@ -101,7 +101,11 @@ export async function searchPublishedCourses(input: CourseSearchInput = {}) {
       )!);
     }
   }
-  if (input.category) filters.push(eq(courses.category, input.category.slice(0, 80)));
+  if (input.category) {
+    filters.push(eq(courses.category, input.category.slice(0, 80)));
+  } else {
+    filters.push(sql`${courses.category} != 'test'`);
+  }
   if (input.level) filters.push(eq(courses.level, input.level));
   if (input.mode) filters.push(eq(courses.mode, input.mode));
   if (input.price === "free") filters.push(eq(courses.priceMillimes, 0));
