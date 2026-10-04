@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { CourseDiscussion } from "@/components/learning/CourseDiscussion";
 import { StreamLessonPlayer } from "@/components/learning/StreamLessonPlayer";
 import { VideoLessonPlayer } from "@/components/learning/VideoLessonPlayer";
@@ -137,9 +137,14 @@ export default async function CourseRoomPage({
   if (!isLocale(locale)) notFound();
   const session = await requireUser(locale);
   const data = await getLearningCourse(session.user.id, slug);
-  if (!data) notFound();
-  const discussion = await getCourseDiscussion(session.user.id, data.course.id);
-  if (!discussion) notFound();
+  if (!data) {
+    const courseExists = courseTranslations.some((item) => item.slug === slug);
+    if (courseExists) {
+      redirect(`/${locale}/formations/${slug}`);
+    }
+    redirect(`/${locale}/dashboard/formations`);
+  }
+  const discussion = (await getCourseDiscussion(session.user.id, data.course.id)) ?? [];
 
   const c = labels[locale];
   const ar = locale === "ar";
@@ -178,8 +183,11 @@ export default async function CourseRoomPage({
       activeLesson.videoUrl
   );
   const checkpoints =
-    isNativeVideoLesson && activeLesson ? await getCheckpointsForLearner(activeLesson.id, data.enrollment.id) : [];
+    isNativeVideoLesson && activeLesson && data.enrollment?.id
+      ? await getCheckpointsForLearner(activeLesson.id, data.enrollment.id)
+      : [];
   const completedLessonsCount = data.lessons.filter((l) => progress.get(l.id)?.completed).length;
+  const progressPercent = data.enrollment?.progressPercent ?? 0;
 
   return (
     <div className="course-room coursera-style">
@@ -198,12 +206,12 @@ export default async function CourseRoomPage({
         <div className="course-top-strip-right">
           <div className="course-top-progress-info">
             <span className="course-top-progress-text">
-              {c.lesson} {activeLessonIndex + 1}/{data.lessons.length} • {data.enrollment.progressPercent}% {c.completed}
+              {c.lesson} {activeLessonIndex + 1}/{data.lessons.length} • {progressPercent}% {c.completed}
             </span>
-            <div className="course-top-progress-bar" role="progressbar" aria-valuenow={data.enrollment.progressPercent} aria-valuemin={0} aria-valuemax={100} aria-label={`${c.progress}: ${data.enrollment.progressPercent}%`}>
+            <div className="course-top-progress-bar" role="progressbar" aria-valuenow={progressPercent} aria-valuemin={0} aria-valuemax={100} aria-label={`${c.progress}: ${progressPercent}%`}>
               <div
                 className="course-top-progress-fill"
-                style={{ width: `${Math.min(100, Math.max(0, data.enrollment.progressPercent))}%` }}
+                style={{ width: `${Math.min(100, Math.max(0, progressPercent))}%` }}
               />
             </div>
           </div>
@@ -373,7 +381,7 @@ export default async function CourseRoomPage({
               </div>
               <div className="course-overview-stat">
                 <span className="course-stat-label">{c.progress}</span>
-                <strong className="course-stat-val">{data.enrollment.progressPercent}%</strong>
+                <strong className="course-stat-val">{progressPercent}%</strong>
               </div>
             </div>
           </section>
@@ -384,7 +392,7 @@ export default async function CourseRoomPage({
               courseId={data.course.id}
               locale={locale}
               items={discussion.map((item) => ({ ...item, createdAt: item.createdAt.toISOString() }))}
-              currentUserFirstName={session.user.name.trim().split(/\s+/)[0] || "ANEI"}
+              currentUserFirstName={(session.user.name ?? "").trim().split(/\s+/)[0] || "ANEI"}
             />
           </section>
 
@@ -437,7 +445,7 @@ export default async function CourseRoomPage({
               </small>
             </div>
             <div className="course-syllabus-pill">
-              {data.enrollment.progressPercent}%
+              {progressPercent}%
             </div>
           </header>
 

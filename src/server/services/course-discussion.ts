@@ -22,8 +22,8 @@ async function enrolledCourse(userId: string, courseId: string) {
   return row ?? null;
 }
 
-function firstName(profileFirstName: string | null, accountName: string) {
-  return profileFirstName?.trim() || accountName.trim().split(/\s+/)[0] || "ANEI";
+function firstName(profileFirstName: string | null, accountName: string | null | undefined) {
+  return profileFirstName?.trim() || (accountName ?? "").trim().split(/\s+/)[0] || "ANEI";
 }
 
 export async function getCourseDiscussion(userId: string, courseId: string): Promise<CourseDiscussionItem[] | null> {

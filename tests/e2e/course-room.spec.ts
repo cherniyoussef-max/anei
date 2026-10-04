@@ -84,3 +84,32 @@ test("enrolled learner course circuit shows first name and publishes a real ques
     await removeTestPost(payload.id);
   }
 });
+
+test("enrolled learner can navigate AVS course room in French and Arabic", async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/fr/login");
+  const form = page.locator(".auth-form");
+  await form.getByLabel("Email").fill("learner@anei.local");
+  await form.getByLabel("Mot de passe").fill("DemoLearner!2026");
+  await form.getByRole("button", { name: "Accéder à mon espace" }).click();
+  await expect.poll(() => new URL(page.url()).pathname, { timeout: 20_000 }).toBe("/fr/verification-channel");
+  await assureCurrentTestSession(page);
+
+  // Navigate to AVS course in French
+  await page.goto("/fr/apprendre/avs-accompagnement-professionnel");
+  await expect(page.locator(".student-app")).toBeVisible();
+  await expect(page.locator(".status-card")).toHaveCount(0);
+  await expect(page.locator(".course-player-card")).toBeVisible();
+  await expect(page.locator(".course-syllabus-drawer")).toBeVisible();
+  await expect(page.locator(".course-syllabus-item")).toHaveCount(4);
+
+  // Navigate to AVS course in Arabic RTL
+  await page.goto("/ar/apprendre/avs-accompagnement-professionnel");
+  await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+  await expect(page.locator(".student-app")).toBeVisible();
+  await expect(page.locator(".status-card")).toHaveCount(0);
+  await expect(page.locator(".course-player-card")).toBeVisible();
+  await expect(page.locator(".course-syllabus-drawer")).toBeVisible();
+});
+
