@@ -61,14 +61,39 @@ test("learner dashboard reflects light sidebar, clean logo, no wave emoji, no ba
   await expect(brandLink.locator("strong")).toHaveText("ANEI");
   await expect(brandLink.getByText("Espace Apprenant")).toBeVisible();
 
-  // Capture desktop screenshot
+  // Verify Coursera Weekly Goal tracker
+  await expect(page.getByText("Objectif de la semaine")).toBeVisible();
+  await expect(page.getByText("Série active")).toBeVisible();
+
+  // Verify Coursera Tabs
+  const inProgressTab = page.getByRole("button", { name: /En cours/ });
+  const completedTab = page.getByRole("button", { name: /Terminées/ });
+  const certTab = page.getByRole("button", { name: /Certificats/ });
+  await expect(inProgressTab).toBeVisible();
+  await expect(completedTab).toBeVisible();
+  await expect(certTab).toBeVisible();
+
+  // Switch to Completed tab
+  await completedTab.click();
+  await page.waitForTimeout(300);
+
+  // Switch to Certificats tab
+  await certTab.click();
+  await page.waitForTimeout(300);
+
+  // Switch back to In Progress tab
+  await inProgressTab.click();
+  await page.waitForTimeout(300);
+
+  // Capture full desktop screenshot
   const artifactDir = "/home/youssef/.gemini/antigravity/brain/18b8d17c-7a26-4295-942c-b87387f373b6";
-  await page.screenshot({ path: `${artifactDir}/student_dashboard_desktop_light.png`, fullPage: false });
+  await page.screenshot({ path: `${artifactDir}/coursera_dashboard_desktop_full.png`, fullPage: true });
 
   // 2. Mobile viewport test
   await page.setViewportSize({ width: 375, height: 812 });
   await page.waitForTimeout(300);
-  await page.screenshot({ path: `${artifactDir}/student_dashboard_mobile_view.png`, fullPage: false });
+  await page.screenshot({ path: `${artifactDir}/coursera_dashboard_mobile_viewport.png`, fullPage: false });
+  await page.screenshot({ path: `${artifactDir}/coursera_dashboard_mobile_full.png`, fullPage: true });
 
   // 3. Navigate to Course Player to test "Passer la vidéo"
   await page.setViewportSize({ width: 1440, height: 1000 });
