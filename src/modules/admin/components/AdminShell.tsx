@@ -35,6 +35,7 @@ export function AdminShell({ children, locale, user }: {
   const groups: NavGroup[] = [
     { fr: "Pilotage", ar: "القيادة", items: [
       { href: base, icon: "chart", fr: "Vue d’ensemble", ar: "نظرة عامة" },
+      { href: `${base}/marketing`, icon: "chart", fr: "Marketing & Audience", ar: "التسويق والجمهور" },
       { href: `${base}/users`, icon: "users", fr: "Utilisateurs", ar: "المستخدمون" },
       { href: `${base}/crm`, icon: "users", fr: "CRM", ar: "إدارة العملاء" },
       { href: `${base}/crm/whatsapp`, icon: "phone", fr: "WhatsApp CRM", ar: "واتساب CRM" },

@@ -97,16 +97,22 @@ export default async function AdminOverview({ params, searchParams }: {
       title={ar ? "نظرة عامة" : "Vue d’ensemble"}
       description={ar ? "مؤشرات حقيقية ومحدثة محسوبة من بيانات منصة ANEI." : "Indicateurs réels, calculés à partir des données de la plateforme ANEI."}
       actions={
-        <form className="admin-period-form" method="get">
-          <label htmlFor="period">{ar ? "الفترة" : "Période"}</label>
-          <select id="period" name="period" defaultValue={period}>
-            <option value="7d">{ar ? "آخر 7 أيام" : "7 derniers jours"}</option>
-            <option value="30d">{ar ? "آخر 30 يوم" : "30 derniers jours"}</option>
-            <option value="90d">{ar ? "آخر 90 يوم" : "90 derniers jours"}</option>
-            <option value="365d">{ar ? "سنة كاملة" : "1 an"}</option>
-          </select>
-          <button type="submit">{ar ? "تطبيق" : "Appliquer"}</button>
-        </form>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+          <Link href={`/${locale}/admin/marketing`} className="admin-primary-button">
+            <TrendingUp size={15} />
+            <span>{ar ? "تحليل الجمهور والتسويق" : "Marketing & Audience"}</span>
+          </Link>
+          <form className="admin-period-form" method="get">
+            <label htmlFor="period">{ar ? "الفترة" : "Période"}</label>
+            <select id="period" name="period" defaultValue={period}>
+              <option value="7d">{ar ? "آخر 7 أيام" : "7 derniers jours"}</option>
+              <option value="30d">{ar ? "آخر 30 يوم" : "30 derniers jours"}</option>
+              <option value="90d">{ar ? "آخر 90 يوم" : "90 derniers jours"}</option>
+              <option value="365d">{ar ? "سنة كاملة" : "1 an"}</option>
+            </select>
+            <button type="submit">{ar ? "تطبيق" : "Appliquer"}</button>
+          </form>
+        </div>
       }
     />
 
