@@ -36,7 +36,7 @@ async function loginAsAdmin(page: import("@playwright/test").Page) {
 
 const ARTIFACT_DIR = "/home/youssef/.gemini/antigravity/brain/18b8d17c-7a26-4295-942c-b87387f373b6";
 
-test.describe("Admin Enterprise Support & Enhanced Creation Workflows", () => {
+test.describe("Admin Enterprise Support & Advanced Creation Studios", () => {
   test.setTimeout(120000);
 
   test("Enterprise Support Console & Upgraded Creation Workflows", async ({ page }) => {
@@ -84,12 +84,15 @@ test.describe("Admin Enterprise Support & Enhanced Creation Workflows", () => {
       fullPage: false,
     });
 
-    // 2. Enhanced Course Creation with Auto-Slug and Presets
+    // 2. Advanced Course Creation Studio with Readiness Gauge & Tabs
     await page.goto("/fr/admin/courses/editor");
     await expect(page.locator("h1")).toContainText(/Créer une formation/i);
 
     const courseForm = page.locator(".admin-course-form");
     await expect(courseForm).toBeVisible();
+
+    // Check Readiness Gauge exists
+    await expect(courseForm).toContainText(/Indicateur d'exhaustivité pédagogique/i);
 
     const titleFrInput = courseForm.locator('input[name="titleFr"]');
     const slugInput = courseForm.locator('input[name="slug"]');
@@ -104,6 +107,29 @@ test.describe("Admin Enterprise Support & Enhanced Creation Workflows", () => {
     const titleArInput = courseForm.locator('input[name="titleAr"]');
     await expect(titleArInput).toHaveValue("Prise en charge de l'autisme en milieu scolaire");
 
+    // Toggle live catalog card preview
+    const previewToggleBtn = courseForm.locator('button:has-text("Aperçu carte catalogue")');
+    await expect(previewToggleBtn).toBeVisible();
+    await previewToggleBtn.click();
+    await expect(courseForm).toContainText(/Aperçu en direct : Rendu de la carte dans le catalogue public/i);
+
+    // Switch to Tab 2: Contenu & Objectifs
+    const tabContentBtn = courseForm.locator('button:has-text("2. Contenu & Objectifs")');
+    await tabContentBtn.click();
+    await expect(courseForm).toContainText(/Objectifs pédagogiques opérationnels/i);
+
+    // Switch to Tab 3: Modalités & Tarification
+    const tabSettingsBtn = courseForm.locator('button:has-text("3. Modalités, Durée & Prix")');
+    await tabSettingsBtn.click();
+    await expect(courseForm).toContainText(/Durée estimée de la formation/i);
+
+    // Click fast hours adder (+5h)
+    const plus5hBtn = courseForm.locator('button:has-text("+5h")');
+    await plus5hBtn.click();
+    const durationMinsInput = courseForm.locator('input[name="durationMinutes"]');
+    await expect(durationMinsInput).toHaveValue("900"); // 10h + 5h = 15h = 900 mins
+
+    // Capture screenshot of Course Studio
     await page.screenshot({
       path: `${ARTIFACT_DIR}/admin_course_creation_fr_desktop.png`,
       fullPage: false,
@@ -132,7 +158,7 @@ test.describe("Admin Enterprise Support & Enhanced Creation Workflows", () => {
       fullPage: false,
     });
 
-    // 4. Enhanced Resources page with Collapsible Panel, Presets, and Auto-Slug
+    // 4. Advanced Resource Library Studio with Typology & Readiness Gauge
     await page.goto("/fr/admin/resources");
     await expect(page.locator("h1")).toContainText(/Gestion des ressources/i);
 
@@ -145,6 +171,9 @@ test.describe("Admin Enterprise Support & Enhanced Creation Workflows", () => {
     const resourceForm = resourcePanel.locator("form.admin-course-form");
     await expect(resourceForm).toBeVisible();
 
+    // Verify readiness gauge
+    await expect(resourceForm).toContainText(/Indicateur d'exhaustivité documentaire/i);
+
     const typePill = resourceForm.locator('button:has-text("Fiche pédagogique")');
     await expect(typePill).toBeVisible();
     await typePill.click();
@@ -155,12 +184,18 @@ test.describe("Admin Enterprise Support & Enhanced Creation Workflows", () => {
     await resTitleFr.fill("Fiche d'adaptation curriculaire pour classe inclusive");
     await expect(resSlug).toHaveValue("fiche-dadaptation-curriculaire-pour-classe-inclusive");
 
+    // Toggle live library card preview
+    const resPreviewBtn = resourceForm.locator('button:has-text("Aperçu carte bibliothèque")');
+    await expect(resPreviewBtn).toBeVisible();
+    await resPreviewBtn.click();
+    await expect(resourceForm).toContainText(/Aperçu en direct : Rendu de la ressource dans la bibliothèque/i);
+
     await page.screenshot({
       path: `${ARTIFACT_DIR}/admin_resource_creation_fr_desktop.png`,
       fullPage: false,
     });
 
-    // 5. Arabic RTL parity of Enterprise Support Console
+    // 5. Arabic RTL parity of Enterprise Support Console and Course Studio
     await page.goto("/ar/admin/users");
     const arUserLink = page.locator("a[href*='/admin/users/']").first();
     await arUserLink.click();
@@ -171,6 +206,18 @@ test.describe("Admin Enterprise Support & Enhanced Creation Workflows", () => {
 
     await page.screenshot({
       path: `${ARTIFACT_DIR}/admin_support_console_ar_desktop.png`,
+      fullPage: false,
+    });
+
+    // Arabic Course Studio
+    await page.goto("/ar/admin/courses/editor");
+    await expect(page.locator("h1")).toContainText(/إنشاء دورة/i);
+    const arCourseForm = page.locator(".admin-course-form");
+    await expect(arCourseForm).toBeVisible();
+    await expect(arCourseForm).toContainText(/مؤشر جودة واكتمال الدورة/i);
+
+    await page.screenshot({
+      path: `${ARTIFACT_DIR}/admin_course_creation_ar_desktop.png`,
       fullPage: false,
     });
   });
