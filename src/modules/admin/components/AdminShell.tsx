@@ -58,6 +58,8 @@ export function AdminShell({ children, locale, user }: {
       { href: `${base}/payments`, icon: "shield", fr: "Paiements", ar: "المدفوعات" },
     ]},
     { fr: "Opérations", ar: "العمليات", items: [
+      { href: `${base}/contacts`, icon: "mail", fr: "Messages & Contacts", ar: "الرسائل والتواصل" },
+      { href: `${base}/news`, icon: "book", fr: "Actualités", ar: "الأخبار" },
       { href: `${base}/avs`, icon: "award", fr: "Annuaire & RDV AVS", ar: "دليل ومواعيد المرافقين" },
       { href: `${base}/care`, icon: "users", fr: "Suivis spécialistes", ar: "متابعات المختصين" },
       { href: `${base}/audit`, icon: "shield", fr: "Journal d’audit", ar: "سجل التدقيق" },

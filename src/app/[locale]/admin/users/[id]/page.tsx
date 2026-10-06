@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { formatDate, formatMillimes, isLocale } from "@/lib/i18n";
@@ -86,7 +87,21 @@ export default async function AdminUserDetail({ params, searchParams }: {
         {specialistProfile && <article className="admin-persona-profile"><div><strong>{ar?"ملف الأخصائي":"Profil spécialiste"}</strong><small>{[specialistProfile.specialty, specialistProfile.qualification, specialistProfile.experienceYears != null ? `${specialistProfile.experienceYears} ${ar?"سنة خبرة":"ans d'expérience"}` : null, specialistProfile.practiceStructure].filter(Boolean).join(" · ") || (ar?"لا توجد تفاصيل":"Aucun détail")}</small></div></article>}
         {organizationProfile && <article className="admin-persona-profile"><div><strong>{ar?"ملف المؤسسة":"Profil organisation"}</strong><small>{[organizationProfile.organizationName, organizationProfile.organizationType, organizationProfile.representativeRole].filter(Boolean).join(" · ") || (ar?"لا توجد تفاصيل":"Aucun détail")}</small></div></article>}
       </div>:null}
-      {tab === "audit" ? <p className="admin-empty">{ar?"استخدم سجل التدقيق مع معرّف المستخدم لتتبع العمليات.":"Utilisez le journal d’audit avec l’identifiant utilisateur pour retracer les opérations."}</p>:null}
+      {tab === "audit" ? (
+        <div className="admin-empty-state">
+          <strong>{ar ? "سجل التدقيق المرتبط" : "Journal d’audit lié"}</strong>
+          <p>
+            {ar
+              ? "تتبع كافة العمليات والأنشطة والولوج المرتبطة بهذا المستخدم مباشرة في سجل التدقيق."
+              : "Retrouvez l’ensemble des opérations, connexions et accès associés à cet utilisateur."}
+          </p>
+          <div className="mt-3">
+            <Link className="admin-primary-button" href={`/${locale}/admin/audit?q=${data.user.email}`}>
+              {ar ? "عرض سجل تدقيق هذا المستخدم" : "Consulter le journal d’audit"}
+            </Link>
+          </div>
+        </div>
+      ) : null}
     </section>
   </>;
 }

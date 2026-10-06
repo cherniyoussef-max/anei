@@ -269,3 +269,132 @@ export async function getCrmLearnerOperationalDetail(organizationId: string, con
   ]);
   return { contact, personas, enrollments: enrollmentRows, appointments, attempts, certificates: certificateRows };
 }
+
+export type AdminEnrollmentItem = {
+  id: string;
+  user_id: string;
+  user_name: string;
+  user_email: string;
+  course_id: string;
+  course_title_fr: string;
+  course_title_ar: string;
+  progress_percent: number;
+  status: string;
+  enrolled_at: Date | string;
+  completed_at: Date | string | null;
+};
+
+export async function getAdminEnrollmentsList(params: {
+  q?: string;
+  status?: string;
+  page?: number;
+  limit?: number;
+} = {}) {
+  const page = Math.max(1, params.page ?? 1);
+  const limit = Math.min(100, Math.max(1, params.limit ?? 25));
+  const offset = (page - 1) * limit;
+  const q = params.q?.trim();
+  const status = params.status?.trim();
+
+  const searchFilter = q ? sql`and (u.name ilike ${`%${q}%`} or u.email ilike ${`%${q}%`} or c.title_fr ilike ${`%${q}%`} or c.title_ar ilike ${`%${q}%`})` : sql``;
+  const statusFilter = status && status !== "all" ? sql`and e.status = ${status}` : sql``;
+
+  const [itemsRes, totalRes, statsRes] = await Promise.all([
+    db.execute<AdminEnrollmentItem>(sql`
+      select 
+        e.id, e.user_id, u.name as user_name, u.email as user_email,
+        c.id as course_id, c.title_fr as course_title_fr, c.title_ar as course_title_ar,
+        e.progress_percent, e.status, e.enrolled_at, e.completed_at
+      from enrollments e
+      join "user" u on u.id = e.user_id
+      join courses c on c.id = e.course_id
+      where 1=1 ${searchFilter} ${statusFilter}
+      order by e.enrolled_at desc
+      limit ${limit} offset ${offset}
+    `),
+    db.execute<{ count: number }>(sql`
+      select count(*)::int as count
+      from enrollments e
+      join "user" u on u.id = e.user_id
+      join courses c on c.id = e.course_id
+      where 1=1 ${searchFilter} ${statusFilter}
+    `),
+    db.execute<{ total: number; active: number; completed: number; avg_progress: number }>(sql`
+      select 
+        count(*)::int as total,
+        count(*) filter (where status = 'active')::int as active,
+        count(*) filter (where status = 'completed')::int as completed,
+        coalesce(round(avg(progress_percent)), 0)::int as avg_progress
+      from enrollments
+    `),
+  ]);
+
+  const total = totalRes.rows[0]?.count ?? 0;
+  const stats = statsRes.rows[0] ?? { total: 0, active: 0, completed: 0, avg_progress: 0 };
+
+  return {
+    items: itemsRes.rows,
+    total,
+    page,
+    totalPages: Math.max(1, Math.ceil(total / limit)),
+    stats,
+  };
+}
+
+export type AdminCertificateItem = {
+  id: string;
+  code: string;
+  file_url: string | null;
+  issued_at: Date | string;
+  user_id: string;
+  user_name: string;
+  user_email: string;
+  course_id: string;
+  course_title_fr: string;
+  course_title_ar: string;
+};
+
+export async function getAdminCertificatesList(params: {
+  q?: string;
+  page?: number;
+  limit?: number;
+} = {}) {
+  const page = Math.max(1, params.page ?? 1);
+  const limit = Math.min(100, Math.max(1, params.limit ?? 25));
+  const offset = (page - 1) * limit;
+  const q = params.q?.trim();
+
+  const searchFilter = q ? sql`and (cert.code ilike ${`%${q}%`} or u.name ilike ${`%${q}%`} or u.email ilike ${`%${q}%`} or c.title_fr ilike ${`%${q}%`} or c.title_ar ilike ${`%${q}%`})` : sql``;
+
+  const [itemsRes, totalRes] = await Promise.all([
+    db.execute<AdminCertificateItem>(sql`
+      select 
+        cert.id, cert.code, cert.file_url, cert.issued_at,
+        cert.user_id, u.name as user_name, u.email as user_email,
+        c.id as course_id, c.title_fr as course_title_fr, c.title_ar as course_title_ar
+      from certificates cert
+      join "user" u on u.id = cert.user_id
+      join courses c on c.id = cert.course_id
+      where 1=1 ${searchFilter}
+      order by cert.issued_at desc
+      limit ${limit} offset ${offset}
+    `),
+    db.execute<{ count: number }>(sql`
+      select count(*)::int as count
+      from certificates cert
+      join "user" u on u.id = cert.user_id
+      join courses c on c.id = cert.course_id
+      where 1=1 ${searchFilter}
+    `),
+  ]);
+
+  const total = totalRes.rows[0]?.count ?? 0;
+
+  return {
+    items: itemsRes.rows,
+    total,
+    page,
+    totalPages: Math.max(1, Math.ceil(total / limit)),
+  };
+}
+
