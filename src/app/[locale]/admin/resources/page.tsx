@@ -31,10 +31,33 @@ export default async function AdminResourcesPage({ params, searchParams }: {
     <AdminPageHeader locale={locale} eyebrow={ar ? "المكتبة" : "Bibliothèque"}
       title={ar ? "إدارة الموارد" : "Gestion des ressources"}
       description={ar ? `${data.total} مورد.` : `${data.total} ressources.`} />
-    <section className="admin-surface">
-      <h2>{ar ? "إضافة مورد جديد" : "Ajouter une nouvelle ressource"}</h2>
-      <AdminResourceForm locale={locale} />
-    </section>
+    <details className="admin-editor-create-panel" style={{ marginBottom: 24 }}>
+      <summary
+        style={{
+          cursor: "pointer",
+          fontWeight: 700,
+          fontSize: 15,
+          padding: "14px 18px",
+          background: "#fff",
+          border: "1px solid #e2e8f0",
+          borderRadius: 8,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ color: "#0284c7", fontSize: 18, fontWeight: 800 }}>+</span>
+          {ar ? "إضافة مورد جديد إلى المكتبة (Guides, Fiches, Outils...)" : "Ajouter une nouvelle ressource à la bibliothèque"}
+        </span>
+        <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>
+          {ar ? "انقر للفتح / الإغلاق" : "Cliquer pour ouvrir le formulaire"}
+        </span>
+      </summary>
+      <div style={{ marginTop: 12 }} className="admin-surface">
+        <AdminResourceForm locale={locale} />
+      </div>
+    </details>
     <form className="admin-filter-panel" method="get" role="search">
       <label><span>{ar ? "البحث" : "Recherche"}</span><input name="q" defaultValue={q} placeholder={ar ? "العنوان أو المعرف" : "Titre ou identifiant"} /></label>
       <button className="admin-primary-button">{ar ? "بحث" : "Rechercher"}</button>

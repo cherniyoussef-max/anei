@@ -34,10 +34,33 @@ export default async function AdminWebinarsPage({
         description={ar ? `${data.total} ندوة مسجلة.` : `${data.total} webinaires enregistrés.`}
       />
 
-      <section className="admin-surface">
-        <h2>{ar ? "إضافة ندوة جديدة (Google Meet / Teams)" : "Ajouter un nouveau webinaire"}</h2>
-        <AdminWebinarForm locale={locale as Locale} />
-      </section>
+      <details className="admin-editor-create-panel" style={{ marginBottom: 24 }}>
+        <summary
+          style={{
+            cursor: "pointer",
+            fontWeight: 700,
+            fontSize: 15,
+            padding: "14px 18px",
+            background: "#fff",
+            border: "1px solid #e2e8f0",
+            borderRadius: 8,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ color: "#00796B", fontSize: 18, fontWeight: 800 }}>+</span>
+            {ar ? "إضافة ندوة جديدة (Google Meet / Teams / حضوري)" : "Ajouter un nouveau webinaire (Créer une session)"}
+          </span>
+          <span style={{ fontSize: 12, color: "#64748b", fontWeight: 500 }}>
+            {ar ? "انقر للفتح / الإغلاق" : "Cliquer pour ouvrir le formulaire"}
+          </span>
+        </summary>
+        <div style={{ marginTop: 12 }} className="admin-surface">
+          <AdminWebinarForm locale={locale as Locale} />
+        </div>
+      </details>
 
       <form className="admin-filter-panel" method="get" role="search">
         <label>

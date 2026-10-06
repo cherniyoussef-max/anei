@@ -7,7 +7,7 @@ import { hasAdminPermission } from "@/modules/admin/domain/permissions";
 import { getAdminUserDetail } from "@/modules/admin/queries/admin-users";
 import { AdminPageHeader } from "@/modules/admin/components/AdminPageHeader";
 import { AdminUserRole } from "@/components/admin/AdminUserRole";
-import { AdminUserCrmActions } from "@/modules/admin/components/AdminUserCrmActions";
+import { AdminUserSupportConsole } from "@/modules/admin/components/AdminUserSupportConsole";
 import { AdminUserPersonas } from "@/components/admin/AdminUserPersonas";
 import { getUserPersonas } from "@/server/queries/personas";
 import {
@@ -56,8 +56,15 @@ export default async function AdminUserDetail({ params, searchParams }: {
       <article><span>{ar?"المدفوع":"Total payé"}</span><strong>{formatMillimes(data.user.paid_millimes,locale)}</strong></article>
     </section>
     
-    {String(session.user.role) === "SUPER_ADMIN" && (
-      <AdminUserCrmActions userId={id} userEmail={data.user.email} userName={data.user.name} locale={locale} />
+    {hasAdminPermission(String(session.user.role), "users.manage") && (
+      <AdminUserSupportConsole
+        userId={id}
+        user={data.user}
+        allCourses={data.allCourses}
+        enrollments={data.enrollments}
+        certificates={data.certificates}
+        locale={locale}
+      />
     )}
 
     <nav className="admin-tabs" aria-label={ar ? "أقسام ملف المستخدم" : "Sections de la fiche utilisateur"}>{tabs.map(([key,label])=><a key={key} className={tab===key?"active":""} href={`?tab=${key}`}>{label}</a>)}</nav>
@@ -80,7 +87,7 @@ export default async function AdminUserDetail({ params, searchParams }: {
       
       </div>:null}
       {tab === "certificates" ? <div><h2>{ar?"الشهادات":"Certificats"}</h2><div className="admin-list">{data.certificates.map((row) => {const item=row as Record<string,unknown>;return <article key={String(item.id)}><div><strong>{String(ar?item.title_ar:item.title_fr)}</strong><small>{String(item.code)}</small></div><b>{formatDate(item.issued_at as Date,locale)}</b></article>})}</div></div>:null}
-      {tab === "sessions" ? <div><h2>{ar?"جلسات الحساب":"Sessions du compte"}</h2><div className="admin-list">{data.sessions.map((row) => {const item=row as Record<string,unknown>;return <article key={String(item.id)}><div><strong>{String(item.user_agent ?? (ar?"جهاز غير معروف":"Appareil inconnu"))}</strong><small>{item.ip_address?String(item.ip_address):"—"}</small></div><b>{formatDate(item.updated_at as Date,locale)}</b></article>})}</div><p className="admin-help">{ar?"إبطال جلسة طرف ثالث غير متاح بأمان في واجهة الخادم الحالية لـ Better Auth؛ لم تتم محاكاته يدويًا.":"La révocation administrative d’une session tierce n’est pas exposée de façon sûre par l’intégration Better Auth actuelle ; elle n’a pas été réinventée."}</p></div>:null}
+      {tab === "sessions" ? <div><h2>{ar?"جلسات الحساب":"Sessions du compte"}</h2><div className="admin-list">{data.sessions.map((row) => {const item=row as Record<string,unknown>;return <article key={String(item.id)}><div><strong>{String(item.user_agent ?? (ar?"جهاز غير معروف":"Appareil inconnu"))}</strong><small>{item.ip_address?String(item.ip_address):"—"}</small></div><b>{formatDate(item.updated_at as Date,locale)}</b></article>})}</div><p className="admin-help">{ar?"يمكنك إنهاء وإبطال كافة الجلسات النشطة من لوحة دعم Super Admin أعلاه (قسم الأمان والجلسات).":"Vous pouvez révoquer l'ensemble des sessions actives depuis la console support ci-dessus (onglet Sécurité & Accès)."}</p></div>:null}
       {tab === "personas" ? <div><h2>{ar?"الأدوار (Personas)":"Personas"}</h2><AdminUserPersonas userId={id} memberships={personaMemberships.map((m) => ({ persona: m.persona, status: m.status, isPrimary: m.isPrimary }))} canEdit={hasAdminPermission(String(session.user.role), "personas.manage")}/>
         {teacherProfile && <article className="admin-persona-profile admin-persona-profile-first"><div><strong>{ar?"ملف التدريس":"Profil enseignant"}</strong><small>{[teacherProfile.discipline, teacherProfile.qualification, teacherProfile.experienceYears != null ? `${teacherProfile.experienceYears} ${ar?"سنة خبرة":"ans d'expérience"}` : null, teacherProfile.professionalInstitution].filter(Boolean).join(" · ") || (ar?"لا توجد تفاصيل":"Aucun détail")}</small></div></article>}
         {avsProfile && <article className="admin-persona-profile"><div><strong>{ar?"ملف AVS":"Profil AVS"}</strong><small>{[avsProfile.qualification, avsProfile.experienceYears != null ? `${avsProfile.experienceYears} ${ar?"سنة خبرة":"ans d'expérience"}` : null, avsProfile.interventionDomains?.join(", ")].filter(Boolean).join(" · ") || (ar?"لا توجد تفاصيل":"Aucun détail")}</small></div></article>}

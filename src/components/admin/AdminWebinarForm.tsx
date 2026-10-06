@@ -8,6 +8,7 @@ import {
   type WebinarMeetingProvider,
   type WebinarFormField,
 } from "@/lib/webinars";
+import { slugify } from "@/lib/slug";
 import type { Locale } from "@/types";
 
 export function AdminWebinarForm({ locale }: { locale: Locale }) {
@@ -16,6 +17,31 @@ export function AdminWebinarForm({ locale }: { locale: Locale }) {
   const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [provider, setProvider] = useState<WebinarMeetingProvider>("google_meet");
   const [dateError, setDateError] = useState("");
+  const [slug, setSlug] = useState("");
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+  const [titleFr, setTitleFr] = useState("");
+  const [titleAr, setTitleAr] = useState("");
+  const [descriptionFr, setDescriptionFr] = useState("");
+  const [descriptionAr, setDescriptionAr] = useState("");
+
+  const handleTitleFrChange = (val: string) => {
+    setTitleFr(val);
+    if (!slugManuallyEdited) {
+      setSlug(slugify(val));
+    }
+  };
+
+  const handleForceGenerateSlug = () => {
+    if (titleFr.trim()) {
+      setSlug(slugify(titleFr));
+      setSlugManuallyEdited(false);
+    }
+  };
+
+  const handleCopyFrToAr = () => {
+    if (!titleAr) setTitleAr(titleFr);
+    if (!descriptionAr) setDescriptionAr(descriptionFr);
+  };
 
   // Form fields configuration
   const [enabledFields, setEnabledFields] = useState<Record<string, boolean>>({
@@ -130,8 +156,35 @@ export function AdminWebinarForm({ locale }: { locale: Locale }) {
     <form className="admin-course-form" onSubmit={submit}>
       <div className="field-row">
         <label>
-          <span>Slug</span>
-          <input name="slug" required pattern="[a-z0-9-]+" placeholder="webinaire-inclusion" />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span>Slug</span>
+            <button
+              type="button"
+              onClick={handleForceGenerateSlug}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#00796B",
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: "pointer",
+                textDecoration: "underline",
+              }}
+            >
+              {ar ? "توليد من العنوان" : "Auto-générer"}
+            </button>
+          </div>
+          <input
+            name="slug"
+            required
+            pattern="[a-z0-9-]+"
+            placeholder="webinaire-inclusion"
+            value={slug}
+            onChange={(e) => {
+              setSlug(e.target.value);
+              setSlugManuallyEdited(true);
+            }}
+          />
         </label>
         <label>
           <span>{ar ? "المدرب" : "Intervenant"}</span>
@@ -139,25 +192,70 @@ export function AdminWebinarForm({ locale }: { locale: Locale }) {
         </label>
       </div>
 
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
+        <button
+          type="button"
+          onClick={handleCopyFrToAr}
+          style={{
+            padding: "3px 10px",
+            borderRadius: 6,
+            fontSize: 11,
+            fontWeight: 600,
+            background: "#f1f5f9",
+            color: "#0f172a",
+            border: "1px solid #cbd5e1",
+            cursor: "pointer",
+          }}
+        >
+          {ar ? "⎘ نسخ FR نحو AR" : "⎘ Dupliquer FR vers AR"}
+        </button>
+      </div>
+
       <div className="field-row">
         <label>
           <span>Titre FR</span>
-          <input name="titleFr" required placeholder="L'inclusion scolaire au quotidien" />
+          <input
+            name="titleFr"
+            required
+            placeholder="L'inclusion scolaire au quotidien"
+            value={titleFr}
+            onChange={(e) => handleTitleFrChange(e.target.value)}
+          />
         </label>
         <label>
           <span>العنوان AR</span>
-          <input name="titleAr" dir="rtl" required placeholder="الدمج المدرسي في الممارسة اليومية" />
+          <input
+            name="titleAr"
+            dir="rtl"
+            required
+            placeholder="الدمج المدرسي في الممارسة اليومية"
+            value={titleAr}
+            onChange={(e) => setTitleAr(e.target.value)}
+          />
         </label>
       </div>
 
       <div className="field-row">
         <label>
           <span>Description FR</span>
-          <textarea name="descriptionFr" rows={4} required />
+          <textarea
+            name="descriptionFr"
+            rows={4}
+            required
+            value={descriptionFr}
+            onChange={(e) => setDescriptionFr(e.target.value)}
+          />
         </label>
         <label>
           <span>الوصف AR</span>
-          <textarea name="descriptionAr" dir="rtl" rows={4} required />
+          <textarea
+            name="descriptionAr"
+            dir="rtl"
+            rows={4}
+            required
+            value={descriptionAr}
+            onChange={(e) => setDescriptionAr(e.target.value)}
+          />
         </label>
       </div>
 

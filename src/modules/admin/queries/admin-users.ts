@@ -104,6 +104,7 @@ type AdminUserDetailPayload = {
   sessions: JsonRecord[];
   certificates: JsonRecord[];
   videoProgress: JsonRecord[];
+  allCourses: Array<{ id: string; title_fr: string; title_ar: string }>;
 };
 
 function parseCached<T>(value: string): T {
@@ -201,7 +202,18 @@ export async function getAdminUsers(input: AdminUserFilters = {}) {
   return payload;
 }
 
-type DetailRow = UserListRow & { profile_type: string; locale: string; email_verified: boolean; certificates: number; webinars: number; paid_millimes: number };
+type DetailRow = UserListRow & {
+  profile_type: string;
+  locale: string;
+  email_verified: boolean;
+  phone_number: string | null;
+  phone_verified_at: Date | string | null;
+  governorate: string | null;
+  city: string | null;
+  certificates: number;
+  webinars: number;
+  paid_millimes: number;
+};
 export async function getAdminUserDetail(id: string) {
   const cacheKey = `admin:users:detail:${id}`;
 
@@ -244,6 +256,7 @@ export async function getAdminUserDetail(id: string) {
 
   const result = await db.execute<DetailRow>(sql`
     select u.id,u.name,u.email,u.image,u.role,u.created_at joined_at,u.profile_type,u.locale,u.email_verified,
+      up.phone_number, up.phone_verified_at, up.governorate, up.city,
       coalesce((select case when bool_or(provider_id='google') then 'google' else 'credential' end from account where user_id=u.id),'credential') provider,
       (select max(updated_at) from session where user_id=u.id) last_activity,
       (select count(*)::int from enrollments where user_id=u.id) enrollments,
@@ -252,16 +265,19 @@ export async function getAdminUserDetail(id: string) {
       (select count(*)::int from webinar_registrations where user_id=u.id) webinars,
       coalesce((select sum(amount_millimes)::int from orders where user_id=u.id and status='paid'),0) paid_millimes,
       1::int total_count
-    from "user" u where u.id=${id} limit 1
+    from "user" u
+    left join user_profile up on up.user_id = u.id
+    where u.id=${id} limit 1
   `);
   if (!result.rows[0]) return null;
-  const [enrollments, sessions, certificates, videoProgress] = await Promise.all([
+  const [enrollments, sessions, certificates, videoProgress, allCourses] = await Promise.all([
     db.execute(sql`select e.id,e.status,e.progress_percent,e.enrolled_at,e.completed_at,c.id course_id,c.title_fr,c.title_ar from enrollments e join courses c on c.id=e.course_id where e.user_id=${id} order by e.enrolled_at desc limit 100`),
     db.execute(sql`select id,created_at,updated_at,expires_at,ip_address,user_agent from session where user_id=${id} order by updated_at desc limit 50`),
     db.execute(sql`select c.id,c.code,c.issued_at,co.title_fr,co.title_ar from certificates c join courses co on co.id=c.course_id where c.user_id=${id} order by c.issued_at desc limit 100`),
     db.execute(sql`select lp.id, lp.watched_seconds, lp.completed, lp.updated_at, l.title_fr, l.title_ar, coalesce(l.duration_seconds, 0) as duration_seconds, c.title_fr as course_fr, c.title_ar as course_ar from lesson_progress lp join lessons l on l.id = lp.lesson_id join enrollments e on e.id = lp.enrollment_id join courses c on c.id = l.course_id where e.user_id=${id} order by lp.updated_at desc limit 100`),
+    db.execute<{ id: string; title_fr: string; title_ar: string }>(sql`select id, title_fr, title_ar from courses order by title_fr asc`),
   ]);
-  const payload = { user: result.rows[0], enrollments: enrollments.rows, sessions: sessions.rows, certificates: certificates.rows, videoProgress: videoProgress.rows };
+  const payload: AdminUserDetailPayload = { user: result.rows[0], enrollments: enrollments.rows, sessions: sessions.rows, certificates: certificates.rows, videoProgress: videoProgress.rows, allCourses: allCourses.rows };
   
   if (memoryCache.size > 200) pruneMemoryCache();
   memoryCache.set(cacheKey, { data: payload, expiresAt: now + MEMORY_CACHE_TTL_MS });
