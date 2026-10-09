@@ -1,0 +1,20 @@
+{
+  "source_path": "docs/adr/0002-private-object-storage.md",
+  "type": "ADR",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "ADR 0002 — Private S3-compatible media",
+  "summary": "Use private S3-compatible storage with short-lived signed URLs for media and direct admin signed PUT uploads.",
+  "scope": [
+    "S3",
+    "object storage",
+    "signed URLs",
+    "media",
+    "PDFs",
+    "videos"
+  ],
+  "cross_refs": [],
+  "locked": true,
+  "precedence": null,
+  "notes": ""
+}

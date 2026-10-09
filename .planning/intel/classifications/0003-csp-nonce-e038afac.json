@@ -1,0 +1,19 @@
+{
+  "source_path": "docs/adr/0003-csp-nonce.md",
+  "type": "ADR",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "ADR 0003 — Per-request CSP nonce",
+  "summary": "Enforce per-request nonce through src/proxy.ts, strict script directives, and dynamic rendering for protected/current application pages.",
+  "scope": [
+    "CSP",
+    "nonce",
+    "proxy.ts",
+    "XSS",
+    "security headers"
+  ],
+  "cross_refs": [],
+  "locked": true,
+  "precedence": null,
+  "notes": "Accepted with monitor performance caveat"
+}

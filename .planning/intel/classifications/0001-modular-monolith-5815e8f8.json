@@ -1,0 +1,20 @@
+{
+  "source_path": "docs/adr/0001-modular-monolith.md",
+  "type": "ADR",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "ADR 0001 — Modular monolith",
+  "summary": "Keep one deployable Next.js modular monolith with domain service boundaries and external state in PostgreSQL, Redis, and object storage.",
+  "scope": [
+    "Next.js",
+    "modular monolith",
+    "PostgreSQL",
+    "Redis",
+    "object storage",
+    "domain boundaries"
+  ],
+  "cross_refs": [],
+  "locked": true,
+  "precedence": null,
+  "notes": ""
+}
