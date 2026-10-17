@@ -17,7 +17,13 @@ import {
 } from "lucide-react";
 import { formatMillimes, isLocale } from "@/lib/i18n";
 import { requireAdminPermission } from "@/server/auth/session";
-import { getAdminDistributions, getAdminGrowth, getAdminOverview, parseAdminPeriod } from "@/modules/admin/queries/admin-analytics";
+import {
+  getAdminDistributions,
+  getAdminGrowth,
+  getAdminOnboardingAnalytics,
+  getAdminOverview,
+  parseAdminPeriod,
+} from "@/modules/admin/queries/admin-analytics";
 import { AdminPageHeader } from "@/modules/admin/components/AdminPageHeader";
 import { Distribution, TrendChart } from "@/modules/admin/components/AdminCharts";
 
@@ -29,8 +35,11 @@ export default async function AdminOverview({ params, searchParams }: {
   const { locale } = await params; if (!isLocale(locale)) notFound();
   await requireAdminPermission(locale, "overview.read");
   const period = parseAdminPeriod((await searchParams).period);
-  const [overview, growth, distributions] = await Promise.all([
-    getAdminOverview(period), getAdminGrowth(period), getAdminDistributions(),
+  const [overview, growth, distributions, onboardingAnalytics] = await Promise.all([
+    getAdminOverview(period),
+    getAdminGrowth(period),
+    getAdminDistributions(),
+    getAdminOnboardingAnalytics(),
   ]);
   const ar = locale === "ar";
   const number = new Intl.NumberFormat(ar ? "ar-TN" : "fr-FR");
@@ -275,6 +284,157 @@ export default async function AdminOverview({ params, searchParams }: {
           </div>
         </div>
       </article>
+    </div>
+
+    {/* 4 Pillars of Registration & Demographic Intelligence */}
+    <div style={{ margin: "2rem 0" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "1rem" }}>
+        <div>
+          <span style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", color: "#0056D2", letterSpacing: "0.08em" }}>
+            {ar ? "الذكاء الديموغرافي وقنوات التسجيل" : "Intelligence Démographique & Acquisition"}
+          </span>
+          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#142B47", margin: "2px 0 0" }}>
+            {ar ? "تحليل التسجيلات الجديدة والتوازن الإقليمي" : "Cockpit d'Onboarding & Équilibrage Territorial"}
+          </h2>
+        </div>
+        <Link href={`/${locale}/admin/users`} style={{ fontSize: "0.8125rem", color: "#0056D2", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+          <span>{ar ? "إدارة المستخدمين الكاملة" : "Gestion Utilisateurs"}</span>
+          <ArrowUpRight size={14} />
+        </Link>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.25rem" }}>
+        {/* Pillar 1: Category Distribution */}
+        <article className="admin-surface" style={{ padding: "1.25rem", borderRadius: "12px", border: "1px solid #E2E8F0" }}>
+          <header style={{ marginBottom: "1rem" }}>
+            <span style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", color: "#64748B" }}>
+              {ar ? "الفئات الرئيسية" : "Catégories"}
+            </span>
+            <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "#142B47", margin: "2px 0 0" }}>
+              {ar ? "توزيع المستخدمين" : "Répartition par Profil"}
+            </h3>
+          </header>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            {onboardingAnalytics.categories.map((cat) => (
+              <div key={cat.label} style={{ fontSize: "0.8125rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.25rem" }}>
+                  <span style={{ fontWeight: 600, color: "#334155" }}>{cat.label}</span>
+                  <span style={{ fontWeight: 700, color: "#0A192F" }}>
+                    {cat.count} ({cat.percentage}%)
+                  </span>
+                </div>
+                <div style={{ height: "6px", width: "100%", background: "#F1F5F9", borderRadius: "999px", overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${Math.min(100, Math.max(5, cat.percentage))}%`, background: "#0A192F", borderRadius: "999px" }} />
+                </div>
+              </div>
+            ))}
+          </div>
+          {onboardingAnalytics.subSpecialties.length > 0 && (
+            <div style={{ marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px dashed #E2E8F0" }}>
+              <span style={{ fontSize: "0.6875rem", fontWeight: 700, textTransform: "uppercase", color: "#94A3B8", display: "block", marginBottom: "0.375rem" }}>
+                {ar ? "أبرز تخصصات العيادات" : "Sous-spécialités cliniques"}
+              </span>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.375rem" }}>
+                {onboardingAnalytics.subSpecialties.map((s) => (
+                  <span key={s.label} style={{ fontSize: "0.6875rem", padding: "2px 8px", background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "6px", color: "#475569" }}>
+                    {s.label} ({s.count})
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </article>
+
+        {/* Pillar 2: Territorial Balancing */}
+        <article className="admin-surface" style={{ padding: "1.25rem", borderRadius: "12px", border: "1px solid #E2E8F0" }}>
+          <header style={{ marginBottom: "1rem" }}>
+            <span style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", color: "#64748B" }}>
+              {ar ? "الخريطة الجغرافية" : "Territoire"}
+            </span>
+            <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "#142B47", margin: "2px 0 0" }}>
+              {ar ? "التوازن الإقليمي (أسر vs ممارسون)" : "Équilibre Régional (Familles / Praticiens)"}
+            </h3>
+          </header>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+            {onboardingAnalytics.territorialBalancing.slice(0, 5).map((row) => (
+              <div key={row.governorate} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.8125rem", padding: "0.375rem 0", borderBottom: "1px solid #F8FAFC" }}>
+                <div>
+                  <strong style={{ color: "#1E293B", display: "block" }}>{row.governorate}</strong>
+                  <span style={{ fontSize: "0.6875rem", color: "#64748B" }}>
+                    {row.learnersCount} {ar ? "متعلم/أسرة" : "apprenants"} • {row.practitionersCount} {ar ? "ممارس" : "praticiens"}
+                  </span>
+                </div>
+                <span style={{
+                  fontSize: "0.6875rem",
+                  fontWeight: 700,
+                  padding: "3px 8px",
+                  borderRadius: "6px",
+                  background: row.practitionersCount === 0 ? "#FEF2F2" : "#F0FDF4",
+                  color: row.practitionersCount === 0 ? "#DC2626" : "#16A34A",
+                  border: `1px solid ${row.practitionersCount === 0 ? "#FECACA" : "#BBF7D0"}`,
+                }}>
+                  {row.ratio}
+                </span>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        {/* Pillar 3: Pathologies Demand vs Supply */}
+        <article className="admin-surface" style={{ padding: "1.25rem", borderRadius: "12px", border: "1px solid #E2E8F0" }}>
+          <header style={{ marginBottom: "1rem" }}>
+            <span style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", color: "#64748B" }}>
+              {ar ? "الاحتياجات والاضطرابات" : "Besoins & Pathologies"}
+            </span>
+            <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "#142B47", margin: "2px 0 0" }}>
+              {ar ? "تغطية الاحتياجات (طلب الأسر vs الممارسون)" : "Couverture des Besoins (Demande vs Offre)"}
+            </h3>
+          </header>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+            {onboardingAnalytics.pathologiesCoverage.slice(0, 5).map((patho) => (
+              <div key={patho.name} style={{ fontSize: "0.8125rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.25rem" }}>
+                  <span style={{ fontWeight: 600, color: "#334155" }}>{patho.name}</span>
+                  <span style={{ fontSize: "0.6875rem", color: "#64748B" }}>
+                    {ar ? "طلب:" : "Demande:"} <b style={{ color: "#0A192F" }}>{patho.learnersDemand}</b> • {ar ? "عرض:" : "Offre:"} <b style={{ color: "#0056D2" }}>{patho.practitionersSupply}</b>
+                  </span>
+                </div>
+                <div style={{ height: "6px", width: "100%", background: "#F1F5F9", borderRadius: "999px", display: "flex", overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${Math.min(100, Math.max(10, patho.learnersDemand * 10))}%`, background: "#0056D2" }} />
+                  <div style={{ height: "100%", width: `${Math.min(100, Math.max(10, patho.practitionersSupply * 10))}%`, background: "#10B981" }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        {/* Pillar 4: Acquisition Channels */}
+        <article className="admin-surface" style={{ padding: "1.25rem", borderRadius: "12px", border: "1px solid #E2E8F0" }}>
+          <header style={{ marginBottom: "1rem" }}>
+            <span style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", color: "#64748B" }}>
+              {ar ? "القنوات التسويقية" : "Canaux d'Acquisition"}
+            </span>
+            <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "#142B47", margin: "2px 0 0" }}>
+              {ar ? "مصادر التسجيل الأولية" : "Origine des Inscriptions"}
+            </h3>
+          </header>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+            {onboardingAnalytics.acquisitionSources.map((src) => (
+              <div key={src.source} style={{ fontSize: "0.8125rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.25rem" }}>
+                  <span style={{ fontWeight: 600, color: "#334155" }}>{src.label}</span>
+                  <span style={{ fontWeight: 700, color: "#0A192F" }}>
+                    {src.count} ({src.percentage}%)
+                  </span>
+                </div>
+                <div style={{ height: "6px", width: "100%", background: "#F1F5F9", borderRadius: "999px", overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${Math.min(100, Math.max(5, src.percentage))}%`, background: "#B58D3D", borderRadius: "999px" }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </article>
+      </div>
     </div>
 
     <section className="admin-dashboard-grid">

@@ -237,6 +237,158 @@ async function computeAdminDistributions() {
 }
 
 // -----------------------------------------------------------------------------
+// Onboarding & Demographic Intelligence (Sprint Master v3.3.0 - Wizard Analytics)
+// -----------------------------------------------------------------------------
+
+export type OnboardingAnalyticsData = {
+  categories: { label: string; count: number; percentage: number }[];
+  subSpecialties: { label: string; count: number }[];
+  territorialBalancing: {
+    governorate: string;
+    learnersCount: number;
+    practitionersCount: number;
+    ratio: string;
+  }[];
+  pathologiesCoverage: {
+    name: string;
+    learnersDemand: number;
+    practitionersSupply: number;
+  }[];
+  acquisitionSources: { source: string; label: string; count: number; percentage: number }[];
+};
+
+export async function getAdminOnboardingAnalytics(): Promise<OnboardingAnalyticsData> {
+  return withDashboardCache("admin:onboarding:analytics", computeAdminOnboardingAnalytics);
+}
+
+async function computeAdminOnboardingAnalytics(): Promise<OnboardingAnalyticsData> {
+  const [categoriesRes, subSpecialtiesRes, territorialRes, sourcesRes, pathologiesRes] = await Promise.all([
+    db.execute<{ category: string; count: number }>(sql`
+      select
+        coalesce(o.category, case when u.profile_type = 'avs' then 'AVS' when u.profile_type = 'specialist' then 'SPECIALIST' else 'LEARNER' end) as category,
+        count(*)::int as count
+      from "user" u
+      left join user_onboarding_analytics o on o.user_id = u.id
+      group by 1
+      order by count desc
+    `),
+    db.execute<{ label: string; count: number }>(sql`
+      select coalesce(category, specialty_fr) as label, count(*)::int as count
+      from avs_profiles
+      where visible = true and directory_type = 'SPECIALIST'
+      group by 1
+      order by count desc
+      limit 6
+    `),
+    db.execute<{ governorate: string; learners_count: number; practitioners_count: number }>(sql`
+      with learner_gov as (
+        select coalesce(o.governorate, p.governorate, 'Tunis') as gov, count(*)::int as cnt
+        from "user" u
+        left join user_onboarding_analytics o on o.user_id = u.id
+        left join user_profile p on p.user_id = u.id
+        where coalesce(o.category, u.profile_type) in ('LEARNER', 'learner', 'parent')
+        group by 1
+      ),
+      practitioner_gov as (
+        select coalesce(governorate_fr, 'Tunis') as gov, count(*)::int as cnt
+        from avs_profiles
+        where visible = true
+        group by 1
+      )
+      select
+        coalesce(l.gov, p.gov) as governorate,
+        coalesce(l.cnt, 0)::int as learners_count,
+        coalesce(p.cnt, 0)::int as practitioners_count
+      from learner_gov l
+      full outer join practitioner_gov p on l.gov = p.gov
+      order by learners_count desc, practitioners_count desc
+      limit 8
+    `),
+    db.execute<{ source: string; count: number }>(sql`
+      select
+        coalesce(acquisition_source, 'DIRECT') as source,
+        count(*)::int as count
+      from user_onboarding_analytics
+      group by 1
+      order by count desc
+    `),
+    db.execute<{ name: string; learners_count: number; practitioners_count: number }>(sql`
+      with p_list as (
+        select unnest(array['Autisme (TSA)', 'Troubles DYS', 'TDAH', 'Trisomie 21', 'Retard de langage', 'Troubles sensoriels']) as name
+      )
+      select
+        p.name,
+        coalesce((select count(*)::int from user_onboarding_analytics o where p.name = any(o.pathologies)), 0) as learners_count,
+        coalesce((select count(*)::int from avs_profiles a where a.visible = true and p.name = any(a.intervention_domains)), 0) as practitioners_count
+      from p_list p
+      order by learners_count desc, practitioners_count desc
+    `),
+  ]);
+
+  const totalUsers = categoriesRes.rows.reduce((sum, r) => sum + r.count, 0) || 1;
+  const categories = categoriesRes.rows.map((r) => {
+    const label = r.category === "LEARNER"
+      ? "Apprenants & Familles"
+      : r.category === "AVS"
+      ? "Accompagnants AVS"
+      : "Spécialistes Cliniciens";
+    return {
+      label,
+      count: r.count,
+      percentage: Math.round((r.count / totalUsers) * 100),
+    };
+  });
+
+  const totalSources = sourcesRes.rows.reduce((sum, r) => sum + r.count, 0) || 1;
+  const sourceLabels: Record<string, string> = {
+    FACEBOOK_INSTAGRAM: "Meta Ads (Facebook / Instagram)",
+    WHATSAPP: "WhatsApp Direct",
+    RECOMMENDATION: "Recommandation médicale / scolaire",
+    GOOGLE: "Recherche Google",
+    WEBINAR: "Webinaires ANEI",
+    WORD_OF_MOUTH: "Bouche-à-oreille",
+    DIRECT: "Accès Direct",
+  };
+
+  const acquisitionSources = (sourcesRes.rows.length > 0 ? sourcesRes.rows : [{ source: "DIRECT", count: 1 }]).map((r) => ({
+    source: r.source,
+    label: sourceLabels[r.source] || r.source,
+    count: r.count,
+    percentage: Math.round((r.count / totalSources) * 100),
+  }));
+
+  const territorialBalancing = territorialRes.rows.map((r) => {
+    const l = r.learners_count;
+    const p = r.practitioners_count;
+    let ratio = "Équilibré";
+    if (p === 0 && l > 0) ratio = "Déficit (0 praticien)";
+    else if (p > 0 && l / p > 10) ratio = "Tension Forte";
+    else if (p > 0) ratio = `1 / ${Math.round(l / p || 1)}`;
+
+    return {
+      governorate: r.governorate,
+      learnersCount: l,
+      practitionersCount: p,
+      ratio,
+    };
+  });
+
+  const pathologiesCoverage = pathologiesRes.rows.map((r) => ({
+    name: r.name,
+    learnersDemand: r.learners_count,
+    practitionersSupply: r.practitioners_count,
+  }));
+
+  return {
+    categories,
+    subSpecialties: subSpecialtiesRes.rows,
+    territorialBalancing,
+    pathologiesCoverage,
+    acquisitionSources,
+  };
+}
+
+// -----------------------------------------------------------------------------
 // Marketing & Audience Intelligence (Phase 7 - Data Analysis for Marketing & Engagement)
 // -----------------------------------------------------------------------------
 

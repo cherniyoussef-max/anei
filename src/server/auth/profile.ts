@@ -84,6 +84,8 @@ const studentProfileSchema = commonFieldsSchema
     requestedPersona: z.literal("STUDENT"),
     educationLevel: z.string().trim().min(1, "education_level_required").max(120),
     institutionName: z.string().trim().min(1, "institution_required").max(160),
+    subRole: z.string().trim().max(80).optional(),
+    interests: domainListField,
   })
   .strict();
 
@@ -113,6 +115,12 @@ const avsProfileSchema = commonFieldsSchema
     qualification: z.string().trim().min(1).max(160).optional(),
     experienceYears: experienceYearsField,
     interventionDomains: domainListField,
+    schoolsCovered: z.string().trim().max(255).optional(),
+    pedagogicalMethods: domainListField,
+    hourlyRateMillimes: z.number().int().min(0).max(1000000).optional(),
+    onlineVisioPriceMillimes: z.number().int().min(0).max(1000000).optional(),
+    availability: z.string().trim().max(120).optional(),
+    bio: z.string().trim().max(2000).optional(),
   })
   .strict();
 
@@ -123,7 +131,13 @@ const specialistProfileSchema = commonFieldsSchema
     qualification: z.string().trim().min(1).max(160).optional(),
     experienceYears: experienceYearsField,
     practiceStructure: z.string().trim().min(1).max(160).optional(),
+    workplaceName: z.string().trim().max(160).optional(),
+    workplaceAddress: z.string().trim().max(255).optional(),
+    licenseOrOrderNumber: z.string().trim().max(80).optional(),
     interventionDomains: domainListField,
+    inPersonPriceMillimes: z.number().int().min(0).max(1000000).optional(),
+    onlineVisioPriceMillimes: z.number().int().min(0).max(1000000).optional(),
+    bio: z.string().trim().max(2000).optional(),
   })
   .strict();
 
@@ -309,6 +323,7 @@ export async function completeUserProfileTx(
     .set({
       name: `${data.firstName} ${data.lastName}`.trim(),
       locale: data.preferredLocale,
+      phone: data.phoneNumber,
       profileType: toLegacyProfileType(data.requestedPersona),
       professionalPostStatus:
         data.requestedPersona === "AVS"
@@ -368,54 +383,48 @@ export async function completeUserProfileTx(
         .limit(1);
 
       const finalSlug = existingAvs ? undefined : `${slugBase}-${userId.slice(0, 6)}`;
+      const availabilityText = data.availability || "Disponible (Sur rendez-vous)";
+      const avsValues = {
+        displayName,
+        directoryType: "AVS" as const,
+        category: "AVS",
+        cityFr: data.city,
+        cityAr: data.city,
+        governorateFr: data.governorate,
+        governorateAr: data.governorate,
+        specialtyFr: "Accompagnant de Vie Scolaire (AVS)",
+        specialtyAr: "مرافق حياة مدرسية",
+        contactPhone: data.phoneNumber,
+        phone: data.phoneNumber,
+        certified: true,
+        visible: true,
+        hourlyRateMillimes: data.hourlyRateMillimes ?? 25000,
+        onlineVisioPriceMillimes: data.onlineVisioPriceMillimes ?? 35000,
+        schoolsCoveredFr: data.schoolsCovered || "",
+        schoolsCoveredAr: data.schoolsCovered || "",
+        pedagogicalMethods: data.pedagogicalMethods || [],
+        availabilityFr: availabilityText,
+        availabilityAr: availabilityText,
+        bioFr: data.bio || "",
+        bioAr: data.bio || "",
+        interventionDomains: data.interventionDomains || [],
+        experienceYears: data.experienceYears ?? 3,
+        updatedAt: now,
+      };
+
       if (existingAvs) {
         await tx
           .update(avsProfiles)
-          .set({
-            displayName,
-            directoryType: "AVS",
-            category: "AVS",
-            cityFr: data.city,
-            cityAr: data.city,
-            governorateFr: data.governorate,
-            governorateAr: data.governorate,
-            specialtyFr: "Accompagnant de Vie Scolaire (AVS)",
-            specialtyAr: "مرافق حياة مدرسية",
-            contactPhone: data.phoneNumber,
-            phone: data.phoneNumber,
-            certified: true,
-            visible: true,
-            interventionDomains: data.interventionDomains || [],
-            experienceYears: data.experienceYears ?? 3,
-            updatedAt: now,
-          })
+          .set(avsValues)
           .where(eq(avsProfiles.id, existingAvs.id));
       } else {
         await tx
           .insert(avsProfiles)
           .values({
+            ...avsValues,
             userId,
-            displayName,
             slug: finalSlug,
-            directoryType: "AVS",
-            category: "AVS",
-            cityFr: data.city,
-            cityAr: data.city,
-            governorateFr: data.governorate,
-            governorateAr: data.governorate,
-            specialtyFr: "Accompagnant de Vie Scolaire (AVS)",
-            specialtyAr: "مرافق حياة مدرسية",
-            contactPhone: data.phoneNumber,
-            phone: data.phoneNumber,
-            certified: true,
-            visible: true,
-            hourlyRateMillimes: 25000,
-            availabilityFr: "Disponible (Sur rendez-vous)",
-            availabilityAr: "متاح (بموعد مسبق)",
-            interventionDomains: data.interventionDomains || [],
-            experienceYears: data.experienceYears ?? 3,
             createdAt: now,
-            updatedAt: now,
           });
       }
     } else if (data.requestedPersona === "SPECIALIST") {
@@ -436,58 +445,49 @@ export async function completeUserProfileTx(
 
       const finalSlug = existingSpec ? undefined : `${slugBase}-${userId.slice(0, 6)}`;
       const specName = data.specialty || "Orthophonie";
+      const workplace = data.workplaceName || data.practiceStructure || null;
+
+      const specValues = {
+        displayName,
+        directoryType: "SPECIALIST" as const,
+        category: data.specialty || "ORTHOPHONIE",
+        cityFr: data.city,
+        cityAr: data.city,
+        governorateFr: data.governorate,
+        governorateAr: data.governorate,
+        specialtyFr: specName,
+        specialtyAr: specName,
+        contactPhone: data.phoneNumber,
+        phone: data.phoneNumber,
+        workplaceName: workplace,
+        workplaceAddress: data.workplaceAddress || null,
+        licenseOrOrderNumber: data.licenseOrOrderNumber || null,
+        certified: true,
+        visible: true,
+        inPersonPriceMillimes: data.inPersonPriceMillimes ?? 40000,
+        onlineVisioPriceMillimes: data.onlineVisioPriceMillimes ?? 35000,
+        availabilityFr: "Disponible (Sur rendez-vous)",
+        availabilityAr: "متاح (بموعد مسبق)",
+        bioFr: data.bio || "",
+        bioAr: data.bio || "",
+        interventionDomains: data.interventionDomains || [],
+        experienceYears: data.experienceYears ?? 3,
+        updatedAt: now,
+      };
 
       if (existingSpec) {
         await tx
           .update(avsProfiles)
-          .set({
-            displayName,
-            directoryType: "SPECIALIST",
-            category: data.specialty || "ORTHOPHONIE",
-            cityFr: data.city,
-            cityAr: data.city,
-            governorateFr: data.governorate,
-            governorateAr: data.governorate,
-            specialtyFr: specName,
-            specialtyAr: specName,
-            contactPhone: data.phoneNumber,
-            phone: data.phoneNumber,
-            workplaceName: data.practiceStructure || null,
-            certified: true,
-            visible: true,
-            interventionDomains: data.interventionDomains || [],
-            experienceYears: data.experienceYears ?? 3,
-            updatedAt: now,
-          })
+          .set(specValues)
           .where(eq(avsProfiles.id, existingSpec.id));
       } else {
         await tx
           .insert(avsProfiles)
           .values({
+            ...specValues,
             userId,
-            displayName,
             slug: finalSlug,
-            directoryType: "SPECIALIST",
-            category: data.specialty || "ORTHOPHONIE",
-            cityFr: data.city,
-            cityAr: data.city,
-            governorateFr: data.governorate,
-            governorateAr: data.governorate,
-            specialtyFr: specName,
-            specialtyAr: specName,
-            contactPhone: data.phoneNumber,
-            phone: data.phoneNumber,
-            workplaceName: data.practiceStructure || null,
-            certified: true,
-            visible: true,
-            inPersonPriceMillimes: 40000,
-            onlineVisioPriceMillimes: 35000,
-            availabilityFr: "Disponible (Sur rendez-vous)",
-            availabilityAr: "متاح (بموعد مسبق)",
-            interventionDomains: data.interventionDomains || [],
-            experienceYears: data.experienceYears ?? 3,
             createdAt: now,
-            updatedAt: now,
           });
       }
     } else {

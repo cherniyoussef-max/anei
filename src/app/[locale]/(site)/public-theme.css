@@ -423,15 +423,15 @@
   color: var(--public-text-primary);
 }
 
-/* Auth uses the same institutional palette without inheriting the public header. */
+/* Auth uses pure white minimalist background (#FFFFFF). */
 .public-auth-experience {
   min-height: 100dvh;
-  background: var(--public-surface-warm);
+  background: #FFFFFF;
 }
 
 .public-auth-experience .auth-section {
   min-height: 100dvh;
-  background: var(--public-surface-warm);
+  background: #FFFFFF;
 }
 
 .public-auth-experience .auth-intro {

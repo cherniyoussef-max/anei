@@ -37,6 +37,7 @@ export const user = pgTable(
     locale: text("locale").notNull().default("fr"),
     profileType: text("profile_type").notNull().default("learner"),
     referredByCode: text("referred_by_code"),
+    phone: text("phone"),
     professionalPostStatus: text("professional_post_status").notNull().default("LEARNER_ONLY"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
@@ -281,6 +282,39 @@ export const rateLimit = pgTable(
   },
   (table) => [uniqueIndex("rate_limit_key_unique").on(table.key)],
 );
+
+export const userOnboardingAnalytics = pgTable(
+  "user_onboarding_analytics",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    category: text("category").notNull(),
+    subRole: text("sub_role"),
+    specialty: text("specialty"),
+    governorate: text("governorate").notNull(),
+    city: text("city").notNull(),
+    acquisitionSource: text("acquisition_source"),
+    ageGroup: text("age_group"),
+    pathologies: text("pathologies").array(),
+    lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
+    lastLoginDevice: text("last_login_device"),
+    lastLoginLocale: text("last_login_locale"),
+    loginCount: integer("login_count").notNull().default(1),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("user_onboarding_analytics_user_unique").on(table.userId),
+    index("user_onboarding_analytics_category_idx").on(table.category),
+    index("user_onboarding_analytics_governorate_idx").on(table.governorate),
+    index("user_onboarding_analytics_source_idx").on(table.acquisitionSource),
+  ],
+);
+
+export type UserOnboardingAnalyticsRow = typeof userOnboardingAnalytics.$inferSelect;
 
 // -----------------------------------------------------------------------------
 // Domain tables.
