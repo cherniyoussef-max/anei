@@ -173,29 +173,6 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
                 </div>
               </div>
 
-              {/* Transit & Accessibility Info Box */}
-              <div className="bg-white p-6 rounded-2xl border border-[#E3E8EF] shadow-[0_4px_16px_rgba(27,58,92,0.05)] space-y-4">
-                <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2 font-sans">
-                  <span className="w-7 h-7 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs">
-                    ✓
-                  </span>
-                  <span>{ar ? "ولوجية النفاذ وتسهيلات الاستقبال" : "Accès & Mobilité Inclusive"}</span>
-                </h4>
-                <ul className="text-xs text-[#3D4A5C] space-y-2.5">
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#B8925A] font-bold">•</span>
-                    <span>{ar ? "مبنى مجهز بالكامل وفق معايير الإتاحة الشاملة ومصاعد مهيأة (PMR)." : "Bâtiment 100% accessible aux personnes à mobilité réduite (rampes, ascenseurs adaptés)."}</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#B8925A] font-bold">•</span>
-                    <span>{ar ? "وسائل النقل: مترو الخط 2 (محطة مدينة العلوم) أو حافلات 35 و 44." : "Transports en commun : Métro Ligne 2 (Cité des Sciences), Bus 35 et 44."}</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[#B8925A] font-bold">•</span>
-                    <span>{ar ? "مأوى سيارات مخصص ومجاني لزوار الأكاديمية وأولياء الأمور." : "Parking gratuit réservé aux familles et professionnels sur présentation du RDV."}</span>
-                  </li>
-                </ul>
-              </div>
             </aside>
           </div>
 

@@ -46,12 +46,13 @@ export default async function SpecialistDetailPage({
   const bio = ar ? profile.bioAr || catMeta.descriptionAr : profile.bioFr || catMeta.descriptionFr;
   const inPersonTnd = Math.round((profile.inPersonPriceMillimes || 45000) / 1000);
   const onlineTnd = Math.round((profile.onlineVisioPriceMillimes || 40000) / 1000);
-  const initials = profile.displayName
-    .split(" ")
-    .map((n) => n[0])
+  const initials = (profile.displayName || "")
+    .trim()
+    .split(/\s+/)
+    .map((n) => n[0] || "")
     .slice(0, 2)
     .join("")
-    .toUpperCase();
+    .toUpperCase() || "SP";
 
   return (
     <div className="min-h-screen bg-[#FDFDFC] pb-16" dir={ar ? "rtl" : "ltr"}>

@@ -245,22 +245,6 @@ export function AvsFilter({
         </h2>
       </div>
 
-      {/* Institutional Guarantee Banner (Single canonical location) */}
-      <div className="bg-white rounded-xl border border-[#E3E8EF] px-5 py-3.5 flex items-center gap-3.5 text-xs text-[#3D4A5C] shadow-2xs">
-        <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center flex-none">
-          <Icon name="shield" size={15} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <strong className="text-[#1B3A5C] me-1.5 font-bold">
-            {ar ? "ضمان الأكاديمية الوطنية :" : "Garantie officielle ANEI :"}
-          </strong>
-          <span>
-            {ar
-              ? "مرافقة تربوية مقننة • مقابلة استكشافية أولى بدون التزام • نظام حماية المدفوعات"
-              : "Accompagnement pédagogique encadré • Entretien exploratoire sans engagement • Système de paiement protégé"}
-          </span>
-        </div>
-      </div>
 
       {/* Practitioner Cards Grid */}
       <div className="space-y-4">

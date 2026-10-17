@@ -81,11 +81,11 @@ export function SpecialistFilter({
       // Query filter
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-        const matchesName = p.displayName.toLowerCase().includes(q);
+        const matchesName = (p.displayName || "").toLowerCase().includes(q);
         const matchesWorkplace = (p.workplaceName || "").toLowerCase().includes(q);
         const matchesAddress = (p.workplaceAddress || "").toLowerCase().includes(q);
-        const matchesCity = p.cityFr.toLowerCase().includes(q) || p.cityAr.toLowerCase().includes(q);
-        const matchesSpecialty = p.specialtyFr.toLowerCase().includes(q) || p.specialtyAr.toLowerCase().includes(q);
+        const matchesCity = (p.cityFr || "").toLowerCase().includes(q) || (p.cityAr || "").toLowerCase().includes(q);
+        const matchesSpecialty = (p.specialtyFr || "").toLowerCase().includes(q) || (p.specialtyAr || "").toLowerCase().includes(q);
         const matchesDegree = (p.universityDegree || "").toLowerCase().includes(q);
         if (!matchesName && !matchesWorkplace && !matchesAddress && !matchesCity && !matchesSpecialty && !matchesDegree) {
           return false;
