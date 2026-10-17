@@ -37,7 +37,7 @@
 }
 
 .news-v7-intro h1 {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   max-width: 14ch;
   margin-block: 16px 20px;
   color: var(--navy-900, #1B3A5C);
@@ -241,7 +241,7 @@
 }
 
 .news-v7-lead-copy h2 {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   max-width: 23ch;
   margin-block: 14px 16px;
   color: var(--navy-900);
@@ -313,7 +313,7 @@
 
 .news-v7-feed > header h2,
 .news-v7-empty h2 {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   margin: 0;
   color: var(--navy-900);
   font-size: clamp(2rem, 3.2vw, 2.5rem);
@@ -371,7 +371,7 @@
 }
 
 .news-v7-item-copy h3 {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   max-width: 34ch;
   margin: 0;
   color: var(--navy-900);

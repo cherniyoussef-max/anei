@@ -109,7 +109,9 @@ export function SiteFooter({ locale }: { locale: Locale }) {
                 className="footer-crest inline-flex items-center gap-3.5 group hover:opacity-95 transition-opacity"
                 aria-label={ar ? "الرئيسية ANEI" : "Accueil ANEI"}
               >
-                <AneiLogo locale={locale} variant="mark" withText={false} height={44} />
+                <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white p-2 shadow-xs">
+                  <AneiLogo locale={locale} variant="mark" withText={false} height={28} />
+                </div>
                 <div className="flex flex-col">
                   <span className="font-bold text-white text-[15px] sm:text-[16px] leading-snug font-sans">
                     {ar ? "الأكاديمية الوطنية للتربية الدامجة" : "Académie Nationale de l’Éducation Inclusive"}
@@ -125,13 +127,6 @@ export function SiteFooter({ locale }: { locale: Locale }) {
                   ? "المنصة الأولى للتميز المتخصصة في التكوين والموارد ومرافقة المهنيين والأسر من أجل تربية دامجة وعادلة في تونس."
                   : "Première plateforme d'excellence dédiée à la formation, aux ressources et à l'accompagnement des professionnels et familles pour une éducation inclusive en Tunisie."}
               </p>
-
-              <div className="mt-5 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.07] border border-white/10 text-xs text-[#C5A059] font-medium">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#C5A059]" />
-                <span>
-                  {ar ? "المؤسسة المرجعية · التربية الدامجة" : "Institution Référente · EdTech Inclusive"}
-                </span>
-              </div>
             </div>
 
             {/* Colonne 2 : Plateforme */}

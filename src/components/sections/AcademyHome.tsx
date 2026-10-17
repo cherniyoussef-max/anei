@@ -358,41 +358,31 @@ export function AcademyHome({
       {/* 5. "À LA UNE" FEATURE BANNER (Depth-of-Field Blur & 12-col Editorial Card) */}
       <section className="alaune-root max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20" aria-labelledby="alaune-heading">
         <div className="rounded-3xl bg-[#F4F7FB] border border-slate-200/80 overflow-hidden shadow-xs grid lg:grid-cols-12 items-center gap-0">
-          {/* Image Column with Depth of Field Blur */}
-          <div className="lg:col-span-6 relative h-[360px] sm:h-[420px] lg:h-[480px] overflow-hidden bg-slate-100">
-            {/* Layer 1: Ambient background blur */}
-            <Image
-              src="/media/alaune-classroom.jpg"
-              alt=""
-              fill
-              sizes="(max-width: 1024px) 100vw, 50vw"
-              aria-hidden="true"
-              className="scale-110 blur-xl opacity-40 object-cover pointer-events-none"
-            />
-
-            {/* Layer 2: Main crisp image centered */}
+          {/* Image Column with True Optical Depth (Crisp Subject + High Background Depth) */}
+          <div className="lg:col-span-6 relative h-[360px] sm:h-[420px] lg:h-[480px] overflow-hidden bg-slate-100 rounded-2xl lg:rounded-none shadow-sm lg:shadow-none">
+            {/* Main crisp image: wheelchair subject in classroom 100% sharp */}
             <Image
               src="/media/alaune-classroom.jpg"
               alt={ar ? "فصل دراسي مجهز بكرسي متحرك في المقدمة" : "Salle de classe inclusive avec fauteuil roulant au premier plan"}
               fill
               sizes="(max-width: 1024px) 100vw, 50vw"
               priority={false}
-              className="object-cover object-[35%_center]"
+              className="object-cover object-[30%_center] blur-none"
             />
 
-            {/* Layer 3: Soft depth-of-field overlay (radial gradient blur vignette) */}
+            {/* Subtle background depth-of-field blur: strictly on the upper 25-35% classroom background */}
             <div
-              className="absolute inset-0 pointer-events-none backdrop-blur-[2.5px]"
+              className="absolute inset-0 pointer-events-none backdrop-blur-[2px]"
               style={{
-                maskImage: "radial-gradient(circle at 38% 58%, transparent 38%, black 88%)",
-                WebkitMaskImage: "radial-gradient(circle at 38% 58%, transparent 38%, black 88%)",
+                maskImage: "linear-gradient(to bottom, black 0%, transparent 35%)",
+                WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 35%)",
               }}
               aria-hidden="true"
             />
 
-            {/* Layer 4: Edge blending gradient towards text column */}
+            {/* Lateral edge blending gradient towards text column */}
             <div
-              className="hidden lg:block absolute inset-y-0 end-0 w-28 lg:w-40 pointer-events-none z-10 bg-gradient-to-r rtl:bg-gradient-to-l from-transparent via-[#F4F7FB]/50 to-[#F4F7FB]"
+              className="hidden lg:block absolute inset-y-0 end-0 w-28 lg:w-36 pointer-events-none z-10 bg-gradient-to-r rtl:bg-gradient-to-l from-transparent via-transparent to-[#F4F7FB]"
               aria-hidden="true"
             />
             {/* Mobile edge blending (bottom) */}
@@ -401,7 +391,7 @@ export function AcademyHome({
               aria-hidden="true"
             />
 
-            {/* Layer 5: Contrast ring */}
+            {/* Contrast border ring */}
             <div className="absolute inset-0 ring-1 ring-inset ring-slate-900/5 pointer-events-none z-10" aria-hidden="true" />
           </div>
 

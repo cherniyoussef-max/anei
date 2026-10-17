@@ -2636,6 +2636,9 @@ export const newsPosts = pgTable(
   {
     id: text("id").primaryKey().$defaultFn(id),
     slug: text("slug").notNull(),
+    category: text("category").notNull().default("FORMATION"),
+    coverImageUrl: text("cover_image_url"),
+    isFeatured: boolean("is_featured").notNull().default(false),
     tagFr: text("tag_fr").notNull(),
     tagAr: text("tag_ar").notNull(),
     titleFr: text("title_fr").notNull(),
@@ -2652,6 +2655,8 @@ export const newsPosts = pgTable(
   (table) => [
     uniqueIndex("news_posts_slug_unique").on(table.slug),
     index("news_posts_published_idx").on(table.published, table.publishedAt),
+    index("news_posts_featured_idx").on(table.isFeatured),
+    index("news_posts_category_idx").on(table.category),
   ],
 );
 
