@@ -81,6 +81,7 @@ export default async function PractitionerDashboardPage({
       parentName: avsBookingRequests.parentName,
       parentPhone: avsBookingRequests.parentPhone,
       parentEmail: avsBookingRequests.parentEmail,
+      parentLocation: avsBookingRequests.parentLocation,
       childName: avsBookingRequests.childName,
       childAge: avsBookingRequests.childAge,
       needDescription: avsBookingRequests.needDescription,
@@ -94,6 +95,7 @@ export default async function PractitionerDashboardPage({
       status: avsBookingRequests.status,
       escrowStatus: avsBookingRequests.escrowStatus,
       liveSessionId: avsBookingRequests.liveSessionId,
+      practitionerNotes: avsBookingRequests.practitionerNotes,
       createdAt: avsBookingRequests.createdAt,
     })
     .from(avsBookingRequests)
@@ -105,6 +107,7 @@ export default async function PractitionerDashboardPage({
     parentName: b.parentName,
     parentPhone: b.parentPhone,
     parentEmail: b.parentEmail,
+    parentLocation: b.parentLocation,
     childName: b.childName,
     childAge: b.childAge,
     needDescription: b.needDescription,
@@ -118,6 +121,7 @@ export default async function PractitionerDashboardPage({
     status: b.status,
     escrowStatus: b.escrowStatus,
     liveSessionId: b.liveSessionId,
+    practitionerNotes: b.practitionerNotes,
     createdAt: b.createdAt,
   }));
 
@@ -144,6 +148,10 @@ export default async function PractitionerDashboardPage({
           workplaceAddress: profile.workplaceAddress,
           bioFr: profile.bioFr,
           bioAr: profile.bioAr,
+          availabilityStatusLabel: profile.availabilityStatusLabel,
+          acceptedModalities: profile.acceptedModalities,
+          availableLocationsText: profile.availableLocationsText,
+          weeklySchedule: profile.weeklySchedule as Record<string, { enabled: boolean; slots: string[] }>,
         }}
         initialBookings={initialBookings}
       />

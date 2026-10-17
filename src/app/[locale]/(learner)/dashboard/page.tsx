@@ -5,7 +5,7 @@ import { getDashboardData, getLearnerAppointments, getLearningCourse } from "@/s
 import { getLiveSessionsForLearner } from "@/server/queries/live";
 import { getUserPersonas } from "@/server/queries/personas";
 import { personaPortalPath, type Persona } from "@/modules/personas/domain/permissions";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/server/db";
 import { avsBookingRequests, avsProfiles } from "@/server/db/schema";
 import { StudentDashboard } from "@/components/student/StudentDashboard";
@@ -53,6 +53,7 @@ export default async function DashboardPage({
         requestedDate: avsBookingRequests.requestedDate,
         requestedTimeSlot: avsBookingRequests.requestedTimeSlot,
         meetingType: avsBookingRequests.meetingType,
+        status: avsBookingRequests.status,
         liveSessionId: avsBookingRequests.liveSessionId,
         practitionerName: avsProfiles.displayName,
       })
@@ -61,10 +62,14 @@ export default async function DashboardPage({
       .where(
         and(
           eq(avsBookingRequests.parentUserId, session.user.id),
-          eq(avsBookingRequests.status, "CONFIRMED")
+          inArray(avsBookingRequests.status, [
+            "AWAITING_PRACTITIONER_CONFIRMATION",
+            "PENDING",
+            "CONFIRMED",
+          ])
         )
       )
-      .limit(4),
+      .limit(6),
   ]);
 
   const continueRow = data.enrollmentRows.find(({ enrollment }) => enrollment.progressPercent < 100) ?? data.enrollmentRows[0];
@@ -151,16 +156,38 @@ export default async function DashboardPage({
           meetingUrl: appointment.meetingUrl ?? undefined,
           type: "appointment" as const,
         })),
-        ...parentBookings.map((b) => ({
-          id: b.id,
-          title: ar
-            ? (b.meetingType === "ONLINE_VISIO" ? "استشارة عن بعد (فيديو)" : "موعد حضوري بالعيادة")
-            : (b.meetingType === "ONLINE_VISIO" ? "Consultation Visio En Ligne" : "Séance en Cabinet / Présentiel"),
-          date: `${b.requestedDate} (${b.requestedTimeSlot})`,
-          trainer: b.practitionerName,
-          meetingUrl: b.meetingType === "ONLINE_VISIO" && b.liveSessionId ? `/${locale}/learning/live/${b.liveSessionId}` : undefined,
-          type: "appointment" as const,
-        })),
+        ...parentBookings.map((b) => {
+          const isPending =
+            b.status === "AWAITING_PRACTITIONER_CONFIRMATION" || b.status === "PENDING";
+          const isOnline = b.meetingType === "ONLINE" || b.meetingType === "ONLINE_VISIO";
+          const statusBadge = isPending
+            ? ar
+              ? `⏳ في انتظار تأكيد ${b.practitionerName} : `
+              : `⏳ En attente de confirmation par ${b.practitionerName} : `
+            : "✓ ";
+
+          const baseTitle = ar
+            ? isOnline
+              ? "استشارة عن بعد (فيديو)"
+              : "موعد حضوري بالعيادة"
+            : isOnline
+            ? "Consultation Visio En Ligne"
+            : "Séance en Cabinet / Présentiel";
+
+          return {
+            id: b.id,
+            title: `${statusBadge}${baseTitle} (${b.childName})`,
+            date: `${b.requestedDate} (${b.requestedTimeSlot})`,
+            trainer: b.practitionerName,
+            meetingUrl:
+              isOnline && !isPending
+                ? b.liveSessionId
+                  ? `/${locale}/learning/live/${b.liveSessionId}`
+                  : `https://meet.jit.si/anei-visio-${b.id.slice(0, 8)}`
+                : undefined,
+            type: "appointment" as const,
+          };
+        }),
         ...data.upcomingWebinars.map(({ webinar }) => ({
           id: webinar.id,
           title: ar ? webinar.titleAr : webinar.titleFr,

@@ -275,6 +275,10 @@ export default async function SpecialistDetailPage({
                 whatsappPhone: profile.whatsappPhone,
                 showPhonePublicly: profile.showPhonePublicly,
                 email: profile.email,
+                availabilityStatusLabel: profile.availabilityStatusLabel,
+                acceptedModalities: profile.acceptedModalities,
+                availableLocationsText: profile.availableLocationsText,
+                weeklySchedule: profile.weeklySchedule as Record<string, { enabled: boolean; slots: string[] }>,
               }}
             />
           </div>

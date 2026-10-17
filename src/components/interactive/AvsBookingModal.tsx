@@ -67,14 +67,33 @@ export function AvsBookingModal({
   const [selectedSlot, setSelectedSlot] = useState<string>(initialTimeSlot || COMMON_SLOTS[1]);
   const [meetingType, setMeetingType] = useState<"IN_PERSON" | "ONLINE" | "HOME">(initialMeetingType || "IN_PERSON");
 
+  // Sync props when reopened with new initial date/slot (without useEffect)
+  const [prevInitialDate, setPrevInitialDate] = useState(initialDate);
+  const [prevInitialSlot, setPrevInitialSlot] = useState(initialTimeSlot);
+  const [prevInitialMeetingType, setPrevInitialMeetingType] = useState(initialMeetingType);
+
+  if (initialDate !== prevInitialDate) {
+    setPrevInitialDate(initialDate);
+    setSelectedDate(initialDate || nextDays[0].iso);
+  }
+  if (initialTimeSlot !== prevInitialSlot) {
+    setPrevInitialSlot(initialTimeSlot);
+    setSelectedSlot(initialTimeSlot || COMMON_SLOTS[1]);
+  }
+  if (initialMeetingType !== prevInitialMeetingType) {
+    setPrevInitialMeetingType(initialMeetingType);
+    setMeetingType(initialMeetingType || "IN_PERSON");
+  }
+
   const [childName, setChildName] = useState("");
   const [childAge, setChildAge] = useState("7");
   const [schoolName, setSchoolName] = useState("");
   const [interventionDomain, setInterventionDomain] = useState(avs.domains?.[0] || "");
   const [needDescription, setNeedDescription] = useState("");
-  const [parentName, setParentName] = useState("");
-  const [parentEmail, setParentEmail] = useState("");
-  const [parentPhone, setParentPhone] = useState("+216 ");
+  const [parentName, setParentName] = useState<string | null>(null);
+  const [parentEmail, setParentEmail] = useState<string | null>(null);
+  const [parentPhone, setParentPhone] = useState<string | null>(null);
+  const [parentLocation, setParentLocation] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"CARD_ESCROW" | "FLOUCI" | "ESCROW_SIMULATION">("CARD_ESCROW");
 
@@ -83,8 +102,13 @@ export function AvsBookingModal({
   const [confirmedBookingId, setConfirmedBookingId] = useState("");
   const [escrowRef, setEscrowRef] = useState("");
 
-  const resolvedParentName = parentName || user?.name || "";
-  const resolvedParentEmail = parentEmail || user?.email || "";
+  const uPhone = (user as { phone?: string | null })?.phone;
+  const uCity = (user as { city?: string | null })?.city;
+
+  const effectiveParentName = parentName !== null ? parentName : (user?.name || "");
+  const effectiveParentEmail = parentEmail !== null ? parentEmail : (user?.email || "");
+  const effectiveParentPhone = parentPhone !== null ? parentPhone : (uPhone || "+216 ");
+  const effectiveParentLocation = parentLocation !== null ? parentLocation : (uCity || "");
 
   if (!isOpen) return null;
 
@@ -95,7 +119,7 @@ export function AvsBookingModal({
 
   async function handlePaymentAndSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!childName || !needDescription || !parentPhone) {
+    if (!childName || !needDescription || !effectiveParentPhone) {
       setErrorMessage(
         ar ? "يرجى ملء جميع الحقول المطلوبة." : "Veuillez renseigner tous les champs obligatoires."
       );
@@ -111,9 +135,10 @@ export function AvsBookingModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           avsProfileId: avs.id,
-          parentName: resolvedParentName || "Parent",
-          parentEmail: resolvedParentEmail || "",
-          parentPhone,
+          parentName: effectiveParentName || "Parent",
+          parentEmail: effectiveParentEmail || "",
+          parentPhone: effectiveParentPhone,
+          parentLocation: effectiveParentLocation || undefined,
           childName,
           childAge: Number(childAge) || 7,
           schoolName,
@@ -483,7 +508,7 @@ export function AvsBookingModal({
                   </div>
 
                   {/* Parent Details */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                     <div>
                       <label className="block font-semibold text-slate-700 mb-1">
                         {ar ? "ولي الأمر المسجل *" : "Parent titulaire *"}
@@ -491,7 +516,7 @@ export function AvsBookingModal({
                       <input
                         type="text"
                         required
-                        value={resolvedParentName}
+                        value={effectiveParentName}
                         onChange={(e) => setParentName(e.target.value)}
                         className="w-full p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#1B3A5C] font-medium"
                       />
@@ -503,7 +528,7 @@ export function AvsBookingModal({
                       <input
                         type="email"
                         required
-                        value={resolvedParentEmail}
+                        value={effectiveParentEmail}
                         onChange={(e) => setParentEmail(e.target.value)}
                         className="w-full p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#1B3A5C] font-medium"
                       />
@@ -515,8 +540,20 @@ export function AvsBookingModal({
                       <input
                         type="tel"
                         required
-                        value={parentPhone}
+                        value={effectiveParentPhone}
                         onChange={(e) => setParentPhone(e.target.value)}
+                        className="w-full p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#1B3A5C]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        {ar ? "المدينة / المحافظة" : "Ville / Localité"}
+                      </label>
+                      <input
+                        type="text"
+                        value={effectiveParentLocation}
+                        onChange={(e) => setParentLocation(e.target.value)}
+                        placeholder={ar ? "تونس، أريانة..." : "Ex: Tunis, Ariana..."}
                         className="w-full p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:border-[#1B3A5C]"
                       />
                     </div>

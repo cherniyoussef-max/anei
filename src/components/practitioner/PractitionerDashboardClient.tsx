@@ -10,6 +10,7 @@ export interface PractitionerBookingItem {
   parentName: string;
   parentPhone: string;
   parentEmail: string;
+  parentLocation?: string | null;
   childName: string;
   childAge: number | null;
   needDescription: string;
@@ -23,6 +24,7 @@ export interface PractitionerBookingItem {
   status: string;
   escrowStatus: string;
   liveSessionId: string | null;
+  practitionerNotes?: string | null;
   createdAt: Date | string;
 }
 
@@ -47,9 +49,52 @@ export type PractitionerDashboardClientProps = {
     workplaceAddress: string | null;
     bioFr: string;
     bioAr: string;
+    availabilityStatusLabel?: string;
+    acceptedModalities?: string;
+    availableLocationsText?: string;
+    weeklySchedule?: Record<string, { enabled: boolean; slots: string[] }>;
   };
   initialBookings: PractitionerBookingItem[];
 };
+
+const DEFAULT_WEEKLY_SCHEDULE: Record<string, { enabled: boolean; slots: string[] }> = {
+  "1": { enabled: true, slots: ["09:00", "10:30", "14:00", "15:30", "17:00"] },
+  "2": { enabled: true, slots: ["09:00", "10:30", "14:00", "15:30", "17:00"] },
+  "3": { enabled: true, slots: ["09:00", "10:30", "14:00", "15:30", "17:00"] },
+  "4": { enabled: true, slots: ["09:00", "10:30", "14:00", "15:30", "17:00"] },
+  "5": { enabled: true, slots: ["09:00", "10:30", "14:00", "15:30", "17:00"] },
+  "6": { enabled: true, slots: ["09:00", "10:30", "12:00"] },
+  "0": { enabled: false, slots: ["09:00", "10:30", "14:00"] },
+};
+
+const DAYS_ORDER = [
+  { key: "1", fr: "Lundi", ar: "الإثنين" },
+  { key: "2", fr: "Mardi", ar: "الثلاثاء" },
+  { key: "3", fr: "Mercredi", ar: "الأربعاء" },
+  { key: "4", fr: "Jeudi", ar: "الخميس" },
+  { key: "5", fr: "Vendredi", ar: "الجمعة" },
+  { key: "6", fr: "Samedi", ar: "السبت" },
+  { key: "0", fr: "Dimanche", ar: "الأحد" },
+];
+
+const PRESET_SLOTS = [
+  "08:30",
+  "09:00",
+  "09:30",
+  "10:00",
+  "10:30",
+  "11:00",
+  "11:30",
+  "14:00",
+  "14:30",
+  "15:00",
+  "15:30",
+  "16:00",
+  "16:30",
+  "17:00",
+  "17:30",
+  "18:00",
+];
 
 export function PractitionerDashboardClient({
   locale,
@@ -57,7 +102,7 @@ export function PractitionerDashboardClient({
   initialBookings,
 }: PractitionerDashboardClientProps) {
   const ar = locale === "ar";
-  const [activeTab, setActiveTab] = useState<"bookings" | "profile">("bookings");
+  const [activeTab, setActiveTab] = useState<"bookings" | "availability" | "profile">("bookings");
   const [bookings, setBookings] = useState<PractitionerBookingItem[]>(initialBookings);
 
   // Profile Form state
@@ -71,8 +116,26 @@ export function PractitionerDashboardClient({
   const [bioFr, setBioFr] = useState(profile.bioFr || "");
   const [bioAr, setBioAr] = useState(profile.bioAr || "");
 
+  // Availability & Weekly Schedule State
+  const [availabilityStatusLabel, setAvailabilityStatusLabel] = useState<string>(
+    profile.availabilityStatusLabel || "IMMEDIATE_FULL_TIME"
+  );
+  const [acceptedModalities, setAcceptedModalities] = useState<string>(
+    profile.acceptedModalities || "BOTH"
+  );
+  const [availableLocationsText, setAvailableLocationsText] = useState<string>(
+    profile.availableLocationsText || ""
+  );
+  const [weeklySchedule, setWeeklySchedule] = useState<Record<string, { enabled: boolean; slots: string[] }>>(
+    profile.weeklySchedule && Object.keys(profile.weeklySchedule).length > 0
+      ? profile.weeklySchedule
+      : DEFAULT_WEEKLY_SCHEDULE
+  );
+
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMsg, setProfileMsg] = useState("");
+  const [savingAvailability, setSavingAvailability] = useState(false);
+  const [availabilityMsg, setAvailabilityMsg] = useState("");
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   // Financial Metrics
@@ -88,6 +151,10 @@ export function PractitionerDashboardClient({
     bookings
       .filter((b) => b.escrowStatus === "HELD_IN_ESCROW" && b.status !== "DECLINED")
       .reduce((sum, b) => sum + (b.netPractitionerPayoutMillimes || b.amountMillimes), 0) / 1000
+  );
+
+  const pendingBookings = bookings.filter(
+    (b) => b.status === "AWAITING_PRACTITIONER_CONFIRMATION" || b.status === "PENDING"
   );
 
   async function handleBookingAction(bookingId: string, action: "CONFIRM" | "DECLINE" | "COMPLETE") {
@@ -152,6 +219,83 @@ export function PractitionerDashboardClient({
     } finally {
       setSavingProfile(false);
     }
+  }
+
+  async function handleAvailabilitySave(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingAvailability(true);
+    setAvailabilityMsg("");
+
+    try {
+      const res = await fetch("/api/practitioner/availability", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          availabilityStatusLabel,
+          acceptedModalities,
+          availableLocationsText,
+          weeklySchedule,
+          contactPhone: contactPhone.trim() !== "+216" ? contactPhone : null,
+          whatsappPhone: whatsappPhone.trim() !== "+216" ? whatsappPhone : null,
+        }),
+      });
+
+      const json = await res.json();
+      if (res.ok && json.ok) {
+        setAvailabilityMsg(
+          ar ? "تم حفظ وتحديث جدول المواعيد والمناطق بنجاح." : "Disponibilités et zones d'intervention enregistrées avec succès."
+        );
+      } else {
+        setAvailabilityMsg(json.message || json.error || "Erreur de sauvegarde");
+      }
+    } catch {
+      setAvailabilityMsg("Erreur réseau");
+    } finally {
+      setSavingAvailability(false);
+    }
+  }
+
+  function toggleDay(dayKey: string) {
+    setWeeklySchedule((prev) => {
+      const current = prev[dayKey] || { enabled: false, slots: [] };
+      return {
+        ...prev,
+        [dayKey]: {
+          ...current,
+          enabled: !current.enabled,
+        },
+      };
+    });
+  }
+
+  function removeSlot(dayKey: string, slotToRemove: string) {
+    setWeeklySchedule((prev) => {
+      const current = prev[dayKey] || { enabled: true, slots: [] };
+      return {
+        ...prev,
+        [dayKey]: {
+          ...current,
+          slots: current.slots.filter((s) => s !== slotToRemove),
+        },
+      };
+    });
+  }
+
+  function addSlot(dayKey: string, slotToAdd: string) {
+    if (!slotToAdd) return;
+    setWeeklySchedule((prev) => {
+      const current = prev[dayKey] || { enabled: true, slots: [] };
+      if (current.slots.includes(slotToAdd)) return prev;
+      const newSlots = [...current.slots, slotToAdd].sort();
+      return {
+        ...prev,
+        [dayKey]: {
+          ...current,
+          enabled: true,
+          slots: newSlots,
+        },
+      };
+    });
   }
 
   return (
@@ -237,18 +381,66 @@ export function PractitionerDashboardClient({
         </div>
       </div>
 
+      {/* Pending Requests Alert Banner */}
+      {pendingBookings.length > 0 && (
+        <div className="bg-amber-50/90 border border-amber-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold text-lg shrink-0 shadow-xs">
+              ⏳
+            </div>
+            <div>
+              <h3 className="text-sm sm:text-base font-bold text-amber-950">
+                {ar
+                  ? `لديك ${pendingBookings.length} طلب موعد جديد بانتظار تأكيدكم!`
+                  : `Vous avez ${pendingBookings.length} nouvelle(s) demande(s) de rendez-vous en attente !`}
+              </h3>
+              <p className="text-xs text-amber-800 mt-0.5">
+                {ar
+                  ? "يرجى تأكيد أو رفض المواعيد حتى يتم إشعار العائلة وتجهيز رابط الاستشارة أو استقبالهم بالعيادة."
+                  : "Veuillez valider ou refuser les demandes afin de notifier immédiatement les familles."}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("bookings")}
+            className="py-2 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all shadow-xs shrink-0 self-start sm:self-auto"
+          >
+            {ar ? "معاينة الطلبات الآن ←" : "Traiter les demandes →"}
+          </button>
+        </div>
+      )}
+
       {/* Navigation Tabs */}
       <div className="flex items-center gap-2 border-b border-slate-200">
         <button
           type="button"
           onClick={() => setActiveTab("bookings")}
-          className={`pb-3 px-4 text-sm font-bold border-b-2 transition-all ${
+          className={`pb-3 px-4 text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
             activeTab === "bookings"
               ? "border-[#082D55] text-[#082D55]"
               : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
-          {ar ? "المواعيد والحجوزات" : "Rendez-vous & Consultations"} ({bookings.length})
+          <span>{ar ? "المواعيد والحجوزات" : "Rendez-vous & Consultations"}</span>
+          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+            pendingBookings.length > 0 ? "bg-amber-100 text-amber-900" : "bg-slate-100 text-slate-600"
+          }`}>
+            {bookings.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("availability")}
+          className={`pb-3 px-4 text-sm font-bold border-b-2 transition-all ${
+            activeTab === "availability"
+              ? "border-[#082D55] text-[#082D55]"
+              : "border-transparent text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          {ar ? "المواعيد والمناطق" : "Mes Disponibilités & Lieux"}
         </button>
 
         <button
@@ -288,12 +480,16 @@ export function PractitionerDashboardClient({
                 const isCompleted = booking.status === "COMPLETED";
                 const isDeclined = booking.status === "DECLINED";
                 const isConfirmed = booking.status === "CONFIRMED";
+                const isPending =
+                  booking.status === "AWAITING_PRACTITIONER_CONFIRMATION" || booking.status === "PENDING";
                 const isLoading = actionLoadingId === booking.id;
 
                 return (
                   <div
                     key={booking.id}
-                    className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-5"
+                    className={`bg-white rounded-2xl border shadow-xs p-5 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-5 transition-all ${
+                      isPending ? "border-amber-300 ring-1 ring-amber-200/60" : "border-slate-200/90"
+                    }`}
                   >
                     <div className="space-y-2 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
@@ -313,17 +509,22 @@ export function PractitionerDashboardClient({
                           </span>
                         )}
 
-                        {isCompleted ? (
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900">
-                            {ar ? "منتهية ومصروفة" : "Séance réalisée"}
-                          </span>
-                        ) : isDeclined ? (
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">
-                            {ar ? "ملغاة" : "Annulée"}
+                        {isPending ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 animate-pulse">
+                            <span>⏳</span>
+                            <span>{ar ? "في انتظار تأكيدكم" : "En attente de confirmation"}</span>
                           </span>
                         ) : isConfirmed ? (
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-900">
-                            {ar ? "مؤكدة" : "Confirmée"}
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-900 border border-blue-200">
+                            {ar ? "✓ موعد مؤكد" : "✓ Confirmé"}
+                          </span>
+                        ) : isCompleted ? (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-200">
+                            {ar ? "✓ منتهية ومصروفة" : "✓ Séance effectuée"}
+                          </span>
+                        ) : isDeclined ? (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                            {ar ? "ملغاة" : "Annulée"}
                           </span>
                         ) : null}
                       </div>
@@ -332,17 +533,29 @@ export function PractitionerDashboardClient({
                         <h4 className="text-base font-bold text-slate-900">
                           {booking.childName} {booking.childAge ? `(${booking.childAge} ans)` : ""}
                         </h4>
-                        <div className="text-xs text-slate-600 flex flex-wrap items-center gap-3 mt-1">
+                        <div className="text-xs text-slate-600 flex flex-wrap items-center gap-3 mt-1.5">
                           <span>
                             <strong>{ar ? "الولي : " : "Parent : "}</strong>
                             {booking.parentName}
                           </span>
                           <span>
                             <strong>{ar ? "الهاتف : " : "Tél : "}</strong>
-                            <a href={`tel:${booking.parentPhone}`} className="text-emerald-700 hover:underline font-mono">
+                            <a href={`tel:${booking.parentPhone}`} className="text-emerald-700 hover:underline font-mono font-bold">
                               {booking.parentPhone}
                             </a>
                           </span>
+                          <span>
+                            <strong>{ar ? "البريد : " : "Email : "}</strong>
+                            <a href={`mailto:${booking.parentEmail}`} className="text-blue-700 hover:underline">
+                              {booking.parentEmail}
+                            </a>
+                          </span>
+                          {booking.parentLocation && (
+                            <span>
+                              <strong>{ar ? "الموقع : " : "Lieu : "}</strong>
+                              <span className="text-slate-800">{booking.parentLocation}</span>
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -365,39 +578,62 @@ export function PractitionerDashboardClient({
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2">
-                        {isOnline && (
-                          <a
-                            href={`https://meet.jit.si/anei-visio-${booking.id.slice(0, 8)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="py-2 px-3 bg-[#082D55] hover:bg-[#0E3B6C] text-white text-xs font-bold rounded-xl shadow-2xs flex items-center gap-1.5 transition-all"
-                          >
-                            <Icon name="video" size={13} />
-                            <span>{ar ? "دخول قاعة الفيديو" : "Rejoindre la visio"}</span>
-                          </a>
+                        {/* Actions for PENDING requests */}
+                        {isPending && (
+                          <>
+                            <button
+                              type="button"
+                              disabled={isLoading}
+                              onClick={() => handleBookingAction(booking.id, "CONFIRM")}
+                              className="py-2 px-3.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition-all disabled:opacity-50"
+                            >
+                              <Icon name="check" size={13} />
+                              <span>{ar ? "✓ تأكيد الموعد" : "✓ Confirmer ce rendez-vous"}</span>
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isLoading}
+                              onClick={() => handleBookingAction(booking.id, "DECLINE")}
+                              className="py-2 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold rounded-xl transition-all disabled:opacity-50"
+                            >
+                              <Icon name="close" size={13} />
+                              <span>{ar ? "رفض" : "Refuser"}</span>
+                            </button>
+                          </>
                         )}
 
-                        {!isCompleted && !isDeclined && (
-                          <button
-                            type="button"
-                            disabled={isLoading}
-                            onClick={() => handleBookingAction(booking.id, "COMPLETE")}
-                            className="py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-2xs flex items-center gap-1.5 transition-all disabled:opacity-50"
-                          >
-                            <Icon name="check" size={13} />
-                            <span>{ar ? "تأكيد إتمام الحصة" : "Séance effectuée"}</span>
-                          </button>
-                        )}
-
-                        {!isCompleted && !isDeclined && (
-                          <button
-                            type="button"
-                            disabled={isLoading}
-                            onClick={() => handleBookingAction(booking.id, "DECLINE")}
-                            className="py-2 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-all disabled:opacity-50"
-                          >
-                            <span>{ar ? "إلغاء" : "Annuler"}</span>
-                          </button>
+                        {/* Actions for CONFIRMED requests */}
+                        {isConfirmed && (
+                          <>
+                            {isOnline && (
+                              <a
+                                href={`https://meet.jit.si/anei-visio-${booking.id.slice(0, 8)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="py-2 px-3.5 bg-[#082D55] hover:bg-[#0E3B6C] text-white text-xs font-bold rounded-xl shadow-2xs flex items-center gap-1.5 transition-all"
+                              >
+                                <Icon name="video" size={13} />
+                                <span>{ar ? "دخول قاعة الفيديو" : "Rejoindre la visio"}</span>
+                              </a>
+                            )}
+                            <button
+                              type="button"
+                              disabled={isLoading}
+                              onClick={() => handleBookingAction(booking.id, "COMPLETE")}
+                              className="py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-2xs flex items-center gap-1.5 transition-all disabled:opacity-50"
+                            >
+                              <Icon name="check" size={13} />
+                              <span>{ar ? "تأكيد إتمام الحصة" : "Séance effectuée"}</span>
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isLoading}
+                              onClick={() => handleBookingAction(booking.id, "DECLINE")}
+                              className="py-2 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-all disabled:opacity-50"
+                            >
+                              <span>{ar ? "إلغاء" : "Annuler"}</span>
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -409,7 +645,204 @@ export function PractitionerDashboardClient({
         </div>
       )}
 
-      {/* Tab 2: Profile & Tariffs Self-Service */}
+      {/* Tab 2: Availability & Schedule Management */}
+      {activeTab === "availability" && (
+        <form onSubmit={handleAvailabilitySave} className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 sm:p-8 space-y-6">
+          <div className="border-b border-slate-100 pb-4">
+            <h3 className="text-lg font-bold text-slate-900">
+              {ar ? "إدارة التوفر وجدول المواعيد الأسبوعي والمناطق" : "Gestion des Disponibilités & Planning Hebdomadaire"}
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {ar
+                ? "حدد أوقات استقبال المرضى والتلاميذ، وصيغ التدخل (حضوري أو عن بعد)، ومناطق الخدمة."
+                : "Configurez votre statut, vos modalités d'intervention, vos créneaux réguliers et zones couvertes."}
+            </p>
+          </div>
+
+          {availabilityMsg && (
+            <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-[#082D55] text-xs font-bold">
+              {availabilityMsg}
+            </div>
+          )}
+
+          {/* Availability Status & Modalities */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                {ar ? "حالة التوفر الحالية" : "Statut de disponibilité"}
+              </label>
+              <select
+                value={availabilityStatusLabel}
+                onChange={(e) => setAvailabilityStatusLabel(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#082D55]"
+              >
+                <option value="IMMEDIATE_FULL_TIME">
+                  {ar ? "متاح فوراً (وقت كامل)" : "Disponible immédiatement (Temps plein)"}
+                </option>
+                <option value="WEEKDAYS">
+                  {ar ? "خلال أيام الأسبوع فقط (الإثنين إلى الجمعة)" : "En semaine uniquement (Lundi au Vendredi)"}
+                </option>
+                <option value="WEEKENDS_AND_EVENINGS">
+                  {ar ? "عطلات نهاية الأسبوع والأمسيات" : "Soirs & Week-ends uniquement"}
+                </option>
+                <option value="UNAVAILABLE">
+                  {ar ? "غير متاح حالياً (مغلق مؤقتاً أمام الحجوزات)" : "Non disponible actuellement (Fermé aux nouveaux RDV)"}
+                </option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                {ar ? "صيغ الاستشارة المقبولة" : "Modalités d'intervention acceptées"}
+              </label>
+              <select
+                value={acceptedModalities}
+                onChange={(e) => setAcceptedModalities(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#082D55]"
+              >
+                <option value="BOTH">
+                  {ar ? "حضوري بالعيادة وعن بعد (كلاهما)" : "Présentiel en cabinet & Téléconsultation Visio (Les deux)"}
+                </option>
+                <option value="IN_PERSON_ONLY">
+                  {ar ? "حضوري بالعيادة فقط" : "Présentiel en cabinet uniquement"}
+                </option>
+                <option value="ONLINE_ONLY">
+                  {ar ? "استشارة عن بعد فقط" : "Téléconsultation Visio uniquement"}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          {/* Intervention Locations */}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+              {ar ? "المناطق والمدن والمدارس المغطاة للتدخل" : "Villes, délégations et écoles couvertes pour les interventions"}
+            </label>
+            <input
+              type="text"
+              value={availableLocationsText}
+              onChange={(e) => setAvailableLocationsText(e.target.value)}
+              placeholder={ar ? "تونس الكبرى، أريانة، المرسى، المدارس الشريكة..." : "Ex: Grand Tunis, Ariana, La Marsa, Écoles partenaires de la région..."}
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#082D55]"
+            />
+          </div>
+
+          {/* Weekly Schedule Planner */}
+          <div className="space-y-4 pt-2">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                {ar ? "الجدول الأسبوعي للفتحات الزمنية" : "Créneaux horaires par jour de la semaine"}
+              </h4>
+              <span className="text-xs text-slate-500">
+                {ar ? "الفتحات تظهر مباشرة في صفحة ملفكم" : "Ces créneaux alimentent le widget de prise de rendez-vous"}
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              {DAYS_ORDER.map((d) => {
+                const dayConfig = weeklySchedule[d.key] || { enabled: false, slots: [] };
+                return (
+                  <div
+                    key={d.key}
+                    className={`p-4 rounded-2xl border transition-all ${
+                      dayConfig.enabled ? "bg-slate-50/70 border-slate-200" : "bg-white border-slate-100 opacity-60"
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          id={`day-${d.key}`}
+                          checked={dayConfig.enabled}
+                          onChange={() => toggleDay(d.key)}
+                          className="w-4 h-4 rounded text-[#082D55] focus:ring-[#082D55]"
+                        />
+                        <label htmlFor={`day-${d.key}`} className="text-xs font-bold text-slate-900 cursor-pointer">
+                          {ar ? d.ar : d.fr}
+                        </label>
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md ${
+                          dayConfig.enabled ? "bg-emerald-50 text-emerald-800 border border-emerald-200" : "bg-slate-100 text-slate-500"
+                        }`}>
+                          {dayConfig.enabled ? (ar ? "نشط ومتاح" : "Actif") : (ar ? "مغلق / راحة" : "Inactif")}
+                        </span>
+                      </div>
+
+                      {dayConfig.enabled && (
+                        <div className="flex items-center gap-1.5">
+                          <label className="text-[11px] text-slate-500">
+                            {ar ? "إضافة توقيت سريع :" : "Ajout rapide :"}
+                          </label>
+                          <select
+                            defaultValue=""
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                addSlot(d.key, e.target.value);
+                                e.target.value = "";
+                              }
+                            }}
+                            className="text-[11px] py-1 px-2 rounded-lg bg-white border border-slate-200 text-slate-700"
+                          >
+                            <option value="">{ar ? "+ اختر ساعة" : "+ Créneau"}</option>
+                            {PRESET_SLOTS.filter((s) => !dayConfig.slots.includes(s)).map((s) => (
+                              <option key={s} value={s}>
+                                {s}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </div>
+
+                    {dayConfig.enabled && (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        {dayConfig.slots.length === 0 ? (
+                          <span className="text-[11px] text-slate-400 italic">
+                            {ar ? "لا توجد فتحات محددة لهذا اليوم. أضف créneau من القائمة أعلاه." : "Aucun créneau configuré pour ce jour."}
+                          </span>
+                        ) : (
+                          dayConfig.slots.map((slot) => (
+                            <span
+                              key={slot}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-xs font-bold text-[#082D55] shadow-2xs"
+                            >
+                              <span>{slot}</span>
+                              <button
+                                type="button"
+                                onClick={() => removeSlot(d.key, slot)}
+                                className="text-slate-400 hover:text-rose-600 transition-colors"
+                                title={ar ? "حذف" : "Supprimer"}
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-slate-100 flex items-center justify-end">
+            <button
+              type="submit"
+              disabled={savingAvailability}
+              className="py-2.5 px-6 bg-[#082D55] hover:bg-[#0E3B6C] text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#082D55] disabled:opacity-50"
+            >
+              <Icon name="check" size={14} />
+              <span>
+                {savingAvailability
+                  ? ar ? "جاري الحفظ..." : "Enregistrement en cours..."
+                  : ar ? "حفظ جدول المواعيد والمناطق" : "Enregistrer mes disponibilités"}
+              </span>
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Tab 3: Profile & Tariffs Self-Service */}
       {activeTab === "profile" && (
         <form onSubmit={handleProfileSave} className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 sm:p-8 space-y-6">
           <div className="border-b border-slate-100 pb-4">

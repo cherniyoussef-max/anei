@@ -23,6 +23,10 @@ export type SpecialistProfileBookingSectionProps = {
     whatsappPhone?: string | null;
     showPhonePublicly?: boolean;
     email?: string | null;
+    availabilityStatusLabel?: string | null;
+    acceptedModalities?: string | null;
+    availableLocationsText?: string | null;
+    weeklySchedule?: Record<string, { enabled: boolean; slots: string[] }> | null;
   };
 };
 
@@ -35,22 +39,52 @@ export function SpecialistProfileBookingSection({
   const ar = locale === "ar";
   const today = new Date();
 
+  const schedule = specialist.weeklySchedule;
+  const isUnavailable = specialist.availabilityStatusLabel === "UNAVAILABLE";
+  const modalities = specialist.acceptedModalities || "BOTH";
+  const showInPerson = modalities === "BOTH" || modalities === "IN_PERSON_ONLY";
+  const showOnline = modalities === "BOTH" || modalities === "ONLINE_ONLY";
+
   // 7 next days
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(today.getDate() + i + 1);
+    const dayOfWeek = String(d.getDay());
+    const dayConfig = schedule?.[dayOfWeek];
+    const isDayActive = dayConfig !== undefined ? dayConfig.enabled : d.getDay() !== 0;
+    const daySlots = dayConfig?.slots && dayConfig.slots.length > 0 ? dayConfig.slots : SLOTS;
+
     return {
       iso: d.toISOString().split("T")[0],
+      dayOfWeek,
       dayName: d.toLocaleDateString(ar ? "ar-TN" : "fr-TN", { weekday: "short" }),
       dateText: d.toLocaleDateString(ar ? "ar-TN" : "fr-TN", { day: "numeric", month: "numeric" }),
+      isEnabled: isDayActive && !isUnavailable,
+      slots: daySlots,
     };
   });
 
-  const [selectedDate, setSelectedDate] = useState(days[0].iso);
-  const [selectedSlot, setSelectedSlot] = useState(SLOTS[1]);
-  const [meetingType, setMeetingType] = useState<"IN_PERSON" | "ONLINE">("IN_PERSON");
+  const firstAvailableDay = days.find((d) => d.isEnabled) || days[0];
+  const [selectedDate, setSelectedDate] = useState(firstAvailableDay.iso);
+  const currentDayConfig = days.find((d) => d.iso === selectedDate) || firstAvailableDay;
+  const availableSlotsForDay = currentDayConfig.slots;
+  const [selectedSlot, setSelectedSlot] = useState(availableSlotsForDay[0] || SLOTS[1]);
+
+  const [meetingType, setMeetingType] = useState<"IN_PERSON" | "ONLINE">(
+    modalities === "ONLINE_ONLY" ? "ONLINE" : "IN_PERSON"
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showDirectContact, setShowDirectContact] = useState(false);
+
+  function handleDateSelect(dateIso: string) {
+    setSelectedDate(dateIso);
+    const dayObj = days.find((d) => d.iso === dateIso);
+    if (dayObj && dayObj.slots.length > 0) {
+      if (!dayObj.slots.includes(selectedSlot)) {
+        setSelectedSlot(dayObj.slots[0]);
+      }
+    }
+  }
 
   const currentPriceTnd =
     meetingType === "IN_PERSON" ? specialist.inPersonPriceTnd : specialist.onlinePriceTnd;
@@ -70,6 +104,25 @@ export function SpecialistProfileBookingSection({
             ? "اختر صيغة المقابلة (بالعيادة أو عن بعد)، وحدد اليوم والساعة المناسبين لطفلك."
             : "Choisissez la modalité (au cabinet ou téléconsultation), puis le créneau souhaité."}
         </p>
+
+        {isUnavailable && (
+          <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs font-bold text-amber-900 flex items-center gap-2">
+            <span>⏳</span>
+            <span>
+              {ar
+                ? "الممارس غير متاح حالياً لاستقبال مواعيد جديدة."
+                : "Le praticien est actuellement indisponible pour de nouvelles demandes."}
+            </span>
+          </div>
+        )}
+
+        {specialist.availableLocationsText && (
+          <div className="mt-2 text-xs text-slate-600 flex items-center gap-1.5">
+            <Icon name="map" size={13} className="text-slate-400 shrink-0" />
+            <span className="font-semibold text-slate-700">{ar ? "المناطق المتاحة :" : "Zones :"}</span>
+            <span className="truncate">{specialist.availableLocationsText}</span>
+          </div>
+        )}
 
         <div className="mt-3 flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-50 border border-blue-200/80 text-[11px] font-bold text-[#082D55]">
@@ -93,42 +146,46 @@ export function SpecialistProfileBookingSection({
           </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => setMeetingType("IN_PERSON")}
-            className={`p-3.5 rounded-xl border text-xs font-semibold flex flex-col items-center justify-center gap-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#082D55] ${
-              meetingType === "IN_PERSON"
-                ? "border-[#082D55] bg-[#082D55] text-white shadow-xs font-bold"
-                : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-700"
-            }`}
-          >
-            <div className="flex items-center gap-1.5">
-              <Icon name="map" size={15} className={meetingType === "IN_PERSON" ? "text-blue-200" : "text-slate-400"} />
-              <span>{ar ? "بالعيادة" : "Au cabinet"}</span>
-            </div>
-            <span className={`text-[10px] ${meetingType === "IN_PERSON" ? "text-blue-100" : "text-emerald-700 font-bold"}`}>
-              {specialist.inPersonPriceTnd} DT · {ar ? "0% عمولة" : "0% frais ANEI"}
-            </span>
-          </button>
+        <div className={`grid gap-2 ${showInPerson && showOnline ? "grid-cols-2" : "grid-cols-1"}`}>
+          {showInPerson && (
+            <button
+              type="button"
+              onClick={() => setMeetingType("IN_PERSON")}
+              className={`p-3.5 rounded-xl border text-xs font-semibold flex flex-col items-center justify-center gap-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#082D55] ${
+                meetingType === "IN_PERSON"
+                  ? "border-[#082D55] bg-[#082D55] text-white shadow-xs font-bold"
+                  : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-700"
+              }`}
+            >
+              <div className="flex items-center gap-1.5">
+                <Icon name="map" size={15} className={meetingType === "IN_PERSON" ? "text-blue-200" : "text-slate-400"} />
+                <span>{ar ? "بالعيادة" : "Au cabinet"}</span>
+              </div>
+              <span className={`text-[10px] ${meetingType === "IN_PERSON" ? "text-blue-100" : "text-emerald-700 font-bold"}`}>
+                {specialist.inPersonPriceTnd} DT · {ar ? "0% عمولة" : "0% frais ANEI"}
+              </span>
+            </button>
+          )}
 
-          <button
-            type="button"
-            onClick={() => setMeetingType("ONLINE")}
-            className={`p-3.5 rounded-xl border text-xs font-semibold flex flex-col items-center justify-center gap-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#082D55] ${
-              meetingType === "ONLINE"
-                ? "border-[#082D55] bg-[#082D55] text-white shadow-xs font-bold"
-                : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-700"
-            }`}
-          >
-            <div className="flex items-center gap-1.5">
-              <Icon name="video" size={15} className={meetingType === "ONLINE" ? "text-blue-200" : "text-slate-400"} />
-              <span>{ar ? "عن بعد (فيديو)" : "Téléconsultation"}</span>
-            </div>
-            <span className={`text-[10px] ${meetingType === "ONLINE" ? "text-blue-100" : "text-slate-500 font-medium"}`}>
-              {specialist.onlinePriceTnd} DT · {ar ? "سداد مؤمّن" : "Séquestre sécurisé"}
-            </span>
-          </button>
+          {showOnline && (
+            <button
+              type="button"
+              onClick={() => setMeetingType("ONLINE")}
+              className={`p-3.5 rounded-xl border text-xs font-semibold flex flex-col items-center justify-center gap-1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#082D55] ${
+                meetingType === "ONLINE"
+                  ? "border-[#082D55] bg-[#082D55] text-white shadow-xs font-bold"
+                  : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-700"
+              }`}
+            >
+              <div className="flex items-center gap-1.5">
+                <Icon name="video" size={15} className={meetingType === "ONLINE" ? "text-blue-200" : "text-slate-400"} />
+                <span>{ar ? "عن بعد (فيديو)" : "Téléconsultation"}</span>
+              </div>
+              <span className={`text-[10px] ${meetingType === "ONLINE" ? "text-blue-100" : "text-slate-500 font-medium"}`}>
+                {specialist.onlinePriceTnd} DT · {ar ? "سداد مؤمّن" : "Séquestre sécurisé"}
+              </span>
+            </button>
+          )}
         </div>
 
         <div className="text-[11px] text-slate-500 mt-2 flex items-center gap-1.5">
@@ -158,18 +215,21 @@ export function SpecialistProfileBookingSection({
               <button
                 key={d.iso}
                 type="button"
-                onClick={() => setSelectedDate(d.iso)}
+                disabled={!d.isEnabled}
+                onClick={() => handleDateSelect(d.iso)}
                 aria-pressed={isSelected}
                 className={`py-2 px-1 rounded-xl border text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#082D55] ${
                   isSelected
                     ? "border-[#082D55] bg-[#082D55] text-white shadow-xs font-bold"
+                    : !d.isEnabled
+                    ? "border-slate-100 bg-slate-50/50 text-slate-300 cursor-not-allowed line-through"
                     : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-700"
                 }`}
               >
-                <div className={`text-[10px] uppercase tracking-wider font-semibold ${isSelected ? "text-blue-100" : "text-slate-400"}`}>
+                <div className={`text-[10px] uppercase tracking-wider font-semibold ${isSelected ? "text-blue-100" : !d.isEnabled ? "text-slate-300" : "text-slate-400"}`}>
                   {d.dayName}
                 </div>
-                <div className={`text-xs mt-0.5 ${isSelected ? "font-bold text-white" : "font-semibold text-slate-700"}`}>
+                <div className={`text-xs mt-0.5 ${isSelected ? "font-bold text-white" : !d.isEnabled ? "text-slate-300" : "font-semibold text-slate-700"}`}>
                   {d.dateText}
                 </div>
               </button>
@@ -184,17 +244,20 @@ export function SpecialistProfileBookingSection({
           {ar ? "3. التوقيت المتاح" : "3. Créneau horaire"}
         </div>
         <div className="grid grid-cols-3 gap-2">
-          {SLOTS.map((slot) => {
+          {availableSlotsForDay.map((slot) => {
             const isSelected = selectedSlot === slot;
             return (
               <button
                 key={slot}
                 type="button"
+                disabled={isUnavailable}
                 onClick={() => setSelectedSlot(slot)}
                 aria-pressed={isSelected}
                 className={`py-2.5 px-2 rounded-xl border text-xs text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#082D55] ${
                   isSelected
                     ? "border-[#082D55] bg-[#082D55] text-white shadow-xs font-bold"
+                    : isUnavailable
+                    ? "border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed"
                     : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-700 font-medium"
                 }`}
               >
@@ -209,8 +272,9 @@ export function SpecialistProfileBookingSection({
       <div className="space-y-2.5 pt-1">
         <button
           type="button"
+          disabled={isUnavailable}
           onClick={() => setIsModalOpen(true)}
-          className="w-full py-3.5 px-4 bg-[#082D55] hover:bg-[#0E3B6C] text-white font-bold text-sm rounded-xl shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#082D55] focus-visible:ring-offset-2"
+          className="w-full py-3.5 px-4 bg-[#082D55] hover:bg-[#0E3B6C] text-white font-bold text-sm rounded-xl shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#082D55] focus-visible:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Icon name="calendar" size={16} />
           <span>{ar ? "حجز هذا الموعد" : "Prendre ce rendez-vous"}</span>

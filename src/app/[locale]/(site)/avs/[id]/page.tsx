@@ -265,9 +265,13 @@ export default async function AvsProfileDetailPage({
                 hourlyRateTnd,
                 initials,
                 domains: localizedDomains,
-                phone: profile.phone,
+                phone: profile.contactPhone || profile.phone,
                 email: profile.email,
                 availability: ar ? profile.availabilityAr : profile.availabilityFr,
+                availabilityStatusLabel: profile.availabilityStatusLabel,
+                acceptedModalities: profile.acceptedModalities,
+                availableLocationsText: profile.availableLocationsText,
+                weeklySchedule: profile.weeklySchedule as Record<string, { enabled: boolean; slots: string[] }>,
               }}
             />
           </div>

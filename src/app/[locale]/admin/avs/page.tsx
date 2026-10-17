@@ -28,6 +28,7 @@ export default async function AdminAvsPage({
         parentName: avsBookingRequests.parentName,
         parentEmail: avsBookingRequests.parentEmail,
         parentPhone: avsBookingRequests.parentPhone,
+        parentLocation: avsBookingRequests.parentLocation,
         childName: avsBookingRequests.childName,
         childAge: avsBookingRequests.childAge,
         schoolName: avsBookingRequests.schoolName,

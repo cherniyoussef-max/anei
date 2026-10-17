@@ -9,15 +9,20 @@ import { isTrustedMutation } from "@/server/security/origin";
 import { readLimitedJson } from "@/server/security/request-body";
 import { isImpersonationActive } from "@/server/auth/impersonation";
 import { consumeRateLimit } from "@/server/security/rate-limit";
+import {
+  sendRequesterBookingConfirmedNotification,
+  sendRequesterBookingDeclinedNotification,
+} from "@/server/services/mailer";
+import { logger } from "@/server/security/logger";
 
 const actionSchema = z.object({
   action: z.enum(["CONFIRM", "DECLINE", "COMPLETE"]),
   practitionerNotes: z.string().max(2000).optional(),
 });
 
-export async function PATCH(
+async function handleAction(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  params: Promise<{ id: string }>
 ) {
   if (!isTrustedMutation(request)) {
     return NextResponse.json({ ok: false, error: "UNTRUSTED_ORIGIN" }, { status: 403 });
@@ -57,7 +62,20 @@ export async function PATCH(
       paymentMode: avsBookingRequests.paymentMode,
       amountMillimes: avsBookingRequests.amountMillimes,
       netPractitionerPayoutMillimes: avsBookingRequests.netPractitionerPayoutMillimes,
+      parentName: avsBookingRequests.parentName,
+      parentEmail: avsBookingRequests.parentEmail,
+      parentPhone: avsBookingRequests.parentPhone,
+      parentLocation: avsBookingRequests.parentLocation,
+      requestedDate: avsBookingRequests.requestedDate,
+      requestedTimeSlot: avsBookingRequests.requestedTimeSlot,
+      meetingType: avsBookingRequests.meetingType,
       profileUserId: avsProfiles.userId,
+      practitionerName: avsProfiles.displayName,
+      practitionerPhone: avsProfiles.contactPhone,
+      specialtyCategory: avsProfiles.category,
+      specialtyFr: avsProfiles.specialtyFr,
+      workplaceName: avsProfiles.workplaceName,
+      workplaceAddress: avsProfiles.workplaceAddress,
     })
     .from(avsBookingRequests)
     .innerJoin(avsProfiles, eq(avsBookingRequests.avsProfileId, avsProfiles.id))
@@ -110,6 +128,42 @@ export async function PATCH(
     .where(eq(avsBookingRequests.id, bookingId))
     .returning();
 
+  // Send automated email notifications asynchronously
+  if (parsed.data.action === "CONFIRM" && booking.parentEmail) {
+    const isOnline = booking.meetingType === "ONLINE" || booking.meetingType === "ONLINE_VISIO";
+    const locationOrVisioUrl = isOnline
+      ? `https://meet.jit.si/anei-visio-${booking.id.slice(0, 8)}`
+      : booking.workplaceAddress || booking.workplaceName || "Cabinet du praticien";
+
+    sendRequesterBookingConfirmedNotification({
+      requesterEmail: booking.parentEmail,
+      requesterName: booking.parentName,
+      practitionerName: booking.practitionerName,
+      practitionerPhone: booking.practitionerPhone,
+      practitionerSpecialty: booking.specialtyFr || booking.specialtyCategory,
+      requestedDate: String(booking.requestedDate),
+      requestedTimeSlot: booking.requestedTimeSlot,
+      meetingType: booking.meetingType,
+      locationOrVisioUrl,
+      bookingId: booking.id,
+      locale: "fr",
+    }).catch((err) => {
+      logger.error("practitioner.booking.confirm_email_error", { error: err, bookingId: booking.id });
+    });
+  } else if (parsed.data.action === "DECLINE" && booking.parentEmail) {
+    sendRequesterBookingDeclinedNotification({
+      requesterEmail: booking.parentEmail,
+      requesterName: booking.parentName,
+      practitionerName: booking.practitionerName,
+      requestedDate: String(booking.requestedDate),
+      requestedTimeSlot: booking.requestedTimeSlot,
+      reason: parsed.data.practitionerNotes,
+      locale: "fr",
+    }).catch((err) => {
+      logger.error("practitioner.booking.decline_email_error", { error: err, bookingId: booking.id });
+    });
+  }
+
   await db.insert(auditLogs).values({
     actorUserId: session.user.id,
     action: `practitioner.booking.${parsed.data.action.toLowerCase()}`,
@@ -124,4 +178,18 @@ export async function PATCH(
   });
 
   return NextResponse.json({ ok: true, booking: updated });
+}
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return handleAction(request, params);
+}
+
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return handleAction(request, params);
 }

@@ -34,7 +34,10 @@ export type MailType =
   | "CARE_ALERT"
   | "CONTACT_INQUIRY"
   | "CONTACT_CONFIRMATION"
-  | "BOOKING_ESCROW";
+  | "BOOKING_ESCROW"
+  | "PRACTITIONER_BOOKING_ALERT"
+  | "BOOKING_CONFIRMED"
+  | "BOOKING_DECLINED";
 
 /**
  * Sanitized failure category, safe to log and safe to report externally.
@@ -475,6 +478,256 @@ export async function sendBookingEscrowNotification(input: BookingEscrowMailInpu
       </div>`,
     },
     "BOOKING_ESCROW"
+  );
+}
+
+export type PractitionerNewBookingMailInput = {
+  practitionerEmail: string;
+  practitionerName: string;
+  requesterName: string;
+  requesterEmail: string;
+  requesterPhone: string;
+  requesterLocation?: string;
+  childName: string;
+  childAge?: number | null;
+  requestedDate: string;
+  requestedTimeSlot: string;
+  meetingType: string;
+  needDescription: string;
+  notes?: string | null;
+  bookingId: string;
+  locale?: Locale;
+};
+
+export async function sendPractitionerNewBookingAlert(input: PractitionerNewBookingMailInput) {
+  const ar = input.locale === "ar";
+  const practitionerName = escapeHtml(input.practitionerName);
+  const requesterName = escapeHtml(input.requesterName);
+  const requesterEmail = escapeHtml(input.requesterEmail);
+  const requesterPhone = escapeHtml(input.requesterPhone);
+  const requesterLocation = escapeHtml(input.requesterLocation || (ar ? "تونس" : "Tunisie"));
+  const childName = escapeHtml(input.childName);
+  const needDesc = escapeHtml(input.needDescription);
+  const notes = escapeHtml(input.notes || "");
+  const isOnline = input.meetingType === "ONLINE" || input.meetingType === "ONLINE_VISIO";
+  const meetingTypeLabel = isOnline
+    ? ar ? "عن بعد (استشارة مرئية ANEI)" : "En ligne (Visioconférence ANEI)"
+    : ar ? "حضوري (على عين المكان / بالعيادة)" : "Sur place (Présentiel / Cabinet)";
+
+  const dashboardUrl = `${env.APP_URL}/${input.locale || "fr"}/dashboard/praticien`;
+
+  await sendMail(
+    {
+      to: input.practitionerEmail,
+      subject: ar
+        ? `📅 طلب موعد جديد — ${requesterName} (${input.requestedDate} à ${input.requestedTimeSlot})`
+        : `📅 Nouvelle demande de rendez-vous ANEI — ${requesterName} (${input.requestedDate} à ${input.requestedTimeSlot})`,
+      text: `Nouvelle demande de rendez-vous reçue sur votre espace ANEI.\nDemandeur: ${input.requesterName} (Tél: ${input.requesterPhone}, Email: ${input.requesterEmail})\nÉlève: ${input.childName}\nDate: ${input.requestedDate} à ${input.requestedTimeSlot}\nModalité: ${meetingTypeLabel}\nBesoin: ${input.needDescription}\nConfirmez dans votre espace: ${dashboardUrl}`,
+      html: `<div dir="${ar ? "rtl" : "ltr"}" style="font-family:Arial,sans-serif;max-width:580px;margin:auto;color:#082d55;line-height:1.6;padding:24px;border:1px solid #e2e8f0;border-top:4px solid #082d55;border-radius:12px;background:#ffffff">
+        <div style="margin-bottom:16px;text-align:${ar ? "right" : "left"}">
+          <img src="${env.APP_URL}/brand/anei-logo-2x-transparent.png" alt="ANEI" width="160" style="display:inline-block;width:160px;height:auto;max-width:100%;border:0" />
+        </div>
+        <div style="margin-bottom:12px">
+          <span style="display:inline-block;font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#d97706;background:#fffbeb;border:1px solid #fde68a;padding:4px 10px;border-radius:999px">
+            ${ar ? "⏳ طلب موعد جديد في انتظار تأكيدكم" : "⏳ NOUVELLE DEMANDE DE RENDEZ-VOUS EN ATTENTE"}
+          </span>
+        </div>
+        <h2 style="color:#082d55;margin:0 0 12px 0;font-size:20px;font-weight:700">
+          ${ar ? "طلب موعد مقابلة واستشارة" : "Nouvelle demande de consultation"}
+        </h2>
+        <p style="font-size:15px;margin:0 0 16px 0">
+          ${ar ? `مرحباً <strong>${practitionerName}</strong>،` : `Bonjour <strong>${practitionerName}</strong>,`}
+        </p>
+        <p style="font-size:14px;color:#334155;line-height:1.6">
+          ${
+            ar
+              ? `تلقيتم طلباً جديداً لحجز موعد استشارة ومرافقة عبر ملفكم المهني في منصة ANEI.`
+              : `Une famille vient de solliciter un rendez-vous sur votre profil professionnel ANEI.`
+          }
+        </p>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:20px 0">
+          <h3 style="margin:0 0 10px 0;font-size:14px;color:#082d55;text-transform:uppercase;font-weight:700">
+            ${ar ? "معلومات الولي والطفل" : "Demandeur & Coordonnées"}
+          </h3>
+          <p style="margin:0 0 6px 0;font-size:14px"><strong>${ar ? "الاسم الكامل :" : "Nom :"}</strong> ${requesterName}</p>
+          <p style="margin:0 0 6px 0;font-size:14px"><strong>${ar ? "الهاتف :" : "Téléphone :"}</strong> <a href="tel:${requesterPhone}" style="color:#0056D2;font-weight:bold">${requesterPhone}</a></p>
+          <p style="margin:0 0 6px 0;font-size:14px"><strong>${ar ? "البريد الإلكتروني :" : "Email :"}</strong> <a href="mailto:${requesterEmail}" style="color:#0056D2">${requesterEmail}</a></p>
+          <p style="margin:0 0 6px 0;font-size:14px"><strong>${ar ? "الموقع / المحافظة :" : "Localisation :"}</strong> ${requesterLocation}</p>
+          <p style="margin:0 0 6px 0;font-size:14px"><strong>${ar ? "التلميذ(ة) :" : "Élève :"}</strong> ${childName} ${input.childAge ? `(${input.childAge} ${ar ? "سنوات" : "ans"})` : ""}</p>
+          <hr style="border:none;border-top:1px dashed #e2e8f0;margin:12px 0" />
+          <h3 style="margin:0 0 10px 0;font-size:14px;color:#082d55;text-transform:uppercase;font-weight:700">
+            ${ar ? "تفاصيل الموعد المطلوب" : "Détails du Rendez-vous"}
+          </h3>
+          <p style="margin:0 0 6px 0;font-size:14px"><strong>${ar ? "التاريخ والتوقيت :" : "Date & Créneau :"}</strong> <span style="color:#082d55;font-weight:bold">${input.requestedDate} à ${input.requestedTimeSlot}</span></p>
+          <p style="margin:0 0 6px 0;font-size:14px"><strong>${ar ? "الصيغة :" : "Modalité :"}</strong> ${meetingTypeLabel}</p>
+          <p style="margin:0 0 6px 0;font-size:14px"><strong>${ar ? "طبيعة الاحتياج :" : "Besoin / Motif :"}</strong> ${needDesc}</p>
+          ${notes ? `<p style="margin:0;font-size:13px;color:#64748b"><strong>${ar ? "ملاحظة إضافية :" : "Note :"}</strong> ${notes}</p>` : ""}
+        </div>
+        <div style="text-align:center;margin:24px 0">
+          <a style="display:inline-block;background:#082d55;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:14px" href="${dashboardUrl}">
+            ${ar ? "فتح لوحة التحكم لتأكيد الموعد ←" : "Ouvrir mon Dashboard pour Confirmer ce RDV →"}
+          </a>
+        </div>
+        <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0" />
+        <p style="font-size:12px;color:#94a3b8;margin:0">
+          ${ar ? "الأكاديمية الوطنية للتربية الدامجة — فضاء الممارسين والأخصائيين المعتمدين." : "Académie Nationale de l'Éducation Inclusive — Espace Praticiens & AVS agréés."}
+        </p>
+      </div>`,
+    },
+    "PRACTITIONER_BOOKING_ALERT"
+  );
+}
+
+export type RequesterBookingConfirmedMailInput = {
+  requesterEmail: string;
+  requesterName: string;
+  practitionerName: string;
+  practitionerPhone?: string | null;
+  practitionerSpecialty?: string | null;
+  requestedDate: string;
+  requestedTimeSlot: string;
+  meetingType: string;
+  locationOrVisioUrl: string;
+  bookingId: string;
+  locale?: Locale;
+};
+
+export async function sendRequesterBookingConfirmedNotification(input: RequesterBookingConfirmedMailInput) {
+  const ar = input.locale === "ar";
+  const requesterName = escapeHtml(input.requesterName);
+  const practitionerName = escapeHtml(input.practitionerName);
+  const practitionerSpecialty = escapeHtml(input.practitionerSpecialty || (ar ? "أخصائي / مرافق معتمد" : "Praticien agréé"));
+  const practitionerPhone = escapeHtml(input.practitionerPhone || "");
+  const locationOrVisioUrl = escapeHtml(input.locationOrVisioUrl);
+  const isOnline = input.meetingType === "ONLINE" || input.meetingType === "ONLINE_VISIO";
+
+  const accessLabel = isOnline
+    ? ar ? "رابط قاعة الفيديو ANEI" : "Lien de visioconférence sécurisée"
+    : ar ? "عنوان ومقر الاستشارة" : "Lieu & Adresse du rendez-vous";
+
+  await sendMail(
+    {
+      to: input.requesterEmail,
+      subject: ar
+        ? `✅ تم تأكيد موعدكم مع ${practitionerName} — ${input.requestedDate} à ${input.requestedTimeSlot}`
+        : `✅ Rendez-vous confirmé avec ${practitionerName} — ${input.requestedDate} à ${input.requestedTimeSlot}`,
+      text: `Votre rendez-vous avec ${input.practitionerName} (${practitionerSpecialty}) a été confirmé.\nDate: ${input.requestedDate} à ${input.requestedTimeSlot}\nAccès: ${input.locationOrVisioUrl}\nConsultez votre espace ANEI: ${env.APP_URL}/${input.locale || "fr"}/dashboard`,
+      html: `<div dir="${ar ? "rtl" : "ltr"}" style="font-family:Arial,sans-serif;max-width:580px;margin:auto;color:#082d55;line-height:1.6;padding:24px;border:1px solid #e2e8f0;border-top:4px solid #059669;border-radius:12px;background:#ffffff">
+        <div style="margin-bottom:16px;text-align:${ar ? "right" : "left"}">
+          <img src="${env.APP_URL}/brand/anei-logo-2x-transparent.png" alt="ANEI" width="160" style="display:inline-block;width:160px;height:auto;max-width:100%;border:0" />
+        </div>
+        <div style="margin-bottom:12px">
+          <span style="display:inline-block;font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#059669;background:#ecfdf5;border:1px solid #a7f3d0;padding:4px 10px;border-radius:999px">
+            ${ar ? "✅ موعد مؤكد رسمياً من الممارس" : "✅ RENDEZ-VOUS CONFIRMÉ PAR LE PRATICIEN"}
+          </span>
+        </div>
+        <h2 style="color:#082d55;margin:0 0 12px 0;font-size:20px;font-weight:700">
+          ${ar ? "تم تأكيد موعدكم بنجاح" : "Votre rendez-vous est confirmé"}
+        </h2>
+        <p style="font-size:15px;margin:0 0 16px 0">
+          ${ar ? `مرحباً <strong>${requesterName}</strong>،` : `Bonjour <strong>${requesterName}</strong>,`}
+        </p>
+        <p style="font-size:14px;color:#334155;line-height:1.6">
+          ${
+            ar
+              ? `يسعدنا إعلامكم بأن <strong>${practitionerName}</strong> (${practitionerSpecialty}) قد أكد(ت) موعدكم رسمياً.`
+              : `Nous vous confirmons que <strong>${practitionerName}</strong> (${practitionerSpecialty}) a validé votre créneau de consultation.`
+          }
+        </p>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:20px 0">
+          <p style="margin:0 0 8px 0;font-size:14px"><strong>${ar ? "الممارس :" : "Praticien :"}</strong> ${practitionerName} (${practitionerSpecialty})</p>
+          ${practitionerPhone ? `<p style="margin:0 0 8px 0;font-size:14px"><strong>${ar ? "الهاتف المهني :" : "Téléphone :"}</strong> <a href="tel:${practitionerPhone}" style="color:#0056D2;font-weight:bold">${practitionerPhone}</a></p>` : ""}
+          <p style="margin:0 0 8px 0;font-size:14px"><strong>${ar ? "التاريخ والتوقيت :" : "Date & Créneau :"}</strong> <span style="color:#082d55;font-weight:bold">${input.requestedDate} à ${input.requestedTimeSlot}</span></p>
+          <hr style="border:none;border-top:1px dashed #e2e8f0;margin:12px 0" />
+          <p style="margin:0 0 6px 0;font-size:13px;color:#64748b;font-weight:700;text-transform:uppercase">${accessLabel}</p>
+          ${
+            isOnline
+              ? `<div style="margin:8px 0"><a href="${input.locationOrVisioUrl}" style="display:inline-block;background:#0056D2;color:#ffffff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:bold;font-size:13px">${ar ? "🎥 دخول قاعة الفيديو المباشرة" : "🎥 Rejoindre la visioconférence ANEI"}</a></div>
+                 <p style="margin:4px 0 0;font-size:12px;color:#94a3b8">Lien direct : <code style="word-break:break-all">${input.locationOrVisioUrl}</code></p>`
+              : `<p style="margin:0;font-size:14px;color:#0f172a;font-weight:bold">${locationOrVisioUrl}</p>`
+          }
+        </div>
+        <div style="text-align:center;margin:24px 0">
+          <a style="display:inline-block;background:#082d55;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:14px" href="${env.APP_URL}/${input.locale || "fr"}/dashboard">
+            ${ar ? "عرض الموعد في فضاء العائلة" : "Consulter mon rendez-vous sur ANEI →"}
+          </a>
+        </div>
+        <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0" />
+        <p style="font-size:12px;color:#94a3b8;margin:0">
+          ${ar ? "الأكاديمية الوطنية للتربية الدامجة — شريككم في الإدماج المدرسي." : "Académie Nationale de l'Éducation Inclusive — Tiers de confiance pour l'éducation inclusive."}
+        </p>
+      </div>`,
+    },
+    "BOOKING_CONFIRMED"
+  );
+}
+
+export type RequesterBookingDeclinedMailInput = {
+  requesterEmail: string;
+  requesterName: string;
+  practitionerName: string;
+  requestedDate: string;
+  requestedTimeSlot: string;
+  reason?: string | null;
+  locale?: Locale;
+};
+
+export async function sendRequesterBookingDeclinedNotification(input: RequesterBookingDeclinedMailInput) {
+  const ar = input.locale === "ar";
+  const requesterName = escapeHtml(input.requesterName);
+  const practitionerName = escapeHtml(input.practitionerName);
+  const reason = escapeHtml(input.reason || "");
+
+  await sendMail(
+    {
+      to: input.requesterEmail,
+      subject: ar
+        ? `تحديث حول موعدكم مع ${practitionerName}`
+        : `Mise à jour concernant votre demande de rendez-vous avec ${practitionerName}`,
+      text: `Votre demande de rendez-vous avec ${input.practitionerName} le ${input.requestedDate} à ${input.requestedTimeSlot} n'a pas pu être acceptée.\nVous pouvez sélectionner un autre créneau disponible sur son profil.\nEspace ANEI: ${env.APP_URL}/${input.locale || "fr"}/dashboard`,
+      html: `<div dir="${ar ? "rtl" : "ltr"}" style="font-family:Arial,sans-serif;max-width:580px;margin:auto;color:#082d55;line-height:1.6;padding:24px;border:1px solid #e2e8f0;border-top:4px solid #ef4444;border-radius:12px;background:#ffffff">
+        <div style="margin-bottom:16px;text-align:${ar ? "right" : "left"}">
+          <img src="${env.APP_URL}/brand/anei-logo-2x-transparent.png" alt="ANEI" width="160" style="display:inline-block;width:160px;height:auto;max-width:100%;border:0" />
+        </div>
+        <h2 style="color:#082d55;margin:0 0 12px 0;font-size:20px;font-weight:700">
+          ${ar ? "عدم توفر الموعد المطلوب" : "Indisponibilité du créneau demandé"}
+        </h2>
+        <p style="font-size:15px;margin:0 0 16px 0">
+          ${ar ? `مرحباً <strong>${requesterName}</strong>،` : `Bonjour <strong>${requesterName}</strong>,`}
+        </p>
+        <p style="font-size:14px;color:#334155;line-height:1.6">
+          ${
+            ar
+              ? `نأسف لإعلامكم بأن <strong>${practitionerName}</strong> غير متاح(ة) في التوقيت الذي تم اختياره (${input.requestedDate} à ${input.requestedTimeSlot}).`
+              : `Nous vous informons que <strong>${practitionerName}</strong> n'est malheureusement pas disponible sur le créneau demandé (${input.requestedDate} à ${input.requestedTimeSlot}).`
+          }
+        </p>
+        ${
+          reason
+            ? `<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:14px;margin:16px 0;font-size:13px;color:#991b1b">
+                <strong>${ar ? "رسالة من الممارس :" : "Motif communiqué :"}</strong> ${reason}
+              </div>`
+            : ""
+        }
+        <p style="font-size:14px;color:#334155;line-height:1.6">
+          ${
+            ar
+              ? `ندعوكم لاختيار موعد بديل عبر جدول المواعيد المتاح في الملف المهني للممارس.`
+              : `Nous vous invitons à choisir un autre créneau directement sur sa fiche professionnelle.`
+          }
+        </p>
+        <div style="text-align:center;margin:24px 0">
+          <a style="display:inline-block;background:#082d55;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:14px" href="${env.APP_URL}/${input.locale || "fr"}/dashboard">
+            ${ar ? "العودة إلى لوحة التحكم" : "Consulter mon tableau de bord →"}
+          </a>
+        </div>
+        <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0" />
+        <p style="font-size:12px;color:#94a3b8;margin:0">
+          ${ar ? "الأكاديمية الوطنية للتربية الدامجة." : "Académie Nationale de l'Éducation Inclusive."}
+        </p>
+      </div>`,
+    },
+    "BOOKING_DECLINED"
   );
 }
 

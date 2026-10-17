@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { z } from "zod";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/server/db";
-import { avsBookingRequests, avsProfiles, liveSessions } from "@/server/db/schema";
+import { avsBookingRequests, avsProfiles, liveSessions, user } from "@/server/db/schema";
 import { auth } from "@/server/auth";
 import { consumeRateLimit } from "@/server/security/rate-limit";
 import { isTrustedMutation } from "@/server/security/origin";
 import { readLimitedJson } from "@/server/security/request-body";
-import { sendBookingEscrowNotification } from "@/server/services/mailer";
+import { sendBookingEscrowNotification, sendPractitionerNewBookingAlert } from "@/server/services/mailer";
 import { logger } from "@/server/security/logger";
 
 const bookingSchema = z.object({
@@ -16,6 +16,7 @@ const bookingSchema = z.object({
   parentName: z.string().trim().min(2).max(120).optional(),
   parentEmail: z.string().trim().email().max(200).optional(),
   parentPhone: z.string().trim().min(6).max(30),
+  parentLocation: z.string().trim().max(120).optional(),
   childName: z.string().trim().min(2).max(120),
   childAge: z.coerce.number().int().min(1).max(30).optional(),
   schoolName: z.string().trim().max(160).optional().default(""),
@@ -65,6 +66,7 @@ export async function POST(request: Request) {
   const [profile] = await db
     .select({
       id: avsProfiles.id,
+      userId: avsProfiles.userId,
       displayName: avsProfiles.displayName,
       directoryType: avsProfiles.directoryType,
       category: avsProfiles.category,
@@ -80,6 +82,27 @@ export async function POST(request: Request) {
 
   if (!profile) {
     return NextResponse.json({ ok: false, error: "AVS_NOT_FOUND" }, { status: 404 });
+  }
+
+  // Prevent double booking on identical practitioner, date and timeslot
+  const [existingConflict] = await db
+    .select({ id: avsBookingRequests.id })
+    .from(avsBookingRequests)
+    .where(
+      and(
+        eq(avsBookingRequests.avsProfileId, parsed.data.avsProfileId),
+        eq(avsBookingRequests.requestedDate, parsed.data.requestedDate),
+        eq(avsBookingRequests.requestedTimeSlot, parsed.data.requestedTimeSlot),
+        inArray(avsBookingRequests.status, ["AWAITING_PRACTITIONER_CONFIRMATION", "PENDING", "CONFIRMED"])
+      )
+    )
+    .limit(1);
+
+  if (existingConflict) {
+    return NextResponse.json(
+      { ok: false, error: "SLOT_ALREADY_BOOKED", message: "Ce créneau horaire est déjà réservé pour cette date." },
+      { status: 409 }
+    );
   }
 
   const isOnline = parsed.data.meetingType === "ONLINE" || parsed.data.meetingType === "ONLINE_VISIO";
@@ -166,6 +189,7 @@ export async function POST(request: Request) {
       parentName,
       parentEmail,
       parentPhone: parsed.data.parentPhone,
+      parentLocation: parsed.data.parentLocation || null,
       childName: parsed.data.childName,
       childAge: parsed.data.childAge ?? null,
       schoolName: parsed.data.schoolName || null,
@@ -174,7 +198,7 @@ export async function POST(request: Request) {
       requestedDate: parsed.data.requestedDate,
       requestedTimeSlot: parsed.data.requestedTimeSlot,
       meetingType: parsed.data.meetingType,
-      status: "CONFIRMED",
+      status: "AWAITING_PRACTITIONER_CONFIRMATION",
       notes: parsed.data.notes || null,
       amountMillimes: totalAmountMillimes,
       platformFeeMillimes,
@@ -191,23 +215,57 @@ export async function POST(request: Request) {
     })
     .returning();
 
-  // Send automatic Escrow Confirmation Email to Parent
-  try {
-    await sendBookingEscrowNotification({
-      parentName,
-      parentEmail,
-      avsName: profile.displayName,
-      childName: parsed.data.childName,
-      requestedDate: parsed.data.requestedDate,
-      requestedTimeSlot: parsed.data.requestedTimeSlot,
-      meetingType: parsed.data.meetingType,
-      amountTnd: Math.round(totalAmountMillimes / 1000),
-      escrowRef,
-      locale: parsed.data.locale,
-    });
-    logger.info("avs.booking.escrow_email_sent", { bookingId: booking.id, escrowRef });
-  } catch (mailErr) {
-    logger.error("avs.booking.mail_error", { error: mailErr });
+  // 1. Send automatic Notification Alert Email to the Practitioner
+  let practitionerEmail = profile.email;
+  if (!practitionerEmail && profile.userId) {
+    const [pUser] = await db.select({ email: user.email }).from(user).where(eq(user.id, profile.userId)).limit(1);
+    if (pUser?.email) practitionerEmail = pUser.email;
+  }
+
+  if (practitionerEmail) {
+    try {
+      await sendPractitionerNewBookingAlert({
+        practitionerEmail,
+        practitionerName: profile.displayName,
+        requesterName: parentName,
+        requesterEmail: parentEmail,
+        requesterPhone: parsed.data.parentPhone,
+        requesterLocation: parsed.data.parentLocation,
+        childName: parsed.data.childName,
+        childAge: parsed.data.childAge,
+        requestedDate: parsed.data.requestedDate,
+        requestedTimeSlot: parsed.data.requestedTimeSlot,
+        meetingType: parsed.data.meetingType,
+        needDescription: parsed.data.needDescription,
+        notes: parsed.data.notes,
+        bookingId: booking.id,
+        locale: parsed.data.locale,
+      });
+      logger.info("avs.booking.practitioner_alert_sent", { bookingId: booking.id, practitionerEmail });
+    } catch (mailErr) {
+      logger.error("avs.booking.practitioner_alert_error", { error: mailErr });
+    }
+  }
+
+  // 2. Send automatic Escrow Confirmation Email to Parent if escrow is active
+  if (paymentMode === "PLATFORM_ESCROW") {
+    try {
+      await sendBookingEscrowNotification({
+        parentName,
+        parentEmail,
+        avsName: profile.displayName,
+        childName: parsed.data.childName,
+        requestedDate: parsed.data.requestedDate,
+        requestedTimeSlot: parsed.data.requestedTimeSlot,
+        meetingType: parsed.data.meetingType,
+        amountTnd: Math.round(totalAmountMillimes / 1000),
+        escrowRef,
+        locale: parsed.data.locale,
+      });
+      logger.info("avs.booking.escrow_email_sent", { bookingId: booking.id, escrowRef });
+    } catch (mailErr) {
+      logger.error("avs.booking.mail_error", { error: mailErr });
+    }
   }
 
   return NextResponse.json(
