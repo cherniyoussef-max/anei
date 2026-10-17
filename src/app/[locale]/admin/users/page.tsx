@@ -5,6 +5,7 @@ import { requireAdminPermission } from "@/server/auth/session";
 import { getAdminUsers } from "@/modules/admin/queries/admin-users";
 import { AdminPageHeader } from "@/modules/admin/components/AdminPageHeader";
 import { AdminUserRole } from "@/components/admin/AdminUserRole";
+import { AdminUserCategorySelect } from "@/components/admin/AdminUserCategorySelect";
 
 export const dynamic = "force-dynamic";
 function value(query: Record<string, string | string[] | undefined>, key: string) {
@@ -41,10 +42,11 @@ export default async function AdminUsers({ params, searchParams }: {
     </form>
     <div className="admin-table-surface">
       <div className="admin-table-scroll"><table className="admin-data-table">
-        <thead><tr><th>{ar ? "المستخدم" : "Utilisateur"}</th><th>Email</th><th>{ar ? "الدور" : "Rôle"}</th><th>{ar ? "المزود" : "Connexion"}</th><th>{ar ? "آخر نشاط" : "Dernière activité"}</th><th>{ar ? "التسجيلات" : "Inscriptions"}</th><th>{ar ? "التقدم" : "Progression"}</th><th><span className="sr-only">{ar ? "إجراءات" : "Actions"}</span></th></tr></thead>
+        <thead><tr><th>{ar ? "المستخدم" : "Utilisateur"}</th><th>Email</th><th>{ar ? "الدور" : "Rôle"}</th><th>{ar ? "الفئة" : "Catégorie"}</th><th>{ar ? "المزود" : "Connexion"}</th><th>{ar ? "آخر نشاط" : "Dernière activité"}</th><th>{ar ? "التسجيلات" : "Inscriptions"}</th><th>{ar ? "التقدم" : "Progression"}</th><th><span className="sr-only">{ar ? "إجراءات" : "Actions"}</span></th></tr></thead>
         <tbody>{data.items.map((item) => <tr key={item.id}>
           <td><Link className="admin-user-cell" href={`/${locale}/admin/users/${item.id}`}><span>{item.name.slice(0,2).toUpperCase()}</span><strong>{item.name}</strong></Link></td>
           <td>{item.email}</td><td><AdminUserRole userId={item.id} role={item.role} canEdit={canEdit} locale={locale}/></td>
+          <td><AdminUserCategorySelect userId={item.id} currentCategory={item.professional_post_status || item.profile_type || "LEARNER"} canEdit={canEdit} locale={locale} compact/></td>
           <td><span className="admin-provider">{item.provider === "google" ? "Google" : "Email"}</span></td>
           <td>{item.last_activity ? formatDate(item.last_activity,locale) : "—"}</td><td className="numeric">{item.enrollments}</td><td className="numeric">{item.completion}%</td>
           <td><Link className="admin-row-link" href={`/${locale}/admin/users/${item.id}`}>{ar ? "فتح" : "Ouvrir"}</Link></td>

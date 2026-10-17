@@ -5,6 +5,7 @@ import { verifyWebhookChallenge, parseAndVerifyMetaWebhook } from "@/server/what
 import { messengerVerifyToken, metaAppSecret } from "@/server/social/config";
 import { normalizeSocialWebhook } from "@/server/social/normalize";
 import { ingestSocialWebhookEvents } from "@/server/services/social-messaging";
+import { ingestOmnichannelMessage } from "@/server/services/omnichannel-crm";
 
 const MAX_WEBHOOK_BODY_BYTES = 256 * 1024;
 
@@ -56,5 +57,21 @@ export async function POST(request: Request) {
   if (summary.processed > 0) {
     logger.info("messenger.webhook_processed", summary);
   }
+
+  // Also bridge into unified omnichannel CRM with Meta Ads attribution
+  for (const ev of events) {
+    if (ev.kind === "inbound_message") {
+      await ingestOmnichannelMessage({
+        channel: "MESSENGER",
+        externalContactId: ev.senderId,
+        contactName: ev.senderName || `Messenger User #${ev.senderId.slice(-6)}`,
+        direction: "INBOUND",
+        content: ev.text || "",
+        messageType: "TEXT",
+        metaMessageId: ev.providerMessageId,
+      }).catch((err) => logger.warn("messenger.omnichannel_ingest_failed", { error: String(err) }));
+    }
+  }
+
   return NextResponse.json({ ok: true });
 }

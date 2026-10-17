@@ -6,6 +6,10 @@ import { readLimitedRawBody } from "@/server/security/request-body";
 import { consumeRateLimit, requestFingerprint } from "@/server/security/rate-limit";
 import { logger } from "@/server/security/logger";
 import { ingestWebhookEvents } from "@/server/services/whatsapp-webhook";
+import {
+  ingestOmnichannelMessage,
+  updateOmnichannelMessageStatus,
+} from "@/server/services/omnichannel-crm";
 
 const MAX_WEBHOOK_BODY_BYTES = 256 * 1024;
 
@@ -82,5 +86,24 @@ export async function POST(request: Request) {
   if (summary.processed > 0) {
     logger.info("whatsapp.webhook_processed", summary);
   }
+
+  // Also bridge into unified omnichannel CRM with Meta Ads attribution
+  for (const ev of events) {
+    if (ev.kind === "inbound_message") {
+      await ingestOmnichannelMessage({
+        channel: "WHATSAPP",
+        externalContactId: ev.senderWaId,
+        direction: "INBOUND",
+        content: ev.textPreview || "",
+        messageType: ev.messageType,
+        metaMessageId: ev.messageId,
+        referral: ev.referral ?? null,
+      }).catch((err) => logger.warn("whatsapp.omnichannel_ingest_failed", { error: String(err) }));
+    } else if (ev.kind === "status_update") {
+      await updateOmnichannelMessageStatus(ev.messageId, ev.status)
+        .catch((err) => logger.warn("whatsapp.omnichannel_status_failed", { error: String(err) }));
+    }
+  }
+
   return NextResponse.json({ ok: true });
 }

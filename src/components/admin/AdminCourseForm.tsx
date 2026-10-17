@@ -56,7 +56,50 @@ export function AdminCourseForm({ locale }: { locale: Locale }) {
   const ar = locale === "ar";
 
   // Tab navigation
-  const [activeTab, setActiveTab] = useState<"general" | "content" | "settings" | "visual">("general");
+  const [activeTab, setActiveTab] = useState<"general" | "content" | "settings" | "visual" | "assessment">("general");
+
+  // QCM Final Assessment (Mandatory)
+  const [qcmTimeLimitMinutes, setQcmTimeLimitMinutes] = useState(30);
+  const [qcmPassingScorePercent, setQcmPassingScorePercent] = useState(80);
+  const [qcmRevealAnswers, setQcmRevealAnswers] = useState(false);
+  const [qcmQuestions, setQcmQuestions] = useState<Array<{
+    questionFr: string;
+    questionAr: string;
+    points: number;
+    explanationFr?: string;
+    explanationAr?: string;
+    options: Array<{ textFr: string; textAr: string }>;
+    correctOptionIndex: number;
+  }>>([
+    {
+      questionFr: "Quel est l'objectif premier d'un Projet Personnalisé de Scolarisation (PPS) ?",
+      questionAr: "ما هو الهدف الأساسي من مشروع الدمج المدرسي الفردي (PPS)؟",
+      points: 1,
+      explanationFr: "Le PPS formalise les aménagements pédagogiques et l'accompagnement personnalisé de l'élève en situation de handicap.",
+      explanationAr: "يحدد مشروع الدمج الفردي التعديلات البيداغوجية والمرافقة الخاصة بالمتعلم ذي الاحتياجات الخاصة.",
+      options: [
+        { textFr: "Définir les adaptations pédagogiques et humaines pour la réussite scolaire", textAr: "تحديد التعديلات التربوية والبشرية اللازمة لنجاح التلميذ" },
+        { textFr: "Isoler l'élève dans une salle spécialisée en dehors de la classe", textAr: "عزل التلميذ في قاعة مخصصة خارج الفصل العادي" },
+        { textFr: "Remplacer l'enseignant titulaire par un médecin", textAr: "استبدال المعلم الرئيسي بطبيب معالج" },
+        { textFr: "Supprimer les évaluations formatives", textAr: "إلغاء جميع التقييمات التكوينية" },
+      ],
+      correctOptionIndex: 0,
+    },
+    {
+      questionFr: "Face à une situation de surcharge sensorielle chez un élève autiste, quelle est la première action recommandée ?",
+      questionAr: "عند حدوث إرهاق حسي لدى تلميذ من ذوي طيف التوحد، ما هو التصرف الفوري الموصى به؟",
+      points: 1,
+      explanationFr: "Réduire les stimuli sonores et visuels et offrir un espace calme et sécurisant permet de réguler l'anxiété.",
+      explanationAr: "تقليل المثيرات الصوتية والبصرية وتوفير ركن هادئ وآمن يساهم في خفض التوتر واستعادة التوازن.",
+      options: [
+        { textFr: "Réduire immédiatement les stimuli sensoriels et proposer un espace de décompression calme", textAr: "تقليل المحفزات الحسية فوراً وتوفير فضاء هادئ لاستعادة التوازن" },
+        { textFr: "Augmenter le volume sonore pour capter son attention", textAr: "رفع الصوت لجذب انتباهه" },
+        { textFr: "Imposer un travail écrit sous contrainte de temps", textAr: "إلزامه بعمل كتابي محدد بوقت سريع" },
+        { textFr: "Le contraindre physiquement à rester assis", textAr: "إجباره جسدياً على البقاء جالساً" },
+      ],
+      correctOptionIndex: 0,
+    },
+  ]);
 
   // Identification & Metadata
   const [slug, setSlug] = useState("");
@@ -235,7 +278,24 @@ export function AdminCourseForm({ locale }: { locale: Locale }) {
         ar: arObjectives,
       },
       coverImageObjectKey: uploadedCoverKey,
+      finalAssessment: {
+        timeLimitMinutes: Number(qcmTimeLimitMinutes),
+        passingScorePercent: Number(qcmPassingScorePercent),
+        revealAnswersAfterPass: Boolean(qcmRevealAnswers),
+        questions: qcmQuestions,
+      },
     };
+
+    if (qcmQuestions.length === 0) {
+      setState("error");
+      setFeedbackMsg(
+        ar
+          ? "يجب إضافة سؤال واحد على الأقل في التقييم النهائي (QCM)."
+          : "Chaque formation doit obligatoirement inclure un QCM d'évaluation finale chronométré."
+      );
+      setActiveTab("assessment");
+      return;
+    }
 
     try {
       const res = await fetch("/api/admin/courses", {
@@ -258,15 +318,26 @@ export function AdminCourseForm({ locale }: { locale: Locale }) {
       } else {
         const errData = await res.json().catch(() => null);
         setState("error");
-        setFeedbackMsg(
-          errData?.error === "SLUG_EXISTS"
-            ? ar
+        if (errData?.error === "ASSESSMENT_QCM_REQUIRED") {
+          setActiveTab("assessment");
+          setFeedbackMsg(
+            ar
+              ? "التقييم النهائي (QCM) إجباري: يرجى ضبط مدة الاختبار ونسبة النجاح وإضافة سؤال واحد على الأقل."
+              : "Chaque formation doit obligatoirement inclure un QCM d'évaluation finale chronométré avant d'être enregistrée."
+          );
+        } else if (errData?.error === "SLUG_EXISTS") {
+          setFeedbackMsg(
+            ar
               ? "معرف الدورة (Slug) مستخدم بالفعل، اختر معرفاً آخر."
               : "Le slug URL est déjà utilisé par une autre formation."
-            : ar
-            ? "تعذر إنشاء الدورة. يرجى التحقق من الحقول المطلوبة."
-            : "Création impossible. Vérifiez les champs obligatoires ou le slug.",
-        );
+          );
+        } else {
+          setFeedbackMsg(
+            ar
+              ? "تعذر إنشاء الدورة. يرجى التحقق من الحقول المطلوبة."
+              : "Création impossible. Vérifiez les champs obligatoires ou le slug."
+          );
+        }
       }
     } catch {
       setState("error");
@@ -576,6 +647,7 @@ export function AdminCourseForm({ locale }: { locale: Locale }) {
           { key: "content", labelFr: "2. Contenu & Objectifs", labelAr: "٢. المحتوى والأهداف" },
           { key: "settings", labelFr: "3. Modalités, Durée & Prix", labelAr: "٣. الصيغة والمدة والسعر" },
           { key: "visual", labelFr: "4. Visuel & Couverture", labelAr: "٤. الغلاف والوسائط" },
+          { key: "assessment", labelFr: "5. Évaluation Finale (QCM Obligatoire *)", labelAr: "٥. التقييم النهائي (QCM إجباري *)" },
         ].map((tab) => (
           <button
             key={tab.key}
@@ -1227,6 +1299,359 @@ export function AdminCourseForm({ locale }: { locale: Locale }) {
               labelFr="Image de couverture de la formation"
               labelAr="صورة الغلاف الرسمية للدورة"
             />
+          </div>
+
+          <div style={{ marginTop: 14 }}>
+            <button
+              type="button"
+              onClick={() => setActiveTab("assessment")}
+              className="btn btn-secondary btn-sm"
+              style={{ padding: "8px 16px" }}
+            >
+              {ar ? "متابعة: التقييم النهائي (QCM) ←" : "Continuer : Évaluation Finale (QCM) →"}
+            </button>
+          </div>
+        </fieldset>
+      )}
+
+      {/* TAB 5: MANDATORY FINAL ASSESSMENT (QCM) */}
+      {activeTab === "assessment" && (
+        <fieldset style={{ border: "1px solid #e2e8f0", borderRadius: 10, padding: 18, background: "#fff", display: "flex", flexDirection: "column", gap: 18 }}>
+          <legend style={{ fontSize: 13, fontWeight: 700, padding: "0 8px", color: "#1e293b", display: "flex", alignItems: "center", gap: 6 }}>
+            <span>{ar ? "٥. التقييم النهائي المعتمد (QCM إجباري)" : "5. Évaluation Finale Certifiante (QCM Obligatoire)"}</span>
+            <span style={{ background: "#dc2626", color: "#fff", fontSize: 10, padding: "2px 6px", borderRadius: 4, fontWeight: 700 }}>
+              {ar ? "إلزامي" : "OBLIGATOIRE"}
+            </span>
+          </legend>
+
+          <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, padding: 12, fontSize: 13, color: "#1e40af" }}>
+            <strong>{ar ? "معيار الجودة الأكاديمية ANEI :" : "Norme Qualité Académique ANEI :"}</strong>{" "}
+            {ar
+              ? "لا يمكن تسجيل أو نشر أي دورة تكوينية في المنصة دون إرفاق اختبار تقييمي نهائي (QCM) يضمن قياس الكفاءات المكتسبة قبل إصدار الشهادات."
+              : "Aucune formation ne peut être créée ou publiée sans son QCM d'évaluation finale chronométré, garantissant la validation des acquis avant la délivrance des attestations."}
+          </div>
+
+          {/* PARAMETERS GRID */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+            <div>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
+                ⏱️ {ar ? "مدة الاختبار (بالدقائق)" : "Durée limite (minutes)"} *
+              </label>
+              <input
+                type="number"
+                min={5}
+                max={240}
+                value={qcmTimeLimitMinutes}
+                onChange={(e) => setQcmTimeLimitMinutes(Math.max(5, Number(e.target.value) || 30))}
+                className="admin-input"
+                style={{ width: "100%" }}
+                required
+              />
+              <span style={{ fontSize: 11, color: "#64748b" }}>
+                {ar ? "الوقت المتاح للمتعلم لاجتياز الاختبار" : "Chronomètre appliqué au passage du candidat"}
+              </span>
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
+                🎯 {ar ? "نسبة النجاح الدنيا (%)" : "Score de passage requis (%)"} *
+              </label>
+              <input
+                type="number"
+                min={50}
+                max={100}
+                value={qcmPassingScorePercent}
+                onChange={(e) => setQcmPassingScorePercent(Math.min(100, Math.max(50, Number(e.target.value) || 80)))}
+                className="admin-input"
+                style={{ width: "100%" }}
+                required
+              />
+              <span style={{ fontSize: 11, color: "#64748b" }}>
+                {ar ? "الحد الأدنى للحصول على شهادة إتمام التكوين (موصى به: 80%)" : "Seuil minimum de validation de l'attestation (Recommandé : 80%)"}
+              </span>
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
+                🔍 {ar ? "كشف التصحيح المفصل" : "Affichage du corrigé"}
+              </label>
+              <label className="checkbox-row" style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", marginTop: 8 }}>
+                <input
+                  type="checkbox"
+                  checked={qcmRevealAnswers}
+                  onChange={(e) => setQcmRevealAnswers(e.target.checked)}
+                  style={{ width: 18, height: 18, accentColor: "#0284c7" }}
+                />
+                <span style={{ fontSize: 13, color: "#1e293b", fontWeight: 500 }}>
+                  {ar ? "إظهار الإجابات الصحيحة والتوضيحات بعد النجاح" : "Révéler les réponses détaillées après réussite"}
+                </span>
+              </label>
+            </div>
+          </div>
+
+          {/* QUESTIONS LIST */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 10 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>
+                {ar ? `قائمة أسئلة الاختبار (${qcmQuestions.length} سؤال)` : `Questions du QCM d'évaluation (${qcmQuestions.length} question${qcmQuestions.length > 1 ? "s" : ""})`}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setQcmQuestions((prev) => [
+                    ...prev,
+                    {
+                      questionFr: "",
+                      questionAr: "",
+                      points: 1,
+                      explanationFr: "",
+                      explanationAr: "",
+                      options: [
+                        { textFr: "", textAr: "" },
+                        { textFr: "", textAr: "" },
+                        { textFr: "", textAr: "" },
+                        { textFr: "", textAr: "" },
+                      ],
+                      correctOptionIndex: 0,
+                    },
+                  ]);
+                }}
+                className="btn btn-secondary btn-sm"
+                style={{ padding: "6px 14px", fontWeight: 600 }}
+              >
+                + {ar ? "إضافة سؤال جديد" : "Ajouter une question"}
+              </button>
+            </div>
+
+            {qcmQuestions.map((q, qIdx) => (
+              <div
+                key={qIdx}
+                style={{
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 8,
+                  padding: 16,
+                  background: "#f8fafc",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 12,
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ width: 24, height: 24, borderRadius: "50%", background: "#0f172a", color: "#fff", display: "grid", placeItems: "center", fontSize: 12, fontWeight: 700 }}>
+                      {qIdx + 1}
+                    </span>
+                    <strong style={{ fontSize: 13, color: "#1e293b" }}>
+                      {ar ? `السؤال رقم ${qIdx + 1}` : `Question ${qIdx + 1}`}
+                    </strong>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <label style={{ fontSize: 11, color: "#64748b" }}>{ar ? "النقاط:" : "Points :"}</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={10}
+                        value={q.points}
+                        onChange={(e) => {
+                          const val = Math.max(1, Number(e.target.value) || 1);
+                          setQcmQuestions((prev) =>
+                            prev.map((item, i) => (i === qIdx ? { ...item, points: val } : item))
+                          );
+                        }}
+                        style={{ width: 50, padding: "2px 6px", fontSize: 12, borderRadius: 4, border: "1px solid #cbd5e1" }}
+                      />
+                    </div>
+                  </div>
+
+                  {qcmQuestions.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setQcmQuestions((prev) => prev.filter((_, i) => i !== qIdx))}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#dc2626",
+                        fontSize: 12,
+                        cursor: "pointer",
+                        fontWeight: 600,
+                      }}
+                    >
+                      ✕ {ar ? "حذف هذا السؤال" : "Supprimer cette question"}
+                    </button>
+                  )}
+                </div>
+
+                {/* Question Texts */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#475569", marginBottom: 3 }}>
+                      Énoncé en Français *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Quel est le rôle principal de l'AVS en classe ?"
+                      value={q.questionFr}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setQcmQuestions((prev) =>
+                          prev.map((item, i) => (i === qIdx ? { ...item, questionFr: val } : item))
+                        );
+                      }}
+                      className="admin-input"
+                      style={{ width: "100%", fontSize: 13 }}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#475569", marginBottom: 3, textAlign: "right" }}>
+                      * نص السؤال بالعربية
+                    </label>
+                    <input
+                      type="text"
+                      dir="rtl"
+                      placeholder="مثال: ما هو الدور الأساسي للمرافق المدرسي داخل الفصل؟"
+                      value={q.questionAr}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setQcmQuestions((prev) =>
+                          prev.map((item, i) => (i === qIdx ? { ...item, questionAr: val } : item))
+                        );
+                      }}
+                      className="admin-input"
+                      style={{ width: "100%", fontSize: 13, textAlign: "right" }}
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Options / Choices */}
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
+                    {ar ? "الخيارات (اختر الإجابة الصحيحة بالزر الدائري) :" : "Options de réponse (Sélectionnez la réponse exacte) :"}
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {q.options.map((opt, optIdx) => {
+                      const isCorrect = q.correctOptionIndex === optIdx;
+                      return (
+                        <div
+                          key={optIdx}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 10,
+                            padding: "6px 10px",
+                            borderRadius: 6,
+                            background: isCorrect ? "#ecfdf5" : "#fff",
+                            border: `1px solid ${isCorrect ? "#10b981" : "#e2e8f0"}`,
+                          }}
+                        >
+                          <input
+                            type="radio"
+                            name={`correct-option-${qIdx}`}
+                            checked={isCorrect}
+                            onChange={() => {
+                              setQcmQuestions((prev) =>
+                                prev.map((item, i) =>
+                                  i === qIdx ? { ...item, correctOptionIndex: optIdx } : item
+                                )
+                              );
+                            }}
+                            style={{ width: 18, height: 18, accentColor: "#10b981", cursor: "pointer", flexShrink: 0 }}
+                          />
+                          <span style={{ fontSize: 11, fontWeight: 700, color: isCorrect ? "#059669" : "#64748b", minWidth: 20 }}>
+                            {String.fromCharCode(65 + optIdx)}.
+                          </span>
+                          <input
+                            type="text"
+                            placeholder={`Option ${String.fromCharCode(65 + optIdx)} (FR)`}
+                            value={opt.textFr}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setQcmQuestions((prev) =>
+                                prev.map((item, i) => {
+                                  if (i !== qIdx) return item;
+                                  const newOptions = [...item.options];
+                                  newOptions[optIdx] = { ...newOptions[optIdx], textFr: val };
+                                  return { ...item, options: newOptions };
+                                })
+                              );
+                            }}
+                            className="admin-input"
+                            style={{ flex: 1, fontSize: 12, padding: "5px 8px" }}
+                            required
+                          />
+                          <input
+                            type="text"
+                            dir="rtl"
+                            placeholder={`الخيار ${optIdx + 1} (AR)`}
+                            value={opt.textAr}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setQcmQuestions((prev) =>
+                                prev.map((item, i) => {
+                                  if (i !== qIdx) return item;
+                                  const newOptions = [...item.options];
+                                  newOptions[optIdx] = { ...newOptions[optIdx], textAr: val };
+                                  return { ...item, options: newOptions };
+                                })
+                              );
+                            }}
+                            className="admin-input"
+                            style={{ flex: 1, fontSize: 12, padding: "5px 8px", textAlign: "right" }}
+                            required
+                          />
+                          {isCorrect && (
+                            <span style={{ fontSize: 11, fontWeight: 700, color: "#059669", background: "#d1fae5", padding: "2px 8px", borderRadius: 4, flexShrink: 0 }}>
+                              ✓ {ar ? "الإجابة الصحيحة" : "Exacte"}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Explanation / Feedback */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, paddingTop: 4 }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, color: "#64748b", marginBottom: 2 }}>
+                      Justification pédagogique (FR, optionnel)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Explication affichée lors de la révision"
+                      value={q.explanationFr || ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setQcmQuestions((prev) =>
+                          prev.map((item, i) => (i === qIdx ? { ...item, explanationFr: val } : item))
+                        );
+                      }}
+                      className="admin-input"
+                      style={{ width: "100%", fontSize: 11, padding: "4px 8px" }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, color: "#64748b", marginBottom: 2, textAlign: "right" }}>
+                      التبرير البيداغوجي للإجابة (AR، اختياري)
+                    </label>
+                    <input
+                      type="text"
+                      dir="rtl"
+                      placeholder="توضيح يظهر للمتعلم عند مراجعة النتيجة"
+                      value={q.explanationAr || ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setQcmQuestions((prev) =>
+                          prev.map((item, i) => (i === qIdx ? { ...item, explanationAr: val } : item))
+                        );
+                      }}
+                      className="admin-input"
+                      style={{ width: "100%", fontSize: 11, padding: "4px 8px", textAlign: "right" }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </fieldset>
       )}

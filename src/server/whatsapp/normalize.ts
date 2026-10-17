@@ -29,6 +29,7 @@ const messageSchema = z
     timestamp: timestampField.optional(),
     type: z.string().trim().max(32).optional(),
     text: z.object({ body: textBodyField.optional() }).partial().optional(),
+    referral: z.record(z.string(), z.unknown()).optional(),
   })
   .passthrough();
 
@@ -86,6 +87,7 @@ export type NormalizedInboundMessage = {
   timestamp: number;
   messageType: "TEXT" | "TEMPLATE";
   textPreview: string | null;
+  referral?: Record<string, unknown> | null;
 };
 
 export type NormalizedStatusUpdate = {
@@ -138,6 +140,7 @@ export function normalizeWebhook(raw: unknown): NormalizedWebhookEvent[] {
           timestamp: Number.isFinite(timestamp) ? timestamp : 0,
           messageType,
           textPreview: boundedPreview(message.text?.body),
+          referral: message.referral ? (message.referral as Record<string, unknown>) : null,
         });
         if (events.length >= MAX_EVENTS) return events;
       }

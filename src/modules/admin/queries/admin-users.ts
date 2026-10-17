@@ -86,6 +86,7 @@ type UserListRow = {
   id: string; name: string; email: string; image: string | null; role: string;
   joined_at: Date; provider: string; last_activity: Date | null;
   enrollments: number; completion: number; total_count: number;
+  profile_type?: string; professional_post_status?: string;
 };
 
 type AdminUsersPayload = {
@@ -179,6 +180,7 @@ export async function getAdminUsers(input: AdminUserFilters = {}) {
       select user_id, max(updated_at) last_session from session group by user_id
     )
     select u.id, u.name, u.email, u.image, u.role, u.created_at joined_at,
+      u.profile_type, coalesce(u.professional_post_status, 'LEARNER_ONLY') as professional_post_status,
       coalesce(p.provider,'credential') provider,
       greatest(a.last_session, l.last_learning) last_activity,
       coalesce(l.enrollments,0)::int enrollments, coalesce(l.completion,0)::int completion,

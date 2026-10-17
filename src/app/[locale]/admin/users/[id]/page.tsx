@@ -7,6 +7,7 @@ import { hasAdminPermission } from "@/modules/admin/domain/permissions";
 import { getAdminUserDetail } from "@/modules/admin/queries/admin-users";
 import { AdminPageHeader } from "@/modules/admin/components/AdminPageHeader";
 import { AdminUserRole } from "@/components/admin/AdminUserRole";
+import { AdminUserCategorySelect } from "@/components/admin/AdminUserCategorySelect";
 import { AdminUserSupportConsole } from "@/modules/admin/components/AdminUserSupportConsole";
 import { AdminUserPersonas } from "@/components/admin/AdminUserPersonas";
 import { getUserPersonas } from "@/server/queries/personas";
@@ -82,8 +83,19 @@ export default async function AdminUserDetail({ params, searchParams }: {
   return <>
     <AdminPageHeader locale={locale} eyebrow={ar ? "ملف المستخدم" : "Fiche utilisateur"} title={data.user.name}
       description={`${data.user.email} · ${data.user.provider === "google" ? "Google" : "Email"}`}
-      actions={<AdminUserRole userId={id} role={data.user.role} canEdit={String(session.user.role)==="SUPER_ADMIN"}/>}/>
+      actions={
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <AdminUserCategorySelect
+            userId={id}
+            currentCategory={data.user.professional_post_status || data.user.profile_type || "LEARNER"}
+            canEdit={hasAdminPermission(String(session.user.role), "users.manage")}
+            locale={locale}
+          />
+          <AdminUserRole userId={id} role={data.user.role} canEdit={String(session.user.role)==="SUPER_ADMIN"}/>
+        </div>
+      }/>
     <section className="admin-user-summary">
+      <article><span>{ar?"الفئة":"Catégorie"}</span><strong>{data.user.professional_post_status === "APPROVED_AVS" ? (ar ? "AVS معتمد" : "AVS Certifié") : data.user.professional_post_status === "APPROVED_SPECIALIST" ? (ar ? "أخصائي معتمد" : "Spécialiste") : (ar ? "متعلم" : "Apprenant")}</strong></article>
       <article><span>{ar?"الدور":"Rôle"}</span><strong>{data.user.role}</strong></article>
       <article><span>{ar?"انضم":"Inscrit le"}</span><strong>{formatDate(data.user.joined_at,locale)}</strong></article>
       <article><span>{ar?"التسجيلات":"Inscriptions"}</span><strong>{data.user.enrollments}</strong></article>

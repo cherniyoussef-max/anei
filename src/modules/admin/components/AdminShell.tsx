@@ -37,7 +37,6 @@ export function AdminShell({ children, locale, user }: {
       { href: base, icon: "chart", fr: "Vue d’ensemble", ar: "نظرة عامة" },
       { href: `${base}/marketing`, icon: "chart", fr: "Marketing & Audience", ar: "التسويق والجمهور" },
       { href: `${base}/users`, icon: "users", fr: "Utilisateurs", ar: "المستخدمون" },
-      { href: `${base}/crm`, icon: "users", fr: "CRM", ar: "إدارة العملاء" },
       { href: `${base}/crm/whatsapp`, icon: "phone", fr: "WhatsApp CRM", ar: "واتساب CRM" },
       { href: `${base}/crm/instagram`, icon: "instagram", fr: "Instagram CRM", ar: "إنستغرام CRM" },
       { href: `${base}/crm/messenger`, icon: "messenger", fr: "Messenger CRM", ar: "ماسنجر CRM" },
@@ -49,10 +48,8 @@ export function AdminShell({ children, locale, user }: {
       { href: `${base}/assessments`, icon: "chart", fr: "Évaluations & résultats", ar: "التقييمات والنتائج" },
       { href: `${base}/certificates`, icon: "award", fr: "Certificats", ar: "الشهادات" },
       { href: `${base}/live`, icon: "spark", fr: "Directs & Webinaires", ar: "البث المباشر والندوات" },
-      { href: `${base}/webinars`, icon: "calendar", fr: "Webinaires", ar: "الندوات" },
       { href: `${base}/disponibilites`, icon: "calendar", fr: "Disponibilités", ar: "الفتحات المتاحة" },
       { href: `${base}/resources`, icon: "download", fr: "Bibliothèque", ar: "المكتبة" },
-      { href: `${base}/rewards`, icon: "award", fr: "Boutique de récompenses", ar: "متجر المكافآت" },
     ]},
     { fr: "Commerce", ar: "التجارة", items: [
       { href: `${base}/orders`, icon: "book", fr: "Commandes", ar: "الطلبات" },

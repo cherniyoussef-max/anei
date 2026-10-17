@@ -2,7 +2,7 @@ import "server-only";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/server/db";
-import { personaMembership, user, userProfile } from "@/server/db/schema";
+import { avsProfiles, personaMembership, user, userProfile } from "@/server/db/schema";
 import { establishOnboardingPersonaTx, type DbClient } from "@/server/services/personas";
 import {
   upsertAvsProfileTx,
@@ -310,6 +310,12 @@ export async function completeUserProfileTx(
       name: `${data.firstName} ${data.lastName}`.trim(),
       locale: data.preferredLocale,
       profileType: toLegacyProfileType(data.requestedPersona),
+      professionalPostStatus:
+        data.requestedPersona === "AVS"
+          ? "APPROVED_AVS"
+          : data.requestedPersona === "SPECIALIST"
+          ? "APPROVED_SPECIALIST"
+          : "LEARNER_ONLY",
       updatedAt: now,
     })
     .where(and(eq(user.id, userId)));
@@ -331,6 +337,14 @@ export async function completeUserProfileTx(
       .limit(1);
     if (!membership) throw new Error("persona_membership missing after establishOnboardingPersonaTx");
 
+    const displayName = `${data.firstName} ${data.lastName}`.trim();
+    const slugBase = displayName
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+
     if (data.requestedPersona === "TEACHER") {
       await upsertTeacherProfileTx(tx, membership.id, {
         discipline: data.discipline ?? null,
@@ -345,6 +359,65 @@ export async function completeUserProfileTx(
         experienceYears: data.experienceYears ?? null,
         interventionDomains: data.interventionDomains ?? null,
       });
+
+      // Auto-publish AVS profile into public directory
+      const [existingAvs] = await tx
+        .select({ id: avsProfiles.id })
+        .from(avsProfiles)
+        .where(eq(avsProfiles.userId, userId))
+        .limit(1);
+
+      const finalSlug = existingAvs ? undefined : `${slugBase}-${userId.slice(0, 6)}`;
+      if (existingAvs) {
+        await tx
+          .update(avsProfiles)
+          .set({
+            displayName,
+            directoryType: "AVS",
+            category: "AVS",
+            cityFr: data.city,
+            cityAr: data.city,
+            governorateFr: data.governorate,
+            governorateAr: data.governorate,
+            specialtyFr: "Accompagnant de Vie Scolaire (AVS)",
+            specialtyAr: "مرافق حياة مدرسية",
+            contactPhone: data.phoneNumber,
+            phone: data.phoneNumber,
+            certified: true,
+            visible: true,
+            interventionDomains: data.interventionDomains || [],
+            experienceYears: data.experienceYears ?? 3,
+            updatedAt: now,
+          })
+          .where(eq(avsProfiles.id, existingAvs.id));
+      } else {
+        await tx
+          .insert(avsProfiles)
+          .values({
+            userId,
+            displayName,
+            slug: finalSlug,
+            directoryType: "AVS",
+            category: "AVS",
+            cityFr: data.city,
+            cityAr: data.city,
+            governorateFr: data.governorate,
+            governorateAr: data.governorate,
+            specialtyFr: "Accompagnant de Vie Scolaire (AVS)",
+            specialtyAr: "مرافق حياة مدرسية",
+            contactPhone: data.phoneNumber,
+            phone: data.phoneNumber,
+            certified: true,
+            visible: true,
+            hourlyRateMillimes: 25000,
+            availabilityFr: "Disponible (Sur rendez-vous)",
+            availabilityAr: "متاح (بموعد مسبق)",
+            interventionDomains: data.interventionDomains || [],
+            experienceYears: data.experienceYears ?? 3,
+            createdAt: now,
+            updatedAt: now,
+          });
+      }
     } else if (data.requestedPersona === "SPECIALIST") {
       await upsertSpecialistProfileTx(tx, membership.id, {
         specialty: data.specialty ?? null,
@@ -353,6 +426,70 @@ export async function completeUserProfileTx(
         practiceStructure: data.practiceStructure ?? null,
         interventionDomains: data.interventionDomains ?? null,
       });
+
+      // Auto-publish Specialist profile into public directory
+      const [existingSpec] = await tx
+        .select({ id: avsProfiles.id })
+        .from(avsProfiles)
+        .where(eq(avsProfiles.userId, userId))
+        .limit(1);
+
+      const finalSlug = existingSpec ? undefined : `${slugBase}-${userId.slice(0, 6)}`;
+      const specName = data.specialty || "Orthophonie";
+
+      if (existingSpec) {
+        await tx
+          .update(avsProfiles)
+          .set({
+            displayName,
+            directoryType: "SPECIALIST",
+            category: data.specialty || "ORTHOPHONIE",
+            cityFr: data.city,
+            cityAr: data.city,
+            governorateFr: data.governorate,
+            governorateAr: data.governorate,
+            specialtyFr: specName,
+            specialtyAr: specName,
+            contactPhone: data.phoneNumber,
+            phone: data.phoneNumber,
+            workplaceName: data.practiceStructure || null,
+            certified: true,
+            visible: true,
+            interventionDomains: data.interventionDomains || [],
+            experienceYears: data.experienceYears ?? 3,
+            updatedAt: now,
+          })
+          .where(eq(avsProfiles.id, existingSpec.id));
+      } else {
+        await tx
+          .insert(avsProfiles)
+          .values({
+            userId,
+            displayName,
+            slug: finalSlug,
+            directoryType: "SPECIALIST",
+            category: data.specialty || "ORTHOPHONIE",
+            cityFr: data.city,
+            cityAr: data.city,
+            governorateFr: data.governorate,
+            governorateAr: data.governorate,
+            specialtyFr: specName,
+            specialtyAr: specName,
+            contactPhone: data.phoneNumber,
+            phone: data.phoneNumber,
+            workplaceName: data.practiceStructure || null,
+            certified: true,
+            visible: true,
+            inPersonPriceMillimes: 40000,
+            onlineVisioPriceMillimes: 35000,
+            availabilityFr: "Disponible (Sur rendez-vous)",
+            availabilityAr: "متاح (بموعد مسبق)",
+            interventionDomains: data.interventionDomains || [],
+            experienceYears: data.experienceYears ?? 3,
+            createdAt: now,
+            updatedAt: now,
+          });
+      }
     } else {
       await upsertOrganizationProfileTx(tx, membership.id, {
         organizationName: data.organizationName,

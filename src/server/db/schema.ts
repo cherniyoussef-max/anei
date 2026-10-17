@@ -2308,6 +2308,107 @@ export type SocialMessageRow = typeof socialMessage.$inferSelect;
 export type SocialWebhookEventRow = typeof socialWebhookEvent.$inferSelect;
 
 // -----------------------------------------------------------------------------
+// Meta Ads & Omnichannel CRM (WhatsApp, Instagram, Facebook Messenger)
+// -----------------------------------------------------------------------------
+export const crmThreads = pgTable(
+  "crm_threads",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    organizationId: text("organization_id").references(() => organization.id, { onDelete: "cascade" }),
+    channel: text("channel").notNull(),
+    externalContactId: text("external_contact_id").notNull(),
+    contactName: text("contact_name").notNull().default(""),
+    contactEmail: text("contact_email"),
+    contactPhone: text("contact_phone"),
+    avatarUrl: text("avatar_url"),
+    linkedUserId: text("linked_user_id").references(() => user.id, { onDelete: "set null" }),
+    linkedContactId: text("linked_contact_id").references(() => crmContact.id, { onDelete: "set null" }),
+    // Meta Ads Attribution
+    sourceType: text("source_type").notNull().default("ORGANIC"),
+    adId: text("ad_id"),
+    campaignId: text("campaign_id"),
+    adHeadline: text("ad_headline"),
+    adBody: text("ad_body"),
+    sourceUrl: text("source_url"),
+    ctwaClid: text("ctwa_clid"),
+    metaAdReferral: jsonb("meta_ad_referral").notNull().default({}),
+    // Lifecycle & Pipeline Stage
+    pipelineStage: text("pipeline_stage").notNull().default("NEW_AD_LEAD"),
+    unreadCount: integer("unread_count").notNull().default(0),
+    lastMessageAt: timestamp("last_message_at", { withTimezone: true }).notNull().$defaultFn(now),
+    lastMessagePreview: text("last_message_preview"),
+    lastMessageDirection: text("last_message_direction"),
+    assignedAdminId: text("assigned_admin_id").references(() => user.id, { onDelete: "set null" }),
+    internalNotes: text("internal_notes").notNull().default(""),
+    metadata: jsonb("metadata").notNull().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("crm_threads_channel_external_org_unique").on(table.channel, table.externalContactId, table.organizationId),
+    index("crm_threads_channel_idx").on(table.channel),
+    index("crm_threads_pipeline_stage_idx").on(table.pipelineStage),
+    index("crm_threads_source_type_idx").on(table.sourceType),
+    index("crm_threads_linked_user_idx").on(table.linkedUserId),
+    index("crm_threads_last_message_at_idx").on(table.lastMessageAt),
+    check("crm_threads_channel_check", sql`${table.channel} in ('WHATSAPP', 'INSTAGRAM', 'MESSENGER')`),
+    check("crm_threads_source_type_check", sql`${table.sourceType} in ('META_CLICK_TO_WHATSAPP', 'META_IG_AD', 'META_MESSENGER_AD', 'ORGANIC')`),
+    check("crm_threads_pipeline_stage_check", sql`${table.pipelineStage} in ('NEW_AD_LEAD', 'QUALIFIED', 'INTERESTED_IN_COURSE', 'BOOKING_AVS_SPECIALIST', 'CONVERTED_PAID', 'ARCHIVED')`),
+  ],
+);
+
+export const crmMessages = pgTable(
+  "crm_messages",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    threadId: text("thread_id").notNull().references(() => crmThreads.id, { onDelete: "cascade" }),
+    direction: text("direction").notNull(),
+    messageType: text("message_type").notNull().default("TEXT"),
+    content: text("content").notNull(),
+    metaMessageId: text("meta_message_id"),
+    deliveryStatus: text("delivery_status").notNull().default("SENT"),
+    sentByAdminId: text("sent_by_admin_id").references(() => user.id, { onDelete: "set null" }),
+    metadata: jsonb("metadata").notNull().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("crm_messages_meta_id_unique").on(table.metaMessageId),
+    index("crm_messages_thread_idx").on(table.threadId, table.createdAt),
+    check("crm_messages_direction_check", sql`${table.direction} in ('INBOUND', 'OUTBOUND')`),
+    check("crm_messages_delivery_status_check", sql`${table.deliveryStatus} in ('SENT', 'DELIVERED', 'READ', 'FAILED')`),
+    check("crm_messages_type_check", sql`${table.messageType} in ('TEXT', 'TEMPLATE', 'AUDIO', 'IMAGE', 'DOCUMENT', 'INTERACTIVE_BUTTON')`),
+  ],
+);
+
+export const crmLeadAttribution = pgTable(
+  "crm_lead_attribution",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    threadId: text("thread_id").notNull().references(() => crmThreads.id, { onDelete: "cascade" }),
+    userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
+    channel: text("channel").notNull(),
+    sourceType: text("source_type").notNull(),
+    adId: text("ad_id"),
+    campaignId: text("campaign_id"),
+    adHeadline: text("ad_headline"),
+    adBody: text("ad_body"),
+    sourceUrl: text("source_url"),
+    ctwaClid: text("ctwa_clid"),
+    payload: jsonb("payload").notNull().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("crm_lead_attribution_thread_idx").on(table.threadId),
+    index("crm_lead_attribution_ad_idx").on(table.adId),
+    index("crm_lead_attribution_campaign_idx").on(table.campaignId),
+  ],
+);
+
+export type CrmThreadRow = typeof crmThreads.$inferSelect;
+export type CrmMessageRow = typeof crmMessages.$inferSelect;
+export type CrmLeadAttributionRow = typeof crmLeadAttribution.$inferSelect;
+
+// -----------------------------------------------------------------------------
 // Phase 9: transactional outbox. A business-mutation transaction inserts an
 // outbox_event row in the SAME transaction as the domain change it represents
 // (see src/server/queue/outbox.ts's enqueueOutboxEvent) so "mutation
