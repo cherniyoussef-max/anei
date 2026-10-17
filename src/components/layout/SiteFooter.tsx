@@ -1,9 +1,5 @@
 import Link from "next/link";
 import {
-  ShieldCheck,
-  Users,
-  BookOpen,
-  Globe,
   Linkedin,
   Facebook,
   Youtube,
@@ -18,28 +14,6 @@ export function SiteFooter({ locale }: { locale: Locale }) {
   const ar = locale === "ar";
   const en = locale === "en";
 
-  const pillars = [
-    {
-      icon: ShieldCheck,
-      title: ar ? "خبرة متخصصة" : en ? "Specialized Expertise" : "Une expertise",
-      desc: ar ? "في خدمة الدمج التربوي والميداني" : en ? "Dedicated to inclusive education" : "au service de l'inclusion",
-    },
-    {
-      icon: Users,
-      title: ar ? "مجتمع متضامن" : en ? "Engaged Community" : "Une communauté",
-      desc: ar ? "ملتزم وداعم لكل الأطراف الفاعلة" : en ? "Committed and supportive" : "engagée et bienveillante",
-    },
-    {
-      icon: BookOpen,
-      title: ar ? "موارد موثوقة" : en ? "Reliable Resources" : "Des ressources",
-      desc: ar ? "ومحيّنة باستمرار وفق المعايير" : en ? "Constantly updated and verified" : "fiables et actualisées",
-    },
-    {
-      icon: Globe,
-      title: ar ? "أثر مستدام" : en ? "Lasting Impact" : "Un impact durable",
-      desc: ar ? "على المدرسة والمجتمع التونسي" : en ? "On schools and society" : "sur l'école et la société",
-    },
-  ];
 
   const platformLinks = [
     { href: `/${locale}`, label: ar ? "الرئيسية" : en ? "Home" : "Accueil" },
@@ -65,36 +39,6 @@ export function SiteFooter({ locale }: { locale: Locale }) {
 
   return (
     <footer className="footer-root v5-site-footer" role="contentinfo">
-      {/* =====================================================================
-          ÉTAGE 1 : BANDEAU DES 4 PILIERS (FOND CLAIR INSTITUTIONNEL)
-          ===================================================================== */}
-      <section
-        className="bg-[#F8FAFC] border-y border-slate-200/80 py-10 lg:py-12"
-        aria-label={ar ? "ركائز التزامنا المؤسساتي" : "Piliers et engagements de l'Académie"}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-6">
-            {pillars.map((pillar, idx) => {
-              const Icon = pillar.icon;
-              return (
-                <div key={idx} className="flex items-start gap-4">
-                  <div className="h-11 w-11 rounded-xl bg-[#0A192F]/[0.05] text-[#0A192F] flex items-center justify-center shrink-0 mt-0.5 border border-slate-200/60">
-                    <Icon size={22} strokeWidth={1.8} className="text-[#0A192F]" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[15px] font-bold text-[#0A192F] leading-snug">
-                      {pillar.title}
-                    </span>
-                    <span className="text-xs sm:text-[13px] text-slate-600 leading-relaxed mt-0.5">
-                      {pillar.desc}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
 
       {/* =====================================================================
           ÉTAGE 2 : CORPS DU FOOTER SOMBRE (NAVY PROFOND #0A192F)
