@@ -87,7 +87,12 @@ export function VerificationChannelForm({ locale }: { locale: Locale }) {
       const response = await fetch("/api/auth/assurance/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ challengeId, code }),
+        body: JSON.stringify({
+          challengeId,
+          code,
+          locale,
+          next: search.get("next") || undefined,
+        }),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -99,7 +104,8 @@ export function VerificationChannelForm({ locale }: { locale: Locale }) {
         setSending(false);
         return;
       }
-      router.push(next);
+      const destination = (typeof payload.redirectTo === "string" && payload.redirectTo) || next;
+      router.replace(destination);
       router.refresh();
     } catch {
       setError(ar ? "حدث خطأ أثناء التحقق. حاول مجددًا." : "Erreur lors de la validation. Veuillez réessayer.");

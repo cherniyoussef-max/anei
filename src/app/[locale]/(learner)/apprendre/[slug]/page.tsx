@@ -188,6 +188,10 @@ export default async function CourseRoomPage({
       : [];
   const completedLessonsCount = data.lessons.filter((l) => progress.get(l.id)?.completed).length;
   const progressPercent = data.enrollment?.progressPercent ?? 0;
+  const allLessonsDone = data.lessons.length > 0 && completedLessonsCount === data.lessons.length;
+  const hasPublishedAssessments = data.assessments.length > 0;
+  const hasPassedAllAssessments = hasPublishedAssessments && data.assessments.every((a) => a.bestAttempt?.passed);
+  const pendingMandatoryQuiz = allLessonsDone && hasPublishedAssessments && !hasPassedAllAssessments;
 
   return (
     <div className="course-room coursera-style">
@@ -222,6 +226,82 @@ export default async function CourseRoomPage({
       <div className="course-workspace-grid">
         {/* MAIN STAGE (72%) */}
         <main className="course-main-stage" id="lessons">
+          {/* MANDATORY QUIZ CALL-TO-ACTION BANNER */}
+          {pendingMandatoryQuiz && firstAssessment && (
+            <div
+              className="course-mandatory-quiz-banner"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 16,
+                padding: "16px 20px",
+                background: "#eff6ff",
+                border: "1.5px solid #bfdbfe",
+                borderRadius: 10,
+                marginBottom: 20,
+                flexWrap: "wrap",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ background: "#0056D2", color: "#fff", padding: 8, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Award size={20} />
+                </div>
+                <div>
+                  <strong style={{ display: "block", color: "#1e3a8a", fontSize: 14 }}>
+                    {ar ? "التقييم النهائي الإلزامي لإتمام الدورة" : "Évaluation finale obligatoire du parcours"}
+                  </strong>
+                  <p style={{ margin: 0, color: "#1e40af", fontSize: 13 }}>
+                    {ar
+                      ? "تهانينا على إتمام جميع الدروس! اجتز هذا الاختبار لتأكيد نتيجتك واستلام شهادتك الرسمية ANEI."
+                      : "Félicitations pour avoir suivi toutes les leçons ! Validez ce quiz pour finaliser votre parcours et débloquer votre certificat officiel ANEI."}
+                  </p>
+                </div>
+              </div>
+              <Link
+                href={`/${locale}/apprendre/${slug}/quiz/${firstAssessment.id}`}
+                className="course-btn-primary"
+                style={{ padding: "10px 18px", fontSize: 13, fontWeight: 700, whiteSpace: "nowrap" }}
+              >
+                {ar ? "بدء الاختبار الإلزامي الآن" : "Passer le quiz obligatoire"}
+              </Link>
+            </div>
+          )}
+
+          {allLessonsDone && (!hasPublishedAssessments || hasPassedAllAssessments) && data.enrollment?.status === "completed" && (
+            <div
+              className="course-completed-success-banner"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 16,
+                padding: "14px 18px",
+                background: "#ecfdf5",
+                border: "1px solid #a7f3d0",
+                borderRadius: 10,
+                marginBottom: 20,
+                flexWrap: "wrap",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <Check size={18} className="text-emerald-700" strokeWidth={2.5} />
+                <span style={{ fontSize: 13, fontWeight: 600, color: "#065f46" }}>
+                  {ar
+                    ? "تهانينا! لقد أتممت هذه الدورة واجتزت التقييم بنجاح. شهادتك الرسمية جاهزة."
+                    : "Félicitations ! Vous avez validé cette formation avec succès. Votre certificat officiel est disponible."}
+                </span>
+              </div>
+              <Link
+                href={`/${locale}/dashboard/certificats`}
+                className="course-btn-primary"
+                style={{ padding: "8px 16px", fontSize: 12, background: "#059669" }}
+              >
+                {ar ? "عرض الشهادة" : "Voir mon certificat"}
+              </Link>
+            </div>
+          )}
+
           {activeLesson ? (
             <article className="course-player-card">
               {/* VIDEO / MEDIA PLAYER AT TOP */}

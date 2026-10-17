@@ -6,8 +6,8 @@ import { auth } from "@/server/auth";
 import { getSessionAssurance } from "@/server/auth/assurance";
 import { getUserProfile, isOnboardingCompleted } from "@/server/auth/profile";
 import { getUserPersonas } from "@/server/queries/personas";
-import { safeAppRedirect } from "@/lib/security/safe-redirect";
-import { personaPortalPath, type Persona } from "@/modules/personas/domain/permissions";
+import { resolveUserHomePath, safeAppRedirect } from "@/lib/security/safe-redirect";
+import type { Persona } from "@/modules/personas/domain/permissions";
 
 /**
  * Authoritative onboarding state, derived only from server/DB data (Better
@@ -84,7 +84,9 @@ export function onboardingPathFor(locale: Locale, result: OnboardingState, next?
     case "PERSONA_PENDING_APPROVAL":
       return `/${locale}/pending-review`;
     case "READY":
-      if (result.admin) return `/${locale}/admin`;
-      return result.persona ? `/${locale}${personaPortalPath[result.persona]}` : `/${locale}/dashboard`;
+      return resolveUserHomePath(locale, {
+        role: result.admin ? "ADMIN" : "USER",
+        primaryPersona: result.persona,
+      }, next);
   }
 }

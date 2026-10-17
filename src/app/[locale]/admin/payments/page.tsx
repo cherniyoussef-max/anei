@@ -42,8 +42,8 @@ export default async function AdminPaymentsPage({
         title={ar ? "معاملات الدفع الإلكتروني" : "Transactions de paiement"}
         description={
           ar
-            ? `متابعة بوابات الدفع (Flouci, Clicktopay) وحركات التحصيل بإجمالي ${formatMillimes(data.stats.total_amount, locale)}.`
-            : `Contrôle des flux monétiques (Flouci, Clicktopay, Mock) pour un total encaissé de ${formatMillimes(data.stats.total_amount, locale)}.`
+            ? `متابعة بوابات الدفع (Flouci) وحركات التحصيل بإجمالي ${formatMillimes(data.stats.total_amount, locale)}.`
+            : `Contrôle des flux monétiques (Flouci, Mock) pour un total encaissé de ${formatMillimes(data.stats.total_amount, locale)}.`
         }
         actions={
           <div className="admin-row-actions">

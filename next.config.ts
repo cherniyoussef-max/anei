@@ -40,6 +40,11 @@ const nextConfig: NextConfig = {
         destination: "/:locale/dashboard",
         permanent: true,
       },
+      {
+        source: "/:locale(fr|ar|en)/dashboard/rendez-vous",
+        destination: "/:locale/dashboard",
+        permanent: true,
+      },
     ];
   },
 };

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Locale } from "@/types";
-import { formatDate, formatMillimes, t } from "@/lib/i18n";
+import { formatDate, formatMillimes } from "@/lib/i18n";
 import { getCourseVisual } from "@/lib/visuals";
 import { Icon } from "@/components/ui/Icon";
 import { Pagination } from "@/components/ui/Pagination";
@@ -46,7 +46,6 @@ export function CourseFilter({
   totalPages: number;
   total: number;
 }) {
-  const c = t(locale);
   const ar = locale === "ar";
   const en = locale === "en";
   const hasFilters = Boolean(filters.q || filters.category || filters.level || filters.mode || filters.price || (filters.sort && filters.sort !== "featured"));
@@ -99,15 +98,21 @@ export function CourseFilter({
       </form>
 
       <div className="catalog-results-heading" role="status">
-        <div><span>{ar ? "التكوين" : en ? "Learning paths" : "Parcours"}</span><h2>{ar ? `${total} دورة` : en ? `${total} course${total === 1 ? "" : "s"}` : `${total} formation${total === 1 ? "" : "s"}`}</h2></div>
+        <div><span>{ar ? "التكوين" : en ? "Learning paths" : "Parcours"}</span><h2 className="font-sans font-semibold tracking-[-0.02em] text-slate-900 tabular-nums">{ar ? `${total} دورة` : en ? `${total} course${total === 1 ? "" : "s"}` : `${total} formation${total === 1 ? "" : "s"}`}</h2></div>
         <p>{filters.q ? (ar ? `نتائج البحث عن «${filters.q}»` : en ? `Search results for “${filters.q}”` : `Résultats pour « ${filters.q} »`) : (ar ? "دورتان مختارتان لبناء ممارسة دامجة." : en ? "Two focused pathways for inclusive practice." : "Deux parcours ciblés pour la pratique inclusive.")}</p>
       </div>
 
       <div className="course-grid catalog-course-grid">
         {courses.map((course) => (
-          <article className={`course-card premium-card course-card-human ${course.featured ? "featured-course" : ""}`} key={course.id}>
-            <div className="course-photo catalog-course-photo">
-              <Image src={getCourseVisual(course.slug)} alt="" fill sizes="(max-width: 900px) 100vw, 33vw" />
+          <article className={`group course-card premium-card course-card-human ${course.featured ? "featured-course" : ""}`} key={course.id}>
+            <div className="course-photo catalog-course-photo relative aspect-[16/9] h-52 w-full overflow-hidden">
+              <Image
+                src={getCourseVisual(course.slug)}
+                alt=""
+                fill
+                sizes="(max-width: 900px) 100vw, 33vw"
+                className="object-cover group-hover:scale-[1.02] transition-transform duration-300"
+              />
               <div className="course-photo-overlay" aria-hidden="true"/>
               <span>{localizeCourseMode(course.mode, locale)}</span>
               {course.featured ? <em>{ar ? "موصى به" : en ? "Recommended" : "Recommandé"}</em> : null}
@@ -117,7 +122,7 @@ export function CourseFilter({
                 <span className="course-category-label">{localizeCourseCategory(course.category, locale)}</span>
                 <span className="course-level-label">{localizeCourseLevel(course.level, locale)}</span>
               </div>
-              <h3>{course.title}</h3>
+              <h3 className="font-sans font-semibold text-lg md:text-xl tracking-[-0.015em] leading-snug text-slate-900 hover:text-slate-700 transition-colors">{course.title}</h3>
               <p>{course.summary}</p>
               <div className="meta-row">
                 <span>
@@ -135,15 +140,28 @@ export function CourseFilter({
                   <span style={{ width: `${Math.min(100, Math.max(0, course.enrollment.progressPercent))}%` }} />
                 </div>
               ) : null}
-              <div className="card-footer">
-                <strong>{formatMillimes(course.priceMillimes, locale)}</strong>
+              <div className="card-footer flex items-center justify-between gap-3 mt-4 pt-4 border-t border-slate-100">
                 {course.enrollment ? (
-                  <Link className="text-link" href={`/${locale}/apprendre/${course.slug}`}>
-                    {course.enrollment.completed ? (ar ? "مراجعة الدورة" : en ? "Review course" : "Revoir la formation") : (ar ? "متابعة التعلم" : en ? "Continue learning" : "Continuer la formation")}
-                    <Icon className="directional-icon" name="arrow" size={16} />
-                  </Link>
+                  <>
+                    <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-semibold text-xs px-2.5 py-1 rounded-full">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                      {course.enrollment.completed
+                        ? (ar ? "مكتمل • 100%" : en ? "Completed • 100%" : "Terminé • 100%")
+                        : (ar ? `مسجل • ${course.enrollment.progressPercent}%` : en ? `Enrolled • ${course.enrollment.progressPercent}%` : `Inscrit • ${course.enrollment.progressPercent}% complété`)}
+                    </span>
+                    <Link className="btn btn-secondary inline-flex items-center gap-1.5 text-xs font-semibold py-2 px-4 rounded-full" href={`/${locale}/apprendre/${course.slug}`}>
+                      <span>{course.enrollment.completed ? (ar ? "مراجعة الدورة" : en ? "Review course" : "Revoir") : (ar ? "متابعة التعلم" : en ? "Continue learning" : "Continuer la formation")}</span>
+                      <Icon className="directional-icon" name="arrow" size={14} />
+                    </Link>
+                  </>
                 ) : (
-                  <Link className="text-link" href={`/${locale}/formations/${course.slug}`}>{c.actions.details}<Icon className="directional-icon" name="arrow" size={16} /></Link>
+                  <>
+                    <strong className="font-bold text-lg text-[#142B47]">{formatMillimes(course.priceMillimes, locale)}</strong>
+                    <Link className="btn btn-secondary inline-flex items-center gap-1.5 text-xs font-semibold py-2 px-4 rounded-full" href={`/${locale}/formations/${course.slug}`}>
+                      <span>{ar ? "اكتشف الدورة" : en ? "Explore course" : "Découvrir la formation"}</span>
+                      <Icon className="directional-icon" name="arrow" size={14} />
+                    </Link>
+                  </>
                 )}
               </div>
             </div>

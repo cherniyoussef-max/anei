@@ -104,7 +104,15 @@ type AdminUserDetailPayload = {
   sessions: JsonRecord[];
   certificates: JsonRecord[];
   videoProgress: JsonRecord[];
+  quizAttempts: JsonRecord[];
   allCourses: Array<{ id: string; title_fr: string; title_ar: string }>;
+  qualifyingCourses?: Array<{
+    id: string;
+    title_fr: string;
+    title_ar: string;
+    qualifying_target_type: string | null;
+    qualifying_target_category: string | null;
+  }>;
 };
 
 function parseCached<T>(value: string): T {
@@ -206,6 +214,7 @@ type DetailRow = UserListRow & {
   profile_type: string;
   locale: string;
   email_verified: boolean;
+  professional_post_status: string;
   phone_number: string | null;
   phone_verified_at: Date | string | null;
   governorate: string | null;
@@ -228,6 +237,7 @@ export async function getAdminUserDetail(id: string) {
       parsed.sessions.forEach((row) => { reviveDate(row, "created_at"); reviveDate(row, "updated_at"); reviveDate(row, "expires_at"); });
       parsed.certificates.forEach((row) => reviveDate(row, "issued_at"));
       parsed.videoProgress.forEach((row) => reviveDate(row, "updated_at"));
+      parsed.quizAttempts?.forEach((row) => { reviveDate(row, "started_at"); reviveDate(row, "submitted_at"); });
       return parsed;
     }
   }
@@ -247,6 +257,7 @@ export async function getAdminUserDetail(id: string) {
         parsed.sessions.forEach((row) => { reviveDate(row, "created_at"); reviveDate(row, "updated_at"); reviveDate(row, "expires_at"); });
         parsed.certificates.forEach((row) => reviveDate(row, "issued_at"));
         parsed.videoProgress.forEach((row) => reviveDate(row, "updated_at"));
+        parsed.quizAttempts?.forEach((row) => { reviveDate(row, "started_at"); reviveDate(row, "submitted_at"); });
         return parsed;
       } catch (error) {
         logCacheCorrupt("detail", error);
@@ -256,6 +267,7 @@ export async function getAdminUserDetail(id: string) {
 
   const result = await db.execute<DetailRow>(sql`
     select u.id,u.name,u.email,u.image,u.role,u.created_at joined_at,u.profile_type,u.locale,u.email_verified,
+      coalesce(u.professional_post_status, 'LEARNER_ONLY') as professional_post_status,
       up.phone_number, up.phone_verified_at, up.governorate, up.city,
       coalesce((select case when bool_or(provider_id='google') then 'google' else 'credential' end from account where user_id=u.id),'credential') provider,
       (select max(updated_at) from session where user_id=u.id) last_activity,
@@ -270,14 +282,16 @@ export async function getAdminUserDetail(id: string) {
     where u.id=${id} limit 1
   `);
   if (!result.rows[0]) return null;
-  const [enrollments, sessions, certificates, videoProgress, allCourses] = await Promise.all([
+  const [enrollments, sessions, certificates, videoProgress, quizAttempts, allCourses, qualifyingCourses] = await Promise.all([
     db.execute(sql`select e.id,e.status,e.progress_percent,e.enrolled_at,e.completed_at,c.id course_id,c.title_fr,c.title_ar from enrollments e join courses c on c.id=e.course_id where e.user_id=${id} order by e.enrolled_at desc limit 100`),
     db.execute(sql`select id,created_at,updated_at,expires_at,ip_address,user_agent from session where user_id=${id} order by updated_at desc limit 50`),
     db.execute(sql`select c.id,c.code,c.issued_at,co.title_fr,co.title_ar from certificates c join courses co on co.id=c.course_id where c.user_id=${id} order by c.issued_at desc limit 100`),
     db.execute(sql`select lp.id, lp.watched_seconds, lp.completed, lp.updated_at, l.title_fr, l.title_ar, coalesce(l.duration_seconds, 0) as duration_seconds, c.title_fr as course_fr, c.title_ar as course_ar from lesson_progress lp join lessons l on l.id = lp.lesson_id join enrollments e on e.id = lp.enrollment_id join courses c on c.id = l.course_id where e.user_id=${id} order by lp.updated_at desc limit 100`),
+    db.execute(sql`select t.id, t.assessment_id, t.attempt_number, t.status, t.raw_points, t.max_points, t.percentage, t.passed, t.started_at, t.submitted_at, a.title_fr as assessment_title_fr, a.title_ar as assessment_title_ar, c.id as course_id, c.title_fr as course_title_fr, c.title_ar as course_title_ar from learning_attempt t join learning_assessment a on a.id = t.assessment_id join courses c on c.id = a.course_id where t.user_id=${id} and t.status = 'GRADED' order by t.submitted_at desc limit 50`),
     db.execute<{ id: string; title_fr: string; title_ar: string }>(sql`select id, title_fr, title_ar from courses order by title_fr asc`),
+    db.execute<{ id: string; title_fr: string; title_ar: string; qualifying_target_type: string | null; qualifying_target_category: string | null }>(sql`select id, title_fr, title_ar, qualifying_target_type, qualifying_target_category from courses where qualifies_for_professional_promotion = true order by title_fr asc`),
   ]);
-  const payload: AdminUserDetailPayload = { user: result.rows[0], enrollments: enrollments.rows, sessions: sessions.rows, certificates: certificates.rows, videoProgress: videoProgress.rows, allCourses: allCourses.rows };
+  const payload: AdminUserDetailPayload = { user: result.rows[0], enrollments: enrollments.rows, sessions: sessions.rows, certificates: certificates.rows, videoProgress: videoProgress.rows, quizAttempts: quizAttempts.rows, allCourses: allCourses.rows, qualifyingCourses: qualifyingCourses.rows };
   
   if (memoryCache.size > 200) pruneMemoryCache();
   memoryCache.set(cacheKey, { data: payload, expiresAt: now + MEMORY_CACHE_TTL_MS });

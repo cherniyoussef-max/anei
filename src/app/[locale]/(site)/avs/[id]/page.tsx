@@ -101,15 +101,15 @@ export default async function AvsProfileDetailPage({
   const localizedMethods = methods.map((method) => localizeMethod(method, locale));
 
   return (
-    <div className="bg-[#fcfbf8] min-h-screen py-8 lg:py-10">
+    <div className="bg-[#F4F7FA] min-h-screen py-8 lg:py-10">
       <div className="container max-w-6xl mx-auto px-4 sm:px-6 space-y-6">
         {/* Subtle Breadcrumb Navigation */}
         <nav className="flex items-center gap-2 text-xs text-slate-400 font-medium" aria-label="Breadcrumb">
-          <Link href={`/${locale}`} className="hover:text-[#0056D2] transition-colors">
+          <Link href={`/${locale}`} className="hover:text-[#1B3A5C] transition-colors">
             {ar ? "الرئيسية" : "Accueil"}
           </Link>
           <span className="text-slate-300">/</span>
-          <Link href={`/${locale}/avs`} className="hover:text-[#0056D2] transition-colors">
+          <Link href={`/${locale}/avs`} className="hover:text-[#1B3A5C] transition-colors">
             {ar ? "دليل المرافقين (AVS)" : "Annuaire AVS"}
           </Link>
           <span className="text-slate-300">/</span>
@@ -117,12 +117,12 @@ export default async function AvsProfileDetailPage({
         </nav>
 
         {/* Profile Hero Header Card */}
-        <header className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-xs">
+        <header className="bg-white rounded-2xl border border-[#E3E8EF] p-6 sm:p-8 shadow-xs">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
             <div className="flex items-start sm:items-center gap-5 sm:gap-6">
               {/* Avatar with Status Indicator */}
               <div className="relative flex-none">
-                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-[#0056D2] text-white flex items-center justify-center font-bold text-2xl sm:text-3xl shadow-xs border-2 border-white ring-1 ring-slate-200/80">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-[#1B3A5C] text-white flex items-center justify-center font-bold text-2xl sm:text-3xl shadow-xs border-2 border-white ring-1 ring-[#E3E8EF]">
                   {initials}
                 </div>
                 <span
@@ -134,12 +134,12 @@ export default async function AvsProfileDetailPage({
               {/* Identity Details */}
               <div className="space-y-1.5">
                 <div className="flex flex-wrap items-center gap-2.5">
-                  <h1 className="text-2xl sm:text-3xl font-bold text-[#0F172A] tracking-tight">
+                  <h1 className="text-2xl sm:text-3xl font-bold font-editorial-serif text-[#1B3A5C] tracking-tight">
                     {displayName}
                   </h1>
                   {profile.certified && (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-[#F0F6FF] text-[#0056D2] border border-[#BFDBFE]">
-                      <Icon name="award" size={13} className="text-[#0056D2]" />
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#F4F7FA] text-[#1B3A5C] border border-[#E3E8EF]">
+                      <Icon name="award" size={13} className="text-[#B8925A]" />
                       <span>{ar ? "معتمد ANEI" : "Certifié ANEI"}</span>
                     </span>
                   )}
@@ -172,10 +172,10 @@ export default async function AvsProfileDetailPage({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* LEFT: Unified Professional Dossier */}
           <div className="lg:col-span-7 space-y-6">
-            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs divide-y divide-slate-100 overflow-hidden">
+            <div className="bg-white rounded-2xl border border-[#E3E8EF] shadow-xs divide-y divide-[#E3E8EF] overflow-hidden">
               {/* 1. Bio & Educational Approach */}
               <section className="p-6 sm:p-7 space-y-3">
-                <h2 className="text-lg font-bold text-[#0F172A] tracking-tight">
+                <h2 className="text-lg font-bold font-editorial-serif text-[#1B3A5C] tracking-tight">
                   {ar ? "نبذة عن المرافق والنهج البيداغوجي" : "Présentation & Démarche d'accompagnement"}
                 </h2>
                 <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line max-w-prose">
@@ -185,16 +185,16 @@ export default async function AvsProfileDetailPage({
 
               {/* 2. Needs & Specializations */}
               <section className="p-6 sm:p-7 space-y-3.5">
-                <h2 className="text-lg font-bold text-[#0F172A] tracking-tight">
+                <h2 className="text-lg font-bold font-editorial-serif text-[#1B3A5C] tracking-tight">
                   {ar ? "مجالات التدخل والاضطرابات المشمولة" : "Besoins pris en charge & Spécialisations"}
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {localizedDomains.map((dom) => (
                     <div
                       key={dom}
-                      className="p-3 rounded-xl bg-slate-50/70 border border-slate-200/60 flex items-center gap-2.5 text-xs font-semibold text-slate-800"
+                      className="p-3 rounded-xl bg-[#F4F7FA] border border-[#E3E8EF] flex items-center gap-2.5 text-xs font-semibold text-slate-800"
                     >
-                      <Icon name="check" size={14} className="text-[#0056D2] flex-none" />
+                      <Icon name="check" size={14} className="text-[#3A8DB5] flex-none" />
                       <span>{dom}</span>
                     </div>
                   ))}
@@ -203,14 +203,14 @@ export default async function AvsProfileDetailPage({
 
               {/* 3. Pedagogical Methods & Tools */}
               <section className="p-6 sm:p-7 space-y-3.5">
-                <h2 className="text-lg font-bold text-[#0F172A] tracking-tight">
+                <h2 className="text-lg font-bold font-editorial-serif text-[#1B3A5C] tracking-tight">
                   {ar ? "الأساليب والأدوات المعتمدة" : "Méthodes et outils pédagogiques"}
                 </h2>
                 <div className="flex flex-wrap gap-2">
                   {localizedMethods.map((method) => (
                     <span
                       key={method}
-                      className="px-3.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 text-xs font-medium"
+                      className="px-3.5 py-1.5 rounded-lg border border-[#E3E8EF] bg-white text-slate-700 text-xs font-medium"
                     >
                       {method}
                     </span>
@@ -220,7 +220,7 @@ export default async function AvsProfileDetailPage({
 
               {/* 4. Schools & Geographic Radius */}
               <section className="p-6 sm:p-7 space-y-3">
-                <h2 className="text-lg font-bold text-[#0F172A] tracking-tight">
+                <h2 className="text-lg font-bold font-editorial-serif text-[#1B3A5C] tracking-tight">
                   {ar ? "المؤسسات التعليمية ونطاق التنقل" : "Établissements scolaires & Rayon d'action"}
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
@@ -236,12 +236,12 @@ export default async function AvsProfileDetailPage({
             </div>
 
             {/* 5. Institutional Reassurance & Ethical Charter */}
-            <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl p-6 sm:p-7 space-y-2.5 shadow-2xs">
-              <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-[#0056D2] font-bold">
+            <div className="bg-[#F4F7FA] border border-[#E3E8EF] rounded-2xl p-6 sm:p-7 space-y-2.5 shadow-2xs">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-[#B8925A] font-bold">
                 <Icon name="shield" size={15} />
                 <span>{ar ? "ضمانات منصة ANEI" : "Garanties d'accompagnement ANEI"}</span>
               </div>
-              <h3 className="text-base font-bold text-[#0F172A]">
+              <h3 className="text-base font-bold font-editorial-serif text-[#1B3A5C]">
                 {ar ? "مرافقة تربوية منظمة ومحمية قانونياً" : "Un cadre d'inclusion structuré et transparent"}
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">

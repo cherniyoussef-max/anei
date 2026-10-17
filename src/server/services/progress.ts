@@ -1,6 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/server/db";
-import { certificates, enrollments, lessonProgress, lessons } from "@/server/db/schema";
+import { certificates, enrollments, learningAssessment, learningAttempt, lessonProgress, lessons } from "@/server/db/schema";
 import { grantPoints, POINT_VALUES } from "@/server/services/points";
 
 /**
@@ -53,11 +53,38 @@ export async function updateLessonProgress(input: { userId: string; lessonId: st
       .innerJoin(lessons, eq(lessonProgress.lessonId, lessons.id))
       .where(and(eq(lessonProgress.enrollmentId, owned.enrollment.id), eq(lessonProgress.completed, true)));
 
+    // Check if the course requires a mandatory published assessment
+    const [publishedAssessment] = await tx
+      .select({ id: learningAssessment.id })
+      .from(learningAssessment)
+      .where(and(eq(learningAssessment.courseId, owned.lesson.courseId), eq(learningAssessment.published, true)))
+      .limit(1);
+
+    let hasPassedAssessment = false;
+    if (publishedAssessment) {
+      const [passedAttempt] = await tx
+        .select({ id: learningAttempt.id })
+        .from(learningAttempt)
+        .where(
+          and(
+            eq(learningAttempt.assessmentId, publishedAssessment.id),
+            eq(learningAttempt.userId, input.userId),
+            eq(learningAttempt.passed, true)
+          )
+        )
+        .limit(1);
+      hasPassedAssessment = Boolean(passedAttempt);
+    }
+
     const percent = total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0;
-    const courseCompleted = percent === 100;
+    const allLessonsDone = percent === 100;
+    const courseCompleted = allLessonsDone && (!publishedAssessment || hasPassedAssessment);
+    // When all lessons are done but the final assessment is not passed yet, keep progress at 95%
+    const progressPercent = allLessonsDone && publishedAssessment && !hasPassedAssessment ? 95 : percent;
+
     await tx
       .update(enrollments)
-      .set({ progressPercent: percent, status: courseCompleted ? "completed" : "active", completedAt: courseCompleted ? new Date() : null })
+      .set({ progressPercent, status: courseCompleted ? "completed" : "active", completedAt: courseCompleted ? new Date() : null })
       .where(eq(enrollments.id, owned.enrollment.id));
 
     let certificateCode: string | null = null;
@@ -81,6 +108,6 @@ export async function updateLessonProgress(input: { userId: string; lessonId: st
       }
     }
 
-    return { percent, lessonCompleted, courseCompleted, certificateCode };
+    return { percent: progressPercent, lessonCompleted, courseCompleted, certificateCode };
   });
 }

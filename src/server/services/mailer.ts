@@ -1,18 +1,28 @@
+import crypto from "node:crypto";
 import nodemailer from "nodemailer";
 import { env } from "@/server/env";
 import { logger } from "@/server/security/logger";
 import { getProviderMeta } from "@/lib/webinars";
 import type { Locale } from "@/types";
 
-const transporter = nodemailer.createTransport({
-  host: env.SMTP_HOST,
-  port: env.SMTP_PORT,
-  secure: env.SMTP_SECURE,
-  auth: env.SMTP_USER ? { user: env.SMTP_USER, pass: env.SMTP_PASS } : undefined,
-  connectionTimeout: 10_000,
-  greetingTimeout: 10_000,
-  socketTimeout: 20_000,
-});
+const transporter = nodemailer.createTransport(
+  {
+    host: env.SMTP_HOST,
+    port: env.SMTP_PORT,
+    secure: env.SMTP_SECURE,
+    auth: env.SMTP_USER ? { user: env.SMTP_USER, pass: env.SMTP_PASS } : undefined,
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 20_000,
+    tls: {
+      sessionIdContext: crypto.randomBytes(16).toString("hex"),
+    },
+  },
+  {
+    disableFileAccess: true,
+    disableUrlAccess: true,
+  },
+);
 
 type Mail = { to: string; subject: string; text: string; html: string };
 type AuthMailInput = { name: string; email: string; url: string; locale: Locale };
@@ -454,8 +464,8 @@ export async function sendBookingEscrowNotification(input: BookingEscrowMailInpu
           <p style="margin:0;font-size:13px;color:#059669"><strong>${ar ? "الحالة :" : "Statut :"}</strong> ${ar ? "الأموال محفوظة لدى ANEI حتى إتمام الجلسة" : "Fonds conservés par l'ANEI jusqu'à la tenue de la séance"}</p>
         </div>
         <div style="text-align:center;margin:24px 0">
-          <a style="display:inline-block;background:#082d55;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:14px" href="${env.APP_URL}/${input.locale || "fr"}/dashboard/rendez-vous">
-            ${ar ? "متابعة الموعد في لوحة التحكم" : "Gérer mon rendez-vous dans l'espace Parent"}
+          <a style="display:inline-block;background:#082d55;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:14px" href="${env.APP_URL}/${input.locale || "fr"}/dashboard">
+            ${ar ? "متابعة الطلب في لوحة التحكم" : "Gérer mon dossier dans l'espace Parent"}
           </a>
         </div>
         <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0" />

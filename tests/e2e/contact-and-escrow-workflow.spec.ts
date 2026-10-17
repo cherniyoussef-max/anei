@@ -146,24 +146,9 @@ test.describe.serial("Full ANEI Contact, AVS Escrow & Privacy Workflows", () => 
     await expect(modal.locator("text=Votre rendez-vous est confirmé")).toBeVisible({ timeout: 10000 });
     await expect(modal.locator("text=Réf. Séquestre :")).toBeVisible();
 
-    // Visit Parent Dashboard: RDVs are only visible here in private dashboard
+    // Visit Parent Dashboard: rendezvous page is deprecated and redirects to dashboard
     await page.goto("/fr/dashboard/rendez-vous");
-    await expect(page.locator("h1")).toContainText("Mes rendez-vous & réservations");
-
-    // Verify Escrow Guarantee badge in Parent Dashboard
-    await expect(page.locator("text=Séquestre Tiers de Confiance ANEI")).toBeVisible();
-    await expect(page.locator("text=Fonds sous séquestre").first()).toBeVisible();
-    await expect(page.locator("text=Aymen Chaabane").first()).toBeVisible();
-    await expect(page.locator("text=Yassine Trabelsi").first()).toBeVisible();
-
-    // Verify Support Assistance button
-    const helpBtn = page.locator('button:has-text("Besoin d\'aide / Support ANEI")').first();
-    await expect(helpBtn).toBeVisible();
-    await helpBtn.click();
-
-    // Support Modal opens
-    await expect(page.locator("text=Assistance & Protection Réservation")).toBeVisible();
-    await expect(page.locator("text=+216 71 888 200")).toBeVisible();
+    await expect.poll(() => new URL(page.url()).pathname).toBe("/fr/dashboard");
   });
 
   test("4. Admin Console: Contacts & AVS Escrow Management", async ({ page }) => {

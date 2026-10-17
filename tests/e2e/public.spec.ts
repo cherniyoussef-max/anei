@@ -211,14 +211,14 @@ test("email learner session survives navigation and cannot enter admin", async (
   await page.goto("/fr/formations");
   await page.goto("/fr/dashboard");
   await expect(page.locator(".student-app")).toBeVisible();
-  for (const route of ["formations", "rendez-vous", "ressources", "certificats", "profil"]) {
+  for (const route of ["formations", "ressources", "certificats", "profil"]) {
     await page.goto(`/fr/dashboard/${route}`);
     await expect.poll(() => new URL(page.url()).pathname).toBe(`/fr/dashboard/${route}`);
     await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
     await expect(page.locator(`aside nav a[href="/fr/dashboard/${route}"]`)).toHaveAttribute("aria-current", "page");
   }
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/ar/dashboard/rendez-vous");
+  await page.goto("/ar/dashboard/formations");
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   await expect(page.locator(".student-mobile-nav")).toBeVisible();
   await page.locator(".student-mobile-nav button").click();

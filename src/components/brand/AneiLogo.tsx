@@ -63,8 +63,7 @@ export function AneiLogo({
         twoLineText ? (
           <span className={`flex flex-col justify-center leading-tight min-w-0 ${textClassName}`}>
             <span
-              className="font-bold tracking-tight text-[#082d55] text-[15px] sm:text-[16.5px] leading-[1.18]"
-              style={{ fontFamily: ar ? undefined : "var(--font-fraunces), Georgia, serif" }}
+              className="font-bold tracking-tight text-[#082d55] text-[15px] sm:text-[16.5px] leading-[1.18] font-sans"
             >
               {ar ? "الأكاديمية الوطنية" : en ? "National Academy" : "Académie Nationale"}
             </span>
@@ -75,8 +74,7 @@ export function AneiLogo({
         ) : (
           <span className={`flex flex-col leading-tight min-w-0 ${textClassName}`}>
             <span
-              className="font-bold tracking-tight text-[#082d55] text-sm md:text-base font-serif"
-              style={{ fontFamily: ar ? undefined : "var(--font-fraunces), Georgia, serif" }}
+              className="font-bold tracking-tight text-[#082d55] text-sm md:text-base font-sans"
             >
               {config.academyName}
             </span>

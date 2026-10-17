@@ -80,7 +80,7 @@ export async function searchAdminOrders(input: { q?: string; status?: string; pr
   const q = input.q?.trim().slice(0, 100);
   if (q) filters.push(or(ilike(orders.itemLabel, `%${q}%`), ilike(orders.id, `%${q}%`))!);
   if (["pending", "paid", "failed", "expired", "cancelled"].includes(input.status ?? "")) filters.push(eq(orders.status, input.status!));
-  if (["mock", "flouci", "clicktopay", "free"].includes(input.provider ?? "")) filters.push(eq(orders.provider, input.provider!));
+  if (["mock", "flouci", "free"].includes(input.provider ?? "")) filters.push(eq(orders.provider, input.provider!));
   const where = filters.length ? and(...filters) : undefined;
   const [countRows, items] = await Promise.all([
     where

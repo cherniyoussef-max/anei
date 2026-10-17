@@ -5,8 +5,63 @@
   --line:#e5e0d6;--blue:#0f6b5c;--blue-2:#0a4f45;--cyan:#2fa792;--green:#19a875;
   --violet:#7657d8;--orange:#e8734a;--rose:#d15f39;--shadow:0 18px 60px rgba(15,36,31,.10);
   --radius:24px;--radius-sm:16px;--max:1180px;
+  --font-serif: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-fraunces: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-cairo: var(--font-arabic), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,"Segoe UI",Tahoma,Arial,sans-serif;line-height:1.6}html[lang="ar"], [dir="rtl"]{font-family:var(--font-cairo),-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;letter-spacing:normal !important}[dir="rtl"] h1,[dir="rtl"] h2,[dir="rtl"] h3,[dir="rtl"] h4,[dir="rtl"] h5,[dir="rtl"] h6,[dir="rtl"] p,[dir="rtl"] span,[dir="rtl"] a,[dir="rtl"] button{letter-spacing:normal !important}[dir="rtl"] :is(h1, h2, h3, h4, h5, h6, .section-heading h2, .page-hero h1, .hero-copy h1, .course-detail-copy h1, .auth-intro h1, .article-shell h1, .news-v7-intro h1, .news-v7-lead-copy h2, .learning-header h1, .prose-card h2, .prose-card h3){letter-spacing:0 !important;line-height:1.35 !important}[dir="rtl"] :is(.article-lead, .article-shell > p, .section-heading p, .page-hero p, .hero-copy p, .course-detail-copy p, .news-v7-intro > p, .news-v7-lead-copy > p, .news-v7-item-copy p, .prose-card p){line-height:1.8 !important}[dir="rtl"] .directional-icon{transform:scaleX(-1);display:inline-block}@layer base{a{color:inherit;text-decoration:none}}button,input,select,textarea{font:inherit}button{cursor:pointer}img{max-width:100%;display:block}.app-shell{min-height:100vh;overflow:hidden}.container{width:min(calc(100% - 40px),var(--max));margin-inline:auto}.section{padding:92px 0}.section-tint{background:#eef5fc}.eyebrow{display:inline-flex;align-items:center;gap:7px;color:var(--blue);font-weight:800;font-size:.78rem;text-transform:uppercase;letter-spacing:.11em}.eyebrow.light{color:#dbeaff}.section-heading{max-width:650px}.section-heading h2,.page-hero h1,.hero-copy h1,.course-detail-copy h1,.auth-intro h1{letter-spacing:-.04em;line-height:1.08}.section-heading h2{font-size:clamp(2rem,4vw,3.3rem);margin:.6rem 0 1rem}.section-heading p{color:var(--muted);font-size:1.06rem;margin:0}.section-title-row{display:flex;align-items:end;justify-content:space-between;gap:32px;margin-bottom:34px}.text-link{display:inline-flex;align-items:center;gap:7px;color:var(--blue);font-weight:800}.text-link:hover{gap:11px}.btn{border:0;display:inline-flex;align-items:center;justify-content:center;gap:9px;border-radius:13px;padding:12px 18px;font-weight:800;transition:.2s ease}.btn-sm{padding:9px 13px;font-size:.9rem}.btn-lg{padding:15px 21px}.btn-block{width:100%}.btn-primary{background:var(--blue);color:white;box-shadow:0 10px 28px rgba(19,104,232,.22)}.btn-primary:hover{background:var(--blue-2);transform:translateY(-1px)}.btn-secondary{background:#eaf2ff;color:#0d59c8}.btn-soft{background:#eaf2fb;color:#27415f}.btn-ghost{background:transparent;color:#29415e;border:1px solid var(--line)}.btn-light{background:white;color:#113764}.icon-button{width:40px;height:40px;border:1px solid var(--line);background:white;color:#31506e;border-radius:12px;display:inline-grid;place-items:center}.meta-row{display:flex;flex-wrap:wrap;gap:14px;color:var(--muted);font-size:.85rem}.meta-row span{display:inline-flex;align-items:center;gap:5px}.small-muted{color:var(--muted);font-size:.85rem}
+
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-sans),Inter,"Segoe UI",Tahoma,Arial,sans-serif;line-height:1.6}
+@layer base{a{color:inherit;text-decoration:none}}button,input,select,textarea{font:inherit}button{cursor:pointer}img{max-width:100%;display:block}.app-shell{min-height:100vh;overflow:hidden}.container{width:min(calc(100% - 40px),var(--max));margin-inline:auto}.section{padding:92px 0}.section-tint{background:#eef5fc}.eyebrow{display:inline-flex;align-items:center;gap:7px;color:var(--blue);font-weight:800;font-size:.78rem;text-transform:uppercase;letter-spacing:.11em}.eyebrow.light{color:#dbeaff}.section-heading{max-width:650px}.section-heading h2,.page-hero h1,.hero-copy h1,.course-detail-copy h1,.auth-intro h1{letter-spacing:-.04em;line-height:1.08}.section-heading h2{font-size:clamp(2rem,4vw,3.3rem);margin:.6rem 0 1rem}.section-heading p{color:var(--muted);font-size:1.06rem;margin:0}.section-title-row{display:flex;align-items:end;justify-content:space-between;gap:32px;margin-bottom:34px}.text-link{display:inline-flex;align-items:center;gap:7px;color:var(--blue);font-weight:800}.text-link:hover{gap:11px}.btn{border:0;display:inline-flex;align-items:center;justify-content:center;gap:9px;border-radius:13px;padding:12px 18px;font-weight:800;transition:.2s ease}.btn-sm{padding:9px 13px;font-size:.9rem}.btn-lg{padding:15px 21px}.btn-block{width:100%}.btn-primary{background:var(--blue);color:white;box-shadow:0 10px 28px rgba(19,104,232,.22)}.btn-primary:hover{background:var(--blue-2);transform:translateY(-1px)}.btn-secondary{background:#eaf2ff;color:#0d59c8}.btn-soft{background:#eaf2fb;color:#27415f}.btn-ghost{background:transparent;color:#29415e;border:1px solid var(--line)}.btn-light{background:white;color:#113764}.icon-button{width:40px;height:40px;border:1px solid var(--line);background:white;color:#31506e;border-radius:12px;display:inline-grid;place-items:center}.meta-row{display:flex;flex-wrap:wrap;gap:14px;color:var(--muted);font-size:.85rem}.meta-row span{display:inline-flex;align-items:center;gap:5px}.small-muted{color:var(--muted);font-size:.85rem}
+
+/* ==========================================================================
+   PERFECTIONNEMENT OPTIQUE TYPOGRAPHIE ARABE (RTL)
+   ========================================================================== */
+[dir="rtl"],
+:lang(ar),
+html[lang="ar"] {
+  font-family: var(--font-arabic), "IBM Plex Sans Arabic", system-ui, -apple-system, sans-serif;
+  letter-spacing: 0em !important;
+  word-spacing: 0.02em;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+[dir="rtl"] h1,
+[dir="rtl"] h2,
+[dir="rtl"] h3,
+[dir="rtl"] h4,
+[dir="rtl"] h5,
+[dir="rtl"] h6 {
+  font-family: var(--font-arabic), "IBM Plex Sans Arabic", system-ui, -apple-system, sans-serif !important;
+  letter-spacing: 0em !important;
+  line-height: 1.38 !important;
+  text-wrap: balance;
+}
+
+[dir="rtl"] p,
+[dir="rtl"] li {
+  line-height: 1.85;
+  text-wrap: pretty;
+}
+
+/* Neutraliser les classes tracking-* de Tailwind en RTL qui cassent les ligatures arabes */
+[dir="rtl"] [class*="tracking-"],
+:lang(ar) [class*="tracking-"] {
+  letter-spacing: 0em !important;
+}
+
+.font-editorial-serif {
+  font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+[dir="rtl"] .font-editorial-serif {
+  font-family: var(--font-arabic), "IBM Plex Sans Arabic", system-ui, -apple-system, sans-serif !important;
+}
+
+[dir="rtl"] .directional-icon {
+  transform: scaleX(-1);
+  display: inline-block;
+}
 
 /* Header */
 .site-header{height:78px;background:rgba(247,249,252,.88);backdrop-filter:blur(18px);border-bottom:1px solid rgba(223,231,241,.8);position:relative;z-index:50}.header-inner{height:100%;display:flex;align-items:center;gap:28px}.logo{display:inline-flex;align-items:center;gap:11px;min-width:max-content}.logo-mark{width:43px;height:43px;border-radius:15px;background:linear-gradient(145deg,#1169e8,#0a4fb9);color:white;display:grid;place-items:center;position:relative;overflow:hidden;box-shadow:0 10px 25px rgba(19,104,232,.22)}.logo-core{font-size:1.1rem;font-weight:900;position:relative}.logo-orbit{position:absolute;border:1px solid rgba(255,255,255,.42);border-radius:999px}.logo-orbit-a{width:36px;height:15px;transform:rotate(35deg)}.logo-orbit-b{width:36px;height:15px;transform:rotate(-35deg)}.logo-copy{display:flex;flex-direction:column;line-height:1.05}.logo-copy strong{font-size:1.07rem;letter-spacing:.08em}.logo-copy small{font-size:.68rem;color:var(--muted);margin-top:4px}.desktop-nav{display:flex;align-items:center;gap:24px;margin-inline:auto}.desktop-nav a{font-size:.9rem;font-weight:700;color:#40516a}.desktop-nav a:hover{color:var(--blue)}.header-actions{display:flex;align-items:center;gap:8px}.locale-switcher{border:0;background:transparent;color:#40516a;display:flex;align-items:center;gap:6px;font-weight:700;font-size:.85rem;padding:9px}.mobile-menu-wrap{display:none;position:relative}.mobile-menu-panel{position:absolute;top:50px;inset-inline-end:0;width:min(330px,90vw);background:white;border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:14px}.mobile-menu-panel nav{display:flex;flex-direction:column}.mobile-menu-panel nav a{padding:11px 12px;border-radius:10px;font-weight:700}.mobile-menu-panel nav a:hover{background:#f2f6fb}.mobile-menu-actions{display:grid;gap:8px;border-top:1px solid var(--line);padding-top:12px;margin-top:8px}

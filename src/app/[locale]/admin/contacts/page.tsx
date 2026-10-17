@@ -39,7 +39,7 @@ export default async function Page({
         <span className="text-xs font-semibold uppercase tracking-wider text-[#a9752f]">
           {ar ? "الدعم الفني والمراسلات" : "Support & Relation Familles"}
         </span>
-        <h1 className="mt-1 font-[family-name:var(--font-fraunces)] text-2xl font-semibold tracking-tight text-[#082D55] sm:text-3xl">
+        <h1 className="mt-1 font-sans text-2xl font-bold tracking-tight text-[#082D55] sm:text-3xl">
           {ar ? "رسائل الاتصال والدعم الأكاديمي" : "Messages & Demandes de Contact"}
         </h1>
         <p className="mt-1 text-sm text-slate-500">

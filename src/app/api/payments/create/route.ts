@@ -10,7 +10,7 @@ import { readLimitedJson } from "@/server/security/request-body";
 const bodySchema = z.object({
   itemType: z.enum(["course", "resource"]),
   itemId: z.string().uuid(),
-  provider: z.enum(["mock", "flouci", "clicktopay"]).optional(),
+  provider: z.enum(["mock", "flouci"]).optional(),
   locale: z.enum(["fr", "ar"]).default("fr"),
   idempotencyKey: z.string().min(12).max(160).optional(),
 });
@@ -19,6 +19,9 @@ export async function POST(request: Request) {
   if (!isTrustedMutation(request)) return NextResponse.json({ error: "UNTRUSTED_ORIGIN" }, { status: 403 });
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
+  if ((session as unknown as { impersonation?: { active: boolean } }).impersonation?.active) {
+    return NextResponse.json({ error: "IMPERSONATION_READ_ONLY", message: "Les paiements sont bloqués en mode prévisualisation support." }, { status: 403 });
+  }
   const rate = await consumeRateLimit(`checkout:${session.user.id}`, 20, 60);
   if (!rate.allowed) return NextResponse.json({ error: "RATE_LIMITED" }, { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } });
   const parsed = bodySchema.safeParse(await readLimitedJson(request).catch(() => null));

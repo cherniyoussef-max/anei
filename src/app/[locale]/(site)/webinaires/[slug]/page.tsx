@@ -39,7 +39,7 @@ export default async function WebinarDetailPage({
       {/* Top Banner / Breadcrumb */}
       <section
         style={{
-          background: "linear-gradient(135deg, #082d55 0%, #0d447f 100%)",
+          background: "linear-gradient(135deg, #1B3A5C 0%, #24476E 100%)",
           color: "#ffffff",
           padding: "3rem 1rem 3.5rem",
         }}
@@ -99,7 +99,9 @@ export default async function WebinarDetailPage({
           <h1
             style={{
               fontSize: "clamp(1.75rem, 3.5vw, 2.75rem)",
-              fontWeight: 800,
+              fontWeight: 700,
+              fontFamily: "var(--font-sans), system-ui, sans-serif",
+              color: "#ffffff",
               lineHeight: 1.25,
               marginBottom: "1rem",
               maxWidth: "850px",
@@ -144,7 +146,7 @@ export default async function WebinarDetailPage({
       </section>
 
       {/* Main Content Layout */}
-      <section style={{ padding: "3rem 1rem", background: "#f8fafc" }}>
+      <section style={{ padding: "3rem 1rem", background: "#F4F7FA" }}>
         <div
           className="container"
           style={{
@@ -166,7 +168,7 @@ export default async function WebinarDetailPage({
                   borderRadius: "1rem",
                   padding: "1.5rem",
                   boxShadow: "0 2px 4px rgba(0, 0, 0, 0.04)",
-                  border: "1px solid #e2e8f0",
+                  border: "1px solid #E3E8EF",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
@@ -175,7 +177,7 @@ export default async function WebinarDetailPage({
                 }}
               >
                 <div>
-                  <strong style={{ color: "#082d55", fontSize: "1rem", display: "block" }}>
+                  <strong style={{ color: "#1B3A5C", fontSize: "1rem", display: "block" }}>
                     {ar ? "موعد انطلاق البث المباشر" : "Compte à rebours avant le direct"}
                   </strong>
                   <small style={{ color: "#64748b" }}>
@@ -195,10 +197,10 @@ export default async function WebinarDetailPage({
                 borderRadius: "1rem",
                 padding: "2rem",
                 boxShadow: "0 2px 4px rgba(0, 0, 0, 0.04)",
-                border: "1px solid #e2e8f0",
+                border: "1px solid #E3E8EF",
               }}
             >
-              <h2 style={{ fontSize: "1.35rem", color: "#082d55", marginBottom: "1rem", fontWeight: 700 }}>
+              <h2 style={{ fontSize: "1.35rem", color: "#1B3A5C", marginBottom: "1rem", fontWeight: 700 }}>
                 {ar ? "عن هذا الويبينار" : "Présentation de la session"}
               </h2>
               <div
@@ -220,10 +222,10 @@ export default async function WebinarDetailPage({
                 borderRadius: "1rem",
                 padding: "2rem",
                 boxShadow: "0 2px 4px rgba(0, 0, 0, 0.04)",
-                border: "1px solid #e2e8f0",
+                border: "1px solid #E3E8EF",
               }}
             >
-              <h3 style={{ fontSize: "1.2rem", color: "#082d55", marginBottom: "1.25rem", fontWeight: 700 }}>
+              <h3 style={{ fontSize: "1.2rem", color: "#1B3A5C", marginBottom: "1.25rem", fontWeight: 700 }}>
                 {ar ? "كيفية المشاركة والانضمام" : "Comment se déroule la session ?"}
               </h3>
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
@@ -258,7 +260,7 @@ export default async function WebinarDetailPage({
                         width: "32px",
                         height: "32px",
                         borderRadius: "50%",
-                        background: "#082d55",
+                        background: "#1B3A5C",
                         color: "#fff",
                         display: "flex",
                         alignItems: "center",
@@ -271,7 +273,7 @@ export default async function WebinarDetailPage({
                       {item.step}
                     </span>
                     <div>
-                      <strong style={{ color: "#082d55", fontSize: "0.95rem" }}>{item.title}</strong>
+                      <strong style={{ color: "#1B3A5C", fontSize: "0.95rem" }}>{item.title}</strong>
                       <p style={{ margin: "0.25rem 0 0", color: "#64748b", fontSize: "0.875rem" }}>{item.desc}</p>
                     </div>
                   </div>
@@ -286,7 +288,7 @@ export default async function WebinarDetailPage({
                 borderRadius: "1rem",
                 padding: "1.75rem",
                 boxShadow: "0 2px 4px rgba(0, 0, 0, 0.04)",
-                border: "1px solid #e2e8f0",
+                border: "1px solid #E3E8EF",
                 display: "flex",
                 gap: "1.25rem",
                 alignItems: "center",
@@ -313,7 +315,7 @@ export default async function WebinarDetailPage({
                 <span style={{ fontSize: "0.75rem", color: "#64748b", textTransform: "uppercase", fontWeight: 600 }}>
                   {ar ? "المدرب والمحاضر" : "Intervenant expert"}
                 </span>
-                <h4 style={{ margin: "0.15rem 0 0.35rem", color: "#082d55", fontSize: "1.1rem" }}>
+                <h4 style={{ margin: "0.15rem 0 0.35rem", color: "#1B3A5C", fontSize: "1.1rem" }}>
                   {localizeTrainerName(webinar.trainerName, locale)}
                 </h4>
                 <p style={{ margin: 0, color: "#64748b", fontSize: "0.85rem" }}>
@@ -333,10 +335,10 @@ export default async function WebinarDetailPage({
                 borderRadius: "1rem",
                 padding: "2rem",
                 boxShadow: "0 4px 12px rgba(0, 0, 0, 0.06)",
-                border: "1px solid #e2e8f0",
+                border: "1px solid #E3E8EF",
               }}
             >
-              <h3 style={{ fontSize: "1.25rem", color: "#082d55", marginBottom: "0.5rem", fontWeight: 700 }}>
+              <h3 style={{ fontSize: "1.25rem", color: "#1B3A5C", marginBottom: "0.5rem", fontWeight: 700 }}>
                 {ar ? "حجز مقعدك في الندوة" : "Participer au webinaire"}
               </h3>
               <p style={{ color: "#64748b", fontSize: "0.875rem", marginBottom: "1.5rem" }}>
@@ -355,13 +357,14 @@ export default async function WebinarDetailPage({
                 meetingProvider={webinar.meetingProvider}
                 formFields={webinar.formFields}
                 requireApproval={webinar.requireApproval}
+                isPast={webinar.isPast}
               />
 
               <div
                 style={{
                   marginTop: "1.5rem",
                   paddingTop: "1.25rem",
-                  borderTop: "1px solid #e2e8f0",
+                  borderTop: "1px solid #E3E8EF",
                   display: "flex",
                   flexDirection: "column",
                   gap: "0.75rem",
@@ -395,7 +398,7 @@ export default async function WebinarDetailPage({
                 color: "#64748b",
               }}
             >
-              <strong style={{ color: "#082d55", display: "block", marginBottom: "0.25rem" }}>
+              <strong style={{ color: "#1B3A5C", display: "block", marginBottom: "0.25rem" }}>
                 {ar ? "تحتاج إلى مساعدة؟" : "Besoin d'aide pour vous connecter ?"}
               </strong>
               {ar

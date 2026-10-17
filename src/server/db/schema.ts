@@ -2,6 +2,7 @@ import {
   bigint,
   boolean,
   check,
+  customType,
   date,
   foreignKey,
   index,
@@ -36,6 +37,7 @@ export const user = pgTable(
     locale: text("locale").notNull().default("fr"),
     profileType: text("profile_type").notNull().default("learner"),
     referredByCode: text("referred_by_code"),
+    professionalPostStatus: text("professional_post_status").notNull().default("LEARNER_ONLY"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
   },
@@ -46,6 +48,7 @@ export const user = pgTable(
     check("user_role_check", sql`${table.role} in ('USER','ADMIN','SUPER_ADMIN')`),
     check("user_locale_check", sql`${table.locale} in ('fr','ar')`),
     check("user_profile_type_check", sql`${table.profileType} in ('learner','teacher','avs','parent','specialist','institution')`),
+    check("user_professional_post_status_check", sql`${table.professionalPostStatus} in ('LEARNER_ONLY','CANDIDATE_UNDER_REVIEW','APPROVED_AVS','APPROVED_SPECIALIST')`),
   ],
 );
 
@@ -304,6 +307,9 @@ export const courses = pgTable(
     coverImage: text("cover_image"),
     published: boolean("published").notNull().default(false),
     featured: boolean("featured").notNull().default(false),
+    qualifiesForProfessionalPromotion: boolean("qualifies_for_professional_promotion").notNull().default(false),
+    qualifyingTargetType: text("qualifying_target_type"),
+    qualifyingTargetCategory: text("qualifying_target_category"),
     objectives: jsonb("objectives").$type<{ fr: string[]; ar: string[] }>().notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
@@ -845,7 +851,7 @@ export const orders = pgTable(
     check("orders_amount_nonnegative", sql`${table.amountMillimes} >= 0`),
     check("orders_currency_check", sql`${table.currency} in ('TND')`),
     check("orders_status_check", sql`${table.status} in ('pending','paid','failed','expired','cancelled')`),
-    check("orders_provider_check", sql`${table.provider} in ('mock','flouci','clicktopay','free')`),
+    check("orders_provider_check", sql`${table.provider} in ('mock','flouci','free')`),
     check("orders_item_type_check", sql`${table.itemType} in ('course','resource')`),
   ],
 );
@@ -872,7 +878,7 @@ export const payments = pgTable(
     uniqueIndex("payments_provider_external_unique").on(table.provider, table.externalPaymentId),
     check("payments_amount_nonnegative", sql`${table.amountMillimes} >= 0`),
     check("payments_status_check", sql`${table.status} in ('pending','paid','failed','expired','cancelled')`),
-    check("payments_provider_check", sql`${table.provider} in ('mock','flouci','clicktopay')`),
+    check("payments_provider_check", sql`${table.provider} in ('mock','flouci')`),
   ],
 );
 
@@ -921,10 +927,14 @@ export const webinars = pgTable(
     requireApproval: boolean("require_approval").notNull().default(true),
     replayUrl: text("replay_url"),
     published: boolean("published").notNull().default(true),
+    category: text("category").notNull().default("EDUCATION_INCLUSIVE"),
+    courseId: text("course_id").references(() => courses.id, { onDelete: "set null" }),
   },
   (table) => [
     uniqueIndex("webinars_slug_unique").on(table.slug),
     index("webinars_published_starts_idx").on(table.published, table.startsAt),
+    index("webinars_category_idx").on(table.category),
+    index("webinars_course_idx").on(table.courseId),
     check("webinars_duration_positive", sql`${table.durationMinutes} > 0`),
   ],
 );
@@ -993,6 +1003,20 @@ export const avsProfiles = pgTable(
     certified: boolean("certified").notNull().default(false),
     visible: boolean("visible").notNull().default(true),
     image: text("image"),
+    directoryType: text("directory_type").notNull().default("AVS"),
+    category: text("category"),
+    contactPhone: text("contact_phone"),
+    showPhonePublicly: boolean("show_phone_publicly").notNull().default(true),
+    whatsappPhone: text("whatsapp_phone"),
+    workplaceName: text("workplace_name"),
+    workplaceAddress: text("workplace_address"),
+    licenseOrOrderNumber: text("license_or_order_number"),
+    universityDegree: text("university_degree"),
+    consultationDurationMinutes: integer("consultation_duration_minutes").notNull().default(45),
+    inPersonPriceMillimes: integer("in_person_price_millimes").notNull().default(40000),
+    onlineVisioPriceMillimes: integer("online_visio_price_millimes").notNull().default(35000),
+    availabilityRegime: text("availability_regime").notNull().default("FULL_TIME"),
+    categoryDetails: jsonb("category_details").notNull().default({}),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
   },
@@ -1002,6 +1026,9 @@ export const avsProfiles = pgTable(
     uniqueIndex("avs_slug_unique").on(table.slug),
     index("avs_certified_idx").on(table.certified),
     index("avs_visible_certified_idx").on(table.visible, table.certified),
+    index("avs_directory_type_idx").on(table.directoryType),
+    index("avs_category_idx").on(table.category),
+    check("avs_directory_type_check", sql`${table.directoryType} in ('AVS', 'SPECIALIST')`),
   ],
 );
 
@@ -1029,6 +1056,12 @@ export const avsBookingRequests = pgTable(
     amountMillimes: integer("amount_millimes").notNull().default(35000),
     platformFeeMillimes: integer("platform_fee_millimes").notNull().default(3500),
     avsPayoutMillimes: integer("avs_payout_millimes").notNull().default(31500),
+    paymentMode: text("payment_mode").notNull().default("PLATFORM_ESCROW"),
+    platformCommissionPercent: integer("platform_commission_percent").notNull().default(0),
+    netPractitionerPayoutMillimes: integer("net_practitioner_payout_millimes").notNull().default(0),
+    liveSessionId: text("live_session_id"),
+    practitionerNotes: text("practitioner_notes"),
+    escrowStatus: text("escrow_status").notNull().default("HELD_IN_ESCROW"),
     paymentStatus: text("payment_status").notNull().default("HELD_IN_ESCROW"),
     paymentMethod: text("payment_method").notNull().default("ESCROW_GATEWAY"),
     paymentReference: text("payment_reference"),
@@ -1043,13 +1076,59 @@ export const avsBookingRequests = pgTable(
     index("avs_booking_parent_idx").on(table.parentUserId),
     index("avs_booking_status_idx").on(table.status),
     index("avs_booking_date_idx").on(table.requestedDate),
+    index("avs_booking_live_session_idx").on(table.liveSessionId),
+    index("avs_booking_payment_mode_idx").on(table.paymentMode),
     check(
       "avs_booking_status_check",
       sql`${table.status} in ('PENDING', 'CONFIRMED', 'DECLINED', 'COMPLETED')`,
     ),
     check(
       "avs_booking_type_check",
-      sql`${table.meetingType} in ('IN_PERSON', 'ONLINE', 'HOME')`,
+      sql`${table.meetingType} in ('IN_PERSON', 'ONLINE', 'HOME', 'ONLINE_VISIO')`,
+    ),
+    check(
+      "avs_booking_payment_mode_check",
+      sql`${table.paymentMode} in ('PAY_ON_SITE', 'PLATFORM_ESCROW')`,
+    ),
+    check(
+      "avs_booking_escrow_status_check",
+      sql`${table.escrowStatus} in ('NOT_APPLICABLE', 'HELD_IN_ESCROW', 'RELEASED_TO_PRACTITIONER', 'REFUNDED')`,
+    ),
+  ],
+);
+
+export const practitionerPromotions = pgTable(
+  "practitioner_promotions",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    targetDirectoryType: text("target_directory_type").notNull(),
+    targetCategory: text("target_category").notNull(),
+    professionalPostStatus: text("professional_post_status").notNull().default("CANDIDATE_UNDER_REVIEW"),
+    interviewStatus: text("interview_status").notNull().default("NOT_SCHEDULED"),
+    interviewNotes: text("interview_notes"),
+    interviewScore: integer("interview_score"),
+    interviewScheduledAt: timestamp("interview_scheduled_at", { withTimezone: true }),
+    qualifyingCourseIds: jsonb("qualifying_course_ids").$type<string[]>().notNull().default([]),
+    promotedByAdminId: text("promoted_by_admin_id").references(() => user.id, { onDelete: "set null" }),
+    promotedAt: timestamp("promoted_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("practitioner_promotions_user_idx").on(table.userId),
+    index("practitioner_promotions_status_idx").on(table.professionalPostStatus),
+    index("practitioner_promotions_type_idx").on(table.targetDirectoryType),
+    check("practitioner_promotions_type_check", sql`${table.targetDirectoryType} in ('AVS', 'SPECIALIST')`),
+    check(
+      "practitioner_promotions_post_status_check",
+      sql`${table.professionalPostStatus} in ('LEARNER_ONLY', 'CANDIDATE_UNDER_REVIEW', 'APPROVED_AVS', 'APPROVED_SPECIALIST')`,
+    ),
+    check(
+      "practitioner_promotions_interview_status_check",
+      sql`${table.interviewStatus} in ('NOT_SCHEDULED', 'SCHEDULED', 'PASSED', 'FAILED')`,
     ),
   ],
 );
@@ -2479,6 +2558,12 @@ export const newsPosts = pgTable(
 // Phase 10A/10B: AI Core + RAG + Controlled Tool Registry
 // -----------------------------------------------------------------------------
 
+export const tsvector = customType<{ data: string }>({
+  dataType() {
+    return "tsvector";
+  },
+});
+
 export const knowledgeDocument = pgTable(
   "knowledge_document",
   {
@@ -2487,7 +2572,8 @@ export const knowledgeDocument = pgTable(
     sourceType: text("source_type").notNull(),
     sourceId: text("source_id"),
     title: text("title").notNull(),
-    visibility: text("visibility").notNull().default("PRIVATE"),
+    visibility: text("visibility").notNull().default("PUBLIC"),
+    language: text("language").notNull().default("fr"),
     contentHash: text("content_hash").notNull(),
     status: text("status").notNull().default("PENDING"),
     metadata: jsonb("metadata"),
@@ -2498,7 +2584,8 @@ export const knowledgeDocument = pgTable(
     index("knowledge_document_org_idx").on(table.organizationId),
     index("knowledge_document_source_idx").on(table.sourceType, table.sourceId),
     index("knowledge_document_visibility_idx").on(table.visibility),
-    check("knowledge_document_visibility_check", sql`${table.visibility} in ('PUBLIC','PLATFORM','ORGANIZATION','PRIVATE')`),
+    check("knowledge_document_visibility_check", sql`${table.visibility} in ('PUBLIC','TEACHER','PLATFORM','ORGANIZATION','PRIVATE')`),
+    check("knowledge_document_language_check", sql`${table.language} in ('fr','ar')`),
     check("knowledge_document_status_check", sql`${table.status} in ('PENDING','INDEXED','FAILED','ARCHIVED')`),
   ],
 );
@@ -2513,12 +2600,19 @@ export const knowledgeChunk = pgTable(
     chunkIndex: integer("chunk_index").notNull(),
     text: text("text").notNull(),
     embedding: vector("embedding", { dimensions: 1536 }).notNull(),
+    visibility: text("visibility").notNull().default("PUBLIC"),
+    language: text("language").notNull().default("fr"),
+    searchVector: tsvector("search_vector"),
     metadata: jsonb("metadata"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
   },
   (table) => [
     index("knowledge_chunk_document_idx").on(table.documentId, table.chunkIndex),
     index("knowledge_chunk_embedding_idx").using("hnsw", table.embedding.op("vector_cosine_ops")),
+    index("knowledge_chunk_visibility_language_idx").on(table.visibility, table.language),
+    index("knowledge_chunk_search_vector_idx").using("gin", table.searchVector),
+    check("knowledge_chunk_visibility_check", sql`${table.visibility} in ('PUBLIC','TEACHER','PLATFORM','ORGANIZATION','PRIVATE')`),
+    check("knowledge_chunk_language_check", sql`${table.language} in ('fr','ar')`),
   ],
 );
 
@@ -2730,6 +2824,74 @@ export const auditLogs = pgTable(
   ],
 );
 
+export const liveSessions = pgTable(
+  "live_sessions",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    titleFr: text("title_fr").notNull(),
+    titleAr: text("title_ar").notNull(),
+    descriptionFr: text("description_fr"),
+    descriptionAr: text("description_ar"),
+    provider: text("provider").notNull(),
+    externalMeetingUrl: text("external_meeting_url").notNull(),
+    embedMode: text("embed_mode").notNull(),
+    scope: text("scope").notNull(),
+    courseId: text("course_id").references(() => courses.id, { onDelete: "set null" }),
+    status: text("status").notNull().default("SCHEDULED"),
+    scheduledStartAt: timestamp("scheduled_start_at", { withTimezone: true }).notNull(),
+    durationMinutes: integer("duration_minutes").notNull().default(60),
+    isBroadcastPushed: boolean("is_broadcast_pushed").notNull().default(false),
+    speakerName: text("speaker_name"),
+    category: text("category").notNull().default("EDUCATION_INCLUSIVE"),
+    replayUrl: text("replay_url"),
+    createdById: text("created_by_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    check("live_sessions_provider_check", sql`${table.provider} in ('GOOGLE_MEET','JITSI','ZOOM','MICROSOFT_TEAMS','CUSTOM_EMBED')`),
+    check("live_sessions_embed_mode_check", sql`${table.embedMode} in ('IFRAME_EMBED','PORTAL_LAUNCH')`),
+    check("live_sessions_scope_check", sql`${table.scope} in ('GLOBAL_WEBINAR','COURSE_SPECIFIC')`),
+    check("live_sessions_status_check", sql`${table.status} in ('SCHEDULED','LIVE_NOW','ENDED','CANCELLED')`),
+    check("live_sessions_duration_positive", sql`${table.durationMinutes} > 0`),
+    index("live_sessions_status_idx").on(table.status),
+    index("live_sessions_scheduled_start_idx").on(table.scheduledStartAt),
+    index("live_sessions_scope_idx").on(table.scope),
+    index("live_sessions_course_idx").on(table.courseId),
+    index("live_sessions_broadcast_pushed_idx").on(table.isBroadcastPushed),
+    index("live_sessions_category_idx").on(table.category),
+  ],
+);
+
+export const liveAttendances = pgTable(
+  "live_attendances",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    sessionId: text("session_id")
+      .notNull()
+      .references(() => liveSessions.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    joinedAt: timestamp("joined_at", { withTimezone: true }).notNull().$defaultFn(now),
+    userAgent: text("user_agent"),
+  },
+  (table) => [
+    uniqueIndex("live_attendances_session_user_unique").on(table.sessionId, table.userId),
+    index("live_attendances_session_idx").on(table.sessionId),
+    index("live_attendances_user_idx").on(table.userId),
+    index("live_attendances_joined_at_idx").on(table.joinedAt),
+  ],
+);
+
+export type LiveSessionProvider = "GOOGLE_MEET" | "JITSI" | "ZOOM" | "MICROSOFT_TEAMS" | "CUSTOM_EMBED";
+export type LiveSessionEmbedMode = "IFRAME_EMBED" | "PORTAL_LAUNCH";
+export type LiveSessionScope = "GLOBAL_WEBINAR" | "COURSE_SPECIFIC";
+export type LiveSessionStatus = "SCHEDULED" | "LIVE_NOW" | "ENDED" | "CANCELLED";
+
+export type LiveSessionRow = typeof liveSessions.$inferSelect;
+export type LiveAttendanceRow = typeof liveAttendances.$inferSelect;
+
 export type DbUser = typeof user.$inferSelect;
 export type PersonaMembershipRow = typeof personaMembership.$inferSelect;
 export type OrganizationRow = typeof organization.$inferSelect;
@@ -2782,3 +2944,4 @@ export type CareAccessLogRow = typeof careAccessLog.$inferSelect;
 export type CareNotificationPreferenceRow = typeof careNotificationPreference.$inferSelect;
 export type AvsProfileRow = typeof avsProfiles.$inferSelect;
 export type AvsBookingRequestRow = typeof avsBookingRequests.$inferSelect;
+export type PractitionerPromotionRow = typeof practitionerPromotions.$inferSelect;

@@ -19,6 +19,7 @@ export const copy = {
       webinars: "Webinars",
       library: "Resources",
       avs: "Find an AVS",
+      specialists: "Specialists",
       news: "News",
       contact: "Contact"
     },
@@ -48,8 +49,9 @@ export const copy = {
       about: "À propos",
       courses: "Formations",
       webinars: "Webinaires",
-      library: "Librairie",
+      library: "Bibliothèque",
       avs: "Trouver un AVS",
+      specialists: "Spécialistes",
       news: "Actualités",
       contact: "Contact"
     },
@@ -58,7 +60,7 @@ export const copy = {
       register: "Créer un compte",
       discover: "Découvrir les formations",
       details: "Voir les détails",
-      enroll: "S’inscrire",
+      enroll: "S'inscrire",
       buy: "Acheter",
       download: "Télécharger",
       contact: "Contacter",
@@ -77,10 +79,11 @@ export const copy = {
     nav: {
       home: "الرئيسية",
       about: "عن الأكاديمية",
-      courses: "الدورات",
+      courses: "التكوين",
       webinars: "الندوات",
       library: "المكتبة",
-      avs: "ابحث عن مرافق مدرسي",
+      avs: "البحث عن مرافق",
+      specialists: "الأخصائيون",
       news: "الأخبار",
       contact: "اتصل بنا"
     },
@@ -123,10 +126,17 @@ export function formatMillimes(value: number, locale: Locale) {
   }).format(value / 1000);
 }
 
-export function formatDate(value: string | Date, locale: Locale) {
-  return new Intl.DateTimeFormat(locale === "ar" ? "ar-TN" : locale === "fr" ? "fr-FR" : "en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric"
-  }).format(new Date(value));
+export function formatDate(value: string | Date | null | undefined, locale: Locale) {
+  if (!value) return "—";
+  try {
+    const d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return "—";
+    return new Intl.DateTimeFormat(locale === "ar" ? "ar-TN" : locale === "fr" ? "fr-FR" : "en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric"
+    }).format(d);
+  } catch {
+    return "—";
+  }
 }

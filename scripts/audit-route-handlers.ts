@@ -34,6 +34,7 @@ const INTENTIONAL_PUBLIC_MUTATING_ROUTES = [
   "src/app/api/webinars/register/route.ts",
   "src/app/api/payments/mock/complete/route.ts",
   "src/app/api/avs/bookings/route.ts",
+  "src/app/api/assistant/public/route.ts",
 ];
 
 async function findRoutes(dir: string): Promise<string[]> {

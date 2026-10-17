@@ -84,6 +84,7 @@ export const courseModeLabels: Record<string, { ar: string; en: string; fr: stri
 };
 
 export const courseCategoryLabels: Record<string, { ar: string; en: string; fr: string }> = {
+  "education": { ar: "التربية والتعليم", en: "Education", fr: "Éducation" },
   "pedagogie-inclusive": { ar: "البيداغوجيا الدامجة", en: "Inclusive Pedagogy", fr: "Pédagogie inclusive" },
   "accompagnement-scolaire": { ar: "المرافقة المدرسية", en: "School Support", fr: "Accompagnement scolaire" },
   "troubles-apprentissage": { ar: "صعوبات التعلم", en: "Learning Disabilities", fr: "Troubles de l'apprentissage" },

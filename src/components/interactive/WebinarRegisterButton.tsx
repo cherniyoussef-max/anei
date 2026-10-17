@@ -29,6 +29,7 @@ export function WebinarRegisterButton({
   formFields,
   requireApproval = true,
   compact = false,
+  isPast = false,
 }: {
   webinarId: string;
   webinarSlug?: string;
@@ -41,6 +42,7 @@ export function WebinarRegisterButton({
   formFields?: WebinarFormField[] | null;
   requireApproval?: boolean;
   compact?: boolean;
+  isPast?: boolean;
 }) {
   const ar = locale === "ar";
   const en = locale === "en";
@@ -59,6 +61,25 @@ export function WebinarRegisterButton({
         <Icon name="play" size={16} />
         {ar ? "مشاهدة الإعادة" : en ? "Watch replay" : "Voir le replay"}
       </Link>
+    );
+  }
+
+  if (isPast) {
+    return (
+      <div style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+        <span style={{ fontSize: "0.85rem", color: "#64748b", background: "#f1f5f9", padding: "0.4rem 0.85rem", borderRadius: "999px", fontWeight: 500 }}>
+          {ar ? "انتهت الجلسة" : en ? "Session ended" : "Session terminée"}
+        </span>
+        {webinarSlug && compact ? (
+          <Link
+            href={`/${locale}/webinaires/${webinarSlug}`}
+            className="btn btn-secondary"
+            style={{ fontSize: "0.85rem", padding: "0.4rem 0.85rem", borderRadius: "999px" }}
+          >
+            {ar ? "التفاصيل" : "Détails"}
+          </Link>
+        ) : null}
+      </div>
     );
   }
 
@@ -288,17 +309,17 @@ export function WebinarRegisterButton({
           className="btn btn-primary"
           type="button"
           onClick={() => setModalOpen(true)}
-          style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
+          style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", borderRadius: "999px" }}
         >
-          <Icon name="book" size={16} />
-          {ar ? "ملء استمارة التسجيل" : "S'inscrire (Formulaire)"}
+          <Icon name="arrow" size={15} className="directional-icon" />
+          <span>{ar ? "التسجيل في الندوة" : en ? "Register" : "S'inscrire"}</span>
         </button>
 
         {webinarSlug && compact ? (
           <Link
             href={`/${locale}/webinaires/${webinarSlug}`}
             className="btn btn-secondary"
-            style={{ fontSize: "0.85rem" }}
+            style={{ fontSize: "0.85rem", borderRadius: "999px" }}
           >
             {ar ? "تفاصيل الندوة" : en ? "Details" : "En savoir plus"}
           </Link>

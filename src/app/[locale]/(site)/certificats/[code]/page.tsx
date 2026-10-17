@@ -36,7 +36,7 @@ export default async function CertificatePage({
     : "Académie Nationale de l’Éducation Inclusive";
 
   return (
-    <section className="certificate-page py-12 px-4 bg-[#fcfbf8]">
+    <section className="certificate-page py-12 px-4 bg-[#F4F7FA]">
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Verification Status Badge */}
         <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200/90 text-emerald-900 flex items-center justify-between gap-3 shadow-xs">
@@ -61,8 +61,8 @@ export default async function CertificatePage({
         </div>
 
         {/* Certificate Card Document */}
-        <div className="bg-white rounded-3xl border border-[#e7e0d3] p-8 sm:p-12 shadow-md text-center space-y-5 relative overflow-hidden">
-          <div className="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-[#082D55] via-[#C9913F] to-[#082D55]" />
+        <div className="bg-white rounded-3xl border border-[#E3E8EF] p-8 sm:p-12 shadow-md text-center space-y-5 relative overflow-hidden">
+          <div className="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-[#1B3A5C] via-[#B8925A] to-[#1B3A5C]" />
 
           <div className="certificate-seal-container mb-4 flex justify-center">
             <Image
@@ -75,11 +75,11 @@ export default async function CertificatePage({
             />
           </div>
 
-          <span className="text-xs font-bold uppercase tracking-widest text-[#a66f24]">
+          <span className="text-xs font-bold uppercase tracking-widest text-[#B8925A]">
             {ar ? "شهادة إتمام وتأهيل مهني" : "Certificat de Réussite & Qualification"}
           </span>
 
-          <h1 className="font-[family-name:var(--font-fraunces)] text-xl sm:text-2xl font-bold text-[#082D55]">
+          <h1 className="font-editorial-serif text-xl sm:text-2xl font-bold text-[#1B3A5C]">
             {ar ? "الأكاديمية الوطنية للتربية الدامجة" : "Académie Nationale de l’Éducation Inclusive"}
           </h1>
 
@@ -87,7 +87,7 @@ export default async function CertificatePage({
             {ar ? "تشهد رسمياً بأن" : "atteste officiellement que"}
           </p>
 
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#082D55] tracking-tight">
+          <h2 className="font-editorial-serif text-2xl sm:text-3xl font-extrabold text-[#1B3A5C] tracking-tight">
             {row.recipient.name}
           </h2>
 
@@ -97,8 +97,8 @@ export default async function CertificatePage({
               : "a validé avec succès l'ensemble des modules et évaluations pratiques du parcours certifiant :"}
           </p>
 
-          <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-200/60 max-w-lg mx-auto">
-            <h3 className="text-base sm:text-lg font-bold text-[#082D55]">
+          <div className="p-4 rounded-2xl bg-[#F4F7FA] border border-[#E3E8EF] max-w-lg mx-auto">
+            <h3 className="font-sans text-base sm:text-lg font-bold text-slate-900">
               {ar ? row.course.titleAr : row.course.titleFr}
             </h3>
           </div>
@@ -111,7 +111,7 @@ export default async function CertificatePage({
             <div className="w-px h-8 bg-slate-200 hidden sm:block" />
             <div>
               <span className="block text-[10px] text-slate-400 font-semibold uppercase">{ar ? "الرمز التعريفي" : "Identifiant unique"}</span>
-              <strong className="font-mono text-[#a66f24]" dir="ltr">{row.certificate.code}</strong>
+              <strong className="font-mono text-[#B8925A]" dir="ltr">{row.certificate.code}</strong>
             </div>
           </div>
 

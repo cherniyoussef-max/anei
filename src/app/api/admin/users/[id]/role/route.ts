@@ -2,6 +2,7 @@ import { count, eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { adminMutationRateLimit, getSuperAdminSession } from "@/server/auth/admin";
+import { isSudoModeActive } from "@/server/auth/sudo";
 import { revokeUserSessions } from "@/server/auth/session";
 import { invalidateAdminUserCaches } from "@/server/cache/admin-users";
 import { db } from "@/server/db";
@@ -19,6 +20,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!session) return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
   const rate = await adminMutationRateLimit(session.user.id);
   if (!rate.allowed) return NextResponse.json({ error: "RATE_LIMITED" }, { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } });
+
+  const sudoActive = await isSudoModeActive(request, session.user.id);
+  if (!sudoActive) {
+    return NextResponse.json(
+      { error: "SUDO_REQUIRED", message: "Mode Sudo requis : veuillez confirmer votre mot de passe administrateur." },
+      { status: 403 }
+    );
+  }
 
   const id = idSchema.safeParse((await params).id);
   const parsed = schema.safeParse(await readLimitedJson(request).catch(() => null));

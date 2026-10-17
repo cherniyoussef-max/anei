@@ -22,8 +22,19 @@ export default async function LearnerLayout({
     getPointsBalance(session.user.id),
   ]);
 
+  const impersonation = (session as unknown as {
+    impersonation?: { active: boolean; impersonatorId: string; impersonatorName: string; impersonatorEmail: string };
+  }).impersonation;
+
   return (
-    <StudentShell locale={locale} user={{ name: session.user.name, email: session.user.email }} pointsBalance={pointsBalance} notificationCount={notificationCount} assistantEnabled={Boolean(env.OPENAI_API_KEY)}>
+    <StudentShell
+      locale={locale}
+      user={{ name: session.user.name, email: session.user.email }}
+      pointsBalance={pointsBalance}
+      notificationCount={notificationCount}
+      assistantEnabled={Boolean(env.OPENAI_API_KEY)}
+      impersonation={impersonation}
+    >
       <main id="main-content" tabIndex={-1}>{children}</main>
     </StudentShell>
   );

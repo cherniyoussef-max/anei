@@ -19,7 +19,7 @@ export function MobileMenu({ locale }: { locale: Locale }) {
   const pathname = usePathname();
   const ar = locale === "ar";
   const en = locale === "en";
-  const links = [["", c.nav.home], ["about", c.nav.about], ["formations", c.nav.courses], ["webinaires", c.nav.webinars], ["bibliotheque", c.nav.library], ["avs", c.nav.avs], ["actualites", c.nav.news], ["contact", c.nav.contact]];
+  const links = [["", c.nav.home], ["about", c.nav.about], ["formations", c.nav.courses], ["webinaires", c.nav.webinars], ["bibliotheque", c.nav.library], ["avs", c.nav.avs], ["specialistes", c.nav.specialists], ["actualites", c.nav.news], ["contact", c.nav.contact]];
   const localeOrder: Locale[] = ["fr", "en", "ar"];
   const localeLabel: Record<Locale, string> = { fr: "Français", en: "English", ar: "العربية" };
   const nextLocale = localeOrder[(localeOrder.indexOf(locale) + 1) % localeOrder.length];
@@ -60,6 +60,32 @@ export function MobileMenu({ locale }: { locale: Locale }) {
     router.refresh();
   }
 
+  const isAdmin = ["ADMIN", "SUPER_ADMIN"].includes(String(data?.user?.role));
+  const userProfileType = (data?.user as { profileType?: string } | undefined)?.profileType;
+  const portalPath = isAdmin
+    ? `/${locale}/admin`
+    : userProfileType === "parent"
+      ? `/${locale}/parent`
+      : userProfileType === "teacher"
+        ? `/${locale}/teacher`
+        : userProfileType === "avs"
+          ? `/${locale}/avs/espace`
+          : userProfileType === "specialist"
+            ? `/${locale}/specialist`
+            : userProfileType === "institution"
+              ? `/${locale}/organization`
+              : `/${locale}/dashboard`;
+
+  const portalLabel = isAdmin
+    ? (ar ? "لوحة الإدارة" : en ? "Admin Console" : "Console d’administration")
+    : userProfileType === "parent"
+      ? (ar ? "مساحة الولي" : en ? "Parent space" : "Espace parent")
+      : userProfileType === "teacher"
+        ? (ar ? "مساحة المكوّن" : en ? "Teacher space" : "Espace formateur")
+        : userProfileType === "avs"
+          ? (ar ? "مساحة المرافق" : en ? "AVS space" : "Espace AVS")
+          : c.actions.dashboard;
+
   return <div className="mobile-menu-wrap">
     <button ref={triggerRef} className="icon-button mobile-menu-button" type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-controls="public-mobile-menu" aria-label={open ? (ar ? "إغلاق القائمة" : en ? "Close menu" : "Fermer le menu") : (ar ? "فتح القائمة" : en ? "Open menu" : "Ouvrir le menu")}><Icon name={open ? "close" : "menu"} size={22}/></button>
     {open ? <>
@@ -72,7 +98,7 @@ export function MobileMenu({ locale }: { locale: Locale }) {
           return <Link key={href} href={target} onClick={closeMenu} aria-current={current ? "page" : undefined}>{label}</Link>;
         })}</nav>
         <Link className="mobile-menu-language" href={nextLocaleTarget} onClick={closeMenu}><Icon name="globe" size={18}/><span lang={nextLocale}>{nextLocaleLabel}</span></Link>
-        <div className="mobile-menu-actions">{data?.user ? <><Link className="btn btn-primary" href={`/${locale}/dashboard`} onClick={closeMenu}>{c.actions.dashboard}</Link><button className="btn btn-ghost" type="button" onClick={logout}>{ar ? "تسجيل الخروج" : en ? "Sign out" : "Se déconnecter"}</button></> : <><Link className="btn btn-ghost" href={`/${locale}/login`} onClick={closeMenu}>{c.actions.login}</Link><Link className="btn btn-primary" href={`/${locale}/register`} onClick={closeMenu}>{c.actions.register}</Link></>}</div>
+        <div className="mobile-menu-actions">{data?.user ? <><Link className="btn btn-primary" href={portalPath} onClick={closeMenu}>{portalLabel}</Link><button className="btn btn-ghost" type="button" onClick={logout}>{ar ? "تسجيل الخروج" : en ? "Sign out" : "Se déconnecter"}</button></> : <><Link className="btn btn-ghost" href={`/${locale}/login`} onClick={closeMenu}>{c.actions.login}</Link><Link className="btn btn-primary" href={`/${locale}/register`} onClick={closeMenu}>{c.actions.register}</Link></>}</div>
       </div>
     </> : null}
   </div>;

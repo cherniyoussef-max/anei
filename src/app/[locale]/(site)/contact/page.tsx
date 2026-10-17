@@ -11,6 +11,9 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
   const ar = locale === "ar";
   const en = locale === "en";
 
+  const officialEmail = env.CONTACT_EMAIL && !env.CONTACT_EMAIL.endsWith(".local") ? env.CONTACT_EMAIL : "contact@anei.tn";
+  const officialPhone = env.CONTACT_PHONE || "+216 71 840 100";
+
   const regionalHubs = [
     {
       title: ar ? "المقر الوطني والحرم الجامعي الرئيسي" : "Siège National & Campus Principal",
@@ -19,8 +22,8 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
         ? "شارع الحبيب بورقيبة، المركز العمراني الشمالي، 1082 تونس"
         : "Avenue Habib Bourguiba, Centre Urbain Nord, 1082 Tunis, Tunisie",
       hours: ar ? "الإثنين - الجمعة: 08:30 - 17:30 | السبت: 09:00 - 13:00" : "Lun - Ven : 08h30 - 17h30 | Sam : 09h00 - 13h00",
-      phone: env.CONTACT_PHONE || "+216 71 840 100",
-      email: env.CONTACT_EMAIL || "contact@anei.local",
+      phone: officialPhone,
+      email: officialEmail,
       transit: ar ? "مترو خفيف خط 2 (محطة مدينة العلوم) • حافلات خط 35 و 44" : "Métro 2 (Station Cité des Sciences) • Bus 35 & 44 • Accès autoroute RN8",
       access: ar ? "مهيأ بالكامل لذوي الإعاقة (PMR) • مواقف سيارات مخصصة" : "Accès PMR universel • Rampes d'accès • Parking réservé",
       isPrimary: true,
@@ -49,9 +52,15 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
     },
   ];
 
+  const breadcrumbs = [
+    { label: ar ? "الرئيسية" : "Accueil", href: `/${locale}` },
+    { label: ar ? "اتصل بنا" : "Contact" },
+  ];
+
   return (
     <>
       <PageHero
+        breadcrumbs={breadcrumbs}
         eyebrow={ar ? "الاتصال والمقر الوطني" : en ? "Contact & Placement" : "Contact & Implantations ANEI"}
         title={ar ? "لنتحدث عن احتياجاتكم في التربية الدامجة" : en ? "Connect with the National Inclusive Academy" : "Parlons de vos besoins d'accompagnement"}
         description={
@@ -63,19 +72,22 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
         }
       />
 
-      <section className="section bg-[#FCFBF8]">
-        <div className="container">
+      <section className="section bg-white">
+        <div className="academy-container">
           <div className="contact-grid grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-16">
             {/* Form Column */}
-            <div className="lg:col-span-7 bg-white p-8 md:p-10 rounded-2xl border border-[#E7E0D3] shadow-sm">
-              <div className="mb-6 pb-6 border-b border-[#F1ECE2]">
-                <span className="text-xs uppercase font-bold tracking-widest text-[#a66f24]">
-                  {ar ? "المراسلة المباشرة" : "Formulaire officiel"}
-                </span>
-                <h2 className="text-xl md:text-2xl font-bold text-[#082D55] mt-1">
+            <div className="lg:col-span-7 bg-white p-7 sm:p-9 rounded-2xl border border-[#E3E8EF] shadow-[0_4px_16px_rgba(27,58,92,0.06)]">
+              <div className="mb-6 pb-6 border-b border-[#E3E8EF]">
+                <div className="eyebrow-container mb-2">
+                  <span className="gold-line" aria-hidden="true" />
+                  <span className="eyebrow-label">
+                    {ar ? "المراسلة المباشرة" : "Formulaire officiel"}
+                  </span>
+                </div>
+                <h2 className="text-xl md:text-2xl font-bold text-slate-900 font-sans tracking-tight mt-1">
                   {ar ? "أرسل رسالتك إلى إدارة الأكاديمية" : "Transmettez votre message à l'Académie"}
                 </h2>
-                <p className="text-sm text-slate-600 mt-1">
+                <p className="text-sm text-[#3D4A5C] mt-1">
                   {ar
                     ? "تصل رسالتكم مباشرة وبشكل آلي إلى مكتب الدعم والمتابعة عبر البريد الإلكتروني مع إشعار استلام فوري."
                     : "Votre message est transmis directement à notre pôle support avec un accusé de réception automatique par email."}
@@ -87,12 +99,12 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
             {/* Quick Contact & Placement Column */}
             <aside className="lg:col-span-5 space-y-6">
               {/* Primary Headquarter Highlight */}
-              <div className="bg-[#082D55] text-white p-7 rounded-2xl shadow-md border border-white/10 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-36 h-36 bg-[#c9913f]/10 rounded-full blur-2xl pointer-events-none" />
-                <span className="inline-block text-[11px] font-bold uppercase tracking-wider text-[#d4af37] bg-white/10 px-3 py-1 rounded-full mb-3">
+              <div className="bg-[#1B3A5C] text-white p-7 rounded-2xl shadow-md border border-white/10 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-36 h-36 bg-[#B8925A]/10 rounded-full blur-2xl pointer-events-none" />
+                <span className="inline-block text-[11px] font-bold uppercase tracking-wider text-[#B8925A] bg-white/10 px-3 py-1 rounded-full mb-3">
                   {ar ? "المقر الوطني الرئيسي" : "Siège & Campus National"}
                 </span>
-                <h3 className="text-xl font-bold text-white mb-2">
+                <h3 className="text-xl font-bold text-white mb-2 font-sans tracking-tight">
                   {ar ? "الأكاديمية الوطنية للتربية الدامجة" : "Académie Nationale de l'Éducation Inclusive"}
                 </h3>
                 <p className="text-xs text-slate-300 mb-6 leading-relaxed">
@@ -103,7 +115,7 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
 
                 <div className="space-y-4 text-xs text-slate-200">
                   <div className="flex items-start gap-3">
-                    <span className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-amber-300 flex-none mt-0.5">
+                    <span className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-[#B8925A] flex-none mt-0.5">
                       <Icon name="map" size={16} />
                     </span>
                     <div>
@@ -113,33 +125,31 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
                   </div>
 
                   <div className="flex items-start gap-3">
-                    <span className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-amber-300 flex-none mt-0.5">
+                    <span className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-[#B8925A] flex-none mt-0.5">
                       <Icon name="mail" size={16} />
                     </span>
                     <div>
                       <strong className="block text-white text-xs">{ar ? "البريد الإلكتروني المباشر" : "Email officiel"}</strong>
-                      <a href={`mailto:${env.CONTACT_EMAIL}`} className="text-amber-200 hover:underline">
-                        {env.CONTACT_EMAIL}
+                      <a href={`mailto:${officialEmail}`} className="text-amber-200 hover:underline">
+                        {officialEmail}
                       </a>
                     </div>
                   </div>
 
-                  {env.CONTACT_PHONE ? (
-                    <div className="flex items-start gap-3">
-                      <span className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-amber-300 flex-none mt-0.5">
-                        <Icon name="phone" size={16} />
-                      </span>
-                      <div>
-                        <strong className="block text-white text-xs">{ar ? "الخط الهاتفي والمساعدة" : "Permanence téléphonique"}</strong>
-                        <a href={`tel:${env.CONTACT_PHONE}`} className="text-white hover:underline">
-                          <span dir="ltr">{env.CONTACT_PHONE}</span>
-                        </a>
-                      </div>
+                  <div className="flex items-start gap-3">
+                    <span className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-[#B8925A] flex-none mt-0.5">
+                      <Icon name="phone" size={16} />
+                    </span>
+                    <div>
+                      <strong className="block text-white text-xs">{ar ? "الخط الهاتفي والمساعدة" : "Permanence téléphonique"}</strong>
+                      <a href={`tel:${officialPhone}`} className="text-white hover:underline">
+                        <span dir="ltr">{officialPhone}</span>
+                      </a>
                     </div>
-                  ) : null}
+                  </div>
 
                   <div className="flex items-start gap-3">
-                    <span className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-amber-300 flex-none mt-0.5">
+                    <span className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-[#B8925A] flex-none mt-0.5">
                       <Icon name="clock" size={16} />
                     </span>
                     <div>
@@ -155,7 +165,7 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
                     href="https://maps.google.com/?q=Centre+Urbain+Nord+Tunis"
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-2 bg-[#c9913f] hover:bg-[#b07d32] text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm"
+                    className="inline-flex items-center gap-2 bg-[#B8925A] hover:bg-[#9E7A45] text-white px-5 py-2.5 rounded-full text-xs font-bold transition-all shadow-sm"
                   >
                     <Icon name="map" size={14} />
                     <span>{ar ? "تحديد المسار على خرائط Google" : "Itinéraire Google Maps"}</span>
@@ -164,24 +174,24 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
               </div>
 
               {/* Transit & Accessibility Info Box */}
-              <div className="bg-white p-6 rounded-2xl border border-[#E7E0D3] shadow-sm space-y-4">
-                <h4 className="font-bold text-[#082D55] text-sm flex items-center gap-2">
+              <div className="bg-white p-6 rounded-2xl border border-[#E3E8EF] shadow-[0_4px_16px_rgba(27,58,92,0.05)] space-y-4">
+                <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2 font-sans">
                   <span className="w-7 h-7 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs">
                     ✓
                   </span>
                   <span>{ar ? "ولوجية النفاذ وتسهيلات الاستقبال" : "Accès & Mobilité Inclusive"}</span>
                 </h4>
-                <ul className="text-xs text-slate-600 space-y-2.5">
+                <ul className="text-xs text-[#3D4A5C] space-y-2.5">
                   <li className="flex items-start gap-2">
-                    <span className="text-[#a66f24] font-bold">•</span>
+                    <span className="text-[#B8925A] font-bold">•</span>
                     <span>{ar ? "مبنى مجهز بالكامل وفق معايير الإتاحة الشاملة ومصاعد مهيأة (PMR)." : "Bâtiment 100% accessible aux personnes à mobilité réduite (rampes, ascenseurs adaptés)."}</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-[#a66f24] font-bold">•</span>
+                    <span className="text-[#B8925A] font-bold">•</span>
                     <span>{ar ? "وسائل النقل: مترو الخط 2 (محطة مدينة العلوم) أو حافلات 35 و 44." : "Transports en commun : Métro Ligne 2 (Cité des Sciences), Bus 35 et 44."}</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-[#a66f24] font-bold">•</span>
+                    <span className="text-[#B8925A] font-bold">•</span>
                     <span>{ar ? "مأوى سيارات مخصص ومجاني لزوار الأكاديمية وأولياء الأمور." : "Parking gratuit réservé aux familles et professionnels sur présentation du RDV."}</span>
                   </li>
                 </ul>
@@ -190,15 +200,18 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
           </div>
 
           {/* Regional Hubs & Implantation Directory */}
-          <div className="mt-16 pt-12 border-t border-[#E7E0D3]">
+          <div className="mt-16 pt-12 border-t border-[#E3E8EF]">
             <div className="max-w-2xl mb-8">
-              <span className="text-xs uppercase font-bold tracking-widest text-[#a66f24]">
-                {ar ? "التغطية الوطنية" : "Réseau territorial"}
-              </span>
-              <h2 className="text-2xl font-bold text-[#082D55] mt-1">
+              <div className="eyebrow-container mb-2">
+                <span className="gold-line" aria-hidden="true" />
+                <span className="eyebrow-label">
+                  {ar ? "التغطية الوطنية" : "Réseau territorial"}
+                </span>
+              </div>
+              <h2 className="text-2xl font-bold text-slate-900 font-sans tracking-tight mt-1">
                 {ar ? "الأقطاب الإقليمية ومراكز الدعم الميداني" : "Pôles régionaux & centres d'accueil"}
               </h2>
-              <p className="text-sm text-slate-600 mt-2">
+              <p className="text-sm text-[#3D4A5C] mt-2">
                 {ar
                   ? "تنتشر أقطاب الأكاديمية لضمان متابعة ميدانية وثيقة للأسر والمرافقين المدرسيين في كامل ولايات الجمهورية."
                   : "Des délégations régionales pour assurer la coordination de proximité, les bilans d'inclusion et le suivi des AVS sur tout le territoire."}
@@ -211,22 +224,22 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
                   key={idx}
                   className={`p-6 rounded-2xl border transition-all ${
                     hub.isPrimary
-                      ? "bg-white border-[#c9913f]/40 shadow-md ring-1 ring-[#c9913f]/20"
-                      : "bg-white border-[#E7E0D3] shadow-sm hover:border-[#082D55]/30"
+                      ? "bg-white border-[#B8925A]/40 shadow-md ring-1 ring-[#B8925A]/20"
+                      : "bg-white border-[#E3E8EF] shadow-[0_4px_16px_rgba(27,58,92,0.05)] hover:border-[#1B3A5C]/30 hover:-translate-y-1"
                   }`}
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-bold text-[#082D55] bg-slate-100 px-2.5 py-1 rounded-md">
+                    <span className="text-xs font-bold text-[#1B3A5C] bg-[#F4F7FA] px-2.5 py-1 rounded-md">
                       {hub.city}
                     </span>
                     {hub.isPrimary && (
-                      <span className="text-[10px] font-bold text-[#a66f24] bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-bold text-[#B8925A] bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
                         {ar ? "المركز الرئيسي" : "Siège Principal"}
                       </span>
                     )}
                   </div>
-                  <h3 className="font-bold text-[#082D55] text-base mb-2">{hub.title}</h3>
-                  <div className="space-y-2.5 text-xs text-slate-600 mt-4">
+                  <h3 className="font-bold text-slate-900 text-base mb-2 font-sans">{hub.title}</h3>
+                  <div className="space-y-2.5 text-xs text-[#3D4A5C] mt-4">
                     <p className="flex items-start gap-2">
                       <span className="text-slate-400 flex-none mt-0.5"><Icon name="map" size={14} /></span>
                       <span>{hub.address}</span>
@@ -237,13 +250,13 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
                     </p>
                     <p className="flex items-start gap-2">
                       <span className="text-slate-400 flex-none mt-0.5"><Icon name="phone" size={14} /></span>
-                      <a href={`tel:${hub.phone}`} className="text-[#082D55] font-semibold hover:underline">
+                      <a href={`tel:${hub.phone}`} className="text-[#1B3A5C] font-semibold hover:underline">
                         <span dir="ltr">{hub.phone}</span>
                       </a>
                     </p>
                     <p className="flex items-start gap-2">
                       <span className="text-slate-400 flex-none mt-0.5"><Icon name="mail" size={14} /></span>
-                      <a href={`mailto:${hub.email}`} className="text-[#a66f24] hover:underline">
+                      <a href={`mailto:${hub.email}`} className="text-[#B8925A] hover:underline">
                         {hub.email}
                       </a>
                     </p>

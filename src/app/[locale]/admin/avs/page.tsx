@@ -45,6 +45,12 @@ export default async function AdminAvsPage({
         paymentMethod: avsBookingRequests.paymentMethod,
         paymentReference: avsBookingRequests.paymentReference,
         paidAt: avsBookingRequests.paidAt,
+        paymentMode: avsBookingRequests.paymentMode,
+        platformCommissionPercent: avsBookingRequests.platformCommissionPercent,
+        netPractitionerPayoutMillimes: avsBookingRequests.netPractitionerPayoutMillimes,
+        liveSessionId: avsBookingRequests.liveSessionId,
+        practitionerNotes: avsBookingRequests.practitionerNotes,
+        escrowStatus: avsBookingRequests.escrowStatus,
         escrowReleasedAt: avsBookingRequests.escrowReleasedAt,
         refundedAt: avsBookingRequests.refundedAt,
         createdAt: avsBookingRequests.createdAt,
@@ -65,7 +71,7 @@ export default async function AdminAvsPage({
         <span className="text-xs font-semibold uppercase tracking-wider text-[#a9752f]">
           {ar ? "إدارة شبكة المرافقة المدرسية" : "Réseau d'accompagnement scolaire"}
         </span>
-        <h1 className="mt-1 font-[family-name:var(--font-fraunces)] text-2xl font-semibold tracking-tight text-[#082D55] sm:text-3xl">
+        <h1 className="mt-1 font-sans text-2xl font-bold tracking-tight text-[#082D55] sm:text-3xl">
           {ar ? "دليل ومواعيد المرافقين (AVS)" : "Annuaire & Réservations AVS"}
         </h1>
         <p className="mt-1 text-sm text-[#7a7261]">

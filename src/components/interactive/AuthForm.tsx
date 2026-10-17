@@ -75,8 +75,12 @@ export function AuthForm({
 
   const ar = locale === "ar";
   const en = locale === "en";
-  const destination = safeAppRedirect(search.get("next"), locale);
-  const assuranceDestination = `/${locale}/verification-channel?next=${encodeURIComponent(destination)}`;
+  const nextParam = search.get("next");
+  const explicitDestination = nextParam ? safeAppRedirect(nextParam, locale, "") : "";
+  const destination = explicitDestination || `/${locale}/dashboard`;
+  const assuranceDestination = explicitDestination
+    ? `/${locale}/verification-channel?next=${encodeURIComponent(explicitDestination)}`
+    : `/${locale}/verification-channel`;
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

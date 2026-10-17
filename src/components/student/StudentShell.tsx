@@ -4,21 +4,62 @@ import { AneiLogo } from "@/components/brand/AneiLogo";
 import { StudentNavigation } from "@/components/student/StudentNavigation";
 import { StudentSignOutButton } from "@/components/student/StudentSignOutButton";
 import { StudentTopbar } from "@/components/student/StudentTopbar";
+import { GlobalWebinarBanner } from "@/components/student/GlobalWebinarBanner";
 
-export function StudentShell({ children, locale, user, pointsBalance = 0, notificationCount = 0, assistantEnabled = false }: {
+export function StudentShell({
+  children,
+  locale,
+  user,
+  pointsBalance = 0,
+  notificationCount = 0,
+  assistantEnabled = false,
+  impersonation,
+}: {
   children: React.ReactNode;
   locale: Locale;
   user: { name: string; email: string };
   pointsBalance?: number;
   notificationCount?: number;
   assistantEnabled?: boolean;
+  impersonation?: {
+    active: boolean;
+    impersonatorId: string;
+    impersonatorName: string;
+    impersonatorEmail: string;
+  };
 }) {
   const ar = locale === "ar";
   const en = locale === "en";
   const initial = user.name.trim().charAt(0).toUpperCase() || "A";
 
   return (
-    <div className="student-app min-h-screen bg-[#F8FAFC] md:flex">
+    <div className="student-app min-h-screen bg-[#F8FAFC]">
+      {impersonation?.active ? (
+        <aside
+          className="sticky top-0 z-50 flex flex-wrap items-center justify-between gap-3 bg-[#FEF3C7] px-4 py-2.5 text-xs text-[#92400E] border-b border-[#FDE68A] shadow-xs"
+          role="alert"
+          aria-label={ar ? "تنبيه وضع المعاينة" : "Alerte mode prévisualisation"}
+        >
+          <div className="flex items-center gap-2 font-medium">
+            <span className="text-sm" aria-hidden="true">⚠️</span>
+            <span>
+              {ar
+                ? `أنت في وضع معاينة الدعم (للقراءة فقط): تتصفح حساب ${user.name} (${user.email}). الإجراءات الحساسة معطلة.`
+                : `Mode Prévisualisation Support (Lecture seule) : Vous naviguez sur le compte de ${user.name} (${user.email}). Actions sensibles bloquées.`}
+            </span>
+          </div>
+          <Link
+            href="/api/admin/impersonate/exit"
+            prefetch={false}
+            className="inline-flex items-center gap-1.5 rounded-md bg-[#78350F] px-3 py-1 font-semibold text-white transition-opacity hover:opacity-90"
+          >
+            <span>{ar ? "إنهاء المعاينة والعودة للإدارة" : "Quitter la session support"}</span>
+            <span aria-hidden="true">&rarr;</span>
+          </Link>
+        </aside>
+      ) : null}
+      <GlobalWebinarBanner locale={locale} />
+      <div className="md:flex">
       <aside
         className="hidden md:fixed md:inset-y-0 md:start-0 md:z-30 md:flex md:w-64 md:flex-col bg-white border-e border-[#E2E8F0] shadow-xs"
         aria-label={ar ? "مساحة المتعلم" : en ? "Learning space" : "Espace apprenant"}
@@ -68,6 +109,7 @@ export function StudentShell({ children, locale, user, pointsBalance = 0, notifi
         <div className="md:hidden">
           <StudentNavigation locale={locale} variant="mobile" />
         </div>
+      </div>
       </div>
     </div>
   );

@@ -1,25 +1,27 @@
 :root {
-  --public-brand-navy: #082d55;
-  --public-brand-navy-strong: #061f3d;
-  --public-brand-gold: #c9913f;
-  --public-brand-gold-muted: #ead6b8;
-  --public-surface-page: #fcfbf8;
-  --public-surface-warm: #f6f3ee;
-  --public-surface-muted: #f0f3f6;
-  --public-surface-dark: #082d55;
-  --public-text-primary: #09284a;
-  --public-text-secondary: #34465a;
-  --public-text-muted: #647184;
-  --public-text-on-dark: #f8fafc;
-  --public-text-on-dark-muted: #c7d4e2;
-  --public-border-subtle: #dce2e8;
-  --public-border-strong: #bdc8d3;
-  --public-focus: #2c6bed;
+  --public-brand-navy: #1B3A5C;
+  --public-brand-navy-strong: #24476E;
+  --public-brand-navy-soft: #3A8DB5;
+  --public-brand-gold: #B8925A;
+  --public-brand-gold-strong: #9E7A45;
+  --public-brand-gold-muted: #E2D3B8;
+  --public-surface-page: #FFFFFF;
+  --public-surface-warm: #F4F7FA;
+  --public-surface-muted: #F4F7FA;
+  --public-surface-dark: #1B3A5C;
+  --public-text-primary: #1B3A5C;
+  --public-text-secondary: #3D4A5C;
+  --public-text-muted: #6B7685;
+  --public-text-on-dark: #FFFFFF;
+  --public-text-on-dark-muted: rgba(255, 255, 255, 0.85);
+  --public-border-subtle: #E3E8EF;
+  --public-border-strong: #CBD5E1;
+  --public-focus: #3A8DB5;
   --public-success: #14765a;
-  --public-radius-control: 8px;
+  --public-radius-control: 9999px;
   --public-radius-card: 12px;
-  --public-radius-media: 16px;
-  --public-shadow-raised: 0 16px 42px rgb(8 45 85 / 10%);
+  --public-radius-media: 12px;
+  --public-shadow-raised: 0 4px 16px rgba(27, 58, 92, 0.06);
   --public-duration-fast: 140ms;
   --public-duration-standard: 200ms;
   --public-ease-out: cubic-bezier(.23, 1, .32, 1);
@@ -62,7 +64,7 @@
   z-index: 50;
   height: 76px;
   border-bottom: 1px solid rgb(8 45 85 / 10%);
-  background: rgb(252 251 248 / 96%);
+  background: rgb(255 255 255 / 96%);
   box-shadow: none;
   backdrop-filter: blur(14px);
 }
@@ -206,7 +208,7 @@
   flex-direction: column;
 }
 .footer-crest-name {
-  font-family: var(--font-fraunces), Georgia, serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-weight: 700;
   font-size: 1.05rem;
   color: #fff;
@@ -553,7 +555,7 @@
 /* Signature crest bar: institution icon + shield wordmark + ANEI seal,
    shown above the nav on every public page (same header everywhere). */
 .crest-bar {
-  background: rgb(252 251 248 / 92%);
+  background: rgb(255 255 255 / 92%);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--public-border-subtle);
   padding: 10px 16px;
@@ -572,7 +574,7 @@
 .crest-shield { width: 24px; height: 29px; flex: none; }
 .crest-brand-text { display: flex; flex-direction: column; min-width: 0; }
 .crest-brand-name-row { display: flex; align-items: baseline; }
-.crest-brand-name { font-family: var(--font-fraunces), Georgia, serif; font-weight: 700; font-size: .95rem; letter-spacing: -.01em; color: var(--public-brand-navy); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.crest-brand-name { font-family: var(--font-sans), system-ui, sans-serif; font-weight: 700; font-size: .95rem; letter-spacing: -.01em; color: var(--public-brand-navy); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .crest-brand-tm { font-size: .48rem; font-weight: 700; color: var(--public-brand-gold-strong); margin-inline-start: 2px; }
 .crest-brand-sub { font-size: .42rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--public-brand-gold-strong); margin-top: -2px; }
 .crest-seal { width: 36px; height: 36px; object-fit: contain; flex: none; }

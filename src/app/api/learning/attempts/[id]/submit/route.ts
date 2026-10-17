@@ -12,6 +12,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!isTrustedMutation(request)) return NextResponse.json({ error: "UNTRUSTED_ORIGIN" }, { status: 403 });
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
+  if ((session as unknown as { impersonation?: { active: boolean } }).impersonation?.active) {
+    return NextResponse.json(
+      { error: "IMPERSONATION_READ_ONLY", message: "Action bloquée en mode prévisualisation support." },
+      { status: 403 }
+    );
+  }
   const rate = await consumeRateLimit(`learning-attempt-submit:${session.user.id}`, 30, 60, { fallbackLimit: 12 });
   if (!rate.allowed) return NextResponse.json({ error: "RATE_LIMITED" }, { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } });
   const id = z.string().uuid().safeParse((await params).id);
@@ -19,5 +25,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!id.success || !body.success) return NextResponse.json({ error: "INVALID_INPUT" }, { status: 400 });
   const result = await submitLearningAttempt(session.user.id, id.data, body.data.answers);
   const status = result.kind === "ok" ? 200 : result.kind === "expired" ? 409 : result.kind === "forbidden" ? 403 : 400;
-  return NextResponse.json(result.kind === "ok" ? { attempt: result.attempt, idempotent: result.idempotent } : { error: result.kind.toUpperCase() }, { status });
+  return NextResponse.json(
+    result.kind === "ok"
+      ? {
+          attempt: result.attempt,
+          idempotent: result.idempotent,
+          courseCompleted: result.courseCompleted,
+          certificateCode: result.certificateCode,
+        }
+      : { error: result.kind.toUpperCase() },
+    { status }
+  );
 }

@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Locale } from "@/types";
 import { AdminObjectUpload } from "./AdminObjectUpload";
+import { AdminStreamVideoUploader } from "./AdminStreamVideoUploader";
 
 type State = "idle" | "loading" | "done" | "error";
 
@@ -51,8 +52,32 @@ export function AdminModuleForm({ locale, courses }: { locale: Locale; courses: 
 }
 
 export function AdminLessonForm({ locale, courses, modules = [] }: { locale: Locale; courses: Array<{ id: string; title: string }>; modules?: Array<{ id: string; courseId: string; title: string }> }) {
-  const { state, send } = useAdminSubmit("/api/admin/lessons"); const ar=locale==="ar";
+  const { state, send } = useAdminSubmit("/api/admin/lessons"); const ar = locale === "ar";
   const isDevelopment = process.env.NODE_ENV === "development";
-  async function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();const form=e.currentTarget;const f=new FormData(form);await send({courseId:String(f.get("courseId")),moduleId:String(f.get("moduleId")||"")||null,position:Number(f.get("position")),titleFr:String(f.get("titleFr")),titleAr:String(f.get("titleAr")),descriptionFr:String(f.get("descriptionFr")||""),descriptionAr:String(f.get("descriptionAr")||""),durationSeconds:Number(f.get("durationSeconds")),videoUrl:String(f.get("videoObjectKey")||f.get("videoUrl")||"")||null,documentUrl:String(f.get("documentObjectKey")||f.get("documentUrl")||"")||null,preview:f.get("preview")==="on"},form)}
-  return <form className="admin-course-form" onSubmit={submit}>{courses.length === 1 ? <input type="hidden" name="courseId" value={courses[0].id}/> : <label><span>{ar?"الدورة":"Formation"}</span><select name="courseId" required defaultValue=""><option value="" disabled>{ar?"اختر دورة":"Choisir une formation"}</option>{courses.map(course=><option value={course.id} key={course.id}>{course.title}</option>)}</select></label>}<div className="field-row"><label><span>{ar?"الوحدة (اختياري)":"Module (optionnel)"}</span><select name="moduleId" defaultValue=""><option value="">{ar?"بدون وحدة":"Sans module"}</option>{modules.map(module=><option value={module.id} key={module.id}>{module.title}</option>)}</select></label><label><span>{ar?"الترتيب":"Position"}</span><input name="position" type="number" min="1" required/></label></div><div className="field-row"><label><span>{ar?"المدة بالثواني":"Durée (secondes)"}</span><input name="durationSeconds" type="number" min="0" defaultValue="300" required/></label><label className="checkbox-row"><input name="preview" type="checkbox"/><span>{ar?"معاينة عامة":"Leçon en aperçu public"}</span></label></div><div className="field-row"><label><span>Titre FR</span><input name="titleFr" required/></label><label><span>العنوان AR</span><input name="titleAr" dir="rtl" required/></label></div><div className="field-row"><label><span>Description FR</span><textarea name="descriptionFr"/></label><label><span>الوصف AR</span><textarea name="descriptionAr" dir="rtl"/></label></div><div className="field-row admin-media-fields"><AdminObjectUpload locale={locale} name="videoObjectKey" category="course" accept="video/mp4" labelFr="Importer une vidéo privée" labelAr="رفع فيديو خاص"/><AdminObjectUpload locale={locale} name="documentObjectKey" category="course" accept="application/pdf,text/vtt" labelFr="Importer un document ou des sous-titres" labelAr="رفع وثيقة أو ترجمة"/></div>{isDevelopment ? <details className="admin-development-fields"><summary>{ar?"خيارات التطوير المحلية":"Options locales de développement"}</summary><div className="field-row"><label><span>{ar?"مسار الفيديو المحلي":"Chemin vidéo local"}</span><input name="videoUrl" placeholder="/demo/inclusion-intro.mp4"/></label><label><span>{ar?"مسار المستند المحلي":"Chemin document local"}</span><input name="documentUrl" placeholder="/demo/support.pdf"/></label></div></details> : null}<button className="btn btn-primary" disabled={state==="loading"}>{ar?"إضافة الدرس":"Ajouter la leçon"}</button><Feedback state={state} locale={locale}/></form>;
+  async function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const f = new FormData(form);
+    const mediaProvider = String(f.get("mediaProvider") || "cloudflare_stream");
+    const mediaRef = String(f.get("mediaRef") || "").trim() || null;
+    const videoUrl = String(f.get("videoUrl") || f.get("videoObjectKey") || "").trim() || null;
+
+    await send({
+      courseId: String(f.get("courseId")),
+      moduleId: String(f.get("moduleId") || "") || null,
+      position: Number(f.get("position")),
+      titleFr: String(f.get("titleFr")),
+      titleAr: String(f.get("titleAr")),
+      descriptionFr: String(f.get("descriptionFr") || ""),
+      descriptionAr: String(f.get("descriptionAr") || ""),
+      durationSeconds: Number(f.get("durationSeconds")),
+      videoUrl: mediaProvider === "internal" ? videoUrl : null,
+      documentUrl: String(f.get("documentObjectKey") || f.get("documentUrl") || "") || null,
+      preview: f.get("preview") === "on",
+      mediaProvider,
+      mediaRef,
+    }, form);
+  }
+  return <form className="admin-course-form" onSubmit={submit}>{courses.length === 1 ? <input type="hidden" name="courseId" value={courses[0].id}/> : <label><span>{ar ? "الدورة" : "Formation"}</span><select name="courseId" required defaultValue=""><option value="" disabled>{ar ? "اختر دورة" : "Choisir une formation"}</option>{courses.map(course => <option value={course.id} key={course.id}>{course.title}</option>)}</select></label>}<div className="field-row"><label><span>{ar ? "الوحدة (اختياري)" : "Module (optionnel)"}</span><select name="moduleId" defaultValue=""><option value="">{ar ? "بدون وحدة" : "Sans module"}</option>{modules.map(module => <option value={module.id} key={module.id}>{module.title}</option>)}</select></label><label><span>{ar ? "الترتيب" : "Position"}</span><input name="position" type="number" min="1" required/></label></div><div className="field-row"><label><span>{ar ? "المدة بالثواني" : "Durée (secondes)"}</span><input name="durationSeconds" type="number" min="0" defaultValue="300" required/></label><label className="checkbox-row"><input name="preview" type="checkbox"/><span>{ar ? "معاينة عامة" : "Leçon en aperçu public"}</span></label></div><div className="field-row"><label><span>Titre FR</span><input name="titleFr" required/></label><label><span>العنوان AR</span><input name="titleAr" dir="rtl" required/></label></div><div className="field-row"><label><span>Description FR</span><textarea name="descriptionFr"/></label><label><span>الوصف AR</span><textarea name="descriptionAr" dir="rtl"/></label></div><div className="field-row admin-media-fields"><AdminStreamVideoUploader locale={locale}/><AdminObjectUpload locale={locale} name="documentObjectKey" category="course" accept="application/pdf,text/vtt" labelFr="Importer un document ou des sous-titres" labelAr="رفع وثيقة أو ترجمة"/></div>{isDevelopment ? <details className="admin-development-fields"><summary>{ar ? "خيارات التطوير المحلية" : "Options locales de développement"}</summary><div className="field-row"><label><span>{ar ? "مسار المستند المحلي" : "Chemin document local"}</span><input name="documentUrl" placeholder="/demo/support.pdf"/></label></div></details> : null}<button className="btn btn-primary" disabled={state === "loading"}>{ar ? "إضافة الدرس" : "Ajouter la leçon"}</button><Feedback state={state} locale={locale}/></form>;
 }
+

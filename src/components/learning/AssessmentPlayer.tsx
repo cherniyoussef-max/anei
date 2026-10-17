@@ -16,7 +16,10 @@ type AssessmentData = {
   attempts: AttemptHistory[];
 };
 type Attempt = { id: string; expiresAt: string; attemptNumber: number };
-type Result = { id: string; attemptNumber: number; submittedAt: string; percentage: number; passed: boolean; rawPoints: number; maxPoints: number };
+type Result = {
+  id: string; attemptNumber: number; submittedAt: string; percentage: number; passed: boolean;
+  rawPoints: number; maxPoints: number; courseCompleted?: boolean; certificateCode?: string | null;
+};
 type Phase = "starting" | "in_progress" | "submitting" | "result" | "error";
 
 function formatSeconds(total: number) {
@@ -81,7 +84,17 @@ export function AssessmentPlayer({ locale, data, courseHref }: { locale: Locale;
     const response = await fetch(`/api/learning/attempts/${attempt.id}/submit`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ answers: data.questions.map((question) => ({ questionId: question.id, optionIds: answers[question.id] ?? [] })) }) });
     const body = await response.json().catch(() => ({}));
     if (!response.ok || !body.attempt) { setErrorCode(body.error ?? "ERROR"); setPhase("error"); return; }
-    const nextResult = { id: body.attempt.id, attemptNumber: body.attempt.attemptNumber, submittedAt: body.attempt.submittedAt, percentage: body.attempt.percentage, passed: body.attempt.passed, rawPoints: body.attempt.rawPoints, maxPoints: body.attempt.maxPoints };
+    const nextResult: Result = {
+      id: body.attempt.id,
+      attemptNumber: body.attempt.attemptNumber,
+      submittedAt: body.attempt.submittedAt,
+      percentage: body.attempt.percentage,
+      passed: body.attempt.passed,
+      rawPoints: body.attempt.rawPoints,
+      maxPoints: body.attempt.maxPoints,
+      courseCompleted: body.courseCompleted,
+      certificateCode: body.certificateCode,
+    };
     setResult(nextResult);
     setHistory((current) => current.some((item) => item.id === nextResult.id) ? current : [...current, { ...nextResult, status: "GRADED" }]);
     setPhase("result");
@@ -91,10 +104,38 @@ export function AssessmentPlayer({ locale, data, courseHref }: { locale: Locale;
   if (phase === "error") return <section className="assessment-player-error" role="alert"><Icon name="shield" size={28}/><h1>{errorCode === "MAX_ATTEMPTS" ? (ar ? "لا توجد محاولات متبقية" : "Aucune tentative restante") : errorCode === "EXPIRED" ? (ar ? "انتهى وقت المحاولة" : "Le temps est écoulé") : (ar ? "تعذر فتح التقييم" : "Impossible d’ouvrir l’évaluation")}</h1><p>{errorCode === "MAX_ATTEMPTS" ? (ar ? "لقد استنفدت عدد المحاولات المسموح بها." : "Vous avez utilisé toutes les tentatives autorisées.") : errorCode === "EXPIRED" ? (ar ? "لم يعد بإمكانك إرسال هذه المحاولة. عُد إلى الدورة أو ابدأ محاولة جديدة إذا كانت متاحة." : "Cette tentative ne peut plus être envoyée. Retournez au cours ou recommencez si une tentative reste disponible.") : errorCode === "FORBIDDEN" ? (ar ? "غير مسموح لك بإجراء هذا التقييم." : "Vous n’êtes pas autorisé à passer cette évaluation.") : (ar ? "حدث خطأ. حاول مرة أخرى." : "Une erreur est survenue. Réessayez.")}</p><div className="assessment-result-actions"><a className="btn btn-secondary" href={courseHref}>{ar ? "العودة إلى الدورة" : "Retour au cours"}</a>{errorCode === "EXPIRED" && attemptsRemaining > 0 ? <button className="btn btn-primary" onClick={() => void startAttempt()}>{ar ? "محاولة جديدة" : "Nouvelle tentative"}</button> : null}</div>{gradedHistory.length ? <AttemptHistoryList locale={locale} attempts={gradedHistory} bestScore={bestScore}/> : null}</section>;
 
   if (phase === "result" && result) return <section className={`assessment-result ${result.passed ? "is-pass" : "is-fail"}`}>
-    <div className="assessment-result-heading"><span>{ar ? "اكتمل التقييم" : "Évaluation terminée"}</span><h1>{result.percentage}%</h1><strong><Icon name={result.passed ? "check" : "shield"} size={18}/>{result.passed ? (ar ? "ناجحة" : "Réussie") : (ar ? "غير ناجحة" : "Non réussie")}</strong><p>{result.rawPoints} / {result.maxPoints} {ar ? "نقطة" : "points"}</p></div>
+    <div className="assessment-result-heading">
+      <span>{ar ? "اكتمل التقييم" : "Évaluation terminée"}</span>
+      <h1>{result.percentage}%</h1>
+      <strong><Icon name={result.passed ? "check" : "shield"} size={18}/>{result.passed ? (ar ? "ناجحة" : "Réussie") : (ar ? "غير ناجحة" : "Non réussie")}</strong>
+      <p>{result.rawPoints} / {result.maxPoints} {ar ? "نقطة" : "points"}</p>
+    </div>
+
     <div className="assessment-score-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={result.percentage} aria-label={ar ? "النتيجة" : "Score"}><span style={{ inlineSize: `${result.percentage}%` }}/></div>
+    
+    {/* Admin Transmission Confirmation Banner */}
+    <div className="assessment-admin-notice" style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderRadius: 8, background: "#f8fafc", border: "1px solid #e2e8f0", margin: "16px 0 10px", fontSize: 13, color: "#334155" }}>
+      <Icon name="check" size={16} />
+      <span>{ar ? "تم تسجيل النتيجة على الخادم وإرسالها مباشرة إلى إدارة ANEI." : "Résultat enregistré sur le serveur et transmis directement à l’administration ANEI."}</span>
+    </div>
+
+    {result.passed ? (
+      <div className="assessment-success-notice" style={{ padding: "14px 18px", borderRadius: 8, background: "#ecfdf5", border: "1px solid #a7f3d0", margin: "0 0 16px", color: "#065f46", fontSize: 13, fontWeight: 500 }}>
+        {ar
+          ? "تهانينا! لقد اجتزت التقييم بنجاح. تم تأكيد استيفاء متطلبات الدورة وتفعيل الشهادة الرسمية."
+          : "Félicitations ! Vous avez validé votre évaluation. Votre parcours de formation est validé et votre certificat officiel ANEI est débloqué."}
+      </div>
+    ) : null}
+
     <dl className="assessment-result-facts"><div><dt>{ar ? "درجة النجاح" : "Seuil de réussite"}</dt><dd>{data.assessment.passingScore}%</dd></div><div><dt>{ar ? "نتيجتك" : "Votre score"}</dt><dd>{result.percentage}%</dd></div><div><dt>{ar ? "أفضل نتيجة" : "Meilleur score"}</dt><dd>{bestScore ?? result.percentage}%</dd></div><div><dt>{ar ? "المحاولة" : "Tentative"}</dt><dd>{result.attemptNumber} / {data.assessment.maxAttempts}</dd></div><div><dt>{ar ? "المحاولات المتبقية" : "Tentatives restantes"}</dt><dd>{attemptsRemaining}</dd></div></dl>
-    <div className="assessment-result-actions"><a className="btn btn-secondary" href={courseHref}>{ar ? "العودة إلى الدورة" : "Retour au cours"}</a>{attemptsRemaining > 0 ? <button className="btn btn-primary" onClick={() => void startAttempt()}>{ar ? "إعادة التقييم" : "Réessayer l’évaluation"}</button> : <span className="assessment-no-attempts">{ar ? "لا توجد محاولات متبقية" : "Aucune tentative restante"}</span>}</div>
+    <div className="assessment-result-actions">
+      <a className="btn btn-secondary" href={courseHref}>{ar ? "العودة إلى الدورة" : "Retour au cours"}</a>
+      {attemptsRemaining > 0 ? (
+        <button className="btn btn-primary" onClick={() => void startAttempt()}>{ar ? "إعادة التقييم" : "Réessayer l’évaluation"}</button>
+      ) : (
+        <span className="assessment-no-attempts">{ar ? "لا توجد محاولات متبقية" : "Aucune tentative restante"}</span>
+      )}
+    </div>
     <AttemptHistoryList locale={locale} attempts={gradedHistory} bestScore={bestScore}/>
   </section>;
 

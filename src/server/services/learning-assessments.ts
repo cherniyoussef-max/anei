@@ -3,6 +3,7 @@ import { and, asc, count, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/server/db";
 import {
   auditLogs,
+  certificates,
   courses,
   enrollments,
   learningAnswer,
@@ -10,6 +11,10 @@ import {
   learningAttempt,
   learningQuestion,
   learningQuestionOption,
+  lessonProgress,
+  lessons,
+  notifications,
+  user,
 } from "@/server/db/schema";
 import { grantPoints, POINT_VALUES } from "@/server/services/points";
 import {
@@ -269,10 +274,128 @@ export async function submitLearningAttempt(userId: string, attemptId: string, a
     await tx.insert(learningAnswer).values(answerRows);
     const passed = percentage >= assessment.passingScore;
     const [graded] = await tx.update(learningAttempt).set({ status: "GRADED", submittedAt, rawPoints, maxPoints, percentage, passed }).where(eq(learningAttempt.id, attemptId)).returning();
+    
+    let courseCompleted = false;
+    let certificateCode: string | null = null;
     if (passed) {
       await grantPoints(tx, { userId, reason: "QUIZ_PASSED", delta: POINT_VALUES.QUIZ_PASSED, referenceType: "learning_attempt", referenceId: attemptId });
+
+      // Check if all lessons of the course have been completed
+      const [{ totalLessons }] = await tx
+        .select({ totalLessons: sql<number>`count(*)::int` })
+        .from(lessons)
+        .where(eq(lessons.courseId, assessment.courseId));
+
+      const [{ doneLessons }] = await tx
+        .select({ doneLessons: sql<number>`count(*)::int` })
+        .from(lessonProgress)
+        .innerJoin(lessons, eq(lessonProgress.lessonId, lessons.id))
+        .where(and(eq(lessonProgress.enrollmentId, attempt.enrollmentId), eq(lessonProgress.completed, true)));
+
+      if (totalLessons === 0 || doneLessons >= totalLessons) {
+        courseCompleted = true;
+        await tx
+          .update(enrollments)
+          .set({ progressPercent: 100, status: "completed", completedAt: new Date() })
+          .where(eq(enrollments.id, attempt.enrollmentId));
+
+        const code = `ANEI-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 12).toUpperCase()}`;
+        const [insertedCert] = await tx
+          .insert(certificates)
+          .values({ userId, courseId: assessment.courseId, code })
+          .onConflictDoNothing({ target: [certificates.userId, certificates.courseId] })
+          .returning({ code: certificates.code });
+
+        if (insertedCert) {
+          certificateCode = insertedCert.code;
+          await grantPoints(tx, {
+            userId,
+            reason: "COURSE_COMPLETE",
+            delta: POINT_VALUES.COURSE_COMPLETE,
+            referenceType: "course",
+            referenceId: assessment.courseId,
+          });
+        } else {
+          const [existingCert] = await tx
+            .select({ code: certificates.code })
+            .from(certificates)
+            .where(and(eq(certificates.userId, userId), eq(certificates.courseId, assessment.courseId)))
+            .limit(1);
+          certificateCode = existingCert?.code ?? null;
+        }
+      }
     }
-    return { kind: "ok" as const, attempt: graded, idempotent: false };
+
+    // 1. Fetch learner user details
+    const [learnerUser] = await tx
+      .select({ name: user.name, email: user.email })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+
+    // 2. Fetch course title
+    const [course] = await tx
+      .select({ id: courses.id, titleFr: courses.titleFr, titleAr: courses.titleAr })
+      .from(courses)
+      .where(eq(courses.id, assessment.courseId))
+      .limit(1);
+
+    // 3. Dispatch official notification to all platform administrators
+    const admins = await tx
+      .select({ id: user.id, locale: user.locale })
+      .from(user)
+      .where(inArray(user.role, ["ADMIN", "SUPER_ADMIN"]));
+
+    const learnerDisplayName = learnerUser?.name?.trim() || learnerUser?.email || "Apprenant";
+    const courseTitleFr = course?.titleFr ?? "Formation";
+    const courseTitleAr = course?.titleAr ?? "الدورة";
+    const assessmentTitleFr = assessment.titleFr;
+    const assessmentTitleAr = assessment.titleAr;
+
+    if (admins.length > 0) {
+      const notifRows = admins.map((admin) => {
+        const isAr = admin.locale === "ar";
+        return {
+          userId: admin.id,
+          type: "QUIZ_RESULT",
+          title: isAr ? "نتيجة اختبار جديدة" : "Nouveau résultat de quiz",
+          body: isAr
+            ? `حصل المتعلم "${learnerDisplayName}" على ${percentage}% (${passed ? "ناجح" : "غير ناجح"}) في اختبار "${assessmentTitleAr}" لدورة "${courseTitleAr}".`
+            : `L'apprenant "${learnerDisplayName}" a obtenu ${percentage}% (${passed ? "Réussi" : "Non réussi"}) au quiz "${assessmentTitleFr}" de la formation "${courseTitleFr}".`,
+          href: `/${admin.locale || "fr"}/admin/assessments`,
+          read: false,
+        };
+      });
+      await tx.insert(notifications).values(notifRows);
+    }
+
+    // 4. Record audit log
+    await tx.insert(auditLogs).values({
+      actorUserId: userId,
+      action: "learning_assessment.attempt.submitted",
+      entityType: "learning_attempt",
+      entityId: graded.id,
+      metadata: {
+        assessmentId: assessment.id,
+        courseId: assessment.courseId,
+        score: percentage,
+        rawPoints,
+        maxPoints,
+        passed,
+        attemptNumber: graded.attemptNumber,
+        learnerEmail: learnerUser?.email,
+        courseCompleted,
+        certificateCode,
+      },
+    });
+
+    return {
+      kind: "ok" as const,
+      attempt: graded,
+      idempotent: false,
+      courseCompleted,
+      certificateCode,
+    };
   });
 }
 
@@ -281,9 +404,11 @@ export async function getAdminAssessmentResults(limit = 50) {
     attempt: learningAttempt,
     assessment: { id: learningAssessment.id, titleFr: learningAssessment.titleFr, titleAr: learningAssessment.titleAr },
     course: { id: courses.id, titleFr: courses.titleFr, titleAr: courses.titleAr },
+    learner: { id: user.id, name: user.name, email: user.email },
   }).from(learningAttempt)
     .innerJoin(learningAssessment, eq(learningAttempt.assessmentId, learningAssessment.id))
     .innerJoin(courses, eq(learningAssessment.courseId, courses.id))
+    .innerJoin(user, eq(learningAttempt.userId, user.id))
     .where(eq(learningAttempt.status, "GRADED"))
     .orderBy(desc(learningAttempt.submittedAt)).limit(Math.min(100, Math.max(1, limit)));
 }

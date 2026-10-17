@@ -44,7 +44,7 @@ export default async function AdminUsers({ params, searchParams }: {
         <thead><tr><th>{ar ? "المستخدم" : "Utilisateur"}</th><th>Email</th><th>{ar ? "الدور" : "Rôle"}</th><th>{ar ? "المزود" : "Connexion"}</th><th>{ar ? "آخر نشاط" : "Dernière activité"}</th><th>{ar ? "التسجيلات" : "Inscriptions"}</th><th>{ar ? "التقدم" : "Progression"}</th><th><span className="sr-only">{ar ? "إجراءات" : "Actions"}</span></th></tr></thead>
         <tbody>{data.items.map((item) => <tr key={item.id}>
           <td><Link className="admin-user-cell" href={`/${locale}/admin/users/${item.id}`}><span>{item.name.slice(0,2).toUpperCase()}</span><strong>{item.name}</strong></Link></td>
-          <td>{item.email}</td><td><AdminUserRole userId={item.id} role={item.role} canEdit={canEdit}/></td>
+          <td>{item.email}</td><td><AdminUserRole userId={item.id} role={item.role} canEdit={canEdit} locale={locale}/></td>
           <td><span className="admin-provider">{item.provider === "google" ? "Google" : "Email"}</span></td>
           <td>{item.last_activity ? formatDate(item.last_activity,locale) : "—"}</td><td className="numeric">{item.enrollments}</td><td className="numeric">{item.completion}%</td>
           <td><Link className="admin-row-link" href={`/${locale}/admin/users/${item.id}`}>{ar ? "فتح" : "Ouvrir"}</Link></td>

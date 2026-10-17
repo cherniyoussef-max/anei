@@ -30,6 +30,7 @@ interface AdminUserSupportConsoleProps {
   allCourses: CourseItem[];
   enrollments: Array<Record<string, unknown>>;
   certificates: Array<Record<string, unknown>>;
+  quizAttempts?: Array<Record<string, unknown>>;
   locale: string;
 }
 
@@ -39,6 +40,7 @@ export function AdminUserSupportConsole({
   allCourses,
   enrollments,
   certificates,
+  quizAttempts = [],
   locale,
 }: AdminUserSupportConsoleProps) {
   const router = useRouter();
@@ -71,10 +73,33 @@ export function AdminUserSupportConsole({
   // Security & Sessions state
   const [revokingSessions, setRevokingSessions] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
+  const [impersonating, setImpersonating] = useState(false);
   const [secMsg, setSecMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Active section tab
   const [activePanel, setActivePanel] = useState<"identity" | "lms" | "certs" | "security">("identity");
+
+  // Handler: Impersonate Learner
+  const handleStartImpersonation = async () => {
+    setImpersonating(true);
+    try {
+      const res = await fetch("/api/admin/impersonate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetUserId: userId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.redirectUrl) {
+        window.location.href = data.redirectUrl;
+      } else {
+        alert(data.message || (ar ? "فشلت المعاينة." : "Impossible d'initier la prévisualisation."));
+      }
+    } catch {
+      alert(ar ? "خطأ في الاتصال." : "Erreur réseau.");
+    } finally {
+      setImpersonating(false);
+    }
+  };
 
   // Handler: Save Profile
   const handleSaveProfile = async (e: React.FormEvent) => {
@@ -364,17 +389,49 @@ export function AdminUserSupportConsole({
           </div>
         </div>
 
-        {/* Sub-nav switcher */}
-        <nav
-          style={{
-            display: "inline-flex",
-            background: "rgba(0,0,0,0.25)",
-            padding: 3,
-            borderRadius: 8,
-            gap: 4,
-          }}
-          aria-label={ar ? "أقسام الدعم" : "Sections support"}
-        >
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <button
+            type="button"
+            onClick={handleStartImpersonation}
+            disabled={impersonating}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "7px 14px",
+              borderRadius: 8,
+              background: "#0284c7",
+              color: "#ffffff",
+              border: "none",
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: impersonating ? "not-allowed" : "pointer",
+              transition: "background 0.15s ease",
+            }}
+            title={ar ? "معاينة مساحة المتعلم كما يراها المستخدم" : "Consulter l'espace apprenant tel que vu par l'utilisateur"}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+            <span>
+              {impersonating
+                ? (ar ? "جارٍ الفتح..." : "Connexion...")
+                : (ar ? "معاينة كمتعلم" : "Voir en tant qu'élève")}
+            </span>
+          </button>
+
+          {/* Sub-nav switcher */}
+          <nav
+            style={{
+              display: "inline-flex",
+              background: "rgba(0,0,0,0.25)",
+              padding: 3,
+              borderRadius: 8,
+              gap: 4,
+            }}
+            aria-label={ar ? "أقسام الدعم" : "Sections support"}
+          >
           <button
             type="button"
             onClick={() => setActivePanel("identity")}
@@ -444,6 +501,7 @@ export function AdminUserSupportConsole({
             {ar ? "الأمان والجلسات" : "Sécurité & Accès"}
           </button>
         </nav>
+        </div>
       </header>
 
       {/* Main Console Body */}
@@ -893,6 +951,78 @@ export function AdminUserSupportConsole({
                 })}
               </div>
             )}
+
+            {/* Quiz & Assessment attempts section */}
+            <div style={{ marginTop: 28, paddingTop: 20, borderTop: "1px solid #e2e8f0" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <h4 style={{ fontSize: 14, fontWeight: 700, color: "#334155", margin: 0 }}>
+                  {ar ? "نتائج ومحاولات الاختبارات والتقييمات" : "Résultats aux quiz & évaluations"}
+                </h4>
+                <span style={{ fontSize: 12, color: "#64748b" }}>
+                  {ar ? `${quizAttempts.length} محاولات مسجلة` : `${quizAttempts.length} tentative(s) enregistrée(s)`}
+                </span>
+              </div>
+
+              {quizAttempts.length === 0 ? (
+                <div style={{ padding: 16, textAlign: "center", color: "#64748b", background: "#f8fafc", borderRadius: 8, fontSize: 13 }}>
+                  {ar ? "لا توجد أي محاولات اختبار مسجلة لهذا المستخدم." : "Aucune tentative d’évaluation enregistrée pour le moment."}
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {quizAttempts.map((row) => {
+                    const item = row as Record<string, unknown>;
+                    const passed = Boolean(item.passed);
+                    const pct = Number(item.percentage) || 0;
+                    const rawPts = Number(item.raw_points) || 0;
+                    const maxPts = Number(item.max_points) || 0;
+                    const attemptNum = Number(item.attempt_number) || 1;
+                    const assessmentTitle = String(ar ? item.assessment_title_ar : item.assessment_title_fr);
+                    const courseTitle = String(ar ? item.course_title_ar : item.course_title_fr);
+
+                    return (
+                      <div
+                        key={String(item.id)}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "12px 16px",
+                          borderRadius: 8,
+                          background: "#fff",
+                          border: "1px solid #e2e8f0",
+                          gap: 12,
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: 13, color: "#1e293b" }}>{assessmentTitle}</div>
+                          <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
+                            {courseTitle} • {ar ? `المحاولة #${attemptNum}` : `Tentative #${attemptNum}`}
+                          </div>
+                        </div>
+
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <span
+                            style={{
+                              padding: "4px 8px",
+                              borderRadius: 4,
+                              fontSize: 12,
+                              fontWeight: 700,
+                              background: passed ? "#dcfce7" : "#fee2e2",
+                              color: passed ? "#15803d" : "#b91c1c",
+                            }}
+                          >
+                            {passed ? (ar ? "✓ ناجح" : "✓ Réussi") : (ar ? "✗ غير ناجح" : "✗ Non réussi")}
+                          </span>
+                          <strong style={{ fontSize: 14, color: "#0f172a" }}>{pct}%</strong>
+                          <span style={{ fontSize: 12, color: "#64748b" }}>({rawPts}/{maxPts} pts)</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

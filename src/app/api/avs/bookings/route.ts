@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { z } from "zod";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/server/db";
-import { avsBookingRequests, avsProfiles } from "@/server/db/schema";
+import { avsBookingRequests, avsProfiles, liveSessions } from "@/server/db/schema";
 import { auth } from "@/server/auth";
 import { consumeRateLimit } from "@/server/security/rate-limit";
 import { isTrustedMutation } from "@/server/security/origin";
@@ -23,9 +23,9 @@ const bookingSchema = z.object({
   interventionDomain: z.string().trim().max(100).optional().default(""),
   requestedDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format (YYYY-MM-DD)"),
   requestedTimeSlot: z.string().trim().min(3).max(50),
-  meetingType: z.enum(["IN_PERSON", "ONLINE", "HOME"]).default("IN_PERSON"),
+  meetingType: z.enum(["IN_PERSON", "ONLINE", "HOME", "ONLINE_VISIO"]).default("IN_PERSON"),
   notes: z.string().trim().max(1000).optional().default(""),
-  paymentMethod: z.enum(["CARD_ESCROW", "FLOUCI", "CLICKTOPAY", "ESCROW_SIMULATION"]).default("CARD_ESCROW"),
+  paymentMethod: z.enum(["CARD_ESCROW", "FLOUCI", "ESCROW_SIMULATION", "PAY_ON_SITE"]).default("CARD_ESCROW"),
   locale: z.enum(["fr", "ar", "en"]).default("fr"),
 });
 
@@ -61,12 +61,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "INVALID_INPUT", issues: parsed.error.flatten() }, { status: 400 });
   }
 
-  // Check target AVS profile exists and is visible
+  // Check target AVS or Specialist profile exists and is visible
   const [profile] = await db
     .select({
       id: avsProfiles.id,
       displayName: avsProfiles.displayName,
+      directoryType: avsProfiles.directoryType,
+      category: avsProfiles.category,
       hourlyRateMillimes: avsProfiles.hourlyRateMillimes,
+      inPersonPriceMillimes: avsProfiles.inPersonPriceMillimes,
+      onlineVisioPriceMillimes: avsProfiles.onlineVisioPriceMillimes,
+      consultationDurationMinutes: avsProfiles.consultationDurationMinutes,
       email: avsProfiles.email,
     })
     .from(avsProfiles)
@@ -77,13 +82,76 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "AVS_NOT_FOUND" }, { status: 404 });
   }
 
-  // Calculate Third-Party Escrow Payment
-  // Standard session rate based on AVS hourly rate (default 35 TND = 35000 millimes)
-  const baseRateMillimes = profile.hourlyRateMillimes > 0 ? profile.hourlyRateMillimes : 35000;
-  // ANEI 10% platform fee as third-party escrow guarantee
-  const platformFeeMillimes = Math.round(baseRateMillimes * 0.10);
-  const totalAmountMillimes = baseRateMillimes + platformFeeMillimes;
-  const avsPayoutMillimes = baseRateMillimes;
+  const isOnline = parsed.data.meetingType === "ONLINE" || parsed.data.meetingType === "ONLINE_VISIO";
+  const isSpecialist = profile.directoryType === "SPECIALIST";
+
+  let paymentMode: "PAY_ON_SITE" | "PLATFORM_ESCROW" = "PLATFORM_ESCROW";
+  let platformCommissionPercent = 10;
+  let platformFeeMillimes = 0;
+  let totalAmountMillimes = 0;
+  let avsPayoutMillimes = 0;
+  let escrowStatus: "NOT_APPLICABLE" | "HELD_IN_ESCROW" | "RELEASED_TO_PRACTITIONER" | "REFUNDED" = "HELD_IN_ESCROW";
+  let paymentStatus = "HELD_IN_ESCROW";
+
+  if (!isOnline && (isSpecialist || parsed.data.paymentMethod === "PAY_ON_SITE")) {
+    // In-person cabinet: 0% platform fee, paid directly on site
+    const baseRate = profile.inPersonPriceMillimes > 0 ? profile.inPersonPriceMillimes : (profile.hourlyRateMillimes > 0 ? profile.hourlyRateMillimes : 40000);
+    paymentMode = "PAY_ON_SITE";
+    platformCommissionPercent = 0;
+    platformFeeMillimes = 0;
+    totalAmountMillimes = baseRate;
+    avsPayoutMillimes = baseRate;
+    escrowStatus = "NOT_APPLICABLE";
+    paymentStatus = "PAY_ON_SITE";
+  } else if (isOnline) {
+    // Online Visio: 15% platform commission for specialists (10% for AVS) under ANEI escrow
+    const baseRate = profile.onlineVisioPriceMillimes > 0 ? profile.onlineVisioPriceMillimes : (profile.hourlyRateMillimes > 0 ? profile.hourlyRateMillimes : 35000);
+    paymentMode = "PLATFORM_ESCROW";
+    platformCommissionPercent = isSpecialist ? 15 : 10;
+    platformFeeMillimes = Math.round(baseRate * (platformCommissionPercent / 100));
+    totalAmountMillimes = baseRate + platformFeeMillimes;
+    avsPayoutMillimes = baseRate;
+    escrowStatus = "HELD_IN_ESCROW";
+    paymentStatus = "HELD_IN_ESCROW";
+  } else {
+    // Standard AVS in-person escrow booking (preserves existing escrow workflow)
+    const baseRate = profile.hourlyRateMillimes > 0 ? profile.hourlyRateMillimes : 35000;
+    paymentMode = "PLATFORM_ESCROW";
+    platformCommissionPercent = 10;
+    platformFeeMillimes = Math.round(baseRate * 0.10);
+    totalAmountMillimes = baseRate + platformFeeMillimes;
+    avsPayoutMillimes = baseRate;
+    escrowStatus = "HELD_IN_ESCROW";
+    paymentStatus = "HELD_IN_ESCROW";
+  }
+
+  // Provision Jitsi live session if online
+  let liveSessionId: string | null = null;
+  if (isOnline) {
+    try {
+      const meetingCode = `anei-visio-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
+      const [sessionRow] = await db
+        .insert(liveSessions)
+        .values({
+          titleFr: `Téléconsultation - ${profile.displayName} & ${parsed.data.childName}`,
+          titleAr: `استشارة عن بعد - ${profile.displayName} و ${parsed.data.childName}`,
+          descriptionFr: `Consultation individuelle sécurisée. Praticien : ${profile.displayName}.`,
+          descriptionAr: `استشارة فردية مشفرة ومؤمنة مع ${profile.displayName}.`,
+          provider: "JITSI",
+          externalMeetingUrl: `https://meet.jit.si/${meetingCode}`,
+          embedMode: "PORTAL_LAUNCH",
+          scope: "COURSE_SPECIFIC",
+          status: "SCHEDULED",
+          scheduledStartAt: new Date(parsed.data.requestedDate),
+          durationMinutes: profile.consultationDurationMinutes || 45,
+          createdById: session.user.id,
+        })
+        .returning({ id: liveSessions.id });
+      liveSessionId = sessionRow.id;
+    } catch (jitsiErr) {
+      logger.error("avs.booking.live_session_provision_error", { error: jitsiErr });
+    }
+  }
 
   const escrowRef = `ESC-2026-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
@@ -111,7 +179,12 @@ export async function POST(request: Request) {
       amountMillimes: totalAmountMillimes,
       platformFeeMillimes,
       avsPayoutMillimes,
-      paymentStatus: "HELD_IN_ESCROW",
+      paymentMode,
+      platformCommissionPercent,
+      netPractitionerPayoutMillimes: avsPayoutMillimes,
+      liveSessionId,
+      escrowStatus,
+      paymentStatus,
       paymentMethod: parsed.data.paymentMethod,
       paymentReference: escrowRef,
       paidAt: new Date(),

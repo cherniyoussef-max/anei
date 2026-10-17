@@ -2,6 +2,7 @@ import { count, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminSessionFor, adminMutationRateLimit } from "@/server/auth/admin";
+import { isSudoModeActive } from "@/server/auth/sudo";
 import { db } from "@/server/db";
 import { auditLogs, courses, enrollments } from "@/server/db/schema";
 import { isTrustedMutation } from "@/server/security/origin";
@@ -23,6 +24,9 @@ const patchSchema = z.object({
   durationMinutes: z.number().int().positive().max(100_000).optional(),
   level: z.enum(["beginner", "intermediate", "advanced"]).optional(),
   mode: z.enum(["online", "hybrid", "onsite"]).optional(),
+  qualifiesForProfessionalPromotion: z.boolean().optional(),
+  qualifyingTargetType: z.enum(["AVS", "SPECIALIST"]).nullable().optional(),
+  qualifyingTargetCategory: z.string().trim().max(100).nullable().optional(),
   coverImageObjectKey: z.string().min(3).max(1024).regex(/^[a-zA-Z0-9._\/-]+$/).nullable().optional(),
   objectives: z.object({
     fr: z.array(z.string().trim().min(1).max(300)).min(1).max(30),
@@ -60,6 +64,14 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   if (!session) return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
   const rate = await adminMutationRateLimit(session.user.id);
   if (!rate.allowed) return NextResponse.json({ error: "RATE_LIMITED" }, { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } });
+
+  const sudoActive = await isSudoModeActive(request, session.user.id);
+  if (!sudoActive) {
+    return NextResponse.json(
+      { error: "SUDO_REQUIRED", message: "Mode Sudo requis : veuillez confirmer votre mot de passe administrateur pour supprimer cette formation." },
+      { status: 403 }
+    );
+  }
 
   const id = await validatedId(params);
   if (!id.success) return NextResponse.json({ error: "INVALID_ID" }, { status: 400 });

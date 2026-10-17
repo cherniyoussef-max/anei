@@ -36,6 +36,8 @@ export const adminPermissions = [
   "audit.read",
   "system.read",
   "ai.knowledge.manage",
+  "live.manage",
+  "live.broadcast.global",
 ] as const;
 
 export type AdminPermission = (typeof adminPermissions)[number];
@@ -48,6 +50,7 @@ const adminCapabilities = new Set<AdminPermission>([
   "certificates.read", "webinars.read", "webinars.manage", "resources.read",
   "resources.manage", "rewards.manage", "availability.manage", "news.read", "news.manage", "orders.read", "payments.read",
   "payments.reconcile", "contacts.read", "contacts.manage", "crm.read", "crm.manage", "audit.read", "system.read",
+  "live.manage",
 ]);
 
 export function hasAdminPermission(role: string | null | undefined, permission: AdminPermission) {

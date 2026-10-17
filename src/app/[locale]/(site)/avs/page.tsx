@@ -149,9 +149,15 @@ export default async function AvsPage({
     };
   });
 
+  const breadcrumbs = [
+    { label: ar ? "الرئيسية" : "Accueil", href: `/${locale}` },
+    { label: ar ? "البحث عن مرافق" : "Trouver un AVS" },
+  ];
+
   return (
     <>
       <PageHero
+        breadcrumbs={breadcrumbs}
         eyebrow={ar ? "الشبكة الوطنية للمرافقة المدرسية" : en ? "National AVS Network" : "Réseau National des AVS"}
         title={
           ar
@@ -169,8 +175,8 @@ export default async function AvsPage({
         }
       />
 
-      <section className="bg-[#fcfbf8] py-8 lg:py-10 border-b border-slate-200/80">
-        <div className="container max-w-7xl mx-auto px-4 sm:px-6">
+      <section className="section bg-[#F4F7FA]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AvsFilter
             locale={locale}
             profiles={profiles}

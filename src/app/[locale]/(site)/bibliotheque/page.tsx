@@ -54,15 +54,21 @@ export default async function LibraryPage({ params, searchParams }: { params: Pr
       coverImageUrl: resource.coverImageUrl,
     };
   });
+  const breadcrumbs = [
+    { label: ar ? "الرئيسية" : "Accueil", href: `/${locale}` },
+    { label: ar ? "المكتبة" : "Bibliothèque" },
+  ];
+
   return (
     <>
       <PageHero
-        eyebrow={ar ? "المكتبة الرقمية" : en ? "Resource library" : "Librairie pédagogique"}
+        breadcrumbs={breadcrumbs}
+        eyebrow={ar ? "المكتبة الرقمية" : en ? "Resource library" : "Bibliothèque pédagogique"}
         title={ar ? "موارد مهنية موثوقة وقابلة للتحميل" : en ? "Reliable resources for inclusive practice" : "Des ressources professionnelles, utiles et accessibles"}
         description={ar ? "أدلة وشبكات وأدوات عملية، مع وصول محمي بعد الشراء." : en ? "Guides, frameworks and practical tools with protected access after purchase." : "Guides, grilles et outils pratiques avec téléchargement protégé après achat."}
       />
       <section className="section">
-        <div className="container">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ResourceCatalog
             locale={locale}
             resources={items}

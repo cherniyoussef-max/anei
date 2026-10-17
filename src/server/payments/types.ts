@@ -1,4 +1,4 @@
-export type PaymentProvider = "mock" | "flouci" | "clicktopay";
+export type PaymentProvider = "mock" | "flouci";
 
 export type CheckoutRequest = {
   orderId: string;

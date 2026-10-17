@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/server/auth";
 import { getSessionAssurance } from "@/server/auth/assurance";
+import { isImpersonationActive } from "@/server/auth/impersonation";
 import { updateLearnerProfile } from "@/server/auth/profile";
 import { isTrustedMutation } from "@/server/security/origin";
 import { readLimitedJson } from "@/server/security/request-body";
@@ -8,6 +9,9 @@ import { consumeRateLimit } from "@/server/security/rate-limit";
 
 export async function PATCH(request: Request) {
   if (!isTrustedMutation(request)) return NextResponse.json({ error: "UNTRUSTED_ORIGIN" }, { status: 403 });
+  if (await isImpersonationActive(request.headers)) {
+    return NextResponse.json({ error: "IMPERSONATION_READ_ONLY", message: "Action bloquée en mode prévisualisation support." }, { status: 403 });
+  }
   const session = await auth.api.getSession({ headers: request.headers, query: { disableCookieCache: true } });
   if (!session) return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
   const rate = await consumeRateLimit(`profile-update:${session.user.id}`, 30, 60);

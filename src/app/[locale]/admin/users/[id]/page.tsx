@@ -17,6 +17,8 @@ import {
   getTeacherProfileForUser,
 } from "@/server/services/persona-profiles";
 
+import { AdminUserPromotionPanel } from "@/components/admin/AdminUserPromotionPanel";
+
 export const dynamic = "force-dynamic";
 export default async function AdminUserDetail({ params, searchParams }: {
   params: Promise<{ locale: string; id: string }>; searchParams: Promise<{ tab?: string }>;
@@ -25,7 +27,41 @@ export default async function AdminUserDetail({ params, searchParams }: {
   const session = await requireAdminPermission(locale, "users.read");
   const data = await getAdminUserDetail(id); if (!data) notFound();
   const ar = locale === "ar"; const tab = (await searchParams).tab ?? "overview";
-  const tabs = [["overview",ar?"نظرة عامة":"Vue d’ensemble"],["learning",ar?"التعلّم":"Apprentissage"],["certificates",ar?"الشهادات":"Certificats"],["sessions",ar?"الجلسات":"Sessions"],["personas",ar?"الأدوار":"Personas"],["audit",ar?"التدقيق":"Audit"]] as const;
+  const tabs = [
+    ["overview", ar ? "نظرة عامة" : "Vue d’ensemble"],
+    ["learning", ar ? "التعلّم" : "Apprentissage"],
+    ["certificates", ar ? "الشهادات" : "Certificats"],
+    ["promotion", ar ? "الترقية المهنية" : "Promotion & Agrément"],
+    ["sessions", ar ? "الجلسات" : "Sessions"],
+    ["personas", ar ? "الأدوار" : "Personas"],
+    ["audit", ar ? "التدقيق" : "Audit"],
+  ] as const;
+
+  const qualifyingCoursesData = (data.qualifyingCourses ?? []).map((qc) => {
+    const enrollment = data.enrollments.find((e) => String(e.course_id) === qc.id) as Record<string, unknown> | undefined;
+    const isCompleted = Boolean(enrollment && (enrollment.status === "COMPLETED" || Number(enrollment.progress_percent) >= 100));
+    return {
+      id: qc.id,
+      titleFr: qc.title_fr,
+      titleAr: qc.title_ar,
+      targetType: qc.qualifying_target_type,
+      targetCategory: qc.qualifying_target_category,
+      isEnrolled: Boolean(enrollment),
+      isCompleted,
+      progressPercent: enrollment ? Number(enrollment.progress_percent) || 0 : 0,
+    };
+  });
+
+  const certificatesData = data.certificates.map((c) => {
+    const item = c as Record<string, unknown>;
+    return {
+      id: String(item.id),
+      courseTitleFr: String(item.title_fr || ""),
+      courseTitleAr: String(item.title_ar || ""),
+      issuedAt: item.issued_at as Date,
+      code: String(item.code || ""),
+    };
+  });
   // Uncached (unlike getAdminUserDetail's Redis-cached SQL blob) to keep the
   // admin persona-mutation → invalidateAdminUserCaches path simple: this
   // section always reflects the current DB state without a separate cache
@@ -63,6 +99,7 @@ export default async function AdminUserDetail({ params, searchParams }: {
         allCourses={data.allCourses}
         enrollments={data.enrollments}
         certificates={data.certificates}
+        quizAttempts={data.quizAttempts}
         locale={locale}
       />
     )}
@@ -84,9 +121,42 @@ export default async function AdminUserDetail({ params, searchParams }: {
           <b>{pct}%</b>
         </div></article>;
       })}{!data.videoProgress.length?<p className="admin-empty">{ar?"لا توجد مقاطع فيديو تمت مشاهدتها.":"Aucune vidéo visionnée."}</p>:null}</div>
+
+      <h2 className="admin-section-heading-spaced">{ar?"نتائج الاختبارات والتقييمات":"Résultats aux quiz & évaluations"}</h2>
+      <div className="admin-list">{data.quizAttempts?.map((row) => {
+        const item = row as Record<string, unknown>;
+        const passed = Boolean(item.passed);
+        return (
+          <article key={String(item.id)}>
+            <div>
+              <strong>{String(ar ? item.assessment_title_ar : item.assessment_title_fr)}</strong>
+              <small>
+                {String(ar ? item.course_title_ar : item.course_title_fr)} · {ar ? `المحاولة #${item.attempt_number}` : `Tentative #${item.attempt_number}`} · {item.submitted_at ? formatDate(item.submitted_at as Date, locale) : "—"}
+              </small>
+            </div>
+            <div className="admin-quiz-score-badge">
+              <span className={`admin-status ${passed ? "is-success" : "is-danger"}`}>
+                {passed ? (ar ? "ناجح" : "Réussi") : (ar ? "غير ناجح" : "Non réussi")}
+              </span>
+              <b>{String(item.percentage)}%</b>
+              <small>({String(item.raw_points)}/{String(item.max_points)} pts)</small>
+            </div>
+          </article>
+        );
+      })}{!data.quizAttempts?.length ? <p className="admin-empty">{ar ? "لا توجد محاولات تقييم لهذا المستخدم." : "Aucune tentative d’évaluation pour cet utilisateur."}</p> : null}</div>
       
       </div>:null}
       {tab === "certificates" ? <div><h2>{ar?"الشهادات":"Certificats"}</h2><div className="admin-list">{data.certificates.map((row) => {const item=row as Record<string,unknown>;return <article key={String(item.id)}><div><strong>{String(ar?item.title_ar:item.title_fr)}</strong><small>{String(item.code)}</small></div><b>{formatDate(item.issued_at as Date,locale)}</b></article>})}</div></div>:null}
+      {tab === "promotion" ? (
+        <AdminUserPromotionPanel
+          locale={locale}
+          userId={id}
+          userName={data.user.name}
+          currentPostStatus={data.user.professional_post_status}
+          qualifyingCourses={qualifyingCoursesData}
+          certificates={certificatesData}
+        />
+      ) : null}
       {tab === "sessions" ? <div><h2>{ar?"جلسات الحساب":"Sessions du compte"}</h2><div className="admin-list">{data.sessions.map((row) => {const item=row as Record<string,unknown>;return <article key={String(item.id)}><div><strong>{String(item.user_agent ?? (ar?"جهاز غير معروف":"Appareil inconnu"))}</strong><small>{item.ip_address?String(item.ip_address):"—"}</small></div><b>{formatDate(item.updated_at as Date,locale)}</b></article>})}</div><p className="admin-help">{ar?"يمكنك إنهاء وإبطال كافة الجلسات النشطة من لوحة دعم Super Admin أعلاه (قسم الأمان والجلسات).":"Vous pouvez révoquer l'ensemble des sessions actives depuis la console support ci-dessus (onglet Sécurité & Accès)."}</p></div>:null}
       {tab === "personas" ? <div><h2>{ar?"الأدوار (Personas)":"Personas"}</h2><AdminUserPersonas userId={id} memberships={personaMemberships.map((m) => ({ persona: m.persona, status: m.status, isPrimary: m.isPrimary }))} canEdit={hasAdminPermission(String(session.user.role), "personas.manage")}/>
         {teacherProfile && <article className="admin-persona-profile admin-persona-profile-first"><div><strong>{ar?"ملف التدريس":"Profil enseignant"}</strong><small>{[teacherProfile.discipline, teacherProfile.qualification, teacherProfile.experienceYears != null ? `${teacherProfile.experienceYears} ${ar?"سنة خبرة":"ans d'expérience"}` : null, teacherProfile.professionalInstitution].filter(Boolean).join(" · ") || (ar?"لا توجد تفاصيل":"Aucun détail")}</small></div></article>}

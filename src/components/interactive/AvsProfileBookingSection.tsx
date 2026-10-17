@@ -49,7 +49,7 @@ export function AvsProfileBookingSection({ locale, avs }: AvsProfileBookingSecti
     <div className="avs-booking-widget bg-white rounded-2xl border border-slate-200/90 shadow-xs p-6 sm:p-7 space-y-6">
       {/* Header */}
       <div className="border-b border-slate-100 pb-4">
-        <div className="text-[11px] font-bold uppercase tracking-wider text-[#0056D2]">
+        <div className="text-[11px] font-bold uppercase tracking-wider text-[#1B3A5C]">
           {ar ? "حجز موعد فوري" : "Prise de rendez-vous en ligne"}
         </div>
         <h3 className="text-lg sm:text-xl font-bold text-[#0F172A] mt-1">
@@ -72,7 +72,7 @@ export function AvsProfileBookingSection({ locale, avs }: AvsProfileBookingSecti
       <div>
         <div className="flex items-center justify-between text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
           <span>{ar ? "1. صيغة المقابلة" : "1. Modalité de la rencontre"}</span>
-          <span className="text-[11px] font-semibold text-[#0056D2]">
+          <span className="text-[11px] font-semibold text-[#1B3A5C]">
             {meetingType === "IN_PERSON"
               ? ar ? "حضوري" : "Sur place"
               : ar ? "عن بعد" : "En ligne"}
@@ -82,9 +82,9 @@ export function AvsProfileBookingSection({ locale, avs }: AvsProfileBookingSecti
           <button
             type="button"
             onClick={() => setMeetingType("IN_PERSON")}
-            className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0056D2] ${
+            className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3A5C] ${
               meetingType === "IN_PERSON"
-                ? "border-[#0056D2] bg-[#0056D2] text-white shadow-xs font-bold"
+                ? "border-[#1B3A5C] bg-[#1B3A5C] text-white shadow-xs font-bold"
                 : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-700"
             }`}
           >
@@ -94,9 +94,9 @@ export function AvsProfileBookingSection({ locale, avs }: AvsProfileBookingSecti
           <button
             type="button"
             onClick={() => setMeetingType("ONLINE")}
-            className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0056D2] ${
+            className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3A5C] ${
               meetingType === "ONLINE"
-                ? "border-[#0056D2] bg-[#0056D2] text-white shadow-xs font-bold"
+                ? "border-[#1B3A5C] bg-[#1B3A5C] text-white shadow-xs font-bold"
                 : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-700"
             }`}
           >
@@ -133,9 +133,9 @@ export function AvsProfileBookingSection({ locale, avs }: AvsProfileBookingSecti
                 type="button"
                 onClick={() => setSelectedDate(d.iso)}
                 aria-pressed={isSelected}
-                className={`py-2 px-1 rounded-xl border text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0056D2] ${
+                className={`py-2 px-1 rounded-xl border text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3A5C] ${
                   isSelected
-                    ? "border-[#0056D2] bg-[#0056D2] text-white shadow-xs font-bold"
+                    ? "border-[#1B3A5C] bg-[#1B3A5C] text-white shadow-xs font-bold"
                     : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-700"
                 }`}
               >
@@ -165,9 +165,9 @@ export function AvsProfileBookingSection({ locale, avs }: AvsProfileBookingSecti
                 type="button"
                 onClick={() => setSelectedSlot(slot)}
                 aria-pressed={isSelected}
-                className={`py-2.5 px-2 rounded-xl border text-xs text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0056D2] ${
+                className={`py-2.5 px-2 rounded-xl border text-xs text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3A5C] ${
                   isSelected
-                    ? "border-[#0056D2] bg-[#0056D2] text-white shadow-xs font-bold"
+                    ? "border-[#1B3A5C] bg-[#1B3A5C] text-white shadow-xs font-bold"
                     : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-700 font-medium"
                 }`}
               >
@@ -183,7 +183,7 @@ export function AvsProfileBookingSection({ locale, avs }: AvsProfileBookingSecti
         <button
           type="button"
           onClick={() => setIsModalOpen(true)}
-          className="w-full py-3.5 px-4 bg-[#0056D2] hover:bg-[#00419E] text-white font-bold text-sm rounded-xl shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0056D2] focus-visible:ring-offset-2"
+          className="w-full py-3.5 px-4 bg-[#1B3A5C] hover:bg-[#24476E] text-white font-bold text-sm rounded-xl shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3A5C] focus-visible:ring-offset-2"
         >
           <Icon name="calendar" size={16} />
           <span>{ar ? "تأكيد الموعد ومتابعة الطلب" : "Prendre ce rendez-vous"}</span>
@@ -199,10 +199,10 @@ export function AvsProfileBookingSection({ locale, avs }: AvsProfileBookingSecti
         <button
           type="button"
           onClick={() => setShowDirectContact(!showDirectContact)}
-          className="w-full text-xs font-semibold text-slate-600 hover:text-[#0056D2] flex items-center justify-between py-1 transition-colors group"
+          className="w-full text-xs font-semibold text-slate-600 hover:text-[#1B3A5C] flex items-center justify-between py-1 transition-colors group"
         >
           <span className="flex items-center gap-2">
-            <Icon name="phone" size={14} className="text-slate-400 group-hover:text-[#0056D2]" />
+            <Icon name="phone" size={14} className="text-slate-400 group-hover:text-[#1B3A5C]" />
             <span>{ar ? "معلومات الاتصال المباشر" : "Coordonnées de l'accompagnant"}</span>
           </span>
           <Icon

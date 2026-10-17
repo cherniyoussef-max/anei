@@ -1,30 +1,46 @@
-/* Public-only visual contract. This layer intentionally does not style learner or admin shells. */
+/* Public-only visual contract. Aligned 100% with canonical ANEI design tokens. */
 .public-experience,
 .public-auth-experience {
-  --public-brand-navy: #082d55;
-  --public-brand-navy-strong: #061f3d;
-  --public-brand-navy-soft: #174f83;
-  --public-brand-gold: #c9913f;
-  --public-brand-gold-strong: #8c5d20;
-  --public-brand-gold-muted: #ead6b8;
-  --public-surface-page: #fcfbf8;
-  --public-surface-card: #ffffff;
-  --public-surface-warm: #f6f3ee;
-  --public-surface-muted: #f0f3f6;
-  --public-text-primary: #09284a;
-  --public-text-secondary: #34465a;
-  --public-text-muted: #647184;
-  --public-text-on-dark: #f8fafc;
-  --public-text-on-dark-muted: #c7d4e2;
-  --public-border-subtle: #dce2e8;
-  --public-border-strong: #bdc8d3;
-  --public-focus: #2c6bed;
+  --public-brand-navy: #1B3A5C;
+  --public-brand-navy-strong: #24476E;
+  --public-brand-navy-soft: #3A8DB5;
+  --public-brand-gold: #B8925A;
+  --public-brand-gold-strong: #9E7A45;
+  --public-brand-gold-muted: #E2D3B8;
+  --public-surface-page: #FFFFFF;
+  --public-surface-card: #FFFFFF;
+  --public-surface-warm: #F4F7FA;
+  --public-surface-muted: #F4F7FA;
+  --public-text-primary: #1B3A5C;
+  --public-text-secondary: #3D4A5C;
+  --public-text-muted: #6B7685;
+  --public-text-on-dark: #FFFFFF;
+  --public-text-on-dark-muted: rgba(255, 255, 255, 0.85);
+  --public-border-subtle: #E3E8EF;
+  --public-border-strong: #CBD5E1;
+  --public-focus: #3A8DB5;
   --public-success: #14765a;
   --public-danger: #b42318;
-  --public-radius-control: 8px;
+  --public-radius-control: 9999px;
   --public-radius-card: 12px;
-  --public-radius-media: 16px;
-  --public-shadow-raised: 0 16px 42px rgb(8 45 85 / 10%);
+  --public-radius-media: 12px;
+  --public-shadow-raised: 0 4px 16px rgba(27, 58, 92, 0.06);
+
+  /* Canonical design tokens mirror */
+  --navy-900: #1B3A5C;
+  --navy-700: #24476E;
+  --teal-500: #3A8DB5;
+  --gold-500: #B8925A;
+  --text-700: #3D4A5C;
+  --text-500: #6B7685;
+  --bg-white: #FFFFFF;
+  --bg-soft: #F4F7FA;
+  --border: #E3E8EF;
+  --card-shadow: 0 4px 16px rgba(27, 58, 92, 0.05);
+  --card-shadow-hover: 0 8px 24px rgba(27, 58, 92, 0.11);
+  --font-serif: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-ar: var(--font-arabic), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
   /* Compatibility aliases for the older shared component layer. */
   --bg: var(--public-surface-page);
@@ -44,7 +60,7 @@
   display: flex;
   flex-direction: column;
   background: var(--public-surface-page);
-  color: var(--public-text-primary);
+  color: var(--public-text-secondary);
 }
 
 .public-experience main {
@@ -60,7 +76,6 @@
 .public-experience :is(h1, h2, h3, h4),
 .public-auth-experience :is(h1, h2, h3, h4) {
   color: var(--public-text-primary);
-  font-family: inherit !important;
 }
 
 .public-experience :is(a, button, input, select, textarea):focus-visible,
@@ -73,20 +88,26 @@
 .public-experience .btn,
 .public-auth-experience .btn {
   min-height: 44px;
-  border-radius: var(--public-radius-control);
+  border-radius: 9999px;
   box-shadow: none;
-  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease, transform 140ms ease;
+  font-weight: 600;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .public-experience .btn-primary,
 .public-auth-experience .btn-primary {
-  background: var(--public-brand-navy) !important;
-  color: var(--public-text-on-dark) !important;
+  background: var(--navy-900, #1B3A5C) !important;
+  color: #FFFFFF !important;
+  border: 1px solid var(--navy-900, #1B3A5C) !important;
+  border-radius: 9999px !important;
+  padding: 10px 24px;
 }
 
 .public-experience .btn-primary:hover,
 .public-auth-experience .btn-primary:hover {
-  background: var(--public-brand-navy-strong) !important;
+  background: var(--navy-700, #24476E) !important;
+  border-color: var(--navy-700, #24476E) !important;
+  box-shadow: 0 6px 18px rgba(27, 58, 92, 0.18) !important;
 }
 
 .public-experience .account-menu { position: relative; }
@@ -100,24 +121,25 @@
 [dir="rtl"] .public-experience .account-menu[open] .account-chip > svg { transform: rotate(-90deg); }
 .public-experience .account-menu-panel { position: absolute; z-index: 40; inset-block-start: calc(100% + 9px); inset-inline-end: 0; width: 224px; display: grid; padding: 7px; border: 1px solid var(--public-border-subtle); border-radius: var(--public-radius-card); background: var(--public-surface-card); box-shadow: var(--public-shadow-raised); transform-origin: top right; }
 [dir="rtl"] .public-experience .account-menu-panel { transform-origin: top left; }
-.public-experience .account-menu-panel :is(a, button) { min-height: 44px; display: flex; align-items: center; gap: 10px; border: 0; border-radius: var(--public-radius-control); padding: 9px 10px; background: transparent; color: var(--public-text-secondary); font-size: .75rem; font-weight: 700; text-align: start; }
-.public-experience .account-menu-signout { border-block-start: 1px solid var(--public-border-subtle) !important; border-radius: 0 0 var(--public-radius-control) var(--public-radius-control) !important; margin-block-start: 5px; padding-block-start: 12px !important; }
+.public-experience .account-menu-panel :is(a, button) { min-height: 44px; display: flex; align-items: center; gap: 10px; border: 0; border-radius: 8px; padding: 9px 10px; background: transparent; color: var(--public-text-secondary); font-size: .75rem; font-weight: 700; text-align: start; }
+.public-experience .account-menu-signout { border-block-start: 1px solid var(--public-border-subtle) !important; border-radius: 0 0 8px 8px !important; margin-block-start: 5px; padding-block-start: 12px !important; }
 .public-experience .account-menu-signout > svg { transform: rotate(-45deg); }
 [dir="rtl"] .public-experience .account-menu-signout > svg { transform: rotate(225deg); }
 
 .public-experience .btn-secondary,
 .public-auth-experience .btn-secondary {
-  border: 1px solid var(--public-border-strong);
-  background: var(--public-surface-card) !important;
-  color: var(--public-brand-navy) !important;
+  border: 1.5px solid var(--navy-900, #1B3A5C) !important;
+  background: transparent !important;
+  color: var(--navy-900, #1B3A5C) !important;
+  border-radius: 9999px !important;
+  padding: 10px 24px;
 }
 
 .public-experience .btn-secondary:hover,
-.public-auth-experience .btn-secondary:hover,
-.public-experience .btn-ghost:hover,
-.public-auth-experience .btn-ghost:hover {
-  border-color: var(--public-brand-navy);
-  background: var(--public-surface-warm) !important;
+.public-auth-experience .btn-secondary:hover {
+  background: var(--navy-900, #1B3A5C) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 6px 18px rgba(27, 58, 92, 0.14) !important;
 }
 
 .public-experience :is(.btn-ghost, .btn-soft),
@@ -237,50 +259,70 @@
 }
 
 .public-experience :is(.course-card, .resource-card, .avs-card, .webinar-large-card, .calendar-card, .news-card, .value-card, .prose-card, .info-card, .contact-info-card, .contact-form, .purchase-note) {
-  border-color: var(--public-border-subtle) !important;
-  border-radius: var(--public-radius-card) !important;
-  background: var(--public-surface-card) !important;
-  box-shadow: none !important;
+  border: 1px solid var(--border, #E3E8EF) !important;
+  border-radius: 12px !important;
+  background: #FFFFFF !important;
+  box-shadow: 0 4px 16px rgba(27, 58, 92, 0.05) !important;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .public-experience :is(.course-card, .resource-card, .avs-card, .webinar-large-card, .news-card):hover {
-  border-color: var(--public-border-strong) !important;
-  box-shadow: var(--public-shadow-raised) !important;
+  transform: translateY(-2px);
+  border-color: #CBD5E1 !important;
+  box-shadow: 0 8px 24px rgba(27, 58, 92, 0.11) !important;
 }
 
 .public-experience .course-catalog-premium .course-card-human {
-  border-color: var(--public-border-subtle);
-  border-radius: var(--public-radius-card);
+  border-color: var(--border, #E3E8EF);
+  border-radius: 12px;
 }
 
 .public-experience :is(.course-category-label, .resource-audience, .news-tag) {
-  color: var(--public-brand-gold-strong) !important;
+  color: var(--gold-500, #B8925A) !important;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.12em;
 }
 
 .public-experience :is(.course-level-label, .resource-level) {
-  border-color: var(--public-border-subtle);
-  background: var(--public-surface-muted);
-  color: var(--public-text-secondary);
+  border: 1px solid var(--border, #E3E8EF);
+  background: var(--bg-soft, #F4F7FA);
+  color: var(--text-700, #3D4A5C);
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
 }
 
 .public-experience :is(.mini-avatar, .avs-avatar) {
-  background: var(--public-surface-warm) !important;
-  color: var(--public-brand-navy) !important;
+  background: var(--navy-900, #1B3A5C) !important;
+  color: #FFFFFF !important;
 }
 
-.public-experience :is(.certified, .status-pill, .status-pill.replay) {
-  background: var(--public-surface-warm) !important;
-  color: var(--public-brand-gold-strong) !important;
+.public-experience :is(.certified, .status-pill) {
+  background: var(--bg-soft, #F4F7FA) !important;
+  color: var(--navy-900, #1B3A5C) !important;
+  border: 1px solid var(--border, #E3E8EF) !important;
+  border-radius: 9999px;
+  font-weight: 600;
+}
+
+.public-experience .status-pill.replay {
+  background: #EFF6FF !important;
+  color: var(--teal-500, #3A8DB5) !important;
+  border: 1px solid #BFDBFE !important;
 }
 
 .public-experience .available-dot::before {
-  background: var(--public-brand-gold);
+  background: var(--teal-500, #3A8DB5);
 }
 
 .public-experience .webinar-date-block,
 .public-experience .mini-event-list > div > span {
-  background: var(--public-brand-gold) !important;
-  color: var(--public-brand-navy-strong) !important;
+  background: var(--navy-900, #1B3A5C) !important;
+  color: #FFFFFF !important;
+  border-radius: 8px;
 }
 
 .public-experience .news-premium .news-visual {
@@ -344,7 +386,7 @@
 }
 
 .public-experience .course-enroll-actions { display: grid; gap: 9px; margin-inline: 20px; }
-.public-experience .course-detail-tabs { position: sticky; z-index: 12; inset-block-start: 76px; display: flex; gap: 4px; overflow-x: auto; margin-block-start: 18px; padding: 5px; border: 1px solid var(--public-border-subtle); border-radius: var(--public-radius-control); background: rgb(252 251 248 / 96%); scrollbar-width: none; }
+.public-experience .course-detail-tabs { position: sticky; z-index: 12; inset-block-start: 76px; display: flex; gap: 4px; overflow-x: auto; margin-block-start: 18px; padding: 5px; border: 1px solid var(--public-border-subtle); border-radius: var(--public-radius-control); background: var(--public-surface-card); box-shadow: var(--public-shadow-ambient); scrollbar-width: none; }
 .public-experience .course-detail-tabs::-webkit-scrollbar { display: none; }
 .public-experience .course-detail-tabs a { min-height: 42px; flex: 1 0 auto; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; padding-inline: 16px; color: var(--public-text-secondary); font-size: .75rem; font-weight: 720; }
 .public-experience .course-trainer-card { display: flex; align-items: center; gap: 12px; }

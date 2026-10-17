@@ -2,11 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const routes = ["formations", "rendez-vous", "ressources", "certificats", "profil"];
+const routes = ["formations", "ressources", "certificats", "profil"];
 
 test("learner navigation uses real route URLs and route-aware aria-current, never dashboard hashes", async () => {
   const source = await readFile("src/components/student/StudentNavigation.tsx", "utf8");
   for (const route of routes) assert.equal(source.includes(`${'${base}'}/${route}`), true);
+  assert.equal(source.includes("/learning/live"), true);
+  assert.equal(source.includes("rendez-vous"), false);
   assert.equal(source.includes("#courses"), false);
   assert.equal(source.includes("#sessions"), false);
   assert.equal(source.includes('aria-current={active ? "page" : undefined}'), true);

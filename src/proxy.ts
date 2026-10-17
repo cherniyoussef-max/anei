@@ -59,6 +59,8 @@ export function proxy(request: NextRequest) {
   const pathLocale = request.nextUrl.pathname.split("/")[1];
   requestHeaders.set("x-anei-locale", pathLocale === "ar" ? "ar" : pathLocale === "en" ? "en" : "fr");
   requestHeaders.set("x-anei-pathname", request.nextUrl.pathname);
+  requestHeaders.set("x-anei-search", request.nextUrl.search);
+  requestHeaders.set("x-anei-url", `${request.nextUrl.pathname}${request.nextUrl.search}`);
   requestHeaders.set("Content-Security-Policy", csp);
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
@@ -71,6 +73,25 @@ export function proxy(request: NextRequest) {
   if (!isDev) {
     response.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
   }
+
+  const pathname = request.nextUrl.pathname;
+  const hasAuthCookie = request.cookies.getAll().some((c) => c.name.includes("session_token"));
+  const isDynamicRoute =
+    hasAuthCookie ||
+    pathname.startsWith("/api") ||
+    pathname.includes("/dashboard") ||
+    pathname.includes("/admin") ||
+    pathname.includes("/parent") ||
+    pathname.includes("/teacher") ||
+    pathname.includes("/apprendre") ||
+    pathname.includes("/auth");
+
+  if (isDynamicRoute) {
+    response.headers.set("Cache-Control", "private, no-cache, no-store, max-age=0, must-revalidate");
+  } else {
+    response.headers.set("Cache-Control", "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400");
+  }
+
   return response;
 }
 

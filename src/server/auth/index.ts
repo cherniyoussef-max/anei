@@ -121,13 +121,13 @@ export const auth = betterAuth({
   rateLimit: {
     enabled: true,
     window: 60,
-    max: 120,
+    max: env.NODE_ENV !== "production" || isLocalProductionSmoke ? 500 : 120,
     storage: "database",
     customRules: {
-      "/sign-in/email": { window: 60, max: isLocalProductionSmoke ? 100 : 8 },
-      "/sign-in/social": { window: 60, max: isLocalProductionSmoke ? 100 : 10 },
-      "/sign-up/email": { window: 60, max: isLocalProductionSmoke ? 100 : 5 },
-      "/request-password-reset": { window: 300, max: isLocalProductionSmoke ? 50 : 5 },
+      "/sign-in/email": { window: 60, max: env.NODE_ENV !== "production" || isLocalProductionSmoke ? 200 : 8 },
+      "/sign-in/social": { window: 60, max: env.NODE_ENV !== "production" || isLocalProductionSmoke ? 200 : 10 },
+      "/sign-up/email": { window: 60, max: env.NODE_ENV !== "production" || isLocalProductionSmoke ? 200 : 5 },
+      "/request-password-reset": { window: 300, max: env.NODE_ENV !== "production" || isLocalProductionSmoke ? 100 : 5 },
     },
   },
   advanced: {

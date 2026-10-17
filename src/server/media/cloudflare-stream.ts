@@ -54,3 +54,59 @@ export async function getStreamPlayback(videoUid: string) {
     expiresAt: new Date(exp * 1000).toISOString(),
   };
 }
+
+/**
+ * Requests a direct-upload URL from Cloudflare Stream so an administrator's
+ * browser can upload a video file directly to Cloudflare without routing
+ * gigabytes of video binary through Vercel serverless functions (which have a
+ * 4.5MB payload limit and incur high bandwidth costs).
+ *
+ * The returned uid is the permanent 32-character video identifier, pre-allocated
+ * by Cloudflare before the upload begins.
+ */
+export async function createStreamDirectUpload(options?: { maxDurationSeconds?: number; expiryMinutes?: number }) {
+  if (!cloudflareStreamConfigured) throw new MediaConfigurationError("CLOUDFLARE_STREAM_NOT_CONFIGURED");
+
+  const maxDurationSeconds = options?.maxDurationSeconds ?? 14400; // 4 hours maximum
+  const expiryMinutes = options?.expiryMinutes ?? 60; // 1 hour upload window
+  const expiry = new Date(Date.now() + expiryMinutes * 60 * 1000).toISOString();
+
+  let response: Response;
+  try {
+    response = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/stream/direct_upload`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.CLOUDFLARE_STREAM_API_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          maxDurationSeconds,
+          expiry,
+          requireSignedURLs: true,
+        }),
+        signal: AbortSignal.timeout(10_000),
+      },
+    );
+  } catch {
+    throw new MediaProviderError("STREAM_DIRECT_UPLOAD_REQUEST_FAILED");
+  }
+
+  if (!response.ok) throw new MediaProviderError("STREAM_DIRECT_UPLOAD_REQUEST_FAILED");
+
+  const data = (await response.json().catch(() => null)) as {
+    success?: boolean;
+    result?: { uploadURL?: string; uid?: string };
+  } | null;
+
+  if (!data?.success || !data.result?.uploadURL || !data.result?.uid) {
+    throw new MediaProviderError("STREAM_DIRECT_UPLOAD_REQUEST_FAILED");
+  }
+
+  return {
+    uploadUrl: data.result.uploadURL,
+    uid: data.result.uid,
+  };
+}
+

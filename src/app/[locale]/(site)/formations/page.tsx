@@ -63,5 +63,33 @@ export default async function CoursesPage({ params, searchParams }: { params: Pr
     featured: course.featured,
     enrollment: enrollment ? { progressPercent: enrollment.progressPercent, completed: enrollment.status === "completed" } : null,
   }); });
-  return <><PageHero eyebrow={ar ? "مسارات تكوينية" : en ? "Certificate course catalog" : "Catalogue certifiant"} title={ar ? "طوّر مهارات تصنع فرقًا في التربية الدامجة" : en ? "Build skills that make inclusion work" : "Développez des compétences qui transforment l’inclusion"} description={ar ? "مسارات منظمة وفيديوهات وموارد عملية وندوات وتتبع للتقدم في مساحة واحدة." : en ? "Structured pathways, practical resources, webinars and progress tracking in one learning environment." : "Des parcours structurés, des vidéos, des documents pratiques, des webinaires et un suivi de progression dans un même espace."} /><section className="section"><div className="container"><CourseFilter locale={locale} courses={items} categories={data.categories} filters={filters} page={data.page} totalPages={data.totalPages} total={data.total} /></div></section></>;
+  const breadcrumbs = [
+    { label: ar ? "الرئيسية" : "Accueil", href: `/${locale}` },
+    { label: ar ? "التكوين" : "Formations" },
+  ];
+
+  return (
+    <>
+      <PageHero
+        breadcrumbs={breadcrumbs}
+        eyebrow={ar ? "مسارات تكوينية" : en ? "Certificate course catalog" : "Catalogue certifiant"}
+        title={ar ? "طوّر مهارات تصنع فرقًا في التربية الدامجة" : en ? "Build skills that make inclusion work" : "Développez des compétences qui transforment l’inclusion"}
+        description={ar ? "مسارات منظمة وفيديوهات وموارد عملية وندوات وتتبع للتقدم في مساحة واحدة." : en ? "Structured pathways, practical resources, webinars and progress tracking in one learning environment." : "Des parcours structurés, des vidéos, des documents pratiques, des webinaires et un suivi de progression dans un même espace."}
+      />
+      <section className="section">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <CourseFilter
+            locale={locale}
+            courses={items}
+            categories={data.categories}
+            filters={filters}
+            page={data.page}
+            totalPages={data.totalPages}
+            total={data.total}
+          />
+        </div>
+      </section>
+    </>
+  );
 }
+

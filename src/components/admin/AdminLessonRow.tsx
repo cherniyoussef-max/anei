@@ -6,10 +6,11 @@ import { useRouter } from "next/navigation";
 import type { Locale } from "@/types";
 import { AdminDeleteButton } from "@/components/admin/AdminDeleteButton";
 import { AdminObjectUpload } from "@/components/admin/AdminObjectUpload";
+import { AdminStreamVideoUploader } from "@/components/admin/AdminStreamVideoUploader";
 
 type LessonRow = {
   id: string; position: number; titleFr: string; titleAr: string; descriptionFr: string; descriptionAr: string;
-  durationSeconds: number; mediaProvider: string; preview?: boolean; moduleId?: string | null;
+  durationSeconds: number; mediaProvider: string; mediaRef?: string | null; preview?: boolean; moduleId?: string | null;
   videoUrl?: string | null; documentUrl?: string | null;
 };
 
@@ -23,18 +24,33 @@ export function AdminLessonRow({ locale, courseId, lesson, modules = [] }: { loc
     event.preventDefault();
     setState("loading");
     const f = new FormData(event.currentTarget);
-    const videoObjectKey = String(f.get("videoObjectKey") || "");
-    const documentObjectKey = String(f.get("documentObjectKey") || "");
-    const payload = {
-      position: Number(f.get("position")), titleFr: String(f.get("titleFr")), titleAr: String(f.get("titleAr")),
-      descriptionFr: String(f.get("descriptionFr") || ""), descriptionAr: String(f.get("descriptionAr") || ""),
-      durationSeconds: Number(f.get("durationSeconds")), preview: f.get("preview") === "on",
+    const mediaProvider = String(f.get("mediaProvider") || "");
+    const mediaRef = String(f.get("mediaRef") || "").trim();
+    const videoUrl = String(f.get("videoUrl") || f.get("videoObjectKey") || "").trim();
+    const documentObjectKey = String(f.get("documentObjectKey") || "").trim();
+
+    const payload: Record<string, unknown> = {
+      position: Number(f.get("position")),
+      titleFr: String(f.get("titleFr")),
+      titleAr: String(f.get("titleAr")),
+      descriptionFr: String(f.get("descriptionFr") || ""),
+      descriptionAr: String(f.get("descriptionAr") || ""),
+      durationSeconds: Number(f.get("durationSeconds")),
+      preview: f.get("preview") === "on",
       moduleId: String(f.get("moduleId") || "") || null,
-      // Omit unless a new file was actually uploaded — the API treats a
-      // present-but-empty value as "clear the file".
-      ...(videoObjectKey ? { videoUrl: videoObjectKey } : {}),
-      ...(documentObjectKey ? { documentUrl: documentObjectKey } : {}),
     };
+
+    if (mediaProvider) {
+      payload.mediaProvider = mediaProvider;
+      if (mediaRef) payload.mediaRef = mediaRef;
+      if (mediaProvider === "internal" && videoUrl) payload.videoUrl = videoUrl;
+    } else if (videoUrl) {
+      payload.videoUrl = videoUrl;
+    }
+    if (documentObjectKey) {
+      payload.documentUrl = documentObjectKey;
+    }
+
     const res = await fetch(`/api/admin/lessons/${lesson.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     if (res.ok) { setEditing(false); setState("idle"); router.refresh(); } else setState("error");
   }
@@ -50,7 +66,7 @@ export function AdminLessonRow({ locale, courseId, lesson, modules = [] }: { loc
 
   if (!editing) return <article>
     <b>{lesson.position}</b>
-    <div><strong>{ar ? lesson.titleAr : lesson.titleFr}</strong><small>{lesson.mediaProvider} · {Math.round(lesson.durationSeconds / 60)} min</small></div>
+    <div><strong>{ar ? lesson.titleAr : lesson.titleFr}</strong><small>{lesson.mediaProvider === "cloudflare_stream" ? "Cloudflare Stream ⚡" : lesson.mediaProvider} · {Math.round(lesson.durationSeconds / 60)} min</small></div>
     <div className="admin-list-actions">
       <button type="button" className="btn btn-ghost btn-sm" disabled={state === "loading"} onClick={() => move(-1)} aria-label={ar ? "نقل لأعلى" : "Monter"}>↑</button>
       <button type="button" className="btn btn-ghost btn-sm" disabled={state === "loading"} onClick={() => move(1)} aria-label={ar ? "نقل لأسفل" : "Descendre"}>↓</button>
@@ -75,16 +91,19 @@ export function AdminLessonRow({ locale, courseId, lesson, modules = [] }: { loc
         </label>
         <label className="checkbox-row"><input name="preview" type="checkbox" defaultChecked={lesson.preview ?? false} /><span>{ar ? "معاينة عامة" : "Leçon en aperçu public"}</span></label>
       </div>
-      <div className="field-row">
-        <div>
-          {lesson.videoUrl ? <p className="small-muted">{ar ? "الفيديو الحالي:" : "Vidéo actuelle :"} <code className="object-key-preview">{lesson.videoUrl}</code></p> : null}
-          <AdminObjectUpload locale={locale} name="videoObjectKey" category="course" accept="video/mp4" labelFr="Remplacer la vidéo privée" labelAr="استبدال الفيديو الخاص"/>
-        </div>
+      <div className="field-row" style={{ display: "grid", gap: "14px" }}>
+        <AdminStreamVideoUploader
+          locale={locale}
+          initialMediaProvider={lesson.mediaProvider}
+          initialMediaRef={lesson.mediaRef}
+          initialVideoUrl={lesson.videoUrl}
+        />
         <div>
           {lesson.documentUrl ? <p className="small-muted">{ar ? "الوثيقة الحالية:" : "Document actuel :"} <code className="object-key-preview">{lesson.documentUrl}</code></p> : null}
           <AdminObjectUpload locale={locale} name="documentObjectKey" category="course" accept="application/pdf,text/vtt" labelFr="Remplacer le document / sous-titres" labelAr="استبدال الوثيقة / الترجمة"/>
         </div>
       </div>
+
       <div className="admin-row-actions">
         <button className="btn btn-primary btn-sm" disabled={state === "loading"}>{ar ? "حفظ" : "Enregistrer"}</button>
         <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEditing(false)}>{ar ? "إلغاء" : "Annuler"}</button>

@@ -13,7 +13,8 @@ export const pool =
     connectionString: hardenPostgresConnectionString(env.DATABASE_URL),
     max: env.NODE_ENV === "production" ? env.DB_POOL_MAX : Math.min(env.DB_POOL_MAX, 10),
     idleTimeoutMillis: 30_000,
-    connectionTimeoutMillis: 10_000,
+    connectionTimeoutMillis: 5_000,
+    maxLifetimeSeconds: 1800,
   });
 
 if (env.NODE_ENV !== "production") globalDb.__aneiPool = pool;

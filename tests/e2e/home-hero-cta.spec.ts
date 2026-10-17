@@ -1,32 +1,27 @@
 import { test, expect } from "@playwright/test";
 
-test.describe("Homepage Hero CTA Redesign", () => {
+test.describe("Homepage Hero Navigation & Actions", () => {
   for (const locale of ["fr", "ar"] as const) {
-    const isAr = locale === "ar";
 
-    test(`verifies homepage hero CTA points to account creation [${locale}]`, async ({ page }) => {
+    test(`verifies homepage hero search and quick access links [${locale}]`, async ({ page }) => {
       await page.goto(`/${locale}`, { waitUntil: "networkidle" });
 
-      const heroActions = page.locator(".ah-hero-actions");
-      await expect(heroActions).toBeVisible();
+      const heroSearchBar = page.locator(".hero-search-bar");
+      await expect(heroSearchBar).toBeVisible();
+      await expect(heroSearchBar).toHaveAttribute("action", `/${locale}/formations`);
 
-      // Primary CTA: Account creation
-      const primaryBtn = heroActions.locator("a.ah-btn-primary");
-      await expect(primaryBtn).toBeVisible();
-      await expect(primaryBtn).toHaveAttribute("href", `/${locale}/register`);
+      const searchInput = heroSearchBar.locator("input[type='search']");
+      await expect(searchInput).toBeVisible();
 
-      if (isAr) {
-        await expect(primaryBtn).toContainText("إنشاء حساب");
-      } else {
-        await expect(primaryBtn).toContainText("Créer mon compte");
-      }
+      // Quick-access grid
+      const quickAccess = page.locator(".quick-access-root");
+      await expect(quickAccess).toBeVisible();
+      await expect(quickAccess.locator(`a[href="/${locale}/formations"]`)).toBeVisible();
+      await expect(quickAccess.locator(`a[href="/${locale}/bibliotheque"]`)).toBeVisible();
+      await expect(quickAccess.locator(`a[href="/${locale}/avs"]`)).toBeVisible();
+      await expect(quickAccess.locator(`a[href="/${locale}/webinaires"]`)).toBeVisible();
 
-      // Secondary CTA: Course catalog
-      const secondaryBtn = heroActions.locator("a.ah-btn-outline");
-      await expect(secondaryBtn).toBeVisible();
-      await expect(secondaryBtn).toHaveAttribute("href", `/${locale}/formations`);
-
-      // Ensure "Demander une démo" is no longer present
+      // Ensure deprecated demo CTA is not present
       const demoBtn = page.locator("a:has-text('Demander une démo'), a:has-text('اطلب عرضًا تجريبيًا')");
       await expect(demoBtn).toHaveCount(0);
     });

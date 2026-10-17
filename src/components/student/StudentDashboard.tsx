@@ -21,6 +21,7 @@ import {
   Check,
   HelpCircle,
   Flame,
+  Video,
   type LucideIcon,
 } from "lucide-react";
 import type { Locale } from "@/types";
@@ -829,8 +830,8 @@ export function StudentDashboard({
                 {ar ? "جلساتك التفاعلية ومتابعاتك الميدانية." : "Vos sessions et webinaires programmés."}
               </p>
             </div>
-            <Link href={`/${locale}/dashboard/rendez-vous`} className="student-panel-viewall">
-              <span>{ar ? "مواعيدي" : "Mes créneaux"}</span>
+            <Link href={`/${locale}/learning/live`} className="student-panel-viewall">
+              <span>{ar ? "الندوات والمباشر" : "Directs & Webinaires"}</span>
               <ArrowRight size={14} className="student-directional-icon" />
             </Link>
           </div>
@@ -887,9 +888,9 @@ export function StudentDashboard({
                     ? "احجز موعدًا فرديًا مع مستشار بيداغوجي لمناقشة أهدافك وصعوبات الميدان."
                     : "Réservez un échange de 30 min avec un tuteur pédagogique pour poser vos questions sur votre pratique."}
                 </p>
-                <Link href={`/${locale}/dashboard/rendez-vous`} className="student-support-slot-btn">
-                  <CalendarDays size={15} />
-                  <span>{ar ? "حجز موعد متابعة" : "Réserver un créneau"}</span>
+                <Link href={`/${locale}/learning/live`} className="student-support-slot-btn">
+                  <Video size={15} />
+                  <span>{ar ? "عرض الجلسات المباشرة" : "Voir les directs & webinaires"}</span>
                 </Link>
               </div>
             </div>

@@ -23,6 +23,7 @@ export default async function TeacherLayout({ children, params }: {
     base={`/${locale}/teacher`}
     items={[
       { href: `/${locale}/teacher`, icon: "LayoutDashboard", fr: "Vue d’ensemble", ar: "نظرة عامة" },
+      { href: `/${locale}/teacher/assistant`, icon: "MessageSquare", fr: "Conseiller IA", ar: "المستشار البيداغوجي" },
     ]}
   >{children}</PersonaShell>;
 }

@@ -48,6 +48,7 @@ export function AdminShell({ children, locale, user }: {
       { href: `${base}/enrollments`, icon: "check", fr: "Inscriptions", ar: "التسجيلات" },
       { href: `${base}/assessments`, icon: "chart", fr: "Évaluations & résultats", ar: "التقييمات والنتائج" },
       { href: `${base}/certificates`, icon: "award", fr: "Certificats", ar: "الشهادات" },
+      { href: `${base}/live`, icon: "spark", fr: "Directs & Webinaires", ar: "البث المباشر والندوات" },
       { href: `${base}/webinars`, icon: "calendar", fr: "Webinaires", ar: "الندوات" },
       { href: `${base}/disponibilites`, icon: "calendar", fr: "Disponibilités", ar: "الفتحات المتاحة" },
       { href: `${base}/resources`, icon: "download", fr: "Bibliothèque", ar: "المكتبة" },

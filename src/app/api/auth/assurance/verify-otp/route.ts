@@ -8,8 +8,15 @@ import { getRequestId } from "@/server/auth/request-id";
 import { verifyOtp } from "@/server/auth/otp";
 import { completeSessionAssurance } from "@/server/auth/assurance";
 import { recordAuthEvent } from "@/server/auth/events";
+import { resolveOnboardingState, onboardingPathFor } from "@/server/auth/onboarding";
+import type { Locale } from "@/types";
 
-const schema = z.object({ challengeId: z.string().uuid(), code: z.string().regex(/^\d{6}$/) }).strict();
+const schema = z.object({
+  challengeId: z.string().uuid(),
+  code: z.string().regex(/^\d{6}$/),
+  locale: z.enum(["fr", "ar", "en"]).optional(),
+  next: z.string().optional(),
+}).strict();
 
 export async function POST(request: Request) {
   if (!isTrustedMutation(request)) return NextResponse.json({ error: "UNTRUSTED_ORIGIN" }, { status: 403 });
@@ -41,5 +48,9 @@ export async function POST(request: Request) {
     eventType: "SESSION_ASSURANCE_COMPLETED",
   });
 
-  return NextResponse.json({ ok: true });
+  const userLocale: Locale = parsed.data.locale === "ar" ? "ar" : "fr";
+  const state = await resolveOnboardingState();
+  const redirectTo = onboardingPathFor(userLocale, state, parsed.data.next);
+
+  return NextResponse.json({ ok: true, redirectTo });
 }

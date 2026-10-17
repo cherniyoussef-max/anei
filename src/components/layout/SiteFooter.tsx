@@ -1,61 +1,267 @@
 import Link from "next/link";
+import {
+  ShieldCheck,
+  Users,
+  BookOpen,
+  Globe,
+  Linkedin,
+  Facebook,
+  Youtube,
+  Mail,
+  Clock,
+} from "lucide-react";
 import type { Locale } from "@/types";
-import { t } from "@/lib/i18n";
-import { AneiLogo } from "@/components/brand/AneiLogo";
-import { Icon } from "@/components/ui/Icon";
-import { NewsletterForm } from "@/components/interactive/NewsletterForm";
 import { env } from "@/server/env";
+import { AneiLogo } from "@/components/brand/AneiLogo";
 
 export function SiteFooter({ locale }: { locale: Locale }) {
-  const c = t(locale);
   const ar = locale === "ar";
   const en = locale === "en";
-  const socialLabel = (network: string) => ar ? `ANEI على ${network}` : en ? `ANEI on ${network}` : `ANEI sur ${network}`;
-  const contactAddress = ar
-    ? (env.CONTACT_ADDRESS.includes("Habib Bourguiba")
-        ? "شارع الحبيب بورقيبة، المركز العمراني الشمالي، 1082 تونس"
-        : env.CONTACT_ADDRESS === "Tunis, Tunisie"
-        ? "تونس، تونس"
-        : env.CONTACT_ADDRESS)
-    : en
-    ? (env.CONTACT_ADDRESS === "Tunis, Tunisie" ? "Tunis, Tunisia" : env.CONTACT_ADDRESS)
-    : env.CONTACT_ADDRESS;
+
+  const pillars = [
+    {
+      icon: ShieldCheck,
+      title: ar ? "خبرة متخصصة" : en ? "Specialized Expertise" : "Une expertise",
+      desc: ar ? "في خدمة الدمج التربوي والميداني" : en ? "Dedicated to inclusive education" : "au service de l'inclusion",
+    },
+    {
+      icon: Users,
+      title: ar ? "مجتمع متضامن" : en ? "Engaged Community" : "Une communauté",
+      desc: ar ? "ملتزم وداعم لكل الأطراف الفاعلة" : en ? "Committed and supportive" : "engagée et bienveillante",
+    },
+    {
+      icon: BookOpen,
+      title: ar ? "موارد موثوقة" : en ? "Reliable Resources" : "Des ressources",
+      desc: ar ? "ومحيّنة باستمرار وفق المعايير" : en ? "Constantly updated and verified" : "fiables et actualisées",
+    },
+    {
+      icon: Globe,
+      title: ar ? "أثر مستدام" : en ? "Lasting Impact" : "Un impact durable",
+      desc: ar ? "على المدرسة والمجتمع التونسي" : en ? "On schools and society" : "sur l'école et la société",
+    },
+  ];
+
+  const platformLinks = [
+    { href: `/${locale}`, label: ar ? "الرئيسية" : en ? "Home" : "Accueil" },
+    { href: `/${locale}/formations`, label: ar ? "التكوين والمصادقة" : en ? "Certifying Courses" : "Formations certifiantes" },
+    { href: `/${locale}/bibliotheque`, label: ar ? "المكتبة الرقمية" : en ? "Resource Library" : "Bibliothèque de ressources" },
+    { href: `/${locale}/avs`, label: ar ? "دليل مرافقي AVS" : en ? "AVS Directory" : "Annuaire des AVS" },
+    { href: `/${locale}/specialistes`, label: ar ? "دليل الأخصائيين المعتمدين" : en ? "Specialists Directory" : "Annuaire des Spécialistes" },
+  ];
+
+  const accompanimentLinks = [
+    { href: `/${locale}/webinaires`, label: ar ? "الندوات واللقاءات المباشرة" : en ? "Webinars & Live" : "Webinaires & Directs" },
+    { href: `/${locale}/actualites`, label: ar ? "الأخبار والمقالات الميدانية" : en ? "News & Articles" : "Actualités & Dossiers" },
+    { href: `/${locale}/contact`, label: ar ? "التواصل المؤسساتي" : en ? "Institutional Contact" : "Contact institutionnel" },
+    { href: `/${locale}/connexion`, label: ar ? "فضاء المتعلم والمدرب" : en ? "Learner Portal" : "Espace d'apprentissage" },
+  ];
+
+  const legalLinks = [
+    { href: `/${locale}/conditions`, label: ar ? "إشعار قانوني والشروط" : en ? "Legal Terms" : "Mentions légales" },
+    { href: `/${locale}/confidentialite`, label: ar ? "سياسة الخصوصية" : en ? "Privacy Policy" : "Confidentialité" },
+    { href: `/${locale}`, label: ar ? "سهولة الوصول WCAG" : en ? "Accessibility" : "Accessibilité" },
+    { href: `/${locale}`, label: ar ? "خريطة الموقع" : en ? "Site map" : "Plan du site" },
+  ];
+
   return (
-    <footer className="site-footer v5-site-footer">
-      <div className="v5-container footer-grid">
-        <div className="footer-brand">
-          <Link href={`/${locale}`} className="footer-crest" aria-label={c.academy}>
-            <span className="inline-flex items-center justify-center bg-white p-1.5 rounded-lg shadow-sm flex-none">
-              <AneiLogo locale={locale} variant="mark" height={36} />
-            </span>
-            <span className="footer-crest-text">
-              <span className="footer-crest-name">
-                {ar ? "الأكاديمية الوطنية" : "Académie Nationale"}
-              </span>
-              <span className="footer-crest-sub">
-                {ar ? "للتربية الدامجة · ANEI" : "de l'Éducation Inclusive · ANEI"}
-              </span>
-            </span>
-          </Link>
-          <p>{ar ? "تكوين مهني وموارد ومرافقة من أجل تربية دامجة قابلة للتطبيق." : en ? "Professional learning, resources and support for inclusive education in practice." : "Formations, ressources et accompagnement pour une éducation inclusive mise en pratique."}</p>
-          <address className="footer-contact-list">
-            <a href={`mailto:${env.CONTACT_EMAIL}`}><Icon name="mail" size={17}/><span>{env.CONTACT_EMAIL}</span></a>
-            {env.CONTACT_PHONE ? <a href={`tel:${env.CONTACT_PHONE.replace(/\s+/g, "")}`}><Icon name="phone" size={17}/><span dir="ltr">{env.CONTACT_PHONE}</span></a> : null}
-            <span><Icon name="map" size={17}/><span>{contactAddress}</span></span>
-          </address>
-          {env.SOCIAL_LINKEDIN_URL || env.SOCIAL_FACEBOOK_URL || env.SOCIAL_INSTAGRAM_URL ? (
-            <div className="footer-social">
-              {env.SOCIAL_INSTAGRAM_URL ? <a href={env.SOCIAL_INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" aria-label={socialLabel("Instagram")}><Icon name="instagram" size={18}/></a> : null}
-              {env.SOCIAL_FACEBOOK_URL ? <a href={env.SOCIAL_FACEBOOK_URL} target="_blank" rel="noopener noreferrer" aria-label={socialLabel("Facebook")}><Icon name="facebook" size={18}/></a> : null}
-              {env.SOCIAL_LINKEDIN_URL ? <a href={env.SOCIAL_LINKEDIN_URL} target="_blank" rel="noopener noreferrer" aria-label={socialLabel("LinkedIn")}><Icon name="linkedin" size={18}/></a> : null}
-            </div>
-          ) : null}
+    <footer className="footer-root v5-site-footer" role="contentinfo">
+      {/* =====================================================================
+          ÉTAGE 1 : BANDEAU DES 4 PILIERS (FOND CLAIR INSTITUTIONNEL)
+          ===================================================================== */}
+      <section
+        className="bg-[#F8FAFC] border-y border-slate-200/80 py-10 lg:py-12"
+        aria-label={ar ? "ركائز التزامنا المؤسساتي" : "Piliers et engagements de l'Académie"}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-6">
+            {pillars.map((pillar, idx) => {
+              const Icon = pillar.icon;
+              return (
+                <div key={idx} className="flex items-start gap-4">
+                  <div className="h-11 w-11 rounded-xl bg-[#0A192F]/[0.05] text-[#0A192F] flex items-center justify-center shrink-0 mt-0.5 border border-slate-200/60">
+                    <Icon size={22} strokeWidth={1.8} className="text-[#0A192F]" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[15px] font-bold text-[#0A192F] leading-snug">
+                      {pillar.title}
+                    </span>
+                    <span className="text-xs sm:text-[13px] text-slate-600 leading-relaxed mt-0.5">
+                      {pillar.desc}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
-        <div className="footer-column"><strong>{ar ? "التعلم" : en ? "Learning" : "Apprendre"}</strong><Link href={`/${locale}/formations`}>{c.nav.courses}</Link><Link href={`/${locale}/webinaires`}>{c.nav.webinars}</Link><Link href={`/${locale}/bibliotheque`}>{c.nav.library}</Link><Link href={`/${locale}/avs`}>{c.nav.avs}</Link></div>
-        <div className="footer-column"><strong>{ar ? "الأكاديمية" : en ? "Academy" : "Académie"}</strong><Link href={`/${locale}/about`}>{c.nav.about}</Link><Link href={`/${locale}/actualites`}>{c.nav.news}</Link><Link href={`/${locale}/contact`}>{c.nav.contact}</Link><Link href={`/${locale}/confidentialite`}>{ar ? "الخصوصية" : en ? "Privacy" : "Confidentialité"}</Link><Link href={`/${locale}/conditions`}>{ar ? "الشروط" : en ? "Terms" : "Conditions"}</Link></div>
-        <div className="footer-newsletter"><strong>{ar ? "ابق على اطلاع" : en ? "Stay informed" : "Rester informé"}</strong><p>{ar ? "دورات وندوات وموارد جديدة، في رسالة موجزة." : en ? "New courses, webinars and resources in one concise email." : "Nouvelles formations, webinaires et ressources dans un message concis."}</p><NewsletterForm locale={locale} variant="expanded"/></div>
+      </section>
+
+      {/* =====================================================================
+          ÉTAGE 2 : CORPS DU FOOTER SOMBRE (NAVY PROFOND #0A192F)
+          ===================================================================== */}
+      <div className="bg-[#0A192F] text-slate-300 py-14 lg:py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8">
+            {/* Colonne 1 : Identité & Mission */}
+            <div className="lg:col-span-5 flex flex-col items-start pe-lg-6">
+              <Link
+                href={`/${locale}`}
+                className="footer-crest inline-flex items-center gap-3.5 group hover:opacity-95 transition-opacity"
+                aria-label={ar ? "الرئيسية ANEI" : "Accueil ANEI"}
+              >
+                <AneiLogo locale={locale} variant="mark" withText={false} height={44} />
+                <div className="flex flex-col">
+                  <span className="font-bold text-white text-[15px] sm:text-[16px] leading-snug font-sans">
+                    {ar ? "الأكاديمية الوطنية للتربية الدامجة" : "Académie Nationale de l’Éducation Inclusive"}
+                  </span>
+                  <span className="text-[11px] font-semibold text-[#C5A059] uppercase tracking-wider mt-0.5">
+                    {ar ? "التربية الدامجة في تونس" : "Éducation Inclusive · Tunisie"}
+                  </span>
+                </div>
+              </Link>
+
+              <p className="mt-5 text-sm leading-[1.7] rtl:leading-[1.85] text-slate-300 max-w-md font-normal">
+                {ar
+                  ? "المنصة الأولى للتميز المتخصصة في التكوين والموارد ومرافقة المهنيين والأسر من أجل تربية دامجة وعادلة في تونس."
+                  : "Première plateforme d'excellence dédiée à la formation, aux ressources et à l'accompagnement des professionnels et familles pour une éducation inclusive en Tunisie."}
+              </p>
+
+              <div className="mt-5 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.07] border border-white/10 text-xs text-[#C5A059] font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#C5A059]" />
+                <span>
+                  {ar ? "المؤسسة المرجعية · التربية الدامجة" : "Institution Référente · EdTech Inclusive"}
+                </span>
+              </div>
+            </div>
+
+            {/* Colonne 2 : Plateforme */}
+            <div className="lg:col-span-2 flex flex-col">
+              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#C5A059] mb-4">
+                {ar ? "المنصة" : en ? "Platform" : "Plateforme"}
+              </span>
+              <ul className="space-y-2.5">
+                {platformLinks.map((item, idx) => (
+                  <li key={idx}>
+                    <Link
+                      href={item.href}
+                      className="text-sm text-slate-300 hover:text-white transition-colors duration-150 inline-flex items-center gap-1 group"
+                    >
+                      <span>{item.label}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Colonne 3 : Accompagnement */}
+            <div className="lg:col-span-2 flex flex-col">
+              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#C5A059] mb-4">
+                {ar ? "المرافقة" : en ? "Services" : "Accompagnement"}
+              </span>
+              <ul className="space-y-2.5">
+                {accompanimentLinks.map((item, idx) => (
+                  <li key={idx}>
+                    <Link
+                      href={item.href}
+                      className="text-sm text-slate-300 hover:text-white transition-colors duration-150 inline-flex items-center gap-1 group"
+                    >
+                      <span>{item.label}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Colonne 4 : Contact & Réseaux Sociaux */}
+            <div className="lg:col-span-3 flex flex-col">
+              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#C5A059] mb-4">
+                {ar ? "التواصل" : en ? "Contact" : "Contact & Réseaux"}
+              </span>
+
+              <div className="space-y-3 text-sm text-slate-300">
+                <div className="flex items-center gap-2.5">
+                  <Mail size={16} className="text-[#C5A059] shrink-0" />
+                  <a
+                    href="mailto:contact@anei.tn"
+                    className="hover:text-white transition-colors underline-offset-4 hover:underline"
+                  >
+                    contact@anei.tn
+                  </a>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <Clock size={16} className="text-[#C5A059] shrink-0" />
+                  <span>
+                    {ar ? "الإثنين - الجمعة · 08:30 - 17:30" : "Lun - Ven · 08:30 - 17:30"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Réseaux sociaux */}
+              <div className="mt-6">
+                <span className="text-xs font-medium text-slate-400 block mb-2.5">
+                  {ar ? "تابعونا على شبكاتنا" : "Suivez-nous sur les réseaux"}
+                </span>
+                <div className="flex items-center gap-2.5">
+                  <a
+                    href={env.SOCIAL_LINKEDIN_URL || "https://linkedin.com"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="h-9 w-9 rounded-full bg-white/[0.08] hover:bg-[#0056D2] text-slate-200 hover:text-white flex items-center justify-center transition-all duration-200 border border-white/10"
+                    aria-label="LinkedIn"
+                  >
+                    <Linkedin size={16} />
+                  </a>
+                  <a
+                    href={env.SOCIAL_FACEBOOK_URL || "https://facebook.com"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="h-9 w-9 rounded-full bg-white/[0.08] hover:bg-[#0056D2] text-slate-200 hover:text-white flex items-center justify-center transition-all duration-200 border border-white/10"
+                    aria-label="Facebook"
+                  >
+                    <Facebook size={16} />
+                  </a>
+                  <a
+                    href="https://youtube.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="h-9 w-9 rounded-full bg-white/[0.08] hover:bg-[#0056D2] text-slate-200 hover:text-white flex items-center justify-center transition-all duration-200 border border-white/10"
+                    aria-label="YouTube"
+                  >
+                    <Youtube size={16} />
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div className="v5-container footer-bottom"><span dir="ltr">© {new Date().getFullYear()} ANEI</span><span>{ar ? "تجربة ثنائية اللغة مصممة للإتاحة" : en ? "A bilingual experience designed for accessibility" : "Une expérience bilingue conçue pour l’accessibilité"}</span></div>
+
+      {/* =====================================================================
+          ÉTAGE 3 : BARRE LÉGALE INFÉRIEURE (COPYRIGHT & LIENS LÉGAUX)
+          ===================================================================== */}
+      <div className="bg-[#071324] border-t border-white/[0.08] py-5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+          <span>
+            {ar
+              ? `© ${new Date().getFullYear()} الأكاديمية الوطنية للتربية الدامجة (ANEI). جميع الحقوق محفوظة.`
+              : `© ${new Date().getFullYear()} L'Académie Nationale de l'Éducation Inclusive (ANEI). Tous droits réservés.`}
+          </span>
+          <nav
+            className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2"
+            aria-label={ar ? "روابط قانونية" : "Liens légaux"}
+          >
+            {legalLinks.map((item, idx) => (
+              <Link
+                key={idx}
+                href={item.href}
+                className="hover:text-slate-200 transition-colors"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+      </div>
     </footer>
   );
 }

@@ -98,6 +98,11 @@ export function AdminCourseForm({ locale }: { locale: Locale }) {
   const [featured, setFeatured] = useState(false);
   const [coverImageKey, setCoverImageKey] = useState<string | null>(null);
 
+  // Qualification for Professional Promotion
+  const [qualifiesForProfessionalPromotion, setQualifiesForProfessionalPromotion] = useState(false);
+  const [qualifyingTargetType, setQualifyingTargetType] = useState<"AVS" | "SPECIALIST">("AVS");
+  const [qualifyingTargetCategory, setQualifyingTargetCategory] = useState<string>("ORTHOPHONIE");
+
   // Submission & Post-Creation States
   const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [feedbackMsg, setFeedbackMsg] = useState("");
@@ -222,6 +227,9 @@ export function AdminCourseForm({ locale }: { locale: Locale }) {
       level,
       published,
       featured,
+      qualifiesForProfessionalPromotion,
+      qualifyingTargetType: qualifiesForProfessionalPromotion ? qualifyingTargetType : null,
+      qualifyingTargetCategory: qualifiesForProfessionalPromotion ? qualifyingTargetCategory : null,
       objectives: {
         fr: frObjectives,
         ar: arObjectives,
@@ -535,6 +543,11 @@ export function AdminCourseForm({ locale }: { locale: Locale }) {
                   {durationHours}h · {level}
                 </span>
               </div>
+              {qualifiesForProfessionalPromotion && (
+                <div style={{ background: "#fef3c7", color: "#92400e", fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 6, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                  🎖️ {ar ? "مسار تأهيلي للاعتماد ANEI" : `Qualifiant ANEI (${qualifyingTargetType})`}
+                </div>
+              )}
               <strong style={{ fontSize: 14, color: "#0f172a", lineHeight: 1.3 }}>
                 {titleFr || "Titre de la formation..."}
               </strong>
@@ -698,6 +711,72 @@ export function AdminCourseForm({ locale }: { locale: Locale }) {
               onChange={(e) => setCategory(e.target.value)}
               style={{ width: "100%", maxWidth: 360 }}
             />
+          </div>
+
+          {/* Professional Qualification Toggle */}
+          <div style={{ marginTop: 16, padding: 14, background: qualifiesForProfessionalPromotion ? "#eff6ff" : "#f1f5f9", borderRadius: 8, border: qualifiesForProfessionalPromotion ? "1px solid #bfdbfe" : "1px solid #e2e8f0", transition: "all 0.2s" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", fontWeight: 700, fontSize: 13, color: "#1e3a8a" }}>
+              <input
+                type="checkbox"
+                checked={qualifiesForProfessionalPromotion}
+                onChange={(e) => setQualifiesForProfessionalPromotion(e.target.checked)}
+                style={{ width: 18, height: 18, accentColor: "#0284c7" }}
+              />
+              <span>🎖️ {ar ? "دورة مؤهلة للاعتماد المهني ANEI (ترقية مرافقي الحياة المدرسية والأخصائيين)" : "Formation qualifiante pour l'agrément professionnel ANEI"}</span>
+            </label>
+            <p style={{ margin: "4px 0 0 28px", fontSize: 12, color: "#475569" }}>
+              {ar
+                ? "تتيح هذه الدورة للمتعلم الترشح للاعتماد الرسمي كـ AVS أو أخصائي مرخص في دليل المنصة بعد استكمالها واجتياز المقابلة."
+                : "La complétion de ce parcours qualifie l'apprenant pour le statut certifié AVS ou Spécialiste dans les annuaires ANEI après entretien."}
+            </p>
+
+            {qualifiesForProfessionalPromotion && (
+              <div style={{ marginTop: 12, paddingLeft: 28, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#1e293b", marginBottom: 4 }}>
+                    {ar ? "نوع الاعتماد المستهدف" : "Corps de métier cible"}
+                  </label>
+                  <select
+                    className="form-select"
+                    value={qualifyingTargetType}
+                    onChange={(e) => setQualifyingTargetType(e.target.value as "AVS" | "SPECIALIST")}
+                    style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: "1px solid #cbd5e1" }}
+                  >
+                    <option value="AVS">{ar ? "مرافق حياة مدرسية (AVS)" : "Accompagnant Scolaire (AVS)"}</option>
+                    <option value="SPECIALIST">{ar ? "أخصائي مرخص (Spécialiste)" : "Spécialiste Paramédical / Thérapeute"}</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#1e293b", marginBottom: 4 }}>
+                    {ar ? "التخصص الدقيق" : "Discipline / Spécialité requise"}
+                  </label>
+                  <select
+                    className="form-select"
+                    value={qualifyingTargetCategory}
+                    onChange={(e) => setQualifyingTargetCategory(e.target.value)}
+                    style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: "1px solid #cbd5e1" }}
+                  >
+                    {qualifyingTargetType === "AVS" ? (
+                      <>
+                        <option value="ACCOMPAGNEMENT_AVS">{ar ? "مرافقة عامة في الوسط المدرسي" : "Accompagnement scolaire généraliste"}</option>
+                        <option value="AVS_AUTISME">{ar ? "مرافقة متخصصة في التوحد TSA" : "Accompagnement TSA / Autisme"}</option>
+                        <option value="AVS_DYS">{ar ? "مرافقة صعوبات التعلم DYS / TDAH" : "Accompagnement DYS & TDAH"}</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="ORTHOPHONIE">{ar ? "تقويم النطق (Orthophonie)" : "Orthophonie"}</option>
+                        <option value="PSYCHOLOGIE">{ar ? "علم النفس المدرسي (Psychologie)" : "Psychologie & Neuropsychologie"}</option>
+                        <option value="ERGOTHERAPIE">{ar ? "العلاج الوظيفي (Ergothérapie)" : "Ergothérapie"}</option>
+                        <option value="PSYCHOMOTRICITE">{ar ? "العلاج الحركي (Psychomotricité)" : "Psychomotricité"}</option>
+                        <option value="PEDOPSYCHIATRIE">{ar ? "الطب النفسي للأطفال (Pédopsychiatrie)" : "Pédopsychiatrie"}</option>
+                        <option value="ORTHOPEDAGOGIE">{ar ? "التربية المختصة (Orthopédagogie)" : "Orthopédagogie"}</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+              </div>
+            )}
           </div>
 
           <div style={{ marginTop: 14 }}>

@@ -18,7 +18,6 @@ const schema = z.object({
   AUTH_REQUIRE_EMAIL_VERIFICATION: boolString,
   ENABLE_GOOGLE_AUTH: boolString,
   ENABLE_FLOUCI: boolString,
-  ENABLE_CLICTOPAY: boolString,
   ENABLE_AI: boolString,
   ENABLE_WHATSAPP: boolString,
   ENABLE_WHATSAPP_AUTO_WELCOME: boolString,
@@ -52,12 +51,7 @@ const schema = z.object({
   FLOUCI_BASE_URL: z.string().url().default("https://developers.flouci.com"),
   FLOUCI_ACCEPT_CARD: boolString,
   PAYMENT_ALLOW_MOCK: boolString,
-  CLICKTOPAY_MERCHANT_ID: optionalTrimmed,
-  CLICKTOPAY_TERMINAL_ID: optionalTrimmed,
-  CLICKTOPAY_API_URL: optionalTrimmed,
-  CLICKTOPAY_API_KEY: optionalTrimmed,
-  CLICKTOPAY_RETURN_URL: z.string().url().default("http://localhost:3000/fr/paiement/retour"),
-  PAYMENT_DEFAULT_PROVIDER: z.enum(["mock", "flouci", "clicktopay"]).default("mock"),
+  PAYMENT_DEFAULT_PROVIDER: z.enum(["mock", "flouci"]).default("mock"),
   CONTACT_EMAIL: z.string().email().default("contact@anei.local"),
   CONTACT_PHONE: optionalTrimmed,
   CONTACT_ADDRESS: z.string().default("Tunis, Tunisie"),
@@ -193,9 +187,6 @@ if (env.NODE_ENV === "production" && !isBuildPhase && !isLocalProductionSmoke) {
   if (env.ENABLE_FLOUCI && (!env.FLOUCI_PUBLIC_KEY || !env.FLOUCI_PRIVATE_KEY)) {
     throw new Error("Flouci is enabled but FLOUCI_PUBLIC_KEY/FLOUCI_PRIVATE_KEY are missing.");
   }
-  if (env.ENABLE_CLICTOPAY) {
-    throw new Error("ClicToPay cannot be enabled until the merchant-specific adapter has been implemented and acceptance-tested.");
-  }
   if (env.ENABLE_AI) {
     throw new Error("ENABLE_AI cannot be true in production until the AI provider/retrieval security implementation is complete.");
   }
@@ -204,9 +195,6 @@ if (env.NODE_ENV === "production" && !isBuildPhase && !isLocalProductionSmoke) {
   }
   if (env.PAYMENT_DEFAULT_PROVIDER === "flouci" && !env.ENABLE_FLOUCI) {
     throw new Error("Flouci is the default payment provider but ENABLE_FLOUCI is false.");
-  }
-  if (env.PAYMENT_DEFAULT_PROVIDER === "clicktopay") {
-    throw new Error("ClicToPay cannot be the production default until the merchant-specific adapter is complete.");
   }
   if (env.STORAGE_PROVIDER === "local") {
     throw new Error("Production protected media requires STORAGE_PROVIDER=s3-compatible.");
@@ -243,9 +231,6 @@ export const googleAuthConfigured = isGoogleAuthConfigured({
   clientSecret: env.GOOGLE_CLIENT_SECRET,
 });
 export const flouciConfigured = Boolean(env.ENABLE_FLOUCI && env.FLOUCI_PUBLIC_KEY && env.FLOUCI_PRIVATE_KEY);
-export const clickToPayConfigured = Boolean(
-  env.ENABLE_CLICTOPAY && env.CLICKTOPAY_MERCHANT_ID && env.CLICKTOPAY_API_URL && env.CLICKTOPAY_API_KEY,
-);
 export const whatsappConfigured = Boolean(
   env.ENABLE_WHATSAPP && env.WHATSAPP_ACCESS_TOKEN && env.WHATSAPP_APP_SECRET && env.WHATSAPP_VERIFY_TOKEN,
 );

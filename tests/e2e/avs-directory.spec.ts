@@ -37,11 +37,12 @@ test.describe("AVS Directory and Booking Platform (FR & AR)", () => {
       await expect(firstCard.locator('a[href*="/avs/"]').first()).toBeVisible();
 
       // Test Search filtering
-      await searchInput.fill("Salma");
+      const searchTarget = isAr ? "سلمى" : "Salma";
+      await searchInput.fill(searchTarget);
       await searchInput.press("Enter");
       await page.waitForLoadState("networkidle");
       const filteredCards = page.locator(".avs-card");
-      await expect(filteredCards.first().locator(".avs-card-name")).toContainText("Salma");
+      await expect(filteredCards.first().locator(".avs-card-name")).toContainText(searchTarget);
     });
 
     test(`verifies AVS detailed profile page and pedagogical sections [${locale}]`, async ({ page }) => {
@@ -50,7 +51,7 @@ test.describe("AVS Directory and Booking Platform (FR & AR)", () => {
 
       // Profile hero
       const profileName = page.locator("h1");
-      await expect(profileName).toContainText("Salma");
+      await expect(profileName).toContainText(isAr ? "سلمى" : "Salma");
 
       // Verify sticky booking widget and modality selector
       const bookingWidget = page.locator(".avs-booking-widget");

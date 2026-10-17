@@ -140,7 +140,7 @@ export const webinars: Webinar[] = [
     id: 1,
     title: { en: "Inclusive schools: from intention to action", fr: "École inclusive : de l’intention à l’action", ar: "المدرسة الدامجة: من النية إلى التطبيق" },
     description: { en: "A practical route from isolated initiatives to a whole-school approach.", fr: "Une feuille de route pour passer d’initiatives isolées à une démarche d’établissement.", ar: "خارطة طريق للانتقال من مبادرات فردية إلى مقاربة مؤسساتية." },
-    date: "2026-08-20",
+    date: "2026-11-12",
     time: "18:00",
     trainer: "Dr. Amira Ben Salem",
     status: "upcoming"
@@ -149,7 +149,7 @@ export const webinars: Webinar[] = [
     id: 2,
     title: { en: "Understanding executive functions", fr: "Comprendre les fonctions exécutives", ar: "فهم الوظائف التنفيذية" },
     description: { en: "Clear reference points and tools for attention, planning and inhibition.", fr: "Repères simples et outils pour soutenir attention, planification et inhibition.", ar: "مفاهيم وأدوات لدعم الانتباه والتخطيط والتحكم." },
-    date: "2026-09-03",
+    date: "2026-11-26",
     time: "19:00",
     trainer: "Dr. Youssef Trabelsi",
     status: "upcoming"
@@ -384,7 +384,7 @@ export const resources: Resource[] = [
 export const newsItems: NewsItem[] = [
   {
     id: 1,
-    title: { en: "Enrollment opens for the 2026 intake", fr: "Ouverture des inscriptions - rentrée 2026", ar: "فتح التسجيل لدورة 2026" },
+    title: { en: "Enrollment opens for the 2026 intake", fr: "Ouverture des inscriptions — Rentrée 2026", ar: "فتح التسجيل لدورة 2026" },
     excerpt: { en: "Enrollment is open for new certificate pathways across several learning formats.", fr: "Les nouveaux parcours certifiants sont ouverts aux inscriptions avec plusieurs formats d’apprentissage.", ar: "تم فتح التسجيل في المسارات الجديدة مع صيغ تعلم متعددة." },
     date: "2026-07-22",
     tag: { en: "Learning", fr: "Formation", ar: "تكوين" }

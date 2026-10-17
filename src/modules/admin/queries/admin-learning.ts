@@ -35,6 +35,9 @@ const adminCourseEditorColumns = {
   level: courses.level,
   mode: courses.mode,
   published: courses.published,
+  qualifiesForProfessionalPromotion: courses.qualifiesForProfessionalPromotion,
+  qualifyingTargetType: courses.qualifyingTargetType,
+  qualifyingTargetCategory: courses.qualifyingTargetCategory,
   coverImage: courses.coverImage,
   updatedAt: courses.updatedAt,
 };

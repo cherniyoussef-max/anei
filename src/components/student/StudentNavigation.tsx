@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, GraduationCap, CalendarDays, BookOpen, Award, UserCheck, Menu, X, ChevronRight, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, GraduationCap, BookOpen, Award, UserCheck, Video, Menu, X, ChevronRight, type LucideIcon } from "lucide-react";
 import type { Locale } from "@/types";
 import { StudentSignOutButton } from "@/components/student/StudentSignOutButton";
 
@@ -14,7 +14,7 @@ function learnerItems(locale: Locale): StudentNavItem[] {
   return [
     { href: base, icon: LayoutDashboard, en: "Dashboard", fr: "Tableau de bord", ar: "لوحة التحكم", shortEn: "Dashboard", shortFr: "Accueil", shortAr: "الرئيسية" },
     { href: `${base}/formations`, icon: GraduationCap, en: "My courses", fr: "Mes formations", ar: "دوراتي", shortEn: "Courses", shortFr: "Formations", shortAr: "دوراتي" },
-    { href: `${base}/rendez-vous`, icon: CalendarDays, en: "My appointments", fr: "Mes rendez-vous", ar: "مواعيدي", shortEn: "Appointments", shortFr: "Rendez-vous", shortAr: "مواعيدي" },
+    { href: `/${locale}/learning/live`, icon: Video, en: "Live & Webinars", fr: "Directs & Webinaires", ar: "البث المباشر والندوات", shortEn: "Live", shortFr: "Directs", shortAr: "مباشر" },
     { href: `${base}/ressources`, icon: BookOpen, en: "My resources", fr: "Mes ressources", ar: "مواردي", shortEn: "Resources", shortFr: "Ressources", shortAr: "مواردي" },
     { href: `${base}/certificats`, icon: Award, en: "My certificates", fr: "Mes certificats", ar: "شهاداتي", shortEn: "Certificates", shortFr: "Certificats", shortAr: "شهاداتي" },
     { href: `${base}/profil`, icon: UserCheck, en: "Profile", fr: "Profil", ar: "الملف الشخصي", shortEn: "Profile", shortFr: "Profil", shortAr: "الملف" },

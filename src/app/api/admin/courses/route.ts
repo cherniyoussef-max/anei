@@ -22,6 +22,9 @@ const schema = z.object({
   mode: z.enum(["online", "hybrid", "onsite"]),
   published: z.boolean().default(false),
   featured: z.boolean().default(false),
+  qualifiesForProfessionalPromotion: z.boolean().default(false),
+  qualifyingTargetType: z.enum(["AVS", "SPECIALIST"]).nullable().optional(),
+  qualifyingTargetCategory: z.string().trim().max(100).nullable().optional(),
   coverImageObjectKey: z.string().min(3).max(1024).regex(/^[a-zA-Z0-9._\/-]+$/).nullable().optional(),
   objectives: z.object({
     fr: z.array(z.string().trim().min(1).max(300)).min(1).max(30),

@@ -1,9 +1,10 @@
-import { and, asc, count, desc, eq, gt, ilike, or, sql, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, ilike, isNull, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/server/db";
 import { avsProfiles, courseModules, courses, lessons, resources, webinars } from "@/server/db/schema";
 import { env } from "@/server/env";
 import { signedMediaUrl } from "@/server/storage";
 import { getRedis } from "@/server/cache/redis";
+import { avsNameMap } from "@/lib/arabic-locale";
 
 const DEFAULT_PAGE_SIZE = 12;
 const MAX_PAGE_SIZE = 48;
@@ -29,6 +30,7 @@ function escapeLike(value: string) {
 
 const COURSE_FIXTURE_SLUG_PATTERN = "^(stream-course|learn-course|course|preview-course|target-course|public-course|enrolled-course)-[0-9a-f]{8}-";
 const RESOURCE_FIXTURE_SLUG_PATTERN = "^storage-authz-resource-[0-9a-f]{8}-";
+const WEBINAR_FIXTURE_SLUG_PATTERN = "^(webinar-a-|webinar-b-|webinar-exp-|webinar-sec-|webinar-oth-|webinar-test-|target-webinar-)";
 const HOMEPAGE_PLACEHOLDER_PATTERN = "^(test|course|sum|demo|example|exemple|placeholder)$";
 const publicCourseFilter = and(eq(courses.published, true), sql`${courses.slug} !~ ${COURSE_FIXTURE_SLUG_PATTERN}`)!;
 const publicResourceFilter = and(eq(resources.published, true), sql`${resources.slug} !~ ${RESOURCE_FIXTURE_SLUG_PATTERN}`)!;
@@ -283,10 +285,24 @@ export async function listPublishedWebinars() {
       formFields: webinars.formFields,
       requireApproval: webinars.requireApproval,
       published: webinars.published,
+      category: webinars.category,
+      courseId: webinars.courseId,
+      courseTitleFr: courses.titleFr,
+      courseTitleAr: courses.titleAr,
+      courseSlug: courses.slug,
       hasReplay: sql<boolean>`(${webinars.replayUrl} IS NOT NULL AND ${webinars.replayUrl} != '')`,
+      isPast: sql<boolean>`(${webinars.startsAt} < NOW())`,
     })
     .from(webinars)
-    .where(eq(webinars.published, true))
+    .leftJoin(courses, eq(courses.id, webinars.courseId))
+    .where(
+      and(
+        eq(webinars.published, true),
+        sql`${webinars.slug} !~ ${WEBINAR_FIXTURE_SLUG_PATTERN}`,
+        sql`lower(trim(${webinars.titleFr})) !~ '^(webinar a|webinar b|webinar expired|webinaire securite|autre webinaire)$'`,
+        sql`lower(trim(${webinars.trainerName})) != 'trainer'`
+      )!
+    )
     .orderBy(asc(webinars.startsAt))
     .limit(100);
 }
@@ -310,9 +326,16 @@ export async function getWebinarBySlug(slug: string) {
       formFields: webinars.formFields,
       requireApproval: webinars.requireApproval,
       published: webinars.published,
+      category: webinars.category,
+      courseId: webinars.courseId,
+      courseTitleFr: courses.titleFr,
+      courseTitleAr: courses.titleAr,
+      courseSlug: courses.slug,
       hasReplay: sql<boolean>`(${webinars.replayUrl} IS NOT NULL AND ${webinars.replayUrl} != '')`,
+      isPast: sql<boolean>`(${webinars.startsAt} < NOW())`,
     })
     .from(webinars)
+    .leftJoin(courses, eq(courses.id, webinars.courseId))
     .where(and(eq(webinars.slug, slug), eq(webinars.published, true)))
     .limit(1);
   return row ?? null;
@@ -417,11 +440,20 @@ export async function getVisibleAvsSpecialties(): Promise<Array<{ fr: string; ar
 export async function searchVisibleAvs(input: AvsSearchInput = {}) {
   const { page, pageSize, offset } = pageBounds(input.page, input.pageSize);
   const q = normalizedQuery(input.q);
-  const filters: SQL[] = [eq(avsProfiles.visible, true)];
+  const filters: SQL[] = [
+    eq(avsProfiles.visible, true),
+    or(eq(avsProfiles.directoryType, "AVS"), isNull(avsProfiles.directoryType))!,
+  ];
   if (q) {
     const pattern = `%${q}%`;
+    const nameConditions: SQL[] = [ilike(avsProfiles.displayName, pattern)];
+    for (const [frName, { ar }] of Object.entries(avsNameMap)) {
+      if (ar.includes(q) || q.includes(ar)) {
+        nameConditions.push(ilike(avsProfiles.displayName, `%${frName}%`));
+      }
+    }
     filters.push(or(
-      ilike(avsProfiles.displayName, pattern),
+      ...nameConditions,
       ilike(avsProfiles.cityFr, pattern),
       ilike(avsProfiles.cityAr, pattern),
       ilike(avsProfiles.governorateFr, pattern),
@@ -476,6 +508,91 @@ export async function searchVisibleAvs(input: AvsSearchInput = {}) {
   };
 }
 
+export type SpecialistSearchInput = {
+  q?: string;
+  category?: string;
+  governorate?: string;
+  city?: string;
+  certified?: boolean;
+  page?: number;
+  pageSize?: number;
+};
+
+export async function searchVisibleSpecialists(input: SpecialistSearchInput = {}) {
+  const { page, pageSize, offset } = pageBounds(input.page, input.pageSize);
+  const q = normalizedQuery(input.q);
+  const filters: SQL[] = [
+    eq(avsProfiles.visible, true),
+    eq(avsProfiles.directoryType, "SPECIALIST"),
+  ];
+
+  if (q) {
+    const pattern = `%${q}%`;
+    filters.push(or(
+      ilike(avsProfiles.displayName, pattern),
+      ilike(avsProfiles.specialtyFr, pattern),
+      ilike(avsProfiles.specialtyAr, pattern),
+      ilike(avsProfiles.cityFr, pattern),
+      ilike(avsProfiles.cityAr, pattern),
+      ilike(avsProfiles.governorateFr, pattern),
+      ilike(avsProfiles.governorateAr, pattern),
+      ilike(avsProfiles.workplaceName, pattern),
+      ilike(avsProfiles.workplaceAddress, pattern),
+      ilike(avsProfiles.bioFr, pattern),
+      ilike(avsProfiles.bioAr, pattern),
+    )!);
+  }
+
+  if (input.category) {
+    filters.push(eq(avsProfiles.category, input.category));
+  }
+
+  if (input.governorate) {
+    const gov = input.governorate.slice(0, 100);
+    filters.push(or(eq(avsProfiles.governorateFr, gov), eq(avsProfiles.governorateAr, gov))!);
+  }
+
+  if (input.city) {
+    const city = input.city.slice(0, 100);
+    filters.push(or(ilike(avsProfiles.cityFr, `%${city}%`), ilike(avsProfiles.cityAr, `%${city}%`))!);
+  }
+
+  if (input.certified) {
+    filters.push(eq(avsProfiles.certified, true));
+  }
+
+  const where = and(...filters)!;
+  const [[{ value: total }], items, governorates] = await Promise.all([
+    db.select({ value: count() }).from(avsProfiles).where(where),
+    db.select().from(avsProfiles).where(where).orderBy(desc(avsProfiles.certified), desc(avsProfiles.rating), asc(avsProfiles.displayName)).limit(pageSize).offset(offset),
+    getVisibleAvsGovernorates(),
+  ]);
+
+  return {
+    items,
+    total,
+    page,
+    pageSize,
+    totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    governorates,
+  };
+}
+
+export async function getSpecialistByIdOrSlug(idOrSlug: string) {
+  const [profile] = await db
+    .select()
+    .from(avsProfiles)
+    .where(
+      and(
+        eq(avsProfiles.visible, true),
+        eq(avsProfiles.directoryType, "SPECIALIST"),
+        or(eq(avsProfiles.id, idOrSlug), eq(avsProfiles.slug, idOrSlug))
+      )
+    )
+    .limit(1);
+  return profile ?? null;
+}
+
 export async function getAvsByIdOrSlug(idOrSlug: string) {
   const [profile] = await db
     .select()
@@ -483,6 +600,10 @@ export async function getAvsByIdOrSlug(idOrSlug: string) {
     .where(
       and(
         eq(avsProfiles.visible, true),
+        or(
+          eq(avsProfiles.directoryType, "AVS"),
+          isNull(avsProfiles.directoryType)
+        ),
         or(eq(avsProfiles.id, idOrSlug), eq(avsProfiles.slug, idOrSlug))
       )
     )

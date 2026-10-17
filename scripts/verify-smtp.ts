@@ -10,15 +10,26 @@ if (!host || !user || !pass || !Number.isInteger(port) || port <= 0) {
   throw new Error("SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASS must be configured before verifying SMTP.");
 }
 
-const transporter = nodemailer.createTransport({
-  host,
-  port,
-  secure: process.env.SMTP_SECURE === "true",
-  auth: { user, pass },
-  connectionTimeout: 10_000,
-  greetingTimeout: 10_000,
-  socketTimeout: 20_000,
-});
+import crypto from "node:crypto";
+
+const transporter = nodemailer.createTransport(
+  {
+    host,
+    port,
+    secure: process.env.SMTP_SECURE === "true",
+    auth: { user, pass },
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 20_000,
+    tls: {
+      sessionIdContext: crypto.randomBytes(16).toString("hex"),
+    },
+  },
+  {
+    disableFileAccess: true,
+    disableUrlAccess: true,
+  },
+);
 
 async function main() {
   await transporter.verify();
@@ -27,6 +38,7 @@ async function main() {
 }
 
 main().catch(async (error: unknown) => {
+  console.error("RAW SMTP ERROR:", error);
   const { categorizeMailError } = await import("../src/server/services/mailer");
   const category = categorizeMailError(error);
   const messages: Record<string, string> = {

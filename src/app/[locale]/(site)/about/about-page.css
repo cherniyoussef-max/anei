@@ -1,17 +1,17 @@
-/* ANEI About page — aligned with Academy Home design tokens and 3D visual language. */
+/* ANEI About page — aligned with canonical design tokens and editorial layout. */
 .about-academy {
-  --ah-navy: #082d55;
-  --ah-navy-soft: #0a3d70;
-  --ah-navy-deep: #061f3d;
-  --ah-gold: #c9913f;
-  --ah-cream: #fcfbf8;
-  --ah-surface: #f6f3ee;
-  --ah-border: #e7e0d3;
-  --ah-ink: #1e293b;
-  --ah-ink-soft: #334155;
-  --ah-muted: #64748b;
-  --font-ah-serif: var(--font-fraunces), Georgia, serif;
-  --font-ah-sans: Inter, "Segoe UI", sans-serif;
+  --ah-navy: #1B3A5C;
+  --ah-navy-soft: #24476E;
+  --ah-navy-deep: #1B3A5C;
+  --ah-gold: #B8925A;
+  --ah-cream: #FFFFFF;
+  --ah-surface: #F4F7FA;
+  --ah-border: #E3E8EF;
+  --ah-ink: #1B3A5C;
+  --ah-ink-soft: #3D4A5C;
+  --ah-muted: #6B7685;
+  --font-ah-serif: var(--font-serif);
+  --font-ah-sans: var(--font-sans);
   background: var(--ah-cream);
   color: var(--ah-ink);
   font-family: var(--font-ah-sans);

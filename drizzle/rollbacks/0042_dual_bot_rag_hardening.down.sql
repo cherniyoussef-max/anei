@@ -1,0 +1,13 @@
+DROP TRIGGER IF EXISTS trg_knowledge_chunk_tsvector ON "knowledge_chunk";
+DROP FUNCTION IF EXISTS knowledge_chunk_tsvector_trigger();
+DROP INDEX IF EXISTS "knowledge_chunk_search_vector_idx";
+DROP INDEX IF EXISTS "knowledge_chunk_visibility_language_idx";
+ALTER TABLE "knowledge_chunk" DROP CONSTRAINT IF EXISTS "knowledge_chunk_language_check";
+ALTER TABLE "knowledge_chunk" DROP CONSTRAINT IF EXISTS "knowledge_chunk_visibility_check";
+ALTER TABLE "knowledge_chunk" DROP COLUMN IF EXISTS "search_vector";
+ALTER TABLE "knowledge_chunk" DROP COLUMN IF EXISTS "language";
+ALTER TABLE "knowledge_chunk" DROP COLUMN IF EXISTS "visibility";
+ALTER TABLE "knowledge_document" DROP CONSTRAINT IF EXISTS "knowledge_document_language_check";
+ALTER TABLE "knowledge_document" DROP CONSTRAINT IF EXISTS "knowledge_document_visibility_check";
+ALTER TABLE "knowledge_document" ADD CONSTRAINT "knowledge_document_visibility_check" CHECK ("visibility" IN ('PUBLIC', 'PLATFORM', 'ORGANIZATION', 'PRIVATE'));
+ALTER TABLE "knowledge_document" DROP COLUMN IF EXISTS "language";

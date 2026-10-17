@@ -92,6 +92,10 @@ type OverviewRow = {
   published_courses: number; enrollments: number; completed_enrollments: number;
   certificates: number; upcoming_webinars: number; pending_contacts: number;
   revenue_millimes: number; successful_payments: number; failed_payments: number;
+  active_escrow_millimes: number; platform_commissions_millimes: number;
+  in_person_consultations_count: number; candidates_under_review_count: number;
+  passed_interviews_count: number; approved_practitioners_count: number;
+  course_sales_count: number;
 };
 
 export async function getAdminOverview(period: AdminPeriod) {
@@ -116,7 +120,14 @@ async function computeAdminOverview(period: AdminPeriod) {
       (select count(*)::int from payments where status = 'paid'
         and created_at >= now() - (${days} * interval '1 day')) as successful_payments,
       (select count(*)::int from payments where status = 'failed'
-        and created_at >= now() - (${days} * interval '1 day')) as failed_payments
+        and created_at >= now() - (${days} * interval '1 day')) as failed_payments,
+      (select coalesce(sum(amount_millimes), 0)::int from avs_booking_requests where escrow_status = 'HELD_IN_ESCROW') as active_escrow_millimes,
+      (select coalesce(sum(platform_fee_millimes), 0)::int from avs_booking_requests where status in ('CONFIRMED', 'COMPLETED')) as platform_commissions_millimes,
+      (select count(*)::int from avs_booking_requests where payment_mode = 'PAY_ON_SITE') as in_person_consultations_count,
+      (select count(*)::int from "user" where professional_post_status = 'CANDIDATE_UNDER_REVIEW') as candidates_under_review_count,
+      (select count(*)::int from practitioner_promotions where interview_status = 'PASSED') as passed_interviews_count,
+      (select count(*)::int from "user" where professional_post_status in ('APPROVED_AVS', 'APPROVED_SPECIALIST')) as approved_practitioners_count,
+      (select count(*)::int from orders where status = 'paid') as course_sales_count
   `);
   const row = result.rows[0];
   return {
@@ -133,6 +144,13 @@ async function computeAdminOverview(period: AdminPeriod) {
     revenueMillimes: row?.revenue_millimes ?? 0,
     successfulPayments: row?.successful_payments ?? 0,
     failedPayments: row?.failed_payments ?? 0,
+    activeEscrowMillimes: row?.active_escrow_millimes ?? 0,
+    platformCommissionsMillimes: row?.platform_commissions_millimes ?? 0,
+    inPersonConsultationsCount: row?.in_person_consultations_count ?? 0,
+    candidatesUnderReviewCount: row?.candidates_under_review_count ?? 0,
+    passedInterviewsCount: row?.passed_interviews_count ?? 0,
+    approvedPractitionersCount: row?.approved_practitioners_count ?? 0,
+    courseSalesCount: row?.course_sales_count ?? 0,
   };
 }
 
@@ -169,7 +187,7 @@ export async function getAdminDistributions() {
 }
 
 async function computeAdminDistributions() {
-  const [roles, providers, courses] = await Promise.all([
+  const [roles, providers, courses, governorates, disciplines] = await Promise.all([
     db.execute<DistributionRow>(sql`select role label, count(*)::int value from "user" group by role order by value desc`),
     db.execute<DistributionRow>(sql`
       select case when provider_id = 'credential' then 'email' else provider_id end label,
@@ -181,8 +199,25 @@ async function computeAdminDistributions() {
       left join enrollments e on e.course_id = c.id
       group by c.id, c.title_fr order by value desc, c.title_fr limit 6
     `),
+    db.execute<DistributionRow>(sql`
+      select coalesce(governorate_fr, 'Tunis') label, count(*)::int value
+      from avs_profiles where visible = true
+      group by 1 order by value desc limit 8
+    `),
+    db.execute<DistributionRow>(sql`
+      select case when directory_type = 'AVS' then 'AVS / Accompagnant' else coalesce(category, 'Spécialiste') end label,
+        count(*)::int value
+      from avs_profiles where visible = true
+      group by 1 order by value desc limit 8
+    `),
   ]);
-  return { roles: roles.rows, providers: providers.rows, topCourses: courses.rows };
+  return {
+    roles: roles.rows,
+    providers: providers.rows,
+    topCourses: courses.rows,
+    governorates: governorates.rows,
+    disciplines: disciplines.rows,
+  };
 }
 
 // -----------------------------------------------------------------------------

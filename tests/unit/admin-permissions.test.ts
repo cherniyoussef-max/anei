@@ -24,3 +24,13 @@ test("persona management (approve/reject/suspend/reactivate) is granted to ADMIN
   assert.equal(hasAdminPermission("ADMIN", "personas.manage"), true);
   assert.equal(hasAdminPermission("USER", "personas.manage"), false);
 });
+
+test("live.manage is granted to ADMIN and SUPER_ADMIN, while live.broadcast.global is granted exclusively to SUPER_ADMIN", () => {
+  assert.equal(hasAdminPermission("ADMIN", "live.manage"), true);
+  assert.equal(hasAdminPermission("SUPER_ADMIN", "live.manage"), true);
+  assert.equal(hasAdminPermission("USER", "live.manage"), false);
+
+  assert.equal(hasAdminPermission("SUPER_ADMIN", "live.broadcast.global"), true);
+  assert.equal(hasAdminPermission("ADMIN", "live.broadcast.global"), false);
+  assert.equal(hasAdminPermission("USER", "live.broadcast.global"), false);
+});
