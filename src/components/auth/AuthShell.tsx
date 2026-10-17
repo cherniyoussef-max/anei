@@ -9,7 +9,7 @@ import { ArrowLeft, X } from "lucide-react";
 
 interface AuthShellProps {
   locale: Locale;
-  mode: "login" | "register";
+  mode: "login" | "register" | "recovery";
   children: ReactNode;
 }
 
@@ -17,9 +17,11 @@ export function AuthShell({ locale, mode, children }: AuthShellProps) {
   const pathname = usePathname();
   const ar = locale === "ar";
 
-  const switchHref = mode === "register" ? `/${locale}/connexion` : `/${locale}/inscription`;
+  const switchHref = mode === "register" ? `/${locale}/connexion` : mode === "recovery" ? `/${locale}/connexion` : `/${locale}/inscription`;
   const switchLabel = mode === "register"
     ? (ar ? "لديك حساب بالفعل؟ تسجيل الدخول ←" : "Déjà un compte ? Se connecter →")
+    : mode === "recovery"
+    ? (ar ? "تذكرت كلمة المرور؟ تسجيل الدخول ←" : "Mot de passe retrouvé ? Se connecter →")
     : (ar ? "جديد في الأكاديمية؟ إنشاء حساب ←" : "Nouveau sur ANEI ? Créer un compte →");
 
   return (

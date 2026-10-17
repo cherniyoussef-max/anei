@@ -247,6 +247,29 @@ export const authResetAuthorization = pgTable(
   ],
 );
 
+export const passwordResetTokens = pgTable(
+  "password_reset_tokens",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    email: text("email").notNull(),
+    tokenHash: text("token_hash").notNull(),
+    status: text("status").notNull().default("ACTIVE"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    consumedAt: timestamp("consumed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("password_reset_tokens_token_hash_unique").on(table.tokenHash),
+    index("password_reset_tokens_user_status_idx").on(table.userId, table.status),
+    index("password_reset_tokens_email_idx").on(table.email),
+    check("password_reset_tokens_status_check", sql`${table.status} in ('ACTIVE','CONSUMED','EXPIRED','REVOKED')`),
+  ],
+);
+
 export const authEvent = pgTable(
   "auth_event",
   {

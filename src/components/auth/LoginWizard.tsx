@@ -279,6 +279,20 @@ export function LoginWizard({
         locale={locale}
       />
 
+      {search.get("reset") === "success" && !error && (
+        <div
+          role="status"
+          className="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-sm flex items-start gap-3 shadow-xs"
+        >
+          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+          <div className="flex-1 font-medium">
+            {ar
+              ? "تمت إعادة تعيين كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول."
+              : "Votre mot de passe a été réinitialisé avec succès. Vous pouvez maintenant vous connecter."}
+          </div>
+        </div>
+      )}
+
       {error ? (
         <div
           role="alert"
@@ -355,7 +369,7 @@ export function LoginWizard({
                   {ar ? "كلمة المرور" : "Mot de passe"} <span className="text-red-500">*</span>
                 </label>
                 <Link
-                  href={`/${locale}/forgot-password`}
+                  href={`/${locale}/mot-de-passe-oublie`}
                   className="text-xs font-semibold text-[#0056D2] hover:underline"
                 >
                   {ar ? "نسيت كلمة المرور؟" : "Mot de passe oublié ?"}

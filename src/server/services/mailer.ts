@@ -124,16 +124,20 @@ export async function sendResetEmail(input: AuthMailInput) {
     to: input.email,
     subject: ar ? "إعادة تعيين كلمة المرور — ANEI" : "Réinitialisation de votre mot de passe — ANEI",
     text: ar
-      ? `مرحباً ${input.name}، تم طلب إعادة تعيين كلمة المرور لحسابك.`
-      : `Bonjour ${input.name}, une réinitialisation de mot de passe a été demandée pour votre compte.`,
+      ? `مرحباً ${input.name}، تم استلام طلب لإعادة تعيين كلمة مرور حسابك على ANEI. الرابط: ${input.url} (صالح لمدة 30 دقيقة).`
+      : `Bonjour ${input.name}, une demande de réinitialisation de mot de passe a été reçue pour votre compte ANEI. Lien : ${input.url} (valable pendant 30 minutes).`,
     html: emailFrame({
       dir: ar ? "rtl" : "ltr",
       title: ar ? "إعادة تعيين كلمة المرور" : "Réinitialisation du mot de passe",
       greeting: ar ? `مرحباً ${name}،` : `Bonjour ${name},`,
-      body: ar ? "تم استلام طلب لإعادة تعيين كلمة مرور حسابك." : "Une demande de réinitialisation a été reçue pour votre compte.",
-      action: ar ? "اختيار كلمة مرور جديدة" : "Choisir un nouveau mot de passe",
+      body: ar
+        ? "تم استلام طلب لإعادة تعيين كلمة مرور حسابك على الأكاديمية الوطنية للتربية الدامجة (ANEI). انقر فوق الزر أدناه لاختيار كلمة مرور جديدة:"
+        : "Une demande de réinitialisation de mot de passe a été reçue pour votre compte sur l'Académie Nationale de l'Éducation Inclusive (ANEI). Cliquez sur le bouton ci-dessous pour choisir votre nouveau mot de passe :",
+      action: ar ? "إعادة تعيين كلمة المرور" : "Réinitialiser mon mot de passe",
       url,
-      footer: ar ? "إذا لم تطلب ذلك، يمكنك تجاهل هذه الرسالة." : "Si vous n’êtes pas à l’origine de cette demande, ignorez ce message.",
+      footer: ar
+        ? "إذا لم تطلب إعادة تعيين كلمة المرور، يرجى تجاهل هذا البريد الإلكتروني. هذا الرابط صالح لمدة 30 دقيقة فقط."
+        : "Si vous n'avez pas demandé cette réinitialisation, veuillez ignorer cet e-mail. Ce lien expire dans 30 minutes.",
     }),
   }, "PASSWORD_RESET");
 }

@@ -1,9 +1,9 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/lib/i18n";
-import { ResetPasswordForm } from "@/components/interactive/ResetPasswordForm";
-import { AuthShowcase } from "@/components/auth/AuthShowcase";
+import { AuthShell } from "@/components/auth/AuthShell";
+import { ResetPasswordWizard } from "@/components/auth/ResetPasswordWizard";
+import { Loader2 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -14,27 +14,21 @@ export default async function ResetPasswordPage({
 }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
-  const ar = locale === "ar";
-  const en = locale === "en";
 
   return (
-    <section className="auth-section">
-      <div className="container auth-grid">
-        <AuthShowcase locale={locale} mode="recovery" stage="reset" />
-
-        <div className="auth-card">
-          <Suspense fallback={<p className="text-center py-6 text-slate-500">{ar ? "جارٍ التحميل..." : "Chargement..."}</p>}>
-            <ResetPasswordForm locale={locale} />
-          </Suspense>
-
-          <div className="auth-switch">
-            <span>{ar ? "تذكرت كلمة المرور القديمة؟" : en ? "Remember your old password?" : "Vous vous souvenez de votre mot de passe ?"}</span>{" "}
-            <Link href={`/${locale}/login`} className="auth-switch-link">
-              {ar ? "العودة لتسجيل الدخول ←" : "Retour à la connexion →"}
-            </Link>
+    <AuthShell locale={locale} mode="recovery">
+      <Suspense
+        fallback={
+          <div className="w-full bg-white rounded-2xl border border-slate-200/90 p-10 shadow-xs text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-[#0056D2] mx-auto mb-4" />
+            <p className="text-slate-500 text-sm font-medium">
+              {locale === "ar" ? "جارٍ التحميل..." : "Chargement..."}
+            </p>
           </div>
-        </div>
-      </div>
-    </section>
+        }
+      >
+        <ResetPasswordWizard locale={locale} />
+      </Suspense>
+    </AuthShell>
   );
 }

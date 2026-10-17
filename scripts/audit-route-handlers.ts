@@ -24,6 +24,8 @@ const WEBHOOK_OR_INTERNAL_ROUTES = [
 const INTENTIONAL_PUBLIC_MUTATING_ROUTES = [
   "src/app/api/contact/route.ts",
   "src/app/api/newsletter/route.ts",
+  "src/app/api/auth/forgot-password/route.ts",
+  "src/app/api/auth/reset-password/route.ts",
   "src/app/api/auth/password/forgot/route.ts",
   "src/app/api/auth/password/reset/route.ts",
   "src/app/api/auth/password/verify-otp/route.ts",

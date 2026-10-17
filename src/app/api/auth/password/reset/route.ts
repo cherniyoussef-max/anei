@@ -3,7 +3,7 @@ import { z } from "zod";
 import { isTrustedMutation } from "@/server/security/origin";
 import { readLimitedJson } from "@/server/security/request-body";
 import { consumeRateLimit, requestFingerprint } from "@/server/security/rate-limit";
-import { resetPasswordWithAuthorization } from "@/server/auth/password-recovery";
+import { resetPasswordWithToken } from "@/server/auth/password-recovery";
 import { getRequestId } from "@/server/auth/request-id";
 
 const schema = z
@@ -15,12 +15,12 @@ const schema = z
 
 export async function POST(request: Request) {
   if (!isTrustedMutation(request)) return NextResponse.json({ error: "UNTRUSTED_ORIGIN" }, { status: 403 });
-  const rate = await consumeRateLimit(`password-reset-ip:${requestFingerprint(request)}`, 10, 600);
+  const rate = await consumeRateLimit(`password-reset-ip:${requestFingerprint(request)}`, 5, 600);
   if (!rate.allowed) return NextResponse.json({ error: "RATE_LIMITED" }, { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } });
   const parsed = schema.safeParse(await readLimitedJson(request).catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "INVALID_INPUT" }, { status: 400 });
 
-  const result = await resetPasswordWithAuthorization({
+  const result = await resetPasswordWithToken({
     requestId: getRequestId(request),
     token: parsed.data.token,
     newPassword: parsed.data.newPassword,
