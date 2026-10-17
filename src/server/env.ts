@@ -81,7 +81,15 @@ const schema = z.object({
   ENABLE_CLOUDFLARE_STREAM: boolString,
   CLOUDFLARE_ACCOUNT_ID: optionalTrimmed,
   CLOUDFLARE_STREAM_API_TOKEN: optionalTrimmed,
+  CLOUDFLARE_API_TOKEN: optionalTrimmed,
   CLOUDFLARE_STREAM_CUSTOMER_CODE: optionalTrimmed,
+  CLOUDFLARE_STREAM_SIGNING_KEY_ID: optionalTrimmed,
+  CLOUDFLARE_STREAM_SIGNING_KEY_PEM: optionalTrimmed,
+  CLOUDFLARE_STREAM_WEBHOOK_SECRET: optionalTrimmed,
+  CLOUDFLARE_R2_BUCKET_NAME: optionalTrimmed,
+  CLOUDFLARE_R2_ACCESS_KEY_ID: optionalTrimmed,
+  CLOUDFLARE_R2_SECRET_ACCESS_KEY: optionalTrimmed,
+  CLOUDFLARE_R2_PUBLIC_DOMAIN: optionalTrimmed,
   OPENAI_API_KEY: optionalTrimmed,
   OPENAI_API_BASE_URL: optionalTrimmed,
   OPENAI_MODEL: z.string().default("gpt-4o-mini"),
@@ -220,8 +228,15 @@ if (env.NODE_ENV === "production" && !isBuildPhase && !isLocalProductionSmoke) {
     // Phase 10 boundary) — never enabled in production until that work lands.
     throw new Error("ENABLE_WHATSAPP_AI_REPLIES cannot be true in production until the AI reply implementation is reviewed and hardened.");
   }
-  if (env.ENABLE_CLOUDFLARE_STREAM && (!env.CLOUDFLARE_ACCOUNT_ID || !env.CLOUDFLARE_STREAM_API_TOKEN || !env.CLOUDFLARE_STREAM_CUSTOMER_CODE)) {
-    throw new Error("Cloudflare Stream is enabled but CLOUDFLARE_ACCOUNT_ID/CLOUDFLARE_STREAM_API_TOKEN/CLOUDFLARE_STREAM_CUSTOMER_CODE are missing.");
+  if (
+    env.ENABLE_CLOUDFLARE_STREAM &&
+    (!env.CLOUDFLARE_ACCOUNT_ID ||
+      (!env.CLOUDFLARE_STREAM_API_TOKEN && !env.CLOUDFLARE_API_TOKEN) ||
+      !env.CLOUDFLARE_STREAM_CUSTOMER_CODE)
+  ) {
+    throw new Error(
+      "Cloudflare Stream is enabled but CLOUDFLARE_ACCOUNT_ID/(CLOUDFLARE_STREAM_API_TOKEN or CLOUDFLARE_API_TOKEN)/CLOUDFLARE_STREAM_CUSTOMER_CODE are missing.",
+    );
   }
 }
 
@@ -239,5 +254,13 @@ export const whatsappAiRepliesConfigured = Boolean(
   env.ENABLE_WHATSAPP_AI_REPLIES && whatsappConfigured && env.OPENAI_API_KEY,
 );
 export const cloudflareStreamConfigured = Boolean(
-  env.ENABLE_CLOUDFLARE_STREAM && env.CLOUDFLARE_ACCOUNT_ID && env.CLOUDFLARE_STREAM_API_TOKEN && env.CLOUDFLARE_STREAM_CUSTOMER_CODE,
+  env.ENABLE_CLOUDFLARE_STREAM &&
+    env.CLOUDFLARE_ACCOUNT_ID &&
+    (env.CLOUDFLARE_STREAM_API_TOKEN || env.CLOUDFLARE_API_TOKEN) &&
+    env.CLOUDFLARE_STREAM_CUSTOMER_CODE,
+);
+export const cloudflareR2Configured = Boolean(
+  env.CLOUDFLARE_R2_BUCKET_NAME &&
+    env.CLOUDFLARE_R2_ACCESS_KEY_ID &&
+    env.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
 );

@@ -94,9 +94,12 @@ export function AdminLessonRow({ locale, courseId, lesson, modules = [] }: { loc
       <div className="field-row" style={{ display: "grid", gap: "14px" }}>
         <AdminStreamVideoUploader
           locale={locale}
+          lessonId={lesson.id}
+          courseId={courseId}
           initialMediaProvider={lesson.mediaProvider}
           initialMediaRef={lesson.mediaRef}
           initialVideoUrl={lesson.videoUrl}
+          initialDurationSeconds={lesson.durationSeconds}
         />
         <div>
           {lesson.documentUrl ? <p className="small-muted">{ar ? "الوثيقة الحالية:" : "Document actuel :"} <code className="object-key-preview">{lesson.documentUrl}</code></p> : null}

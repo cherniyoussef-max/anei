@@ -442,6 +442,39 @@ export const lessons = pgTable(
   ],
 );
 
+export const videoAssets = pgTable(
+  "video_assets",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    lessonId: text("lesson_id").references(() => lessons.id, { onDelete: "set null" }),
+    courseId: text("course_id").references(() => courses.id, { onDelete: "set null" }),
+    provider: text("provider").notNull().default("LOCAL_DEV"),
+    cloudflareUid: text("cloudflare_uid").notNull(),
+    originalFilename: text("original_filename").notNull().default(""),
+    fileSizeBytes: bigint("file_size_bytes", { mode: "number" }).notNull().default(0),
+    mimeType: text("mime_type").notNull().default("video/mp4"),
+    status: text("status").notNull().default("UPLOADING"),
+    encodingProgressPercent: integer("encoding_progress_percent").notNull().default(0),
+    durationSeconds: integer("duration_seconds").notNull().default(0),
+    playbackHlsUrl: text("playback_hls_url"),
+    playbackDashUrl: text("playback_dash_url"),
+    thumbnailUrl: text("thumbnail_url"),
+    requireSignedUrls: boolean("require_signed_urls").notNull().default(true),
+    uploadedByAdminId: text("uploaded_by_admin_id").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("video_assets_cloudflare_uid_unique").on(table.cloudflareUid),
+    index("video_assets_lesson_idx").on(table.lessonId),
+    index("video_assets_course_idx").on(table.courseId),
+    index("video_assets_status_idx").on(table.status),
+    index("video_assets_created_at_idx").on(table.createdAt),
+    check("video_assets_provider_check", sql`${table.provider} in ('CLOUDFLARE_STREAM','CLOUDFLARE_R2','LOCAL_DEV')`),
+    check("video_assets_status_check", sql`${table.status} in ('UPLOADING','PROCESSING','READY','ERROR')`),
+  ],
+);
+
 export const enrollments = pgTable(
   "enrollments",
   {
@@ -3121,3 +3154,5 @@ export type CareNotificationPreferenceRow = typeof careNotificationPreference.$i
 export type AvsProfileRow = typeof avsProfiles.$inferSelect;
 export type AvsBookingRequestRow = typeof avsBookingRequests.$inferSelect;
 export type PractitionerPromotionRow = typeof practitionerPromotions.$inferSelect;
+export type VideoAssetRow = typeof videoAssets.$inferSelect;
+export type VideoAssetInsert = typeof videoAssets.$inferInsert;

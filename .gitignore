@@ -37,3 +37,9 @@ docs/archive/CLAUDE_LEGACY_*.md
 .claude/settings.json.graphify-bak
 .claude/settings.json
 .vercel
+
+# User local course resource files
+/Les chapitres/
+/TDAH/
+/Trouble d'apprentissage/
+/fiche TDAH/

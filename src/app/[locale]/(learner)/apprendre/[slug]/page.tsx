@@ -317,6 +317,9 @@ export default async function CourseRoomPage({
                     lessonId={activeLesson.id}
                     title={ar ? activeLesson.titleAr : activeLesson.titleFr}
                     locale={locale}
+                    initialSeconds={activeProgress?.watchedSeconds ?? 0}
+                    initiallyCompleted={activeProgress?.completed ?? false}
+                    nextLessonHref={nextLesson ? lessonHref(nextLesson.id) : undefined}
                   />
                 ) : activeLesson.videoUrl ? (
                   <VideoLessonPlayer

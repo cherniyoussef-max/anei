@@ -1,17 +1,14 @@
 import { NextResponse } from "next/server";
 import { getAdminSessionFor, adminMutationRateLimit } from "@/server/auth/admin";
 import { isTrustedMutation } from "@/server/security/origin";
-import { createStreamDirectUpload, MediaConfigurationError, MediaProviderError } from "@/server/media/cloudflare-stream";
-import { cloudflareStreamConfigured } from "@/server/env";
+import { createDirectUploadSession } from "@/server/media/cloudflare-stream";
 import { logger } from "@/server/security/logger";
 
 const noStore = { "Cache-Control": "private, no-store" } as const;
 
 /**
- * Creates a pre-signed Direct Creator Upload URL from Cloudflare Stream.
- * Allows the admin browser to upload large course video files directly to Cloudflare's
- * global edge network without hitting Vercel's 4.5MB serverless payload limit
- * or incurring Vercel bandwidth costs.
+ * Creates a pre-signed Direct Creator Upload URL from Cloudflare Stream
+ * or transparent local fallback engine.
  */
 export async function POST(request: Request) {
   if (!isTrustedMutation(request)) {
@@ -31,44 +28,35 @@ export async function POST(request: Request) {
     );
   }
 
-  // If Cloudflare Stream credentials are not configured:
-  // In development/test environments, return a mock endpoint so non-production workflows can be tested safely.
-  if (!cloudflareStreamConfigured) {
-    if (process.env.NODE_ENV !== "production") {
-      const mockUid = "0123456789abcdef0123456789abcdef";
-      return NextResponse.json(
-        {
-          uploadUrl: "/api/admin/media/mock-stream-upload",
-          uid: mockUid,
-          mock: true,
-        },
-        { status: 201, headers: noStore },
-      );
-    }
-    return NextResponse.json(
-      { error: "CLOUDFLARE_STREAM_NOT_CONFIGURED" },
-      { status: 503, headers: noStore },
-    );
+  let body: Record<string, unknown> = {};
+  try {
+    body = (await request.json()) as Record<string, unknown>;
+  } catch {
+    // optional body
   }
 
   try {
-    const directUpload = await createStreamDirectUpload({ maxDurationSeconds: 14400 });
+    const uploadSession = await createDirectUploadSession({
+      filename: typeof body.filename === "string" ? body.filename : undefined,
+      fileSizeBytes: typeof body.fileSizeBytes === "number" ? body.fileSizeBytes : undefined,
+      mimeType: typeof body.mimeType === "string" ? body.mimeType : undefined,
+      lessonId: typeof body.lessonId === "string" ? body.lessonId : null,
+      courseId: typeof body.courseId === "string" ? body.courseId : null,
+      adminId: session.user.id,
+    });
+
     return NextResponse.json(
       {
-        uploadUrl: directUpload.uploadUrl,
-        uid: directUpload.uid,
+        assetId: uploadSession.assetId,
+        uploadUrl: uploadSession.uploadUrl,
+        uid: uploadSession.cloudflareUid,
+        provider: uploadSession.provider,
+        mock: uploadSession.provider === "LOCAL_DEV",
       },
       { status: 201, headers: noStore },
     );
   } catch (error) {
-    if (error instanceof MediaConfigurationError) {
-      return NextResponse.json({ error: "CLOUDFLARE_STREAM_NOT_CONFIGURED" }, { status: 503, headers: noStore });
-    }
-    if (error instanceof MediaProviderError) {
-      logger.error("stream_direct_upload.provider_failure", { adminUserId: session.user.id });
-      return NextResponse.json({ error: "STREAM_UPLOAD_FAILED" }, { status: 502, headers: noStore });
-    }
     logger.error("stream_direct_upload.unexpected_error", { error: String(error) });
-    return NextResponse.json({ error: "INTERNAL_ERROR" }, { status: 500, headers: noStore });
+    return NextResponse.json({ error: "STREAM_UPLOAD_FAILED" }, { status: 500, headers: noStore });
   }
 }
