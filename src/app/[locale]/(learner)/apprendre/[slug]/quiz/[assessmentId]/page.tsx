@@ -17,5 +17,21 @@ export default async function AssessmentPage({ params }: { params: Promise<{ loc
   const data = await getLearnerAssessment(session.user.id, assessmentId);
   if (!data) notFound();
   const courseHref = `/${locale}/apprendre/${slug}`;
-  return <section className="course-assessment-room"><Link className="course-room-back" href={courseHref}>{locale === "ar" ? "العودة إلى الدورة" : locale === "en" ? "Back to course" : "Retour à la formation"}</Link><AssessmentPlayer locale={locale} data={data} courseHref={courseHref}/></section>;
+  return (
+    <section className="course-assessment-room">
+      <Link className="course-room-back" href={courseHref}>
+        {locale === "ar" ? "العودة إلى الدورة" : locale === "en" ? "Back to course" : "Retour à la formation"}
+      </Link>
+      <AssessmentPlayer
+        locale={locale}
+        data={data}
+        courseHref={courseHref}
+        learner={{
+          id: session.user.id,
+          email: session.user.email,
+          name: session.user.name,
+        }}
+      />
+    </section>
+  );
 }

@@ -12,6 +12,8 @@ type DiscussionItem = {
   createdAt: string;
   authorFirstName: string;
   own: boolean;
+  isExpert?: boolean;
+  authorRole?: string;
 };
 
 const copy = {
@@ -31,6 +33,9 @@ const copy = {
     error: "Your contribution could not be published. Check the text and try again.",
     limit: "Maximum 2,000 characters",
     you: "You",
+    expertBadge: "Expert ANEI",
+    pinnedResponse: "Certified Expert Response",
+    fomoBanner: "Direct Q&A with certified ANEI trainers • Expert replies pinned first",
   },
   fr: {
     title: "Questions et réponses",
@@ -48,6 +53,9 @@ const copy = {
     error: "Votre contribution n’a pas pu être publiée. Vérifiez le texte puis réessayez.",
     limit: "2 000 caractères maximum",
     you: "Vous",
+    expertBadge: "Expert ANEI",
+    pinnedResponse: "Réponse certifiée formateur",
+    fomoBanner: "Échange direct avec le formateur & les experts ANEI • Réponses certifiées épinglées en haut",
   },
   ar: {
     title: "الأسئلة والإجابات",
@@ -65,6 +73,9 @@ const copy = {
     error: "تعذر نشر مساهمتك. تحقق من النص ثم أعد المحاولة.",
     limit: "الحد الأقصى 2000 حرف",
     you: "أنت",
+    expertBadge: "خبير معتمد ANEI",
+    pinnedResponse: "إجابة معتمدة من المدرب",
+    fomoBanner: "نقاش مباشر مع مؤطري الدورة وخبراء ANEI • إجابات المدرب مثبتة في الأعلى",
   },
 } as const;
 
@@ -134,6 +145,12 @@ export function CourseDiscussion({ courseId, locale, items, currentUserFirstName
         <span>{roots.length}</span>
       </header>
 
+      {/* FOMO & Expert Engagement Banner */}
+      <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-50/80 border border-amber-200/90 text-amber-900 text-xs font-medium my-3">
+        <Icon name="check" size={15} className="text-amber-700 shrink-0" />
+        <span>{c.fomoBanner}</span>
+      </div>
+
       <form className="course-question-form" onSubmit={(event) => { event.preventDefault(); void submit(question, null); }}>
         <label htmlFor="course-question">{c.label}</label>
         <textarea id="course-question" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={c.questionPlaceholder} minLength={2} maxLength={2000} required />
@@ -143,13 +160,56 @@ export function CourseDiscussion({ courseId, locale, items, currentUserFirstName
       <p className="course-discussion-status" aria-live="polite">{status === "success" ? c.success : status === "error" ? c.error : ""}</p>
 
       {roots.length ? <div className="course-question-list">{roots.map((item) => {
-        const replies = displayItems.filter((candidate) => candidate.parentId === item.id);
+        // Sort replies: expert replies pinned first
+        const rawReplies = displayItems.filter((candidate) => candidate.parentId === item.id);
+        const replies = [...rawReplies].sort((a, b) => (b.isExpert ? 1 : 0) - (a.isExpert ? 1 : 0));
+
         return <article className="course-question" key={item.id}>
-          <header><span aria-hidden="true">{item.authorFirstName.charAt(0).toLocaleUpperCase(locale)}</span><div><strong>{item.own ? c.you : item.authorFirstName}</strong><time dateTime={item.createdAt}>{dateFormatter.format(new Date(item.createdAt))}</time></div></header>
+          <header>
+            <span aria-hidden="true">{item.authorFirstName.charAt(0).toLocaleUpperCase(locale)}</span>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <strong>{item.own ? c.you : item.authorFirstName}</strong>
+                {item.isExpert && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
+                    <Icon name="shield" size={10} className="text-amber-700" />
+                    <span>{c.expertBadge}</span>
+                  </span>
+                )}
+              </div>
+              <time dateTime={item.createdAt}>{dateFormatter.format(new Date(item.createdAt))}</time>
+            </div>
+          </header>
           <p>{item.body}</p>
           <button className="course-reply-trigger" type="button" aria-expanded={replyTo === item.id} aria-controls={`reply-${item.id}`} onClick={() => { setReplyTo(replyTo === item.id ? null : item.id); setReply(""); setStatus("idle"); }}><Icon name="mail" size={16} />{c.reply}</button>
 
-          {replies.length ? <div className="course-replies">{replies.map((response) => <article key={response.id}><header><span aria-hidden="true">{response.authorFirstName.charAt(0).toLocaleUpperCase(locale)}</span><div><strong>{response.own ? c.you : response.authorFirstName}</strong><time dateTime={response.createdAt}>{dateFormatter.format(new Date(response.createdAt))}</time></div></header><p>{response.body}</p></article>)}</div> : null}
+          {replies.length ? (
+            <div className="course-replies">
+              {replies.map((response) => (
+                <article
+                  key={response.id}
+                  className={response.isExpert ? "p-3 rounded-xl bg-amber-50/70 border border-amber-200/90 shadow-2xs my-1.5" : ""}
+                >
+                  <header>
+                    <span aria-hidden="true">{response.authorFirstName.charAt(0).toLocaleUpperCase(locale)}</span>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <strong>{response.own ? c.you : response.authorFirstName}</strong>
+                        {response.isExpert && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
+                            <Icon name="shield" size={10} className="text-amber-700" />
+                            <span>{c.expertBadge}</span>
+                          </span>
+                        )}
+                      </div>
+                      <time dateTime={response.createdAt}>{dateFormatter.format(new Date(response.createdAt))}</time>
+                    </div>
+                  </header>
+                  <p>{response.body}</p>
+                </article>
+              ))}
+            </div>
+          ) : null}
 
           {replyTo === item.id ? <form className="course-reply-form" id={`reply-${item.id}`} onSubmit={(event) => { event.preventDefault(); void submit(reply, item.id); }}><label htmlFor={`reply-body-${item.id}`}>{c.replyLabel}</label><textarea id={`reply-body-${item.id}`} value={reply} onChange={(event) => setReply(event.target.value)} placeholder={c.replyPlaceholder} minLength={2} maxLength={2000} required autoFocus/><div className="course-form-footer"><button type="button" className="course-room-secondary" onClick={() => setReplyTo(null)}>{c.cancel}</button><button type="submit" className="course-room-primary" disabled={pending || reply.trim().length < 2}>{c.publishReply}</button></div></form> : null}
         </article>;

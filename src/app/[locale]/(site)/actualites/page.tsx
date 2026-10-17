@@ -96,14 +96,14 @@ export default async function NewsPage({ params }: { params: Promise<{ locale: s
               <span className="w-6 h-[1.5px] bg-[#B58D3D] shrink-0" aria-hidden="true" />
               <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#B58D3D]">{text.eyebrow}</span>
             </div>
-            <h1 id="news-title" className="text-4xl sm:text-5xl font-serif font-bold tracking-tight text-[#142B47] leading-[1.15] max-w-2xl mt-2">{text.title}</h1>
+            <h1 id="news-title" className="text-4xl sm:text-5xl font-sans font-bold tracking-tight text-[#142B47] leading-[1.15] max-w-2xl mt-2">{text.title}</h1>
             <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-xl mt-4 font-normal">{text.intro}</p>
           </div>
 
           <aside className="news-v7-alerts" aria-labelledby="news-alerts-title">
             <div className="news-v7-alert-icon" aria-hidden="true"><Icon name="bell" size={22} /></div>
             <div className="news-v7-alert-copy">
-              <h2 id="news-alerts-title" className="font-editorial-serif">{text.alertsTitle}</h2>
+              <h2 id="news-alerts-title" className="font-sans font-bold text-base text-[#142B47]">{text.alertsTitle}</h2>
               <p>{text.alertsCopy}</p>
             </div>
             <NewsletterForm locale={locale} idSuffix="news" variant="expanded" />
@@ -147,7 +147,7 @@ export default async function NewsPage({ params }: { params: Promise<{ locale: s
                 {/* Colonne droite avec padding équilibré p-8 lg:p-10 */}
                 <div className="md:col-span-8 p-8 lg:p-10 flex flex-col justify-center">
                   <span className="text-xs font-semibold uppercase tracking-wider text-[#B58D3D] mb-2">{latest.tag}</span>
-                  <h2 id="latest-news-title" className="text-2xl sm:text-3xl font-serif font-bold text-[#142B47] leading-tight mb-3">
+                  <h2 id="latest-news-title" className="text-2xl sm:text-3xl font-sans font-bold text-[#142B47] leading-tight mb-3">
                     <Link href={`/${locale}/actualites/${latest.slug}`} className="hover:text-[#1E3F66] transition-colors">
                       {cleanLatestTitle}
                     </Link>
@@ -174,7 +174,7 @@ export default async function NewsPage({ params }: { params: Promise<{ locale: s
                   <span className="w-6 h-[1.5px] bg-[#B58D3D] shrink-0" aria-hidden="true" />
                   <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#B58D3D]">{ar ? "المستجدات" : "Mises à jour"}</span>
                 </div>
-                <h2 id="all-news-title" className="text-2xl sm:text-3xl font-serif font-bold text-[#142B47]">{text.all}</h2>
+                <h2 id="all-news-title" className="text-2xl sm:text-3xl font-sans font-bold text-[#142B47]">{text.all}</h2>
                 <p className="text-sm sm:text-[15px] text-slate-600 leading-relaxed max-w-xl mt-1.5">{text.allCopy}</p>
               </header>
               <div className="divide-y divide-slate-100">
@@ -200,7 +200,7 @@ export default async function NewsPage({ params }: { params: Promise<{ locale: s
 
                           {/* Titre et extrait */}
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-lg sm:text-xl font-serif font-semibold text-[#142B47] leading-snug group-hover:text-[#1E3F66] transition-colors">
+                            <h3 className="text-lg sm:text-xl font-sans font-semibold text-[#142B47] leading-snug group-hover:text-[#1E3F66] transition-colors">
                               {cleanItemTitle}
                             </h3>
                             <p className="text-sm text-slate-600 leading-relaxed mt-1 line-clamp-2">

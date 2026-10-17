@@ -239,6 +239,42 @@ export default async function AdminOverview({ params, searchParams }: {
           </div>
         </div>
       </article>
+
+      {/* 3. Webinar-to-Course Conversion Funnel */}
+      <article className="admin-surface" style={{ padding: "1.25rem", borderRadius: "12px", border: "1px solid #E2E8F0" }}>
+        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+          <div>
+            <span style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", color: "#B58D3D", letterSpacing: "0.08em" }}>
+              {ar ? "أثر الندوات" : "Acquisition Événementielle"}
+            </span>
+            <h2 style={{ fontSize: "1.125rem", fontWeight: 700, color: "#142B47", margin: "2px 0 0" }}>
+              {ar ? "تحويل الندوات إلى تكوينات" : "Funnel Webinaires ➔ Formations"}
+            </h2>
+          </div>
+          <Link href={`/${locale}/admin/live`} style={{ fontSize: "0.8125rem", color: "#0056D2", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+            <span>{ar ? "الندوات" : "Webinaires"}</span>
+            <ArrowUpRight size={14} />
+          </Link>
+        </header>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.75rem", textAlign: "center" }}>
+          <div style={{ background: "#F8FAFC", padding: "0.875rem", borderRadius: "8px", border: "1px solid #E2E8F0" }}>
+            <span style={{ fontSize: "0.75rem", color: "#64748B", display: "block" }}>{ar ? "المسجلون" : "Inscrits"}</span>
+            <strong style={{ fontSize: "1.375rem", color: "#082D55", display: "block", marginTop: 2 }}>{overview.webinarRegistrationsCount}</strong>
+            <small style={{ fontSize: "0.6875rem", color: "#94A3B8" }}>{ar ? "كل الندوات" : "Participants"}</small>
+          </div>
+          <div style={{ background: "#F8FAFC", padding: "0.875rem", borderRadius: "8px", border: "1px solid #E2E8F0" }}>
+            <span style={{ fontSize: "0.75rem", color: "#64748B", display: "block" }}>{ar ? "التحقوا بالدورة" : "Convertis"}</span>
+            <strong style={{ fontSize: "1.375rem", color: "#0284C7", display: "block", marginTop: 2 }}>{overview.webinarToCourseConversionsCount}</strong>
+            <small style={{ fontSize: "0.6875rem", color: "#94A3B8" }}>{ar ? "دورة مرتبطة" : "Formations liées"}</small>
+          </div>
+          <div style={{ background: "#F0FDF4", padding: "0.875rem", borderRadius: "8px", border: "1px solid #BBF7D0" }}>
+            <span style={{ fontSize: "0.75rem", color: "#166534", display: "block" }}>{ar ? "نسبة التحويل" : "Taux Conv."}</span>
+            <strong style={{ fontSize: "1.375rem", color: "#15803D", display: "block", marginTop: 2 }}>{overview.webinarConversionRate}%</strong>
+            <small style={{ fontSize: "0.6875rem", color: "#16A34A" }}>{ar ? "تحويل مباشر" : "Webinar-to-Course"}</small>
+          </div>
+        </div>
+      </article>
     </div>
 
     <section className="admin-dashboard-grid">

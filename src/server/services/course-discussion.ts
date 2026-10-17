@@ -10,6 +10,8 @@ export type CourseDiscussionItem = {
   createdAt: Date;
   authorFirstName: string;
   own: boolean;
+  isExpert: boolean;
+  authorRole?: string;
 };
 
 async function enrolledCourse(userId: string, courseId: string) {
@@ -28,6 +30,13 @@ function firstName(profileFirstName: string | null, accountName: string | null |
 
 export async function getCourseDiscussion(userId: string, courseId: string): Promise<CourseDiscussionItem[] | null> {
   if (!(await enrolledCourse(userId, courseId))) return null;
+
+  const [course] = await db
+    .select({ trainerName: courses.trainerName })
+    .from(courses)
+    .where(eq(courses.id, courseId))
+    .limit(1);
+
   const rows = await db
     .select({
       id: courseDiscussionPosts.id,
@@ -36,6 +45,7 @@ export async function getCourseDiscussion(userId: string, courseId: string): Pro
       createdAt: courseDiscussionPosts.createdAt,
       authorUserId: courseDiscussionPosts.authorUserId,
       accountName: user.name,
+      userRole: user.role,
       profileFirstName: userProfile.firstName,
     })
     .from(courseDiscussionPosts)
@@ -45,14 +55,24 @@ export async function getCourseDiscussion(userId: string, courseId: string): Pro
     .orderBy(asc(courseDiscussionPosts.createdAt))
     .limit(200);
 
-  return rows.map((row) => ({
-    id: row.id,
-    parentId: row.parentId,
-    body: row.body,
-    createdAt: row.createdAt,
-    authorFirstName: firstName(row.profileFirstName, row.accountName),
-    own: row.authorUserId === userId,
-  }));
+  const trainerNameLower = course?.trainerName?.toLowerCase().trim() ?? "";
+
+  return rows.map((row) => {
+    const isRoleAdmin = ["ADMIN", "SUPER_ADMIN", "TEACHER"].includes(String(row.userRole));
+    const isTrainer = Boolean(trainerNameLower && row.accountName?.toLowerCase().includes(trainerNameLower));
+    const isExpert = isRoleAdmin || isTrainer;
+
+    return {
+      id: row.id,
+      parentId: row.parentId,
+      body: row.body,
+      createdAt: row.createdAt,
+      authorFirstName: firstName(row.profileFirstName, row.accountName),
+      own: row.authorUserId === userId,
+      isExpert,
+      authorRole: row.userRole ?? undefined,
+    };
+  });
 }
 
 export async function createCourseDiscussionPost(userId: string, input: { courseId: string; parentId?: string | null; body: string }) {

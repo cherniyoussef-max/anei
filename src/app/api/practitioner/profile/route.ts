@@ -8,6 +8,7 @@ import { auth } from "@/server/auth";
 import { isTrustedMutation } from "@/server/security/origin";
 import { readLimitedJson } from "@/server/security/request-body";
 import { isImpersonationActive } from "@/server/auth/impersonation";
+import { consumeRateLimit } from "@/server/security/rate-limit";
 
 const profileUpdateSchema = z.object({
   contactPhone: z.string().max(30).optional().nullable(),
@@ -40,6 +41,11 @@ export async function PATCH(request: Request) {
       { ok: false, error: "MUTATION_BLOCKED_IN_IMPERSONATION" },
       { status: 403 }
     );
+  }
+
+  const rate = await consumeRateLimit(`practitioner-profile-update:${session.user.id}`, 20, 60, { fallbackLimit: 10 });
+  if (!rate.allowed) {
+    return NextResponse.json({ ok: false, error: "RATE_LIMITED" }, { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } });
   }
 
   const rawBody = await readLimitedJson(request).catch(() => null);

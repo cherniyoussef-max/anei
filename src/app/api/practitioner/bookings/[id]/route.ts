@@ -8,6 +8,7 @@ import { auth } from "@/server/auth";
 import { isTrustedMutation } from "@/server/security/origin";
 import { readLimitedJson } from "@/server/security/request-body";
 import { isImpersonationActive } from "@/server/auth/impersonation";
+import { consumeRateLimit } from "@/server/security/rate-limit";
 
 const actionSchema = z.object({
   action: z.enum(["CONFIRM", "DECLINE", "COMPLETE"]),
@@ -32,6 +33,11 @@ export async function PATCH(
       { ok: false, error: "MUTATION_BLOCKED_IN_IMPERSONATION" },
       { status: 403 }
     );
+  }
+
+  const rate = await consumeRateLimit(`practitioner-booking-action:${session.user.id}`, 30, 60, { fallbackLimit: 15 });
+  if (!rate.allowed) {
+    return NextResponse.json({ ok: false, error: "RATE_LIMITED" }, { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } });
   }
 
   const bookingId = (await params).id;

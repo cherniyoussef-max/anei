@@ -79,7 +79,7 @@ export default async function CertificatePage({
             {ar ? "شهادة إتمام وتأهيل مهني" : "Certificat de Réussite & Qualification"}
           </span>
 
-          <h1 className="font-editorial-serif text-xl sm:text-2xl font-bold text-[#1B3A5C]">
+          <h1 className="font-sans text-xl sm:text-2xl font-bold text-[#1B3A5C]">
             {ar ? "الأكاديمية الوطنية للتربية الدامجة" : "Académie Nationale de l’Éducation Inclusive"}
           </h1>
 
@@ -87,7 +87,7 @@ export default async function CertificatePage({
             {ar ? "تشهد رسمياً بأن" : "atteste officiellement que"}
           </p>
 
-          <h2 className="font-editorial-serif text-2xl sm:text-3xl font-extrabold text-[#1B3A5C] tracking-tight">
+          <h2 className="font-sans text-2xl sm:text-3xl font-extrabold text-[#1B3A5C] tracking-tight">
             {row.recipient.name}
           </h2>
 

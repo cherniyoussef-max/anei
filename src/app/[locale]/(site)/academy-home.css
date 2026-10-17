@@ -16,9 +16,9 @@
   --footer-divider: rgba(255, 255, 255, 0.15);
   --card-shadow: 0 4px 16px rgba(27, 58, 92, 0.05);
   --card-shadow-hover: 0 8px 24px rgba(27, 58, 92, 0.11);
-  --font-serif: var(--font-fraunces), "Libre Baskerville", "Playfair Display", Georgia, serif;
+  --font-serif: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-sans: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-ar: var(--font-cairo), "Tajawal", "Noto Naskh Arabic", sans-serif;
+  --font-ar: var(--font-arabic), "IBM Plex Sans Arabic", system-ui, sans-serif;
 }
 
 [dir="rtl"] {

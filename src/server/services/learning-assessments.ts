@@ -1,4 +1,5 @@
 import "server-only";
+import crypto from "node:crypto";
 import { and, asc, count, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/server/db";
 import {
@@ -236,7 +237,12 @@ export async function startLearningAttempt(userId: string, assessmentId: string)
   });
 }
 
-export async function submitLearningAttempt(userId: string, attemptId: string, answers: { questionId: string; optionIds: string[] }[]) {
+export async function submitLearningAttempt(
+  userId: string,
+  attemptId: string,
+  answers: { questionId: string; optionIds: string[] }[],
+  submitOpts?: { cheatingDetected?: boolean; reason?: string }
+) {
   return db.transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${attemptId}, 0))`);
     const [attempt] = await tx.select().from(learningAttempt).where(and(eq(learningAttempt.id, attemptId), eq(learningAttempt.userId, userId))).limit(1);
@@ -247,6 +253,34 @@ export async function submitLearningAttempt(userId: string, attemptId: string, a
       await tx.update(learningAttempt).set({ status: "EXPIRED" }).where(eq(learningAttempt.id, attempt.id));
       return { kind: "expired" as const };
     }
+
+    if (submitOpts?.cheatingDetected) {
+      const questions = await tx.select().from(learningQuestion).where(eq(learningQuestion.assessmentId, attempt.assessmentId));
+      const maxPoints = Math.max(1, questions.reduce((total, q) => total + q.points, 0));
+      const submittedAt = new Date();
+      const [graded] = await tx
+        .update(learningAttempt)
+        .set({ status: "GRADED", submittedAt, rawPoints: 0, maxPoints, percentage: 0, passed: false })
+        .where(eq(learningAttempt.id, attemptId))
+        .returning();
+
+      await tx.insert(auditLogs).values({
+        actorUserId: userId,
+        action: "learning_assessment.cheating_detected",
+        entityType: "learning_attempt",
+        entityId: attemptId,
+        metadata: { reason: submitOpts.reason || "FOCUS_LOCK_VIOLATION", assessmentId: attempt.assessmentId },
+      });
+
+      return {
+        kind: "ok" as const,
+        attempt: { ...graded, cheatingDetected: true },
+        idempotent: false,
+        courseCompleted: false,
+        certificateCode: null,
+      };
+    }
+
     const [assessment] = await tx.select().from(learningAssessment).where(eq(learningAssessment.id, attempt.assessmentId)).limit(1);
     if (!assessment) return { kind: "invalid_state" as const };
     const questions = await tx.select().from(learningQuestion).where(eq(learningQuestion.assessmentId, attempt.assessmentId));

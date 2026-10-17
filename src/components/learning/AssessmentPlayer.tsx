@@ -20,7 +20,7 @@ type Result = {
   id: string; attemptNumber: number; submittedAt: string; percentage: number; passed: boolean;
   rawPoints: number; maxPoints: number; courseCompleted?: boolean; certificateCode?: string | null;
 };
-type Phase = "starting" | "in_progress" | "submitting" | "result" | "error";
+type Phase = "starting" | "in_progress" | "submitting" | "result" | "error" | "cheating_detected";
 
 function formatSeconds(total: number) {
   const minutes = Math.floor(Math.max(0, total) / 60); const seconds = Math.max(0, total) % 60;
@@ -28,16 +28,31 @@ function formatSeconds(total: number) {
 }
 function answerLetter(index: number) { return String.fromCharCode(65 + index); }
 
-export function AssessmentPlayer({ locale, data, courseHref }: { locale: Locale; data: AssessmentData; courseHref: string }) {
+export function AssessmentPlayer({
+  locale,
+  data,
+  courseHref,
+  learner,
+}: {
+  locale: Locale;
+  data: AssessmentData;
+  courseHref: string;
+  learner?: { id: string; email: string; name: string | null };
+}) {
   const ar = locale === "ar";
-  const [phase, setPhase] = useState<Phase>("starting"); const [attempt, setAttempt] = useState<Attempt | null>(null);
-  const [answers, setAnswers] = useState<Record<string, string[]>>({}); const [currentIndex, setCurrentIndex] = useState(0);
-  const [remainingSeconds, setRemainingSeconds] = useState(data.assessment.timeLimitSeconds); const [result, setResult] = useState<Result | null>(null);
-  const [errorCode, setErrorCode] = useState<string | null>(null); const confirmRef = useRef<HTMLDialogElement>(null);
+  const [phase, setPhase] = useState<Phase>("starting");
+  const [attempt, setAttempt] = useState<Attempt | null>(null);
+  const [answers, setAnswers] = useState<Record<string, string[]>>({});
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [remainingSeconds, setRemainingSeconds] = useState(data.assessment.timeLimitSeconds);
+  const [result, setResult] = useState<Result | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
+  const [cheatingReason, setCheatingReason] = useState<string | null>(null);
+  const confirmRef = useRef<HTMLDialogElement>(null);
   const [history, setHistory] = useState<AttemptHistory[]>(() => data.attempts.filter((item) => item.status === "GRADED"));
 
   const startAttempt = useCallback(async () => {
-    setPhase("starting"); setErrorCode(null); setAnswers({}); setCurrentIndex(0); setResult(null);
+    setPhase("starting"); setErrorCode(null); setCheatingReason(null); setAnswers({}); setCurrentIndex(0); setResult(null);
     const response = await fetch(`/api/learning/assessments/${data.assessment.id}/attempts`, { method: "POST" });
     const body = await response.json().catch(() => ({}));
     if (!response.ok || body.kind !== "ok") { setErrorCode(body.error ?? "ERROR"); setPhase("error"); return; }
@@ -56,6 +71,7 @@ export function AssessmentPlayer({ locale, data, courseHref }: { locale: Locale;
       .catch(() => { if (!cancelled) { setErrorCode("ERROR"); setPhase("error"); } });
     return () => { cancelled = true; };
   }, [data.assessment.id]);
+
   useEffect(() => {
     if (phase !== "in_progress" || !attempt) return;
     const expiresAt = new Date(attempt.expiresAt).getTime();
@@ -66,6 +82,63 @@ export function AssessmentPlayer({ locale, data, courseHref }: { locale: Locale;
     };
     tick(); const interval = setInterval(tick, 1000); return () => clearInterval(interval);
   }, [phase, attempt]);
+
+  // Anti-Cheat Focus Lock: detect tab-switch or window blur
+  const triggerCheatingSanction = useCallback(async (reason: string) => {
+    if (!attempt) return;
+    setPhase("cheating_detected");
+    setCheatingReason(reason);
+    confirmRef.current?.close();
+
+    // Instantly notify server of cheating violation
+    await fetch(`/api/learning/attempts/${attempt.id}/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        cheatingDetected: true,
+        cheatingReason: reason,
+        answers: [],
+      }),
+    }).catch(() => null);
+
+    const failResult: Result = {
+      id: attempt.id,
+      attemptNumber: attempt.attemptNumber,
+      submittedAt: new Date().toISOString(),
+      percentage: 0,
+      passed: false,
+      rawPoints: 0,
+      maxPoints: 100,
+    };
+    setResult(failResult);
+    setHistory((current) => [...current, { ...failResult, status: "GRADED" }]);
+  }, [attempt]);
+
+  useEffect(() => {
+    if (phase !== "in_progress") return;
+
+    const handleVisibility = () => {
+      if (document.hidden) {
+        void triggerCheatingSanction("FOCUS_LOCK_VISIBILITY_HIDDEN");
+      }
+    };
+
+    const handleBlur = () => {
+      // If submission confirmation dialog is open, do not penalize dialog interaction
+      if (confirmRef.current?.open) return;
+      if (document.hidden) {
+        void triggerCheatingSanction("FOCUS_LOCK_WINDOW_BLUR");
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("blur", handleBlur);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("blur", handleBlur);
+    };
+  }, [phase, triggerCheatingSanction]);
 
   const answeredCount = useMemo(() => Object.values(answers).filter((selected) => selected.length > 0).length, [answers]);
   const allAnswered = answeredCount === data.questions.length; const current = data.questions[currentIndex];
@@ -101,6 +174,40 @@ export function AssessmentPlayer({ locale, data, courseHref }: { locale: Locale;
   }
 
   if (phase === "starting") return <div className="assessment-player-loading" role="status"><span/><span/><span/><p>{ar ? "جارٍ تحضير التقييم..." : "Préparation de l’évaluation..."}</p></div>;
+
+  // Cheating Disqualification Screen
+  if (phase === "cheating_detected") {
+    return (
+      <section className="assessment-player-error select-none max-w-2xl mx-auto p-8 rounded-3xl bg-rose-50/90 border border-rose-200 text-center space-y-4 shadow-sm" role="alert">
+        <span className="w-16 h-16 rounded-2xl bg-rose-600 text-white flex items-center justify-center mx-auto shadow-sm">
+          <Icon name="shield" size={32} />
+        </span>
+        <h1 className="text-xl font-bold text-rose-950">
+          {ar ? "تم إلغاء المحاولة : رصد مغادرة نافذة التقييم (Anti-Triche)" : "Tentative invalidée : Violation du Focus Lock (Anti-Triche)"}
+        </h1>
+        <p className="text-sm text-rose-800 max-w-lg mx-auto leading-relaxed">
+          {ar
+            ? "تم رصد تغيير التبويب أو تصغير النافذة أثناء الاختبار. وفقاً لميثاق الأمان والنزاهة الأكاديمية لـ ANEI، تم إنهاء التقييم فوراً بدرجة 0% (راسب) وتسجيل الحادثة في سجل الرقابة."
+            : "Une perte de focus ou un changement d'onglet a été détecté pendant l'évaluation chronométrée. Conformément à la charte d'intégrité académique ANEI, l'épreuve est immédiatement invalidée avec une note de 0% (Échec) et l'incident est consigné dans le journal de sécurité."}
+        </p>
+
+        <div className="my-4 p-3.5 rounded-xl bg-white border border-rose-200 text-rose-900 text-xs font-mono max-w-md mx-auto text-start">
+          <div className="font-semibold text-rose-700">{ar ? "بيانات الحادثة الأكاديمية :" : "Rapport d'incident de sécurité :"}</div>
+          <div className="mt-1 text-[11px] text-slate-600">MOTIF : {cheatingReason || "FOCUS_LOCK_VIOLATION"}</div>
+          {learner?.email && <div className="text-[11px] text-slate-600">CANDIDAT : {learner.email}</div>}
+          <div className="text-[11px] text-rose-600 font-bold mt-1">SANCTION : 0% GRADED • BLOQUÉ 24H</div>
+        </div>
+
+        <div className="assessment-result-actions pt-2">
+          <a className="btn btn-secondary px-6 py-2.5 rounded-xl text-xs font-bold" href={courseHref}>
+            {ar ? "العودة إلى مسار التكوين" : "Retour au cours"}
+          </a>
+        </div>
+        {gradedHistory.length ? <AttemptHistoryList locale={locale} attempts={gradedHistory} bestScore={bestScore}/> : null}
+      </section>
+    );
+  }
+
   if (phase === "error") return <section className="assessment-player-error" role="alert"><Icon name="shield" size={28}/><h1>{errorCode === "MAX_ATTEMPTS" ? (ar ? "لا توجد محاولات متبقية" : "Aucune tentative restante") : errorCode === "EXPIRED" ? (ar ? "انتهى وقت المحاولة" : "Le temps est écoulé") : (ar ? "تعذر فتح التقييم" : "Impossible d’ouvrir l’évaluation")}</h1><p>{errorCode === "MAX_ATTEMPTS" ? (ar ? "لقد استنفدت عدد المحاولات المسموح بها." : "Vous avez utilisé toutes les tentatives autorisées.") : errorCode === "EXPIRED" ? (ar ? "لم يعد بإمكانك إرسال هذه المحاولة. عُد إلى الدورة أو ابدأ محاولة جديدة إذا كانت متاحة." : "Cette tentative ne peut plus être envoyée. Retournez au cours ou recommencez si une tentative reste disponible.") : errorCode === "FORBIDDEN" ? (ar ? "غير مسموح لك بإجراء هذا التقييم." : "Vous n’êtes pas autorisé à passer cette évaluation.") : (ar ? "حدث خطأ. حاول مرة أخرى." : "Une erreur est survenue. Réessayez.")}</p><div className="assessment-result-actions"><a className="btn btn-secondary" href={courseHref}>{ar ? "العودة إلى الدورة" : "Retour au cours"}</a>{errorCode === "EXPIRED" && attemptsRemaining > 0 ? <button className="btn btn-primary" onClick={() => void startAttempt()}>{ar ? "محاولة جديدة" : "Nouvelle tentative"}</button> : null}</div>{gradedHistory.length ? <AttemptHistoryList locale={locale} attempts={gradedHistory} bestScore={bestScore}/> : null}</section>;
 
   if (phase === "result" && result) return <section className={`assessment-result ${result.passed ? "is-pass" : "is-fail"}`}>
@@ -141,15 +248,48 @@ export function AssessmentPlayer({ locale, data, courseHref }: { locale: Locale;
 
   if (!current) return <div className="assessment-player-error" role="alert">{ar ? "لا توجد أسئلة في هذا التقييم." : "Cette évaluation ne contient aucune question."}</div>;
   const progress = Math.round(((currentIndex + 1) / data.questions.length) * 100);
-  return <section className="assessment-player-shell">
-    <header className="assessment-player-header"><div><span>{ar ? `السؤال ${currentIndex + 1} من ${data.questions.length}` : `Question ${currentIndex + 1} sur ${data.questions.length}`}</span><h1>{ar ? data.assessment.titleAr : data.assessment.titleFr}</h1></div><div className={`assessment-timer ${remainingSeconds <= 60 ? "is-urgent" : ""}`} aria-live="off"><Icon name="clock" size={18}/><span><strong>{formatSeconds(remainingSeconds)}</strong><small>{ar ? "متبقٍ" : "restantes"}</small></span></div></header>
-    <div className="assessment-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress} aria-label={ar ? `التقدم ${progress}%` : `Progression ${progress}%`}><span style={{ inlineSize: `${progress}%` }}/></div>
-    {(ar ? data.assessment.instructionsAr : data.assessment.instructionsFr) ? <p className="assessment-player-instructions">{ar ? data.assessment.instructionsAr : data.assessment.instructionsFr}</p> : null}
-    <nav className="assessment-question-navigator" aria-label={ar ? "التنقل بين الأسئلة" : "Navigation entre les questions"}>{data.questions.map((question, index) => { const answered = Boolean(answers[question.id]?.length); const selected = index === currentIndex; return <button type="button" key={question.id} className={`${selected ? "is-current" : ""} ${answered ? "is-answered" : ""}`} aria-current={selected ? "step" : undefined} aria-label={ar ? `السؤال ${index + 1}${answered ? "، تمت الإجابة" : ""}` : `Question ${index + 1}${answered ? ", répondue" : ""}`} onClick={() => setCurrentIndex(index)}>{answered && !selected ? <Icon name="check" size={14}/> : index + 1}</button>; })}</nav>
-    <fieldset className="assessment-current-question"><legend>{ar ? `السؤال ${currentIndex + 1}` : `Question ${currentIndex + 1}`}<span>{current.points} {current.points === 1 ? (ar ? "نقطة" : "point") : (ar ? "نقاط" : "points")}</span></legend><h2>{ar ? current.promptAr : current.promptFr}</h2>{current.type === "MULTIPLE_CHOICE" ? <p className="assessment-selection-hint">{ar ? "اختر جميع الإجابات الصحيحة." : "Sélectionnez toutes les réponses correctes."}</p> : null}<div className="assessment-choice-list">{current.options.map((option, index) => { const checked = (answers[current.id] ?? []).includes(option.id); return <label key={option.id} className={`assessment-choice ${checked ? "is-selected" : ""}`}><input type={current.type === "MULTIPLE_CHOICE" ? "checkbox" : "radio"} name={`question-${current.id}`} checked={checked} onChange={() => current.type === "MULTIPLE_CHOICE" ? toggleMultiple(current.id, option.id) : selectSingle(current.id, option.id)}/><span className="assessment-choice-letter" aria-hidden="true">{answerLetter(index)}</span><span className="assessment-choice-text">{ar ? option.textAr : option.textFr}</span>{checked ? <Icon name="check" size={18}/> : null}</label>; })}</div></fieldset>
-    <footer className="assessment-player-footer"><button type="button" className="btn btn-secondary" onClick={() => setCurrentIndex((index) => Math.max(0, index - 1))} disabled={currentIndex === 0}><Icon name="chevron" size={16}/>{ar ? "السابق" : "Précédent"}</button><span><bdi>{answeredCount} / {data.questions.length}</bdi> {ar ? "تمت الإجابة" : "répondues"}</span>{currentIndex < data.questions.length - 1 ? <button type="button" className="btn btn-primary" onClick={() => setCurrentIndex((index) => Math.min(data.questions.length - 1, index + 1))}>{ar ? "التالي" : "Suivant"}<Icon name="chevron" size={16}/></button> : <button type="button" className="btn btn-primary" onClick={() => confirmRef.current?.showModal()}>{ar ? "إنهاء التقييم" : "Terminer l’évaluation"}</button>}</footer>
-    <dialog ref={confirmRef} className="assessment-submit-dialog" aria-labelledby="assessment-submit-title" onClick={(event) => { if (event.target === event.currentTarget) event.currentTarget.close(); }}><div><button type="button" className="assessment-dialog-close" onClick={() => confirmRef.current?.close()} aria-label={ar ? "إغلاق" : "Fermer"}><Icon name="close" size={18}/></button><Icon name="shield" size={24}/><h2 id="assessment-submit-title">{ar ? "إرسال تقييمك؟" : "Soumettre votre évaluation ?"}</h2><p><strong><bdi>{answeredCount} / {data.questions.length}</bdi></strong> {ar ? "أسئلة تمت الإجابة عنها" : "questions répondues"}</p>{unanswered.length ? <p className="assessment-dialog-warning">{ar ? `الأسئلة ${unanswered.map((item) => item.number).join("، ")} دون إجابة.` : `Questions ${unanswered.map((item) => item.number).join(", ")} sans réponse.`}</p> : <p>{ar ? "بعد الإرسال، سيتم تقييم إجاباتك على الخادم." : "Après l’envoi, vos réponses seront évaluées par le serveur."}</p>}<div className="assessment-dialog-actions"><button type="button" className="btn btn-secondary" onClick={() => confirmRef.current?.close()}>{ar ? "عودة" : "Retour"}</button><button type="button" className="btn btn-primary" onClick={() => void submit()} disabled={!allAnswered || phase === "submitting"}>{ar ? "إرسال التقييم" : "Soumettre l’évaluation"}</button></div></div></dialog>
-  </section>;
+
+  return (
+    <section
+      className="assessment-player-shell select-none relative overflow-hidden"
+      style={{ userSelect: "none", WebkitUserSelect: "none" }}
+      onContextMenu={(e) => e.preventDefault()}
+      onCopy={(e) => e.preventDefault()}
+      onCut={(e) => e.preventDefault()}
+    >
+      {/* Dynamic Digital Watermark (Anti-Leak / Forensic Tracking) */}
+      <div
+        className="pointer-events-none absolute inset-0 overflow-hidden opacity-[0.035] select-none z-10 flex flex-wrap gap-12 p-8"
+        aria-hidden="true"
+      >
+        {Array.from({ length: 16 }).map((_, i) => (
+          <span
+            key={i}
+            className="text-[11px] font-mono font-bold tracking-widest rotate-[-25deg] text-slate-900 whitespace-nowrap"
+          >
+            ANEI EXAM SECURE • {learner?.email || "CANDIDAT"} • ID:{learner?.id?.slice(0, 8) || "VERIFIED"}
+          </span>
+        ))}
+      </div>
+
+      <header className="assessment-player-header">
+        <div>
+          <span>{ar ? `السؤال ${currentIndex + 1} من ${data.questions.length}` : `Question ${currentIndex + 1} sur ${data.questions.length}`}</span>
+          <h1>{ar ? data.assessment.titleAr : data.assessment.titleFr}</h1>
+        </div>
+        <div className={`assessment-timer ${remainingSeconds <= 60 ? "is-urgent" : ""}`} aria-live="off">
+          <Icon name="clock" size={18}/>
+          <span><strong>{formatSeconds(remainingSeconds)}</strong><small>{ar ? "متبقٍ" : "restantes"}</small></span>
+        </div>
+      </header>
+      <div className="assessment-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress} aria-label={ar ? `التقدم ${progress}%` : `Progression ${progress}%`}><span style={{ inlineSize: `${progress}%` }}/></div>
+      {(ar ? data.assessment.instructionsAr : data.assessment.instructionsFr) ? <p className="assessment-player-instructions">{ar ? data.assessment.instructionsAr : data.assessment.instructionsFr}</p> : null}
+      <nav className="assessment-question-navigator" aria-label={ar ? "التنقل بين الأسئلة" : "Navigation entre les questions"}>{data.questions.map((question, index) => { const answered = Boolean(answers[question.id]?.length); const selected = index === currentIndex; return <button type="button" key={question.id} className={`${selected ? "is-current" : ""} ${answered ? "is-answered" : ""}`} aria-current={selected ? "step" : undefined} aria-label={ar ? `السؤال ${index + 1}${answered ? "، تمت الإجابة" : ""}` : `Question ${index + 1}${answered ? ", répondue" : ""}`} onClick={() => setCurrentIndex(index)}>{answered && !selected ? <Icon name="check" size={14}/> : index + 1}</button>; })}</nav>
+      <fieldset className="assessment-current-question"><legend>{ar ? `السؤال ${currentIndex + 1}` : `Question ${currentIndex + 1}`}<span>{current.points} {current.points === 1 ? (ar ? "نقطة" : "point") : (ar ? "نقاط" : "points")}</span></legend><h2>{ar ? current.promptAr : current.promptFr}</h2>{current.type === "MULTIPLE_CHOICE" ? <p className="assessment-selection-hint">{ar ? "اختر جميع الإجابات الصحيحة." : "Sélectionnez toutes les réponses correctes."}</p> : null}<div className="assessment-choice-list">{current.options.map((option, index) => { const checked = (answers[current.id] ?? []).includes(option.id); return <label key={option.id} className={`assessment-choice ${checked ? "is-selected" : ""}`}><input type={current.type === "MULTIPLE_CHOICE" ? "checkbox" : "radio"} name={`question-${current.id}`} checked={checked} onChange={() => current.type === "MULTIPLE_CHOICE" ? toggleMultiple(current.id, option.id) : selectSingle(current.id, option.id)}/><span className="assessment-choice-letter" aria-hidden="true">{answerLetter(index)}</span><span className="assessment-choice-text">{ar ? option.textAr : option.textFr}</span>{checked ? <Icon name="check" size={18}/> : null}</label>; })}</div></fieldset>
+      <footer className="assessment-player-footer"><button type="button" className="btn btn-secondary" onClick={() => setCurrentIndex((index) => Math.max(0, index - 1))} disabled={currentIndex === 0}><Icon name="chevron" size={16}/>{ar ? "السابق" : "Précédent"}</button><span><bdi>{answeredCount} / {data.questions.length}</bdi> {ar ? "تمت الإجابة" : "répondues"}</span>{currentIndex < data.questions.length - 1 ? <button type="button" className="btn btn-primary" onClick={() => setCurrentIndex((index) => Math.min(data.questions.length - 1, index + 1))}>{ar ? "التالي" : "Suivant"}<Icon name="chevron" size={16}/></button> : <button type="button" className="btn btn-primary" onClick={() => confirmRef.current?.showModal()}>{ar ? "إنهاء التقييم" : "Terminer l’évaluation"}</button>}</footer>
+      <dialog ref={confirmRef} className="assessment-submit-dialog" aria-labelledby="assessment-submit-title" onClick={(event) => { if (event.target === event.currentTarget) event.currentTarget.close(); }}><div><button type="button" className="assessment-dialog-close" onClick={() => confirmRef.current?.close()} aria-label={ar ? "إغلاق" : "Fermer"}><Icon name="close" size={18}/></button><Icon name="shield" size={24}/><h2 id="assessment-submit-title">{ar ? "إرسال تقييمك؟" : "Soumettre votre évaluation ?"}</h2><p><strong><bdi>{answeredCount} / {data.questions.length}</bdi></strong> {ar ? "أسئلة تمت الإجابة عنها" : "questions répondues"}</p>{unanswered.length ? <p className="assessment-dialog-warning">{ar ? `الأسئلة ${unanswered.map((item) => item.number).join("، ")} دون إجابة.` : `Questions ${unanswered.map((item) => item.number).join(", ")} sans réponse.`}</p> : <p>{ar ? "بعد الإرسال، سيتم تقييم إجاباتك على الخادم." : "Après l’envoi, vos réponses seront évaluées par le serveur."}</p>}<div className="assessment-dialog-actions"><button type="button" className="btn btn-secondary" onClick={() => confirmRef.current?.close()}>{ar ? "عودة" : "Retour"}</button><button type="button" className="btn btn-primary" onClick={() => void submit()} disabled={!allAnswered || phase === "submitting"}>{ar ? "إرسال التقييم" : "Soumettre l’évaluation"}</button></div></div></dialog>
+    </section>
+  );
 }
 
 function AttemptHistoryList({ locale, attempts, bestScore }: { locale: Locale; attempts: AttemptHistory[]; bestScore: number | null }) {

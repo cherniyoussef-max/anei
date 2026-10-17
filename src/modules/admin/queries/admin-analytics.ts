@@ -96,6 +96,8 @@ type OverviewRow = {
   in_person_consultations_count: number; candidates_under_review_count: number;
   passed_interviews_count: number; approved_practitioners_count: number;
   course_sales_count: number;
+  webinar_registrations_count: number;
+  webinar_to_course_conversions_count: number;
 };
 
 export async function getAdminOverview(period: AdminPeriod) {
@@ -127,9 +129,20 @@ async function computeAdminOverview(period: AdminPeriod) {
       (select count(*)::int from "user" where professional_post_status = 'CANDIDATE_UNDER_REVIEW') as candidates_under_review_count,
       (select count(*)::int from practitioner_promotions where interview_status = 'PASSED') as passed_interviews_count,
       (select count(*)::int from "user" where professional_post_status in ('APPROVED_AVS', 'APPROVED_SPECIALIST')) as approved_practitioners_count,
-      (select count(*)::int from orders where status = 'paid') as course_sales_count
+      (select count(*)::int from orders where status = 'paid') as course_sales_count,
+      (select count(*)::int from webinar_registrations) as webinar_registrations_count,
+      (select count(distinct e.user_id)::int from webinar_registrations wr
+        inner join webinars w on w.id = wr.webinar_id
+        inner join enrollments e on e.user_id = wr.user_id and e.course_id = w.course_id
+        where w.course_id is not null) as webinar_to_course_conversions_count
   `);
   const row = result.rows[0];
+  const webinarRegistrationsCount = row?.webinar_registrations_count ?? 0;
+  const webinarToCourseConversionsCount = row?.webinar_to_course_conversions_count ?? 0;
+  const webinarConversionRate = webinarRegistrationsCount > 0
+    ? Math.round((webinarToCourseConversionsCount / webinarRegistrationsCount) * 1000) / 10
+    : 0;
+
   return {
     period,
     totalUsers: row?.total_users ?? 0,
@@ -151,6 +164,9 @@ async function computeAdminOverview(period: AdminPeriod) {
     passedInterviewsCount: row?.passed_interviews_count ?? 0,
     approvedPractitionersCount: row?.approved_practitioners_count ?? 0,
     courseSalesCount: row?.course_sales_count ?? 0,
+    webinarRegistrationsCount,
+    webinarToCourseConversionsCount,
+    webinarConversionRate,
   };
 }
 
