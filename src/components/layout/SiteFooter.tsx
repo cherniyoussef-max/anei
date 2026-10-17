@@ -53,11 +53,15 @@ export function SiteFooter({ locale }: { locale: Locale }) {
                 className="footer-crest inline-flex items-center gap-3.5 group hover:opacity-95 transition-opacity"
                 aria-label={ar ? "الرئيسية ANEI" : "Accueil ANEI"}
               >
-                <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white p-2 shadow-xs">
-                  <AneiLogo locale={locale} variant="mark" withText={false} height={28} />
-                </div>
+                <AneiLogo
+                  locale={locale}
+                  variant="mark"
+                  withText={false}
+                  height={34}
+                  className="footer-brand-logo shrink-0"
+                />
                 <div className="flex flex-col">
-                  <span className="font-bold text-white text-[15px] sm:text-[16px] leading-snug font-sans">
+                  <span className="font-bold text-white text-[15px] sm:text-[16px] leading-snug font-sans group-hover:text-white/95 transition-colors">
                     {ar ? "الأكاديمية الوطنية للتربية الدامجة" : "Académie Nationale de l’Éducation Inclusive"}
                   </span>
                   <span className="text-[11px] font-semibold text-[#C5A059] uppercase tracking-wider mt-0.5">
