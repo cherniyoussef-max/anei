@@ -42,37 +42,37 @@ interface TeacherAssistantWorkspaceProps {
 const TEMPLATES = {
   fr: [
     {
-      title: "🎯 Adapter un exercice (TDAH / DYS)",
+      title: "Adapter un exercice (TDAH / DYS)",
       prompt: "Comment adapter un exercice de français ou de mathématiques et ses consignes pour un élève présentant un TDAH ou une dyslexie ?",
     },
     {
-      title: "🧩 Gérer une crise ou un refus de tâche",
+      title: "Gérer une crise ou un refus de tâche",
       prompt: "Que faire immédiatement face à une crise, une agitation motrice sévère ou un refus de tâche en classe ?",
     },
     {
-      title: "📋 Grille d'observation & PEI",
+      title: "Grille d'observation & PEI",
       prompt: "Aidez-moi à concevoir une grille d'observation des comportements et des objectifs concrets pour un plan d'accompagnement (PEI).",
     },
     {
-      title: "💡 Expliquer simplement un trouble",
+      title: "Expliquer simplement un trouble",
       prompt: "Comment expliquer de manière simple, déculpabilisante et positive le TDAH, la Dyslexie ou le TSA à l'élève et à ses camarades ?",
     },
   ],
   ar: [
     {
-      title: "🎯 تكييف تمرين أو اختبار (TDAH / DYS)",
+      title: "تكييف تمرين أو اختبار (TDAH / DYS)",
       prompt: "كيف يمكن تكييف تمرين في مادة اللغة أو الرياضيات وتبسيط التعليمات لتلميذ من ذوي فرط الحركة أو عسر القراءة والكتابة؟",
     },
     {
-      title: "🧩 التعامل مع نوبة غضب أو رفض المهمة",
+      title: "التعامل مع نوبة غضب أو رفض المهمة",
       prompt: "ما هي الخطوات الإجرائية الفورية للتعامل مع نوبة غضب، تفريغ حسي، أو رفض أداء المهمة داخل الفصل المدرسي؟",
     },
     {
-      title: "📋 إعداد شبكة ملاحظة وخطة مرافقة (PEI)",
+      title: "إعداد شبكة ملاحظة وخطة مرافقة (PEI)",
       prompt: "ساعدني في إعداد شبكة ملاحظة دقيقة للسلوكيات وتحديد أهداف بيداغوجية لمشروع الدمج الفردي للتلميذ.",
     },
     {
-      title: "💡 شرح مبسط للاضطراب",
+      title: "شرح مبسط للاضطراب",
       prompt: "كيف أشرح بطريقة علمية مبسطة وإيجابية اضطراب فرط الحركة، عسر التعلّم أو طيف التوحد للتلميذ وزملائه في القسم؟",
     },
   ],

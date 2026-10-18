@@ -47,54 +47,54 @@ interface StandaloneAssistantViewProps {
 const SUGGESTIONS = {
   fr: [
     {
-      title: "🎯 Adapter un exercice TDAH / DYS",
+      title: "Adapter un exercice TDAH / DYS",
       desc: "Consignes claires, réduction de surcharge cognitive et repères visuels.",
       prompt: "Comment adapter un exercice de français ou de mathématiques pour un élève présentant un TDAH ou une dyslexie ?",
     },
     {
-      title: "🧩 Gérer une crise ou surcharge sensorielle",
+      title: "Gérer une crise ou surcharge sensorielle",
       desc: "Protocole d'apaisement immédiat pour le Trouble du Spectre de l'Autisme.",
       prompt: "Que faire immédiatement face à une crise, une agitation motrice sévère ou une surcharge sensorielle d'un élève avec TSA ?",
     },
     {
-      title: "📋 Élaborer une grille d'observation (PEI)",
+      title: "Élaborer une grille d'observation (PEI)",
       desc: "Identifier les déclencheurs et formuler des objectifs mesurables.",
       prompt: "Aidez-moi à concevoir une grille d'observation des comportements et des objectifs concrets pour un projet éducatif individualisé (PEI).",
     },
     {
-      title: "💡 Expliquer simplement la Dyslexie ou le TDAH",
+      title: "Expliquer simplement la Dyslexie ou le TDAH",
       desc: "Vocabulaire positif et déculpabilisant pour l'enfant et sa classe.",
       prompt: "Comment expliquer simplement et de façon positive le TDAH ou la dyslexie à l'enfant et à ses camarades de classe ?",
     },
     {
-      title: "🏫 Stratégies pour l'accompagnant AVS",
+      title: "Stratégies pour l'accompagnant AVS",
       desc: "Posture professionnelle, guidance estompée et autonomie.",
       prompt: "Quelles sont les meilleures pratiques pour un AVS afin d'encourager l'autonomie de l'élève sans créer de dépendance ?",
     },
   ],
   ar: [
     {
-      title: "🎯 تكييف تمرين لتلميذ TDAH أو عسر تعلّم",
+      title: "تكييف تمرين لتلميذ TDAH أو عسر تعلّم",
       desc: "تبسيط التعليمات، تقسيم المهام وتوفير المعينات البصرية.",
       prompt: "كيف يمكن تكييف تمرين في مادة اللغة أو الرياضيات وتبسيط التعليمات لتلميذ من ذوي فرط الحركة أو عسر القراءة والكتابة؟",
     },
     {
-      title: "🧩 التعامل مع نوبة غضب أو تفريغ حسي (طيف التوحد)",
+      title: "التعامل مع نوبة غضب أو تفريغ حسي (طيف التوحد)",
       desc: "خطوات التهدئة الفورية، توفير ركن هادئ واستخدام بطاقات التواصل.",
       prompt: "ما هي الخطوات الإجرائية الفورية للتعامل مع نوبة غضب، تفريغ حسي، أو رفض أداء المهمة لتلميذ من ذوي طيف التوحد داخل الفصل؟",
     },
     {
-      title: "📋 إعداد شبكة ملاحظة وخطة مرافقة (PEI)",
+      title: "إعداد شبكة ملاحظة وخطة مرافقة (PEI)",
       desc: "رصد السلوكيات المحفزة وصياغة أهداف إجرائية قابلة للقياس.",
       prompt: "ساعدني في إعداد شبكة ملاحظة دقيقة للسلوكيات وتحديد أهداف بيداغوجية لمشروع الدمج الفردي للتلميذ.",
     },
     {
-      title: "💡 شرح مبسط للاضطراب للطفل وزملائه",
+      title: "شرح مبسط للاضطراب للطفل وزملائه",
       desc: "أسلوب علمي إيجابي يعزز تقبل الفروق الفردية في القسم.",
       prompt: "كيف أشرح بطريقة علمية مبسطة وإيجابية اضطراب فرط الحركة، عسر التعلّم أو طيف التوحد للتلميذ وزملائه في القسم؟",
     },
     {
-      title: "🏫 استراتيجيات المرافقة المدرسية AVS",
+      title: "استراتيجيات المرافقة المدرسية AVS",
       desc: "المساندة الذكية، التلاشي التدريجي للمساعدة وبناء الاستقلالية.",
       prompt: "ما هي أفضل الممارسات لمرافق التلميذ (AVS) لتعزيز استقلالية الطفل في القسم دون خلق التبعية الدائمة؟",
     },
@@ -344,7 +344,7 @@ export function StandaloneAssistantView({ locale = "fr" }: StandaloneAssistantVi
           msg.id === assistantMessageId
             ? {
                 ...msg,
-                content: `${isAr ? "⚠️ عذرًا، تعذر إكمال الإجابة: " : "⚠️ Désolé, une erreur est survenue : "}${errorMessage}`,
+                content: `${isAr ? "عذرًا، تعذر إكمال الإجابة: " : "Désolé, une erreur est survenue : "}${errorMessage}`,
                 isStreaming: false,
               }
             : msg,

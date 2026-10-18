@@ -6,7 +6,6 @@ import { usePathname, useSearchParams } from "next/navigation";
 import {
   X,
   BookOpen,
-  ShieldCheck,
   ChevronDown,
   ChevronUp,
   User,
@@ -15,14 +14,11 @@ import {
   RotateCcw,
   ArrowRight,
   ArrowLeft,
-  Sparkles,
   ArrowUp,
-  Compass,
-  HelpCircle,
-  HeartHandshake,
-  CreditCard,
-  CheckCircle2,
+  ChevronRight,
+  MessageSquare,
 } from "lucide-react";
+import { AneiLogo } from "@/components/brand/AneiLogo";
 
 interface Citation {
   id: string;
@@ -46,33 +42,79 @@ interface PublicAssistantDrawerProps {
 
 const LEARNER_SUGGESTIONS = {
   fr: [
-    { label: "Synthétiser les points clés de ma formation", query: "Je prépare mon évaluation certifiante. Peux-tu me faire une synthèse des points clés indispensables de ma formation ?", icon: BookOpen },
-    { label: "Comment réussir mon test certifiant (QCM 80%) ?", query: "Quels sont les concepts et questions clés à maîtriser absolument pour réussir l'examen certifiant ?", icon: CheckCircle2 },
-    { label: "S'entraîner avec des questions types", query: "Pose-moi une question d'entraînement pour tester ma compréhension de mes leçons et évalue ma réponse.", icon: HelpCircle },
-    { label: "Aménagements concrets en classe (TEACCH & ABC)", query: "Quels sont les aménagements scolaires et pratiques fondées sur les preuves essentiels de mon cours ?", icon: ShieldCheck },
+    {
+      label: "Synthétiser les points clés de ma formation",
+      query: "Je prépare mon évaluation certifiante. Peux-tu me faire une synthèse des points clés indispensables de ma formation ?",
+    },
+    {
+      label: "Comment réussir mon test certifiant (QCM 80%) ?",
+      query: "Quels sont les concepts et questions clés à maîtriser absolument pour réussir l'examen certifiant ?",
+    },
+    {
+      label: "S'entraîner avec des questions types",
+      query: "Pose-moi une question d'entraînement pour tester ma compréhension de mes leçons et évalue ma réponse.",
+    },
+    {
+      label: "Aménagements concrets en classe (TEACCH & ABC)",
+      query: "Quels sont les aménagements scolaires et pratiques fondées sur les preuves essentiels de mon cours ?",
+    },
   ],
   ar: [
-    { label: "مراجعة النقاط الأساسية لدورتي التكوينية", query: "أستعد للتقييم النهائي، هل يمكنك تلخيص المفاهيم الأساسية لدورتي التكوينية ومساعدتي على المراجعة؟" },
-    { label: "كيف أجتاز التقييم النهائي للشهادة بنجاح؟", query: "ما هي المفاهيم الجوهرية والأسئلة الأساسية لاجتياز اختبار الشهادة بنسبة تفوق 80%؟" },
-    { label: "تدريب بأسئلة تفاعلية لاختبار فهمي", query: "اطرح عليّ سؤالاً تدريبياً لاختبار فهمي للمنهاج، وقيّم إجابتي بيداغوجياً." },
-    { label: "الترتيبات الصفية والممارسات المبنية على البراهين", query: "ما هي أهم التدابير الصفية (TEACCH، شبكة ABC، والتواصل المعزز) الواجب استيعابها في دراستي؟" },
+    {
+      label: "مراجعة النقاط الأساسية لدورتي التكوينية",
+      query: "أستعد للتقييم النهائي، هل يمكنك تلخيص المفاهيم الأساسية لدورتي التكوينية ومساعدتي على المراجعة؟",
+    },
+    {
+      label: "كيف أجتاز التقييم النهائي للشهادة بنجاح؟",
+      query: "ما هي المفاهيم الجوهرية والأسئلة الأساسية لاجتياز اختبار الشهادة بنسبة تفوق 80%؟",
+    },
+    {
+      label: "تدريب بأسئلة تفاعلية لاختبار فهمي",
+      query: "اطرح عليّ سؤالاً تدريبياً لاختبار فهمي للمنهاج، وقيّم إجابتي بيداغوجياً.",
+    },
+    {
+      label: "الترتيبات الصفية والممارسات المبنية على البراهين",
+      query: "ما هي أهم التدابير الصفية (TEACCH، شبكة ABC، والتواصل المعزز) الواجب استيعابها في دراستي؟",
+    },
   ],
 };
 
 const SUGGESTIONS = {
   fr: [
-    { label: "Comment créer un compte et m'inscrire ?", query: "Comment créer un compte et s'inscrire sur la plateforme ?", icon: HelpCircle },
-    { label: "Quelle formation choisir pour ma situation ?", query: "Quelle formation recommandez-vous selon ma situation ?", icon: Compass },
-    { label: "Mon enfant a un TSA (autisme), que faire ?", query: "Mon enfant a un trouble du spectre de l'autisme (TSA), que recommandez-vous ?", icon: HeartHandshake },
-    { label: "Comment devenir accompagnant scolaire (AVS) ?", query: "Comment devenir accompagnant scolaire AVS certifié ?", icon: ShieldCheck },
-    { label: "Quels sont les tarifs et moyens de paiement ?", query: "Quels sont les tarifs des formations et les moyens de paiement ?", icon: CreditCard },
+    {
+      label: "Comment créer un compte et m'inscrire ?",
+      query: "Comment créer un compte et s'inscrire sur la plateforme ?",
+    },
+    {
+      label: "Quelle formation choisir pour ma situation ?",
+      query: "Quelle formation recommandez-vous selon ma situation ?",
+    },
+    {
+      label: "Mon enfant a un TSA (autisme), que faire ?",
+      query: "Mon enfant a un trouble du spectre de l'autisme (TSA), que recommandez-vous ?",
+    },
+    {
+      label: "Comment devenir accompagnant scolaire (AVS) ?",
+      query: "Comment devenir accompagnant scolaire AVS certifié ?",
+    },
   ],
   ar: [
-    { label: "كيف أنشئ حساباً وأسجل في المنصة؟", query: "كيف أنشئ حساباً جديداً وأسجل في المنصة؟" },
-    { label: "ما هي الدورة المناسبة لوضعيتي؟", query: "ما هي الدورة التكوينية الأنسب لوضعيتي الحالية؟" },
-    { label: "طفلي يعاني من طيف التوحد (TSA)، بماذا تنصحني؟", query: "طفلي يعاني من طيف التوحد (TSA)، كيف أساعده وما هي الدورة المقترحة؟" },
-    { label: "كيف أصبح مرافقاً مدرسياً (AVS) معتمداً؟", query: "كيف أصبح مرافقاً مدرسياً AVS معتمداً عبر المنصة؟" },
-    { label: "ما هي أسعار الدورات وطرق الدفع؟", query: "ما هي أسعار التكوينات وطرق الدفع المتاحة؟" },
+    {
+      label: "كيف أنشئ حساباً وأسجل في المنصة؟",
+      query: "كيف أنشئ حساباً جديداً وأسجل في المنصة؟",
+    },
+    {
+      label: "ما هي الدورة المناسبة لوضعيتي؟",
+      query: "ما هي الدورة التكوينية الأنسب لوضعيتي الحالية؟",
+    },
+    {
+      label: "طفلي يعاني من طيف التوحد (TSA)، بماذا تنصحني؟",
+      query: "طفلي يعاني من طيف التوحد (TSA)، كيف أساعده وما هي الدورة المقترحة؟",
+    },
+    {
+      label: "كيف أصبح مرافقاً مدرسياً (AVS) معتمداً؟",
+      query: "كيف أصبح مرافقاً مدرسياً AVS معتمداً عبر المنصة؟",
+    },
   ],
 };
 
@@ -81,8 +123,6 @@ const SUGGESTIONS = {
  */
 function FormattedMessage({ text, locale }: { text: string; locale: "fr" | "ar" }) {
   const isRtl = locale === "ar";
-
-  // Split lines
   const lines = text.split("\n");
 
   return (
@@ -92,7 +132,6 @@ function FormattedMessage({ text, locale }: { text: string; locale: "fr" | "ar" 
           return <div key={idx} className="h-1" />;
         }
 
-        // Render bullet lines
         const isBullet = /^[-*•]\s+/.test(line);
         const isNumbered = /^\d+[\.\)]\s+/.test(line);
         const cleanLine = isBullet
@@ -101,13 +140,11 @@ function FormattedMessage({ text, locale }: { text: string; locale: "fr" | "ar" 
           ? line.replace(/^\d+[\.\)]\s+/, "")
           : line;
 
-        // Parse markdown bold **text**, `code/link`, [Title](Url) and internal paths
         const parts = cleanLine.split(/(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\)|(?:\/)?(?:fr|ar)\/[a-zA-Z0-9\-_/]+)/g);
 
         const content = parts.map((part, pIdx) => {
           if (!part) return null;
 
-          // Bold markdown
           if (part.startsWith("**") && part.endsWith("**")) {
             return (
               <strong key={pIdx} className="font-semibold text-slate-900">
@@ -116,7 +153,6 @@ function FormattedMessage({ text, locale }: { text: string; locale: "fr" | "ar" 
             );
           }
 
-          // Backtick code / inline link
           if (part.startsWith("`") && part.endsWith("`")) {
             const rawContent = part.slice(1, -1).trim();
             const normalizedLink = rawContent.startsWith("/")
@@ -145,7 +181,6 @@ function FormattedMessage({ text, locale }: { text: string; locale: "fr" | "ar" 
             );
           }
 
-          // Markdown link [Title](Url)
           const linkMatch = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
           if (linkMatch) {
             const [, title, url] = linkMatch;
@@ -161,7 +196,6 @@ function FormattedMessage({ text, locale }: { text: string; locale: "fr" | "ar" 
             );
           }
 
-          // Raw internal path like /fr/formations/... or ar/auth/register
           const trimmedPart = part.trim();
           if (
             trimmedPart.startsWith(`/${locale}/`) ||
@@ -188,7 +222,7 @@ function FormattedMessage({ text, locale }: { text: string; locale: "fr" | "ar" 
         if (isBullet || isNumbered) {
           return (
             <div key={idx} className="flex items-start gap-2 ps-1">
-              <span className="text-[#B58D3D] font-bold select-none shrink-0 mt-0.5">
+              <span className="text-[#0A192F] font-bold select-none shrink-0 mt-0.5">
                 {isNumbered ? line.match(/^\d+[\.\)]/)?.[0] : "•"}
               </span>
               <span className="flex-1">{content}</span>
@@ -427,35 +461,27 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
 
   return (
     <>
-      {/* High-Tech Floating Trigger Capsule (Linear / Apple / Raycast inspired) */}
+      {/* Sober & Institutional Floating Trigger Button (Zero AI clichés) */}
       {!isOpen && !isLearnerPath && (
         <button
           data-testid="public-assistant-trigger"
           onClick={() => setIsOpen(true)}
           className={`fixed bottom-5 sm:bottom-6 ${
             isRtl ? "left-5 sm:left-6" : "right-5 sm:right-6"
-          } z-40 group inline-flex items-center gap-2.5 h-11 pl-3 pr-2.5 rtl:pl-2.5 rtl:pr-3 rounded-full bg-[#0A192F]/95 hover:bg-[#0A192F] backdrop-blur-xl text-white text-[13px] font-semibold tracking-[-0.01em] border border-white/15 hover:border-white/30 shadow-[0_10px_25px_-5px_rgba(10,25,47,0.35),0_8px_10px_-6px_rgba(10,25,47,0.2),inset_0_1px_0_rgba(255,255,255,0.18)] hover:shadow-[0_16px_35px_-5px_rgba(0,86,210,0.4),0_10px_15px_-5px_rgba(10,25,47,0.25),inset_0_1px_0_rgba(255,255,255,0.3)] transition-all duration-200 ease-out hover:scale-[1.02] active:scale-[0.98] cursor-pointer select-none focus:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0056D2]`}
-          aria-label={isRtl ? "فتح مساعد ANEI" : "Ouvrir l'assistant ANEI"}
+          } z-40 group inline-flex items-center gap-2.5 h-11 px-4 rounded-full bg-[#0A192F] hover:bg-[#142B47] text-white shadow-md border border-white/10 text-[13px] font-medium transition-all duration-200 ease-out hover:scale-[1.02] active:scale-[0.98] cursor-pointer select-none focus:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0056D2]`}
+          aria-label={isRtl ? "فتح مساعدة ANEI" : "Ouvrir l'assistance ANEI"}
         >
-          {/* Luminous micro-orb */}
-          <span className="relative flex items-center justify-center w-6 h-6 rounded-full bg-gradient-to-tr from-[#0056D2] via-[#0A192F] to-[#B58D3D] p-[1px] shrink-0 shadow-xs">
-            <span className="w-full h-full rounded-full bg-[#0A192F] flex items-center justify-center">
-              <Sparkles className="w-3.5 h-3.5 text-amber-300 group-hover:text-amber-200 transition-colors" />
-            </span>
-            <span className="absolute -top-0.5 -end-0.5 w-1.5 h-1.5 rounded-full bg-emerald-400 ring-2 ring-[#0A192F] animate-pulse" />
+          <MessageSquare className="w-4 h-4 text-white/90 shrink-0" />
+          <span className="font-medium tracking-tight">
+            {isRtl ? "مساعدة ANEI" : "Assistance ANEI"}
           </span>
-
-          {/* Label */}
-          <span className="text-white font-medium">{isRtl ? "مساعد ANEI" : "Assistant ANEI"}</span>
-
-          {/* High-tech keyboard hint chip */}
-          <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-md bg-white/10 group-hover:bg-white/15 border border-white/10 text-[10.5px] font-mono font-medium text-slate-300 transition-colors select-none">
+          <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-md bg-white/10 group-hover:bg-white/15 border border-white/10 text-[10.5px] font-mono font-medium text-slate-300 transition-colors select-none ms-0.5">
             {isMac ? "⌘K" : "Ctrl K"}
           </kbd>
         </button>
       )}
 
-      {/* Drawer Overlay / Copilot Modal */}
+      {/* Drawer Overlay / Support Chat Modal */}
       {isOpen && (
         <aside
           data-testid="public-assistant-drawer"
@@ -463,32 +489,27 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
           dir={isRtl ? "rtl" : "ltr"}
           className={`fixed bottom-5 sm:bottom-6 ${
             isRtl ? "left-5 sm:left-6" : "right-5 sm:right-6"
-          } z-50 w-[calc(100vw-2.5rem)] sm:w-[460px] h-[620px] max-h-[85vh] bg-white rounded-2xl sm:rounded-3xl shadow-[0_25px_60px_-15px_rgba(10,25,47,0.25),0_0_0_1px_rgba(10,25,47,0.06)] border border-slate-200/90 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-250`}
+          } z-50 w-[370px] sm:w-[388px] h-[520px] max-h-[calc(100vh-6rem)] rounded-2xl border border-slate-200/90 bg-white shadow-[0_12px_40px_-8px_rgba(10,25,47,0.16)] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200`}
         >
-          {/* Header with Institutional Branding & Professional Micro-details */}
-          <div className="bg-[#0A192F] text-white px-4 py-3.5 flex items-center justify-between border-b border-slate-800/80 shrink-0">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="relative w-8 h-8 rounded-xl bg-gradient-to-tr from-[#0056D2] via-[#0A192F] to-[#B58D3D] p-[1px] flex items-center justify-center shrink-0 shadow-xs">
-                <div className="w-full h-full rounded-[11px] bg-[#0A192F] flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-amber-300" />
-                </div>
+          {/* 1. Minimalist & Institutional Header (Light Surface, No Sparkles, No Online Pill) */}
+          <div className="bg-white border-b border-slate-200/80 px-4 py-3.5 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="shrink-0 flex items-center justify-center">
+                <AneiLogo locale={locale} variant="mark" withText={false} height={22} className="shrink-0" />
               </div>
               <div className="flex flex-col min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-[14px] font-semibold text-white tracking-tight truncate">
+                  <span className="text-[13.5px] font-semibold text-[#0A192F] truncate">
                     {isLearnerPath
                       ? (isRtl ? "المرشد البيداغوجي ANEI" : "Tuteur Pédagogique ANEI")
                       : (isRtl ? "مساعد ANEI" : "Assistant ANEI")}
                   </span>
-                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10.5px] font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/20 shrink-0">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    <span>{isRtl ? "متاح الآن" : "En ligne"}</span>
-                  </span>
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
                 </div>
-                <p className="text-[11.5px] text-slate-300/90 font-normal truncate mt-0.5">
+                <p className="text-[11.5px] text-slate-500 truncate mt-0.5">
                   {isLearnerPath
-                    ? (isRtl ? "مرافقة المتعلّم، مراجعة الدروس والاستعداد للاختبار" : "Accompagnement, révision & préparation au test certifiant")
-                    : (isRtl ? "توجيه رسمي، استشارات ومعلومات التكوين" : "Orientation officielle, conseil & formations")}
+                    ? (isRtl ? "مرافقة ومراجعة للدروس" : "Accompagnement & révision des cours")
+                    : (isRtl ? "توجيه، تكوينات ومرافقة" : "Orientation, formations & accompagnement")}
                 </p>
               </div>
             </div>
@@ -498,78 +519,52 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
                 <button
                   type="button"
                   onClick={resetChat}
-                  className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors focus:outline-hidden cursor-pointer"
+                  className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
                   title={isRtl ? "محادثة جديدة" : "Nouvelle conversation"}
                   aria-label={isRtl ? "محادثة جديدة" : "Nouvelle conversation"}
                 >
-                  <RotateCcw className="w-4 h-4" />
+                  <RotateCcw className="h-3.5 w-3.5" />
                 </button>
               )}
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors focus:outline-hidden cursor-pointer"
+                className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
                 aria-label={isRtl ? "إغلاق" : "Fermer"}
               >
-                <X className="w-4 h-4" />
+                <X className="h-4 w-4" />
               </button>
             </div>
           </div>
 
-          {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3.5 bg-[#F8FAFC]">
+          {/* 2. Body: Clean Welcome Bubble & Untruncated Suggestions (Zero Scrollbar on Open) */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#F8FAFC]/50 [scrollbar-width:thin]">
             {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center px-4 space-y-4">
-                <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#0056D2] via-[#0A192F] to-[#B58D3D] p-[1px] shadow-sm">
-                  <div className="w-full h-full rounded-[15px] bg-white flex items-center justify-center text-[#0A192F]">
-                    <Sparkles className="w-5 h-5 text-[#0056D2]" />
-                  </div>
-                </div>
-                <div>
-                  <h4 className="text-[14.5px] font-semibold text-slate-900 tracking-tight">
-                    {isLearnerPath
-                      ? (isRtl ? "فضاء المتعلّم ANEI · المرشد الذكي" : "Tuteur Pédagogique ANEI")
-                      : (isRtl ? "مرحباً بكم في الأكاديمية الوطنية" : "Bienvenue à l'Académie ANEI")}
-                  </h4>
-                  <p className="text-[12px] text-slate-500 mt-1 max-w-[320px] leading-relaxed">
-                    {isLearnerPath
-                      ? (isRtl
-                          ? "أنا مرشدك البيداغوجي: أتابع دوراتك، دروسك، وأساعدك على مراجعة النقاط الأساسية واجتياز التقييم النهائي بنجاح."
-                          : "Je connais vos formations et leçons. Posez vos questions, révisez les concepts clés et préparez votre test final certifiant.")
-                      : (isRtl
-                          ? "أنا هنا لمساعدتكم في اختيار التكوين الأنسب، معرفة الإجراءات والتسجيل في المنصة."
-                          : "Je réponds à vos questions sur les formations certifiantes, les débouchés AVS, les inscriptions et le fonctionnement de la plateforme.")}
-                  </p>
+              <div className="flex flex-col gap-3">
+                {/* Natural Welcome Bubble */}
+                <div className="rounded-xl border border-slate-200/70 bg-[#F8FAFC] p-3.5 text-[13px] text-slate-700 leading-relaxed shadow-2xs">
+                  {isLearnerPath
+                    ? (isRtl
+                        ? "مرحباً بك. كيف يمكنني مرافقتك اليوم في متابعة دروسك، المراجعة أو الاستعداد لاختبار الشهادة؟"
+                        : "Bonjour. Comment puis-je vous accompagner aujourd'hui dans vos cours, révisions ou la préparation de votre test certifiant ?")
+                    : (isRtl
+                        ? "مرحباً بك. كيف يمكنني توجيهك اليوم بخصوص التكوينات، مرافقة الحياة المدرسية أو الأخصائيين؟"
+                        : "Bonjour. Comment puis-je vous orienter aujourd'hui concernant nos formations, l'accompagnement AVS ou nos spécialistes ?")}
                 </div>
 
-                {/* Suggestions List */}
-                <div className="w-full space-y-2 pt-1">
-                  <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-1">
-                    <span>{isRtl ? "اقتراحات سريعة" : "Suggestions rapides"}</span>
-                    <span className="text-[10px] font-normal normal-case text-slate-400">
-                      {isRtl ? "انقر للمتابعة" : "Cliquer pour envoyer"}
-                    </span>
-                  </div>
-                  {suggestions.map((item, idx) => {
-                    const IconComponent = (item as { icon?: typeof BookOpen }).icon || BookOpen;
-                    return (
-                      <button
-                        key={idx}
-                        onClick={() => handleSend(item.query)}
-                        className="w-full text-start text-[12.5px] px-3.5 py-2.5 rounded-xl bg-white border border-slate-200/90 hover:border-[#0056D2] hover:bg-blue-50/30 text-slate-700 font-medium transition-all shadow-2xs flex items-center justify-between group cursor-pointer"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <span className="w-6 h-6 rounded-lg bg-slate-100 group-hover:bg-blue-100/60 text-slate-500 group-hover:text-[#0056D2] flex items-center justify-center shrink-0 transition-colors">
-                            <IconComponent className="w-3.5 h-3.5" />
-                          </span>
-                          <span className="truncate">{item.label}</span>
-                        </div>
-                        <span className="text-slate-400 group-hover:text-[#0056D2] transition-colors shrink-0 ms-2">
-                          {isRtl ? <ArrowLeft className="w-3.5 h-3.5" /> : <ArrowRight className="w-3.5 h-3.5" />}
-                        </span>
-                      </button>
-                    );
-                  })}
+                {/* 4 Clean Action Prompts (No left circle icons, no truncation with "...") */}
+                <div className="flex flex-col gap-1.5">
+                  {suggestions.slice(0, 4).map((item, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleSend(item.query)}
+                      className="w-full text-start px-3.5 py-2.5 rounded-xl border border-slate-200/90 bg-white hover:bg-[#F8FAFC] hover:border-slate-300 text-[12.5px] font-medium text-[#0A192F] leading-snug transition-all flex items-center justify-between gap-2 cursor-pointer shadow-2xs group"
+                    >
+                      <span className="flex-1 text-slate-800 font-medium">{item.label}</span>
+                      <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-slate-700 shrink-0 rtl:rotate-180 transition-colors" />
+                    </button>
+                  ))}
                 </div>
               </div>
             ) : (
@@ -588,11 +583,15 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
                     <div
                       className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 text-xs ${
                         msg.role === "user"
-                          ? "bg-[#0056D2] text-white"
-                          : "bg-white text-[#0A192F] border border-slate-200 shadow-2xs"
+                          ? "bg-[#0A192F] text-white"
+                          : "bg-white border border-slate-200 shadow-2xs p-0.5"
                       }`}
                     >
-                      {msg.role === "user" ? <User className="w-3 h-3" /> : <Sparkles className="w-3.5 h-3.5 text-[#0056D2]" />}
+                      {msg.role === "user" ? (
+                        <User className="w-3.5 h-3.5" />
+                      ) : (
+                        <AneiLogo locale={locale} variant="mark" withText={false} height={14} />
+                      )}
                     </div>
 
                     <div
@@ -608,9 +607,9 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
                         <FormattedMessage text={msg.content} locale={locale} />
                       ) : msg.isStreaming ? (
                         <span className="inline-flex items-center gap-1.5 text-slate-400 py-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#0056D2] animate-bounce" />
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#0A192F] animate-bounce [animation-delay:0.2s]" />
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#B58D3D] animate-bounce [animation-delay:0.4s]" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#0A192F] animate-bounce" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#0056D2] animate-bounce [animation-delay:0.2s]" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce [animation-delay:0.4s]" />
                         </span>
                       ) : null}
                     </div>
@@ -687,17 +686,7 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Ethical Disclaimer */}
-          <div className="px-4 py-2 bg-slate-50 border-t border-slate-200/80 flex items-center justify-center gap-1.5 text-[10.5px] text-slate-500 shrink-0">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-            <span>
-              {isRtl
-                ? "مساعد استرشادي رسمي — لا يغني عن الاستشارة الطبية أو النفسية المتخصصة."
-                : "Information indicative officielle — Ne remplace pas un avis médical ou spécialisé."}
-            </span>
-          </div>
-
-          {/* Input Footer (Command-Bar style) */}
+          {/* 3. Compact Input Bar (Single Line, No "IA & RAG" badge, No shortcut clutter) */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -705,11 +694,11 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
             }}
             className="p-3 bg-white border-t border-slate-200/80 shrink-0"
           >
-            <div className="relative rounded-2xl border border-slate-200 bg-slate-50/80 focus-within:border-[#0056D2] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#0056D2]/10 transition-all shadow-2xs p-2.5">
+            <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-[#F8FAFC] focus-within:bg-white focus-within:border-[#0A192F] px-3 py-1.5 transition-all">
               <textarea
                 data-testid="public-assistant-input"
                 ref={textareaRef}
-                rows={2}
+                rows={1}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -720,31 +709,27 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
                 }}
                 placeholder={
                   isLearnerPath
-                    ? (isRtl ? "اطرح سؤالك على المرشد البيداغوجي..." : "Posez une question sur vos cours ou l'évaluation...")
-                    : (isRtl ? "اكتب سؤالك هنا..." : "Posez votre question...")
+                    ? (isRtl ? "اطرح سؤالك على المرشد البيداغوجي..." : "Posez une question sur vos cours...")
+                    : (isRtl ? "اطرح سؤالك..." : "Posez votre question...")
                 }
                 disabled={isLoading}
-                className="public-chat-input w-full text-[13px] text-slate-900 placeholder:text-slate-400 focus:outline-none resize-none leading-relaxed pe-9 bg-transparent"
+                className="public-chat-input flex-1 bg-transparent text-[13px] text-[#0A192F] placeholder:text-slate-400 outline-none resize-none h-7 py-0.5 leading-6 overflow-hidden"
               />
-              <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 mt-1">
-                <span className="flex items-center gap-1 text-[10.5px] text-slate-400">
-                  <ShieldCheck className="w-3 h-3 text-emerald-600 shrink-0" />
-                  <span>{isRtl ? "قاعدة معرفة ANEI الرسمية" : "IA & RAG Officiel ANEI"}</span>
-                </span>
-                <button
-                  data-testid="public-assistant-send"
-                  type="submit"
-                  disabled={isLoading || !input.trim()}
-                  className="w-7 h-7 rounded-lg bg-[#0056D2] hover:bg-[#00419e] text-white disabled:opacity-40 disabled:hover:bg-[#0056D2] transition-colors flex items-center justify-center shadow-2xs cursor-pointer disabled:cursor-not-allowed"
-                  aria-label={isRtl ? "إرسال" : "Envoyer"}
-                >
-                  <ArrowUp className="w-3.5 h-3.5" />
-                </button>
-              </div>
+              <button
+                data-testid="public-assistant-send"
+                type="submit"
+                disabled={isLoading || !input.trim()}
+                className="h-7 w-7 rounded-lg bg-[#0A192F] hover:bg-[#0056D2] disabled:bg-slate-200 disabled:text-slate-400 text-white flex items-center justify-center shrink-0 transition-colors cursor-pointer disabled:cursor-not-allowed"
+                aria-label={isRtl ? "إرسال" : "Envoyer"}
+              >
+                <ArrowUp className="h-3.5 w-3.5" />
+              </button>
             </div>
-            <div className="mt-1 flex items-center justify-end px-1 text-[10px] text-slate-400">
-              <span>{isRtl ? "Enter للإرسال • Shift+Enter لسطر جديد" : "Entrée pour envoyer • Shift+Entrée pour saut de ligne"}</span>
-            </div>
+            <p className="text-[10.5px] text-slate-400 text-center mt-1.5">
+              {isRtl
+                ? "معلومات توجيهية — لا تعوض الاستشارة الطبية."
+                : "Information d'orientation — Ne remplace pas un avis médical."}
+            </p>
           </form>
         </aside>
       )}
