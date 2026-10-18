@@ -474,12 +474,13 @@ body{background:var(--bg);color:var(--ink)}
 .admin-nav-progress-bar{position:fixed;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#0056D2,#38BDF8,#0056D2);background-size:200% 100%;animation:adminNavPulse 1.2s ease-in-out infinite;z-index:9999;pointer-events:none}
 @keyframes adminNavPulse{0%{background-position:100% 0}100%{background-position:-100% 0}}
 .admin-app-sidebar{position:fixed;inset-block:0;inset-inline-start:0;inline-size:var(--admin-sidebar-w);background:#FFFFFF;color:#334155;display:flex;flex-direction:column;overflow:hidden;border-inline-end:1px solid var(--admin-border);z-index:30;transition:inline-size .18s ease}
-.admin-app-brand{min-height:70px;padding:14px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--admin-border);background:#FFFFFF}
-.admin-brand-mark{inline-size:40px;block-size:40px;flex:none;display:grid;place-items:center;border-radius:10px;overflow:hidden;background:#F8FAFC;border:1px solid var(--admin-border)}
-.admin-brand-mark img{inline-size:100%;block-size:100%;object-fit:cover;object-position:0 50%}
-.admin-app-brand>div,.admin-app-profile>div{display:flex;flex-direction:column;line-height:1.25;min-width:0}
-.admin-app-brand strong{letter-spacing:.04em;color:#0F172A;font-weight:800;font-size:1.05rem}
-.admin-app-brand small{color:#64748B;font-size:.72rem;font-weight:500}
+.admin-app-brand{min-height:70px;padding:14px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--admin-border);background:#FFFFFF;text-decoration:none;color:inherit;transition:background-color .15s ease}
+.admin-app-brand:hover{background:#F8FAFC}
+.admin-brand-mark{flex:none;display:flex;align-items:center;justify-content:center}
+.admin-brand-mark img{height:32px;width:auto;max-width:none;object-fit:contain;display:block}
+.admin-app-brand>div,.admin-app-profile>div{display:flex;flex-direction:column;line-height:1.2;min-width:0}
+.admin-app-brand strong{letter-spacing:-0.01em;color:#0F172A;font-weight:800;font-size:1.1rem}
+.admin-app-brand small{color:#64748B;font-size:.72rem;font-weight:600}
 .admin-app-nav{padding:14px 10px;flex:1;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
 .admin-nav-group{display:grid;gap:2px;margin-bottom:14px}
 .admin-nav-group-trigger{padding:8px 12px 6px;color:#64748B;font-size:.68rem;font-weight:750;text-transform:uppercase;letter-spacing:.06em;background:transparent;border:0;display:flex;align-items:center;justify-content:space-between;width:100%;cursor:pointer;border-radius:6px;transition:color .15s}
@@ -826,7 +827,7 @@ body{background:var(--bg);color:var(--ink)}
 
 /* Enterprise Coursera standard — admin console polish */
 .admin-app-brand strong{font-family:inherit}
-.admin-brand-mark{background:#F8FAFC;color:#0056D2}
+.admin-brand-mark{color:#0056D2}
 .admin-app-nav a.active{background:#F0F6FF;color:#0056D2;box-shadow:inset 3px 0 0 #0056D2}
 [dir="rtl"] .admin-app-nav a.active{box-shadow:inset -3px 0 0 #0056D2}
 .admin-app-profile{border-color:#E2E8F0;background:#F8FAFC}

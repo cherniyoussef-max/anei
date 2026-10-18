@@ -98,13 +98,20 @@ export function AdminShell({ children, locale, user }: {
   return <div className={`admin-app ${collapsed ? "is-collapsed" : ""}`}>
     {isNavigating ? <div className="admin-nav-progress-bar" role="progressbar" aria-label="Navigation" /> : null}
     <aside className="admin-app-sidebar">
-      <div className="admin-app-brand"><span className="admin-brand-mark"><AneiLogo locale={locale} variant="mark" height={26} priority /></span><div><strong>ANEI</strong><small>{ar ? "وحدة تحكم الإدارة" : "Console d’administration"}</small></div></div>
+      <Link href={base} className="admin-app-brand" prefetch={true} aria-label={ar ? "ANEI، وحدة تحكم الإدارة" : "ANEI, Console d’administration"}>
+        <span className="admin-brand-mark"><AneiLogo locale={locale} variant="mark" height={32} priority /></span>
+        <div><strong>ANEI</strong><small>{ar ? "وحدة تحكم الإدارة" : "Console d’administration"}</small></div>
+      </Link>
       {nav}
       <div className="admin-app-profile"><span>{user.name.slice(0, 2).toUpperCase()}</span><div><strong>{user.name}</strong><small className="admin-role-badge">{user.role}</small></div></div>
     </aside>
     {mobileOpen ? <button className="admin-drawer-backdrop" aria-label={ar ? "إغلاق القائمة" : "Fermer le menu"} onClick={() => setMobileOpen(false)}/> : null}
     <aside className={`admin-mobile-drawer ${mobileOpen ? "open" : ""}`} aria-hidden={!mobileOpen} role="dialog" aria-modal="true" aria-label={ar ? "قائمة الإدارة" : "Menu d’administration"}>
-      <div className="admin-app-brand"><span className="admin-brand-mark"><AneiLogo locale={locale} variant="mark" height={26} /></span><div><strong>ANEI</strong><small>{ar ? "وحدة تحكم الإدارة" : "Console d’administration"}</small></div>
+      <div className="admin-app-brand">
+        <Link href={base} className="flex items-center gap-3 flex-1 min-w-0" onClick={() => setMobileOpen(false)} aria-label={ar ? "ANEI، وحدة تحكم الإدارة" : "ANEI, Console d’administration"}>
+          <span className="admin-brand-mark"><AneiLogo locale={locale} variant="mark" height={32} /></span>
+          <div><strong>ANEI</strong><small>{ar ? "وحدة تحكم الإدارة" : "Console d’administration"}</small></div>
+        </Link>
         <button ref={closeRef} className="admin-icon-button" onClick={() => setMobileOpen(false)} aria-label={ar ? "إغلاق" : "Fermer"}><Icon name="close"/></button>
       </div>{nav}
     </aside>
