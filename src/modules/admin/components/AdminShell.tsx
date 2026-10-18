@@ -1,146 +1,381 @@
 "use client";
 
 import Link from "next/link";
-import { AneiLogo } from "@/components/brand/AneiLogo";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { Icon, type IconName } from "@/components/ui/Icon";
+import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
+import { AneiLogo } from "@/components/brand/AneiLogo";
 import type { Locale } from "@/types";
+import {
+  LayoutDashboard,
+  TrendingUp,
+  Users,
+  MessageSquare,
+  Instagram,
+  MessageCircle,
+  BookOpen,
+  FileEdit,
+  GraduationCap,
+  BarChart3,
+  Award,
+  Video,
+  CalendarDays,
+  FolderDown,
+  ShoppingBag,
+  CreditCard,
+  Mail,
+  Newspaper,
+  ShieldCheck,
+  Stethoscope,
+  Activity,
+  FileText,
+  Search,
+  ChevronsUpDown,
+  ChevronRight,
+  Sparkles,
+  Globe,
+  Menu,
+  X,
+} from "lucide-react";
 
-type NavItem = { href: string; icon: IconName; fr: string; ar: string };
-type NavGroup = { fr: string; ar: string; items: NavItem[] };
+interface NavItem {
+  href: string;
+  icon: ComponentType<{ className?: string }>;
+  fr: string;
+  ar: string;
+  badge?: string;
+}
 
-export function AdminShell({ children, locale, user }: {
-  children: React.ReactNode; locale: Locale; user: { name: string; email: string; role: string };
+interface NavGroup {
+  fr: string;
+  ar: string;
+  items: NavItem[];
+}
+
+export function AdminShell({
+  children,
+  locale,
+  user,
+}: {
+  children: React.ReactNode;
+  locale: Locale;
+  user: { name: string; email: string; role: string };
 }) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [isNavigating, setIsNavigating] = useState(false);
-  const [prevPathname, setPrevPathname] = useState(pathname);
-
-  if (pathname !== prevPathname) {
-    setPrevPathname(pathname);
-    setIsNavigating(false);
-  }
-
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
-    Pilotage: true, Apprentissage: true, Commerce: true, "Opérations": true,
-  });
-  const closeRef = useRef<HTMLButtonElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const ar = locale === "ar";
   const base = `/${locale}/admin`;
 
-  const groups: NavGroup[] = [
-    { fr: "Pilotage", ar: "القيادة", items: [
-      { href: base, icon: "chart", fr: "Vue d’ensemble", ar: "نظرة عامة" },
-      { href: `${base}/marketing`, icon: "chart", fr: "Marketing & Audience", ar: "التسويق والجمهور" },
-      { href: `${base}/users`, icon: "users", fr: "Utilisateurs", ar: "المستخدمون" },
-      { href: `${base}/crm/whatsapp`, icon: "phone", fr: "WhatsApp CRM", ar: "واتساب CRM" },
-      { href: `${base}/crm/instagram`, icon: "instagram", fr: "Instagram CRM", ar: "إنستغرام CRM" },
-      { href: `${base}/crm/messenger`, icon: "messenger", fr: "Messenger CRM", ar: "ماسنجر CRM" },
-    ]},
-    { fr: "Apprentissage", ar: "التعلّم", items: [
-      { href: `${base}/courses`, icon: "book", fr: "Formations", ar: "الدورات" },
-      { href: `${base}/courses/editor`, icon: "spark", fr: "Éditeur de cours", ar: "محرر الدورات" },
-      { href: `${base}/enrollments`, icon: "check", fr: "Inscriptions", ar: "التسجيلات" },
-      { href: `${base}/assessments`, icon: "chart", fr: "Évaluations & résultats", ar: "التقييمات والنتائج" },
-      { href: `${base}/certificates`, icon: "award", fr: "Certificats", ar: "الشهادات" },
-      { href: `${base}/live`, icon: "spark", fr: "Directs & Webinaires", ar: "البث المباشر والندوات" },
-      { href: `${base}/disponibilites`, icon: "calendar", fr: "Disponibilités", ar: "الفتحات المتاحة" },
-      { href: `${base}/resources`, icon: "download", fr: "Bibliothèque", ar: "المكتبة" },
-    ]},
-    { fr: "Commerce", ar: "التجارة", items: [
-      { href: `${base}/orders`, icon: "book", fr: "Commandes", ar: "الطلبات" },
-      { href: `${base}/payments`, icon: "shield", fr: "Paiements", ar: "المدفوعات" },
-    ]},
-    { fr: "Opérations", ar: "العمليات", items: [
-      { href: `${base}/contacts`, icon: "mail", fr: "Messages & Contacts", ar: "الرسائل والتواصل" },
-      { href: `${base}/news`, icon: "book", fr: "Actualités", ar: "الأخبار" },
-      { href: `${base}/avs`, icon: "award", fr: "Annuaire & RDV AVS", ar: "دليل ومواعيد المرافقين" },
-      { href: `${base}/care`, icon: "users", fr: "Suivis spécialistes", ar: "متابعات المختصين" },
-    ]},
+  const groups: NavGroup[] = useMemo(() => [
+    {
+      fr: "Pilotage",
+      ar: "القيادة والتنفيذ",
+      items: [
+        { href: base, icon: LayoutDashboard, fr: "Vue d’ensemble", ar: "نظرة عامة" },
+        { href: `${base}/marketing`, icon: TrendingUp, fr: "Marketing & Audience", ar: "التسويق والجمهور" },
+        { href: `${base}/users`, icon: Users, fr: "Utilisateurs", ar: "المستخدمون" },
+      ],
+    },
+    {
+      fr: "Apprentissage",
+      ar: "منظومة التعلّم",
+      items: [
+        { href: `${base}/courses`, icon: BookOpen, fr: "Formations", ar: "الدورات" },
+        { href: `${base}/courses/editor`, icon: FileEdit, fr: "Éditeur de cours", ar: "محرر الدورات" },
+        { href: `${base}/enrollments`, icon: GraduationCap, fr: "Inscriptions", ar: "التسجيلات" },
+        { href: `${base}/assessments`, icon: BarChart3, fr: "Évaluations & résultats", ar: "التقييمات والنتائج" },
+        { href: `${base}/certificates`, icon: Award, fr: "Certificats", ar: "الشهادات" },
+        { href: `${base}/live`, icon: Video, fr: "Directs & Webinaires", ar: "البث المباشر والندوات" },
+        { href: `${base}/disponibilites`, icon: CalendarDays, fr: "Disponibilités", ar: "الفتحات المتاحة" },
+        { href: `${base}/resources`, icon: FolderDown, fr: "Bibliothèque", ar: "المكتبة" },
+      ],
+    },
+    {
+      fr: "Messagerie & CRM",
+      ar: "إدارة علاقات العملاء",
+      items: [
+        { href: `${base}/crm/whatsapp`, icon: MessageSquare, fr: "WhatsApp CRM", ar: "واتساب CRM" },
+        { href: `${base}/crm/instagram`, icon: Instagram, fr: "Instagram CRM", ar: "إنستغرام CRM" },
+        { href: `${base}/crm/messenger`, icon: MessageCircle, fr: "Messenger CRM", ar: "ماسنجر CRM" },
+      ],
+    },
+    {
+      fr: "Annuaires & Opérations",
+      ar: "العمليات والأدلة",
+      items: [
+        { href: `${base}/orders`, icon: ShoppingBag, fr: "Commandes", ar: "الطلبات" },
+        { href: `${base}/payments`, icon: CreditCard, fr: "Paiements", ar: "المدفوعات" },
+        { href: `${base}/contacts`, icon: Mail, fr: "Messages & Contacts", ar: "الرسائل والتواصل" },
+        { href: `${base}/news`, icon: Newspaper, fr: "Actualités", ar: "الأخبار" },
+        { href: `${base}/avs`, icon: ShieldCheck, fr: "Annuaire & RDV AVS", ar: "دليل ومواعيد المرافقين" },
+        { href: `${base}/care`, icon: Stethoscope, fr: "Suivis spécialistes", ar: "متابعات المختصين" },
+      ],
+    },
+    {
+      fr: "Gouvernance",
+      ar: "الحوكمة والنظام",
+      items: [
+        { href: `${base}/system`, icon: Activity, fr: "État du système", ar: "حالة النظام" },
+        { href: `${base}/audit`, icon: FileText, fr: "Journal d’audit", ar: "سجل العمليات" },
+      ],
+    },
+  ], [base]);
 
-  ];
-  const activeHref = groups.flatMap((group) => group.items).filter((item) => item.href === base ? pathname === base : pathname === item.href || pathname.startsWith(`${item.href}/`)).sort((a, b) => b.href.length - a.href.length)[0]?.href;
-  const activeGroup = groups.find((group) => group.items.some((item) => item.href === activeHref));
-  const activeItem = activeGroup?.items.find((item) => item.href === activeHref);
+  // Determine active item based on current pathname
+  const activeHref = useMemo(() => {
+    return groups
+      .flatMap((group) => group.items)
+      .filter((item) => (item.href === base ? pathname === base : pathname === item.href || pathname.startsWith(`${item.href}/`)))
+      .sort((a, b) => b.href.length - a.href.length)[0]?.href;
+  }, [groups, pathname, base]);
+
+  const activeGroup = useMemo(() => {
+    return groups.find((group) => group.items.some((item) => item.href === activeHref));
+  }, [groups, activeHref]);
+
+  const activeItem = useMemo(() => {
+    return activeGroup?.items.find((item) => item.href === activeHref);
+  }, [activeGroup, activeHref]);
+
+  // Quick search filter for sidebar navigation
+  const filteredGroups = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return groups;
+    return groups
+      .map((g) => ({
+        ...g,
+        items: g.items.filter(
+          (item) => item.fr.toLowerCase().includes(q) || item.ar.toLowerCase().includes(q)
+        ),
+      }))
+      .filter((g) => g.items.length > 0);
+  }, [groups, searchQuery]);
+
+  // Keyboard shortcut Ctrl+K to focus search
   useEffect(() => {
-    if (!mobileOpen) return;
-    const trigger = triggerRef.current;
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    closeRef.current?.focus();
-    const close = (event: KeyboardEvent) => { if (event.key === "Escape") setMobileOpen(false); };
-    document.addEventListener("keydown", close);
-    return () => { document.body.style.overflow = overflow; document.removeEventListener("keydown", close); trigger?.focus(); };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+      if (e.key === "Escape" && mobileOpen) {
+        setMobileOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, [mobileOpen]);
-  function toggleCollapsed() {
-    setCollapsed((current) => !current);
-  }
-  const nav = <nav className="admin-app-nav" aria-label={ar ? "التنقل الإداري" : "Navigation d’administration"}>
-    {groups.map((group) => <div className="admin-nav-group" key={group.fr}>
-      <button type="button" className="admin-nav-group-trigger" aria-expanded={openGroups[group.fr] !== false}
-        onClick={() => setOpenGroups((current) => ({ ...current, [group.fr]: current[group.fr] === false }))}>
-        <span>{ar ? group.ar : group.fr}</span><Icon name="chevron" size={14}/>
-      </button>
-      <div className="admin-nav-group-items" hidden={!collapsed && openGroups[group.fr] === false}>{group.items.map((item) => {
-        const active = item.href === activeHref;
-        const label = ar ? item.ar : item.fr;
-        return <Link href={item.href} key={item.href} prefetch={true} className={active ? "active" : ""} aria-current={active ? "page" : undefined}
-          title={collapsed ? label : undefined} onClick={() => { setMobileOpen(false); if (pathname !== item.href) setIsNavigating(true); }}>
-          <Icon name={item.icon} size={19}/><span>{label}</span>
-        </Link>;
-      })}</div>
-    </div>)}
-  </nav>;
-  return <div className={`admin-app ${collapsed ? "is-collapsed" : ""}`}>
-    {isNavigating ? <div className="admin-nav-progress-bar" role="progressbar" aria-label="Navigation" /> : null}
-    <aside className="admin-app-sidebar">
-      <Link href={base} className="admin-app-brand" prefetch={true} aria-label={ar ? "ANEI، وحدة تحكم الإدارة" : "ANEI, Console d’administration"}>
-        <span className="admin-brand-mark"><AneiLogo locale={locale} variant="mark" height={32} priority /></span>
-        <div><strong>ANEI</strong><small>{ar ? "وحدة تحكم الإدارة" : "Console d’administration"}</small></div>
-      </Link>
-      {nav}
-      <div className="admin-app-profile"><span>{user.name.slice(0, 2).toUpperCase()}</span><div><strong>{user.name}</strong><small className="admin-role-badge">{user.role}</small></div></div>
-    </aside>
-    {mobileOpen ? <button className="admin-drawer-backdrop" aria-label={ar ? "إغلاق القائمة" : "Fermer le menu"} onClick={() => setMobileOpen(false)}/> : null}
-    <aside className={`admin-mobile-drawer ${mobileOpen ? "open" : ""}`} aria-hidden={!mobileOpen} role="dialog" aria-modal="true" aria-label={ar ? "قائمة الإدارة" : "Menu d’administration"}>
-      <div className="admin-app-brand">
-        <Link href={base} className="flex items-center gap-3 flex-1 min-w-0" onClick={() => setMobileOpen(false)} aria-label={ar ? "ANEI، وحدة تحكم الإدارة" : "ANEI, Console d’administration"}>
-          <span className="admin-brand-mark"><AneiLogo locale={locale} variant="mark" height={32} /></span>
-          <div><strong>ANEI</strong><small>{ar ? "وحدة تحكم الإدارة" : "Console d’administration"}</small></div>
+
+  const sidebarContent = (
+    <aside className="w-64 bg-slate-50/95 border-e border-slate-200 h-screen sticky top-0 flex flex-col select-none shrink-0 z-30">
+      {/* 1. Top Account Switcher */}
+      <div className="h-14 px-4 flex items-center justify-between border-b border-slate-200/80 bg-white/70">
+        <Link href={base} className="flex items-center gap-2.5 min-w-0 flex-1 group">
+          <AneiLogo locale={locale} variant="mark" withText={false} height={26} priority />
+          <div className="flex flex-col min-w-0 leading-tight">
+            <span className="text-[13px] font-semibold text-[#0A192F] truncate group-hover:text-[#0056D2] transition-colors">
+              ANEI Console
+            </span>
+            <span className="text-[10.5px] text-slate-400 truncate">
+              {user.email || "admin@anei.tn"}
+            </span>
+          </div>
         </Link>
-        <button ref={closeRef} className="admin-icon-button" onClick={() => setMobileOpen(false)} aria-label={ar ? "إغلاق" : "Fermer"}><Icon name="close"/></button>
-      </div>{nav}
+        <ChevronsUpDown className="h-3.5 w-3.5 text-slate-400 shrink-0 ms-1" />
+      </div>
+
+      {/* 2. Quick Search (Ctrl+K) */}
+      <div className="px-3 pt-3 pb-2">
+        <div className="w-full h-8 px-2.5 rounded-md border border-slate-200/90 bg-white text-[13px] text-slate-600 placeholder:text-slate-400 flex items-center justify-between shadow-2xs hover:border-slate-300 focus-within:border-[#0056D2] transition-colors">
+          <Search className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+          <input
+            ref={searchInputRef}
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={ar ? "بحث سريع..." : "Recherche rapide..."}
+            className="w-full bg-transparent border-0 px-2 text-[12.5px] text-[#0A192F] placeholder:text-slate-400 focus:outline-none"
+          />
+          <kbd className="text-[10.5px] font-medium text-slate-400 bg-slate-100 border border-slate-200 px-1 py-0.5 rounded shrink-0">
+            Ctrl K
+          </kbd>
+        </div>
+      </div>
+
+      {/* 3. Navigation Groups */}
+      <nav className="flex-1 overflow-y-auto px-2.5 py-2 space-y-4 scrollbar-thin scrollbar-thumb-slate-200" aria-label={ar ? "التنقل الإداري" : "Navigation d’administration"}>
+        {filteredGroups.map((group) => (
+          <div key={group.fr}>
+            <div className="px-2 pt-2 pb-1 text-[11px] font-medium text-slate-400 tracking-normal select-none">
+              {ar ? group.ar : group.fr}
+            </div>
+            <div className="space-y-0.5">
+              {group.items.map((item) => {
+                const active = item.href === activeHref;
+                const IconComponent = item.icon;
+                const label = ar ? item.ar : item.fr;
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    prefetch={true}
+                    onClick={() => setMobileOpen(false)}
+                    className={`group flex items-center justify-between rounded-md px-2.5 py-1.5 text-[13px] transition-colors ${
+                      active
+                        ? "bg-slate-200/75 text-[#0A192F] font-semibold"
+                        : "text-slate-600 font-normal hover:bg-slate-200/40 hover:text-[#0A192F]"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <IconComponent
+                        className={`h-4 w-4 shrink-0 transition-colors ${
+                          active ? "text-[#0A192F] stroke-[1.8]" : "text-slate-500 stroke-[1.6] group-hover:text-[#0A192F]"
+                        }`}
+                      />
+                      <span className="truncate">{label}</span>
+                    </div>
+
+                    {item.badge ? (
+                      <span className="rounded bg-slate-200/80 px-1.5 py-0.2 text-[10.5px] font-medium text-slate-600 shrink-0">
+                        {item.badge}
+                      </span>
+                    ) : (
+                      <ChevronRight className="h-3.5 w-3.5 text-slate-400 rtl:rotate-180 group-hover:text-slate-600 shrink-0 transition-transform" />
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </nav>
+
+      {/* 4. Bottom Profile Card */}
+      <div className="p-3 border-t border-slate-200/80 bg-white/60 flex items-center justify-between">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-7 h-7 rounded-full bg-[#0A192F] text-white text-[11px] font-bold flex items-center justify-center shrink-0">
+            {user.name ? user.name.slice(0, 2).toUpperCase() : "AD"}
+          </div>
+          <div className="flex flex-col min-w-0 leading-tight">
+            <span className="text-[12.5px] font-semibold text-[#0A192F] truncate">{user.name}</span>
+            <span className="text-[10px] text-slate-400 uppercase font-medium truncate">{user.role}</span>
+          </div>
+        </div>
+      </div>
     </aside>
-    <div className="admin-app-body">
-      <header className="admin-app-topbar">
-        <button className="admin-icon-button desktop-collapse" onClick={toggleCollapsed}
-          aria-label={collapsed ? (ar ? "توسيع القائمة" : "Développer le menu") : (ar ? "طي القائمة" : "Réduire le menu")}>
-          <Icon name="menu"/>
-        </button>
-        <button ref={triggerRef} className="admin-icon-button mobile-menu-trigger" onClick={() => setMobileOpen(true)}
-          aria-label={ar ? "فتح القائمة" : "Ouvrir le menu"}><Icon name="menu"/></button>
-        <div className="admin-topbar-context">
-          <nav className="admin-breadcrumbs" aria-label={ar ? "مسار التنقل" : "Fil d’Ariane"}>
-            <Link href={base} prefetch={true}>{ar ? "الإدارة" : "Administration"}</Link>
-            {activeGroup ? <><Icon className="admin-directional-icon" name="chevron" size={12}/><span>{ar ? activeGroup.ar : activeGroup.fr}</span></> : null}
-          </nav>
-          <strong>{activeItem ? (ar ? activeItem.ar : activeItem.fr) : (ar ? "وحدة تحكم الإدارة" : "Console d’administration")}</strong>
+  );
+
+  return (
+    <div className="min-h-screen bg-[#F8FAFC] flex" dir={ar ? "rtl" : "ltr"}>
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:block shrink-0">{sidebarContent}</div>
+
+      {/* Mobile Drawer */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          <div
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-2xs transition-opacity"
+            onClick={() => setMobileOpen(false)}
+          />
+          <div className="relative w-64 max-w-[85vw] bg-white h-full z-10 shadow-2xl flex flex-col">
+            <div className="absolute top-3 end-3 z-20">
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                className="p-1 rounded-md text-slate-500 hover:bg-slate-100"
+                aria-label={ar ? "إغلاق القائمة" : "Fermer le menu"}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            {sidebarContent}
+          </div>
         </div>
-        <div className="admin-topbar-actions">
-          <Link className="admin-exit-link" href={`/${locale}`} prefetch={true} title={ar ? "العودة إلى المنصة" : "Retour à la plateforme"}>
-            <Icon name="globe" size={15}/>
-            <span>{ar ? "المنصة" : "Plateforme"}</span>
-          </Link>
-          <Link className="admin-locale-link" href={`/${ar ? "fr" : "ar"}${pathname.replace(/^\/(fr|ar)/, "")}`} hrefLang={ar ? "fr" : "ar"}>
-            {ar ? "FR" : "العربية"}
-          </Link>
-        </div>
-      </header>
-      <main className="admin-app-content" id="main-content" tabIndex={-1}>{children}</main>
+      )}
+
+      {/* Main Column */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Top Header Bar */}
+        <header className="sticky top-0 z-20 h-14 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between select-none">
+          {/* Left: Hamburger (mobile) + Breadcrumbs */}
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              type="button"
+              onClick={() => setMobileOpen(true)}
+              className="lg:hidden p-1.5 -ms-1.5 rounded-md text-slate-600 hover:bg-slate-100 focus:outline-none"
+              aria-label={ar ? "فتح القائمة" : "Ouvrir le menu"}
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+
+            <nav className="flex items-center gap-1.5 text-[13px] min-w-0" aria-label={ar ? "مسار التنقل" : "Fil d’Ariane"}>
+              <Link href={base} className="text-slate-500 hover:text-[#0A192F] transition-colors shrink-0">
+                {ar ? "الإدارة" : "Administration"}
+              </Link>
+              <ChevronRight className="h-3.5 w-3.5 text-slate-400 rtl:rotate-180 shrink-0" />
+              {activeGroup && (
+                <>
+                  <span className="text-slate-500 hidden sm:inline truncate">
+                    {ar ? activeGroup.ar : activeGroup.fr}
+                  </span>
+                  <ChevronRight className="h-3.5 w-3.5 text-slate-400 rtl:rotate-180 shrink-0 hidden sm:inline" />
+                </>
+              )}
+              <span className="font-semibold text-[#0A192F] truncate">
+                {activeItem ? (ar ? activeItem.ar : activeItem.fr) : (ar ? "لوحة القيادة" : "Tableau de bord")}
+              </span>
+            </nav>
+          </div>
+
+          {/* Right: Actions */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Assistant IA */}
+            <Link
+              href={`${base}/system`}
+              className="inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-700 hover:text-[#0056D2] px-2.5 py-1.5 rounded-md hover:bg-slate-100 transition-colors"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-[#0056D2]" />
+              <span className="hidden sm:inline">{ar ? "المساعد الذكي" : "Assistant IA"}</span>
+            </Link>
+
+            {/* Platform Exit */}
+            <Link
+              href={`/${locale}`}
+              className="inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-600 hover:text-[#0A192F] px-2.5 py-1.5 rounded-md hover:bg-slate-100 transition-colors"
+              title={ar ? "العودة إلى المنصة" : "Retour à la plateforme"}
+            >
+              <Globe className="h-3.5 w-3.5" />
+              <span className="hidden md:inline">{ar ? "المنصة" : "Plateforme"}</span>
+            </Link>
+
+            {/* Language Switcher */}
+            <Link
+              href={`/${ar ? "fr" : "ar"}${pathname.replace(/^\/(fr|ar)/, "")}`}
+              hrefLang={ar ? "fr" : "ar"}
+              className="text-[12px] font-bold text-slate-700 hover:text-[#0056D2] px-2 py-1 rounded border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors"
+            >
+              {ar ? "FR" : "العربية"}
+            </Link>
+
+            {/* Admin Avatar */}
+            <div className="flex items-center gap-2 ps-2 border-s border-slate-200">
+              <div className="w-7 h-7 rounded-full bg-[#0A192F] text-white text-[11px] font-bold flex items-center justify-center">
+                {user.name ? user.name.slice(0, 2).toUpperCase() : "AD"}
+              </div>
+              <span className="text-[12.5px] font-semibold text-[#0A192F] hidden xl:inline">
+                {user.name}
+              </span>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content Area */}
+        <main className="flex-1 px-4 sm:px-8 py-6 sm:py-8 max-w-7xl w-full mx-auto" id="main-content" tabIndex={-1}>
+          {children}
+        </main>
+      </div>
     </div>
-  </div>;
+  );
 }

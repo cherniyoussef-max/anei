@@ -5,6 +5,8 @@ import { requireAdminPermission } from "@/server/auth/session";
 import { db } from "@/server/db";
 import { contactMessages } from "@/server/db/schema";
 import { AdminContactsManager } from "@/components/admin/AdminContactsManager";
+import { AdminPageHeader } from "@/modules/admin/components/AdminPageHeader";
+import { AdminFooter } from "@/modules/admin/components/AdminFooter";
 
 export const dynamic = "force-dynamic";
 
@@ -34,22 +36,21 @@ export default async function Page({
   const ar = locale === "ar";
 
   return (
-    <div className="space-y-6" dir={ar ? "rtl" : "ltr"}>
-      <div>
-        <span className="text-xs font-semibold uppercase tracking-wider text-[#a9752f]">
-          {ar ? "الدعم الفني والمراسلات" : "Support & Relation Familles"}
-        </span>
-        <h1 className="mt-1 font-sans text-2xl font-bold tracking-tight text-[#082D55] sm:text-3xl">
-          {ar ? "رسائل الاتصال والدعم الأكاديمي" : "Messages & Demandes de Contact"}
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">
-          {ar
+    <>
+      <AdminPageHeader
+        locale={locale}
+        eyebrow={ar ? "الدعم الفني والمراسلات" : "Support & Relation Familles"}
+        title={ar ? "رسائل الاتصال والدعم الأكاديمي" : "Messages & Demandes de Contact"}
+        description={
+          ar
             ? "متابعة ومعالجة رسائل واستفسارات أولياء الأمور والمؤسسات الواردة عبر النموذج الرسمي."
-            : "Suivi opérationnel, traitement et réponse aux messages reçus via le formulaire de contact officiel."}
-        </p>
-      </div>
+            : "Suivi opérationnel, traitement et réponse aux messages reçus via le formulaire de contact officiel."
+        }
+      />
 
       <AdminContactsManager locale={locale} initialMessages={messages} />
-    </div>
+
+      <AdminFooter locale={locale} />
+    </>
   );
 }

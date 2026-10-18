@@ -22,6 +22,7 @@ import {
   type MarketingAudienceFilters,
 } from "@/modules/admin/queries/admin-analytics";
 import { AdminPageHeader } from "@/modules/admin/components/AdminPageHeader";
+import { AdminFooter } from "@/modules/admin/components/AdminFooter";
 
 export const dynamic = "force-dynamic";
 
@@ -642,6 +643,8 @@ export default async function AdminMarketingPage({
           </Link>
         </nav>
       </div>
+
+      <AdminFooter locale={locale} />
     </>
   );
 }

@@ -4,6 +4,8 @@ import { requireAdminPermission } from "@/server/auth/session";
 import { getAdminCareRelationships } from "@/server/queries/care-relationships";
 import { getAdminCareAccessLogs } from "@/server/queries/care-notes-documents";
 import { AdminCareTable } from "@/components/admin/AdminCareTable";
+import { AdminPageHeader } from "@/modules/admin/components/AdminPageHeader";
+import { AdminFooter } from "@/modules/admin/components/AdminFooter";
 
 export const dynamic = "force-dynamic";
 
@@ -24,20 +26,17 @@ export default async function AdminCarePage({
   const ar = locale === "ar";
 
   return (
-    <div className="space-y-6" dir={ar ? "rtl" : "ltr"}>
-      <div>
-        <span className="text-xs font-semibold uppercase tracking-wider text-[#a9752f]">
-          {ar ? "إدارة الرعاية والوساطة" : "Accompagnement & Suivis"}
-        </span>
-        <h1 className="mt-1 font-sans text-2xl font-bold tracking-tight text-[#082D55] sm:text-3xl">
-          {ar ? "متابعات المختصين والأولياء" : "Relations de suivi spécialistes"}
-        </h1>
-        <p className="mt-1 text-sm text-[#7a7261]">
-          {ar
+    <>
+      <AdminPageHeader
+        locale={locale}
+        eyebrow={ar ? "إدارة الرعاية والوساطة" : "Accompagnement & Suivis"}
+        title={ar ? "متابعات المختصين والأولياء" : "Relations de suivi spécialistes"}
+        description={
+          ar
             ? "نظرة شاملة على طلبات المتابعة والملفات النشطة وإدارتها على المنصة."
-            : "Supervision des demandes d'accompagnement, des suivis actifs et des clôtures administratives."}
-        </p>
-      </div>
+            : "Supervision des demandes d'accompagnement, des suivis actifs et des clôtures administratives."
+        }
+      />
 
       <AdminCareTable
         locale={locale}
@@ -45,6 +44,8 @@ export default async function AdminCarePage({
         totalCount={data.total}
         accessLogs={accessLogs}
       />
-    </div>
+
+      <AdminFooter locale={locale} />
+    </>
   );
 }

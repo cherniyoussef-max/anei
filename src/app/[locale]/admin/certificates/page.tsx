@@ -4,6 +4,8 @@ import { formatDate, isLocale } from "@/lib/i18n";
 import { requireAdminPermission } from "@/server/auth/session";
 import { getAdminCertificatesList } from "@/modules/admin/queries/admin-learning";
 import { AdminPageHeader } from "@/modules/admin/components/AdminPageHeader";
+import { AdminSectionCard } from "@/modules/admin/components/AdminSectionCard";
+import { AdminFooter } from "@/modules/admin/components/AdminFooter";
 
 export const dynamic = "force-dynamic";
 
@@ -44,11 +46,11 @@ export default async function AdminCertificatesPage({
             : `Gestion et contrôle d'authenticité de ${data.total} certificats sécurisés délivrés.`
         }
         actions={
-          <div className="admin-row-actions">
-            <Link className="btn btn-secondary btn-sm" href={`/${locale}/admin/courses`}>
+          <div className="flex items-center gap-2">
+            <Link className="admin-secondary-button" href={`/${locale}/admin/courses`}>
               {ar ? "كتالوج الدورات" : "Formations"}
             </Link>
-            <Link className="btn btn-secondary btn-sm" href={`/${locale}/admin/assessments`}>
+            <Link className="admin-secondary-button" href={`/${locale}/admin/assessments`}>
               {ar ? "نتائج التقييمات" : "Résultats quiz"}
             </Link>
           </div>
@@ -68,21 +70,29 @@ export default async function AdminCertificatesPage({
         </article>
       </section>
 
-      <form className="admin-filter-panel" method="get" role="search">
-        <label>
-          <span>{ar ? "البحث" : "Recherche"}</span>
+      <AdminSectionCard
+        title={ar ? "البحث والتحقق" : "Recherche de certificats"}
+        subtitle={ar ? "البحث برمز الشهادة، اسم المتعلم، أو البريد" : "Vérifiez un certificat par son code unique ou par apprenant"}
+        bodyClassName="p-4"
+      >
+        <form className="flex items-center gap-3" method="get" role="search">
           <input
             name="q"
             defaultValue={q}
-            placeholder={ar ? "رمز الشهادة، اسم المتعلم، أو البريد..." : "Code (ex: ANEI-...), nom ou email de l'apprenant..."}
+            placeholder={ar ? "رمز الشهادة (مثال: ANEI-...) أو اسم المتعلم..." : "Code (ex: ANEI-...), nom ou email de l'apprenant..."}
+            className="flex-1 h-9 px-3 rounded-md border border-slate-200 text-sm focus:outline-none focus:border-[#0056D2]"
           />
-        </label>
-        <button type="submit" className="admin-primary-button">
-          {ar ? "بحث" : "Rechercher"}
-        </button>
-      </form>
+          <button type="submit" className="admin-primary-button h-9">
+            {ar ? "بحث" : "Rechercher"}
+          </button>
+        </form>
+      </AdminSectionCard>
 
-      <div className="admin-table-surface">
+      <AdminSectionCard
+        title={ar ? "سجل الشهادات الرسمية" : "Registre officiel des certificats"}
+        subtitle={ar ? `${data.total} شهادة مسجلة وموثوقة` : `${data.total} certificat(s) au total`}
+        bodyClassName="p-0"
+      >
         <div className="admin-table-scroll">
           <table className="admin-data-table">
             <thead>
@@ -98,14 +108,14 @@ export default async function AdminCertificatesPage({
               {data.items.map((row) => (
                 <tr key={row.id}>
                   <td>
-                    <span className="mono font-semibold text-slate-800 text-xs px-2 py-1 bg-slate-100 rounded border border-slate-200">
+                    <span className="mono font-semibold text-slate-800 text-xs px-2 py-1 bg-slate-100 rounded border border-slate-200 block">
                       {row.code}
                     </span>
                   </td>
                   <td>
                     <Link
                       href={`/${locale}/admin/users/${row.user_id}`}
-                      className="hover:underline font-semibold text-[#0056D2]"
+                      className="hover:underline font-semibold text-[#0056D2] block"
                     >
                       {row.user_name}
                     </Link>
@@ -114,14 +124,14 @@ export default async function AdminCertificatesPage({
                   <td>
                     <Link
                       href={`/${locale}/admin/courses/editor/${row.course_id}`}
-                      className="hover:underline text-slate-900 font-medium"
+                      className="hover:underline text-slate-900 font-medium block"
                     >
                       {ar ? row.course_title_ar : row.course_title_fr}
                     </Link>
                   </td>
                   <td className="text-sm text-slate-600">{formatDate(row.issued_at, locale)}</td>
                   <td>
-                    <div className="admin-row-actions">
+                    <div className="flex items-center gap-2">
                       <Link
                         className="admin-row-link"
                         href={`/${locale}/certificats/verify/${row.code}`}
@@ -148,9 +158,9 @@ export default async function AdminCertificatesPage({
         </div>
 
         {!data.items.length ? (
-          <div className="admin-empty-state">
-            <strong>{ar ? "لا توجد شهادات مطابقة" : "Aucun certificat trouvé"}</strong>
-            <p>
+          <div className="admin-empty-state p-8 text-center">
+            <strong className="text-slate-800">{ar ? "لا توجد شهادات مطابقة" : "Aucun certificat trouvé"}</strong>
+            <p className="text-sm text-slate-500 mt-1">
               {ar
                 ? "يتم إصدار الشهادات تلقائياً عند إكمال المتعلم للدورة واجتياز التقييم النهائي بنجاح."
                 : "Les certificats sont générés automatiquement lorsqu'un apprenant termine sa formation avec succès."}
@@ -179,7 +189,9 @@ export default async function AdminCertificatesPage({
             {ar ? "التالي" : "Suivant"}
           </Link>
         </nav>
-      </div>
+      </AdminSectionCard>
+
+      <AdminFooter locale={locale} />
     </>
   );
 }

@@ -4,6 +4,8 @@ import { formatDate, isLocale } from "@/lib/i18n";
 import { requireAdminPermission } from "@/server/auth/session";
 import { getAdminEnrollmentsList } from "@/modules/admin/queries/admin-learning";
 import { AdminPageHeader } from "@/modules/admin/components/AdminPageHeader";
+import { AdminSectionCard } from "@/modules/admin/components/AdminSectionCard";
+import { AdminFooter } from "@/modules/admin/components/AdminFooter";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +40,7 @@ export default async function AdminEnrollmentsPage({
     <>
       <AdminPageHeader
         locale={locale}
-        eyebrow={ar ? "التعلّم" : "Apprentissage"}
+        eyebrow={ar ? "منظومة التعلّم" : "Apprentissage & Pédagogie"}
         title={ar ? "تسجيلات المتعلمين" : "Inscriptions aux formations"}
         description={
           ar
@@ -46,11 +48,11 @@ export default async function AdminEnrollmentsPage({
             : `Suivi précis de la progression de ${data.stats.total} inscriptions pédagogiques.`
         }
         actions={
-          <div className="admin-row-actions">
-            <Link className="btn btn-secondary btn-sm" href={`/${locale}/admin/courses`}>
+          <div className="flex items-center gap-2">
+            <Link className="admin-secondary-button" href={`/${locale}/admin/courses`}>
               {ar ? "كتالوج الدورات" : "Catalogue des formations"}
             </Link>
-            <Link className="btn btn-secondary btn-sm" href={`/${locale}/admin/assessments`}>
+            <Link className="admin-secondary-button" href={`/${locale}/admin/assessments`}>
               {ar ? "التقييمات" : "Évaluations"}
             </Link>
           </div>
@@ -80,29 +82,44 @@ export default async function AdminEnrollmentsPage({
         </article>
       </section>
 
-      <form className="admin-filter-panel" method="get" role="search">
-        <label>
-          <span>{ar ? "البحث" : "Recherche"}</span>
-          <input
-            name="q"
-            defaultValue={q}
-            placeholder={ar ? "اسم المتعلم، البريد، أو الدورة..." : "Nom, email ou intitulé de formation..."}
-          />
-        </label>
-        <label>
-          <span>{ar ? "الحالة" : "Statut"}</span>
-          <select name="status" defaultValue={status ?? "all"}>
-            <option value="all">{ar ? "جميع الحالات" : "Tous les statuts"}</option>
-            <option value="active">{ar ? "قيد التعلّم (نشط)" : "En cours (Actif)"}</option>
-            <option value="completed">{ar ? "مكتمل" : "Complété"}</option>
-          </select>
-        </label>
-        <button type="submit" className="admin-primary-button">
-          {ar ? "تصفية" : "Filtrer"}
-        </button>
-      </form>
+      <AdminSectionCard
+        title={ar ? "البحث والتصفية" : "Filtres des inscriptions"}
+        subtitle={ar ? "البحث بالاسم أو البريد الإلكتروني أو عنوان الدورة" : "Filtrer les inscriptions par apprenant, formation ou statut de progression"}
+        bodyClassName="p-4"
+      >
+        <form className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end" method="get" role="search">
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold text-slate-600">{ar ? "البحث" : "Recherche"}</span>
+            <input
+              name="q"
+              defaultValue={q}
+              placeholder={ar ? "اسم المتعلم، البريد، أو الدورة..." : "Nom, email ou intitulé..."}
+              className="h-9 px-3 rounded-md border border-slate-200 text-sm focus:outline-none focus:border-[#0056D2]"
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold text-slate-600">{ar ? "الحالة" : "Statut"}</span>
+            <select
+              name="status"
+              defaultValue={status ?? "all"}
+              className="h-9 px-3 rounded-md border border-slate-200 text-sm bg-white focus:outline-none focus:border-[#0056D2]"
+            >
+              <option value="all">{ar ? "جميع الحالات" : "Tous les statuts"}</option>
+              <option value="active">{ar ? "قيد التعلّم (نشط)" : "En cours (Actif)"}</option>
+              <option value="completed">{ar ? "مكتمل" : "Complété"}</option>
+            </select>
+          </label>
+          <button type="submit" className="admin-primary-button h-9 justify-center">
+            {ar ? "تصفية" : "Filtrer"}
+          </button>
+        </form>
+      </AdminSectionCard>
 
-      <div className="admin-table-surface">
+      <AdminSectionCard
+        title={ar ? "قائمة التسجيلات" : "Répertoire des inscriptions"}
+        subtitle={ar ? `${data.total} تسجيل إجمالي` : `${data.total} inscription(s) au total`}
+        bodyClassName="p-0"
+      >
         <div className="admin-table-scroll">
           <table className="admin-data-table">
             <thead>
@@ -122,7 +139,7 @@ export default async function AdminEnrollmentsPage({
                   <td>
                     <Link
                       href={`/${locale}/admin/users/${row.user_id}`}
-                      className="hover:underline font-semibold text-[#0056D2]"
+                      className="hover:underline font-semibold text-[#0056D2] block"
                     >
                       {row.user_name}
                     </Link>
@@ -131,7 +148,7 @@ export default async function AdminEnrollmentsPage({
                   <td>
                     <Link
                       href={`/${locale}/admin/courses/editor/${row.course_id}`}
-                      className="hover:underline text-slate-900 font-medium"
+                      className="hover:underline text-slate-900 font-medium block"
                     >
                       {ar ? row.course_title_ar : row.course_title_fr}
                     </Link>
@@ -183,9 +200,9 @@ export default async function AdminEnrollmentsPage({
         </div>
 
         {!data.items.length ? (
-          <div className="admin-empty-state">
-            <strong>{ar ? "لا توجد تسجيلات مطابقة" : "Aucune inscription trouvée"}</strong>
-            <p>
+          <div className="admin-empty-state p-8 text-center">
+            <strong className="text-slate-800">{ar ? "لا توجد تسجيلات مطابقة" : "Aucune inscription trouvée"}</strong>
+            <p className="text-sm text-slate-500 mt-1">
               {ar
                 ? "جرّب تغيير كلمات البحث أو معايير التصفية."
                 : "Modifiez votre recherche ou réinitialisez les filtres."}
@@ -214,7 +231,9 @@ export default async function AdminEnrollmentsPage({
             {ar ? "التالي" : "Suivant"}
           </Link>
         </nav>
-      </div>
+      </AdminSectionCard>
+
+      <AdminFooter locale={locale} />
     </>
   );
 }

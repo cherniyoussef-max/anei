@@ -4,6 +4,8 @@ import { formatDate, formatMillimes, isLocale } from "@/lib/i18n";
 import { requireAdminPermission } from "@/server/auth/session";
 import { getAdminOrdersList } from "@/modules/admin/queries/admin-operations";
 import { AdminPageHeader } from "@/modules/admin/components/AdminPageHeader";
+import { AdminSectionCard } from "@/modules/admin/components/AdminSectionCard";
+import { AdminFooter } from "@/modules/admin/components/AdminFooter";
 
 export const dynamic = "force-dynamic";
 
@@ -46,11 +48,11 @@ export default async function AdminOrdersPage({
             : `Gestion des ${data.stats.total} commandes et encaissements pour un volume de ${formatMillimes(data.stats.total_revenue, locale)}.`
         }
         actions={
-          <div className="admin-row-actions">
-            <Link className="btn btn-secondary btn-sm" href={`/${locale}/admin/payments`}>
+          <div className="flex items-center gap-2">
+            <Link className="admin-secondary-button" href={`/${locale}/admin/payments`}>
               {ar ? "سجل المدفوعات" : "Transactions de paiement"}
             </Link>
-            <Link className="btn btn-secondary btn-sm" href={`/${locale}/admin/marketing`}>
+            <Link className="admin-secondary-button" href={`/${locale}/admin/marketing`}>
               {ar ? "تحليلات الجمهور" : "Audience & Ventes"}
             </Link>
           </div>
@@ -80,30 +82,45 @@ export default async function AdminOrdersPage({
         </article>
       </section>
 
-      <form className="admin-filter-panel" method="get" role="search">
-        <label>
-          <span>{ar ? "البحث" : "Recherche"}</span>
-          <input
-            name="q"
-            defaultValue={q}
-            placeholder={ar ? "معرف الطلب، المشتري، أو العنصر..." : "ID commande, nom du client ou libellé produit..."}
-          />
-        </label>
-        <label>
-          <span>{ar ? "الحالة" : "Statut"}</span>
-          <select name="status" defaultValue={status ?? "all"}>
-            <option value="all">{ar ? "جميع الحالات" : "Tous les statuts"}</option>
-            <option value="paid">{ar ? "مدفوعة" : "Payée"}</option>
-            <option value="pending">{ar ? "قيد الانتظار" : "En attente"}</option>
-            <option value="failed">{ar ? "ملغاة / فاشلة" : "Échouée / Annulée"}</option>
-          </select>
-        </label>
-        <button type="submit" className="admin-primary-button">
-          {ar ? "تصفية" : "Filtrer"}
-        </button>
-      </form>
+      <AdminSectionCard
+        title={ar ? "البحث والتصفية" : "Filtres des commandes"}
+        subtitle={ar ? "البحث برقم الطلب أو العميل أو المنتج" : "Rechercher par référence commande, client ou libellé de l'article"}
+        bodyClassName="p-4"
+      >
+        <form className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end" method="get" role="search">
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold text-slate-600">{ar ? "البحث" : "Recherche"}</span>
+            <input
+              name="q"
+              defaultValue={q}
+              placeholder={ar ? "معرف الطلب، المشتري، أو العنصر..." : "ID commande, client ou produit..."}
+              className="h-9 px-3 rounded-md border border-slate-200 text-sm focus:outline-none focus:border-[#0056D2]"
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold text-slate-600">{ar ? "الحالة" : "Statut"}</span>
+            <select
+              name="status"
+              defaultValue={status ?? "all"}
+              className="h-9 px-3 rounded-md border border-slate-200 text-sm bg-white focus:outline-none focus:border-[#0056D2]"
+            >
+              <option value="all">{ar ? "جميع الحالات" : "Tous les statuts"}</option>
+              <option value="paid">{ar ? "مدفوعة" : "Payée"}</option>
+              <option value="pending">{ar ? "قيد الانتظار" : "En attente"}</option>
+              <option value="failed">{ar ? "ملغاة / فاشلة" : "Échouée / Annulée"}</option>
+            </select>
+          </label>
+          <button type="submit" className="admin-primary-button h-9 justify-center">
+            {ar ? "تصفية" : "Filtrer"}
+          </button>
+        </form>
+      </AdminSectionCard>
 
-      <div className="admin-table-surface">
+      <AdminSectionCard
+        title={ar ? "قائمة الطلبات" : "Répertoire des commandes"}
+        subtitle={ar ? `${data.total} طلب مسجل` : `${data.total} commande(s) au total`}
+        bodyClassName="p-0"
+      >
         <div className="admin-table-scroll">
           <table className="admin-data-table">
             <thead>
@@ -122,14 +139,14 @@ export default async function AdminOrdersPage({
               {data.items.map((row) => (
                 <tr key={row.id}>
                   <td>
-                    <span className="mono text-xs text-slate-700 bg-slate-100 px-2 py-0.5 rounded" title={row.id}>
+                    <span className="mono text-xs text-slate-700 bg-slate-100 px-2 py-0.5 rounded block" title={row.id}>
                       #{row.id.slice(0, 8)}
                     </span>
                   </td>
                   <td>
                     <Link
                       href={`/${locale}/admin/users/${row.user_id}`}
-                      className="hover:underline font-semibold text-[#0056D2]"
+                      className="hover:underline font-semibold text-[#0056D2] block"
                     >
                       {row.user_name}
                     </Link>
@@ -190,9 +207,9 @@ export default async function AdminOrdersPage({
         </div>
 
         {!data.items.length ? (
-          <div className="admin-empty-state">
-            <strong>{ar ? "لا توجد طلبات مطابقة" : "Aucune commande trouvée"}</strong>
-            <p>
+          <div className="admin-empty-state p-8 text-center">
+            <strong className="text-slate-800">{ar ? "لا توجد طلبات مطابقة" : "Aucune commande trouvée"}</strong>
+            <p className="text-sm text-slate-500 mt-1">
               {ar
                 ? "جرّب تغيير كلمات البحث أو معايير التصفية."
                 : "Modifiez votre recherche ou réinitialisez les filtres."}
@@ -221,7 +238,9 @@ export default async function AdminOrdersPage({
             {ar ? "التالي" : "Suivant"}
           </Link>
         </nav>
-      </div>
+      </AdminSectionCard>
+
+      <AdminFooter locale={locale} />
     </>
   );
 }

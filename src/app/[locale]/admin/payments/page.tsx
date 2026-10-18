@@ -4,6 +4,8 @@ import { formatDate, formatMillimes, isLocale } from "@/lib/i18n";
 import { requireAdminPermission } from "@/server/auth/session";
 import { getAdminPaymentsList } from "@/modules/admin/queries/admin-operations";
 import { AdminPageHeader } from "@/modules/admin/components/AdminPageHeader";
+import { AdminSectionCard } from "@/modules/admin/components/AdminSectionCard";
+import { AdminFooter } from "@/modules/admin/components/AdminFooter";
 
 export const dynamic = "force-dynamic";
 
@@ -46,11 +48,11 @@ export default async function AdminPaymentsPage({
             : `Contrôle des flux monétiques (Flouci, Mock) pour un total encaissé de ${formatMillimes(data.stats.total_amount, locale)}.`
         }
         actions={
-          <div className="admin-row-actions">
-            <Link className="btn btn-secondary btn-sm" href={`/${locale}/admin/orders`}>
+          <div className="flex items-center gap-2">
+            <Link className="admin-secondary-button" href={`/${locale}/admin/orders`}>
               {ar ? "سجل الطلبات" : "Commandes"}
             </Link>
-            <Link className="btn btn-secondary btn-sm" href={`/${locale}/admin/marketing`}>
+            <Link className="admin-secondary-button" href={`/${locale}/admin/marketing`}>
               {ar ? "تحليلات المبيعات" : "Marketing & Ventes"}
             </Link>
           </div>
@@ -80,30 +82,45 @@ export default async function AdminPaymentsPage({
         </article>
       </section>
 
-      <form className="admin-filter-panel" method="get" role="search">
-        <label>
-          <span>{ar ? "البحث" : "Recherche"}</span>
-          <input
-            name="q"
-            defaultValue={q}
-            placeholder={ar ? "معرف المعاملة، معرف البوابة، أو البريد..." : "ID transaction, réf. externe ou client..."}
-          />
-        </label>
-        <label>
-          <span>{ar ? "الحالة" : "Statut"}</span>
-          <select name="status" defaultValue={status ?? "all"}>
-            <option value="all">{ar ? "جميع الحالات" : "Tous les statuts"}</option>
-            <option value="paid">{ar ? "مؤكد (مدفوع)" : "Payé (Confirmé)"}</option>
-            <option value="pending">{ar ? "قيد المعالجة" : "En attente"}</option>
-            <option value="failed">{ar ? "فاشل / ملغى" : "Échoué / Annulé"}</option>
-          </select>
-        </label>
-        <button type="submit" className="admin-primary-button">
-          {ar ? "تصفية" : "Filtrer"}
-        </button>
-      </form>
+      <AdminSectionCard
+        title={ar ? "البحث والتصفية" : "Filtres des transactions"}
+        subtitle={ar ? "البحث بمعرف المعاملة أو البوابة أو العميل" : "Rechercher par référence, passerelle monétique ou identifiant client"}
+        bodyClassName="p-4"
+      >
+        <form className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end" method="get" role="search">
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold text-slate-600">{ar ? "البحث" : "Recherche"}</span>
+            <input
+              name="q"
+              defaultValue={q}
+              placeholder={ar ? "معرف المعاملة، معرف البوابة، أو البريد..." : "ID transaction, réf. externe ou client..."}
+              className="h-9 px-3 rounded-md border border-slate-200 text-sm focus:outline-none focus:border-[#0056D2]"
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold text-slate-600">{ar ? "الحالة" : "Statut"}</span>
+            <select
+              name="status"
+              defaultValue={status ?? "all"}
+              className="h-9 px-3 rounded-md border border-slate-200 text-sm bg-white focus:outline-none focus:border-[#0056D2]"
+            >
+              <option value="all">{ar ? "جميع الحالات" : "Tous les statuts"}</option>
+              <option value="paid">{ar ? "مؤكد (مدفوع)" : "Payé (Confirmé)"}</option>
+              <option value="pending">{ar ? "قيد المعالجة" : "En attente"}</option>
+              <option value="failed">{ar ? "فاشل / ملغى" : "Échoué / Annulé"}</option>
+            </select>
+          </label>
+          <button type="submit" className="admin-primary-button h-9 justify-center">
+            {ar ? "تصفية" : "Filtrer"}
+          </button>
+        </form>
+      </AdminSectionCard>
 
-      <div className="admin-table-surface">
+      <AdminSectionCard
+        title={ar ? "سجل المدفوعات" : "Journal des transactions"}
+        subtitle={ar ? `${data.total} معاملة مسجلة` : `${data.total} transaction(s) enregistrée(s)`}
+        bodyClassName="p-0"
+      >
         <div className="admin-table-scroll">
           <table className="admin-data-table">
             <thead>
@@ -139,7 +156,7 @@ export default async function AdminPaymentsPage({
                   <td>
                     <Link
                       href={`/${locale}/admin/users/${row.user_id}`}
-                      className="hover:underline font-semibold text-[#0056D2]"
+                      className="hover:underline font-semibold text-[#0056D2] block"
                     >
                       {row.user_name}
                     </Link>
@@ -192,9 +209,9 @@ export default async function AdminPaymentsPage({
         </div>
 
         {!data.items.length ? (
-          <div className="admin-empty-state">
-            <strong>{ar ? "لا توجد معاملات مطابقة" : "Aucune transaction trouvée"}</strong>
-            <p>
+          <div className="admin-empty-state p-8 text-center">
+            <strong className="text-slate-800">{ar ? "لا توجد معاملات مطابقة" : "Aucune transaction trouvée"}</strong>
+            <p className="text-sm text-slate-500 mt-1">
               {ar
                 ? "جرّب تغيير كلمات البحث أو معايير التصفية."
                 : "Modifiez votre recherche ou réinitialisez les filtres."}
@@ -223,7 +240,9 @@ export default async function AdminPaymentsPage({
             {ar ? "التالي" : "Suivant"}
           </Link>
         </nav>
-      </div>
+      </AdminSectionCard>
+
+      <AdminFooter locale={locale} />
     </>
   );
 }

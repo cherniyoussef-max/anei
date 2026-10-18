@@ -7,6 +7,8 @@ import { AdminPageHeader } from "@/modules/admin/components/AdminPageHeader";
 import { AdminNewsForm } from "@/components/admin/AdminNewsForm";
 import { AdminNewsActions } from "@/components/admin/AdminNewsActions";
 import { AdminDeleteButton } from "@/components/admin/AdminDeleteButton";
+import { AdminSectionCard } from "@/modules/admin/components/AdminSectionCard";
+import { AdminFooter } from "@/modules/admin/components/AdminFooter";
 
 export const dynamic = "force-dynamic";
 
@@ -59,26 +61,32 @@ export default async function AdminNewsPage({
       />
 
       {/* Formulaire de création / édition */}
-      <section className="admin-surface">
-        <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200/80">
-          <h2 className="text-lg font-bold text-slate-900">
-            {editingPost
-              ? ar
-                ? `تعديل المقال: ${editingPost.titleAr}`
-                : `Modifier l'actualité : ${editingPost.titleFr}`
-              : ar
-              ? "إضافة خبر جديد"
-              : "Ajouter une nouvelle actualité"}
-          </h2>
-          {editingPost && (
+      <AdminSectionCard
+        title={
+          editingPost
+            ? ar
+              ? `تعديل المقال: ${editingPost.titleAr}`
+              : `Modifier l'actualité : ${editingPost.titleFr}`
+            : ar
+            ? "إضافة خبر جديد"
+            : "Ajouter une nouvelle actualité"
+        }
+        subtitle={
+          editingPost
+            ? (ar ? "تعديل محتوى وتفاصيل هذا المقال" : "Mise à jour du titre, contenu et statut")
+            : (ar ? "نشر مقال جديد في المدونة وقسم المستجدات" : "Publier un nouvel article dans le flux public")
+        }
+        headerActions={
+          editingPost ? (
             <Link
               href={`/${locale}/admin/news`}
               className="text-xs font-semibold text-slate-500 hover:text-slate-800 underline"
             >
               {ar ? "إلغاء التعديل والعودة للإضافة" : "Annuler la modification"}
             </Link>
-          )}
-        </div>
+          ) : undefined
+        }
+      >
         <AdminNewsForm
           locale={locale}
           initialPost={
@@ -102,31 +110,33 @@ export default async function AdminNewsPage({
               : undefined
           }
         />
-      </section>
-
-      {/* Barre de recherche */}
-      <form className="admin-filter-panel" method="get" role="search">
-        <label>
-          <span>{ar ? "البحث في الأخبار" : "Rechercher une actualité"}</span>
-          <input
-            name="q"
-            defaultValue={q}
-            placeholder={ar ? "العنوان، الفئة أو المعرف (slug)..." : "Titre, catégorie ou slug..."}
-          />
-        </label>
-        <button className="admin-primary-button">{ar ? "بحث" : "Rechercher"}</button>
-        {q && (
-          <Link
-            href={`/${locale}/admin/news`}
-            className="text-xs font-semibold text-slate-500 hover:text-slate-800 self-center"
-          >
-            {ar ? "إعادة تعيين" : "Réinitialiser"}
-          </Link>
-        )}
-      </form>
+      </AdminSectionCard>
 
       {/* Table des actualités */}
-      <div className="admin-table-surface">
+      <AdminSectionCard
+        title={ar ? "قائمة المقالات المنشورة" : "Répertoire des actualités"}
+        subtitle={ar ? `${data.total} مقال مسجل` : `${data.total} article(s) au total`}
+        headerActions={
+          <form className="flex items-center gap-2" method="get" role="search">
+            <input
+              name="q"
+              defaultValue={q}
+              placeholder={ar ? "بحث..." : "Rechercher..."}
+              className="h-8 px-2.5 rounded border border-slate-200 text-xs focus:outline-none focus:border-[#0056D2]"
+            />
+            <button className="admin-primary-button h-8 px-2.5 text-xs">{ar ? "بحث" : "Filtrer"}</button>
+            {q && (
+              <Link
+                href={`/${locale}/admin/news`}
+                className="text-xs font-semibold text-slate-500 hover:text-slate-800 underline ms-1"
+              >
+                {ar ? "إلغاء" : "Effacer"}
+              </Link>
+            )}
+          </form>
+        }
+        bodyClassName="p-0"
+      >
         <div className="admin-table-scroll">
           <table className="admin-data-table">
             <thead>
@@ -145,7 +155,6 @@ export default async function AdminNewsPage({
                 const catMeta = CATEGORY_LABELS[item.category || "FORMATION"] || CATEGORY_LABELS.FORMATION;
                 return (
                   <tr key={item.id} className={item.isFeatured ? "bg-amber-50/20" : undefined}>
-                    {/* Colonne Article */}
                     <td>
                       <div className="flex flex-col">
                         <strong className="text-slate-900 font-semibold text-sm">
@@ -165,8 +174,6 @@ export default async function AdminNewsPage({
                         </div>
                       </div>
                     </td>
-
-                    {/* Catégorie */}
                     <td>
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${catMeta.bg} ${catMeta.text}`}
@@ -174,13 +181,9 @@ export default async function AdminNewsPage({
                         {ar ? catMeta.ar : catMeta.fr}
                       </span>
                     </td>
-
-                    {/* Date */}
                     <td className="text-xs text-slate-600 whitespace-nowrap">
                       {formatDate(item.publishedAt ?? item.createdAt, locale)}
                     </td>
-
-                    {/* Statut & À la une (Quick 1-click toggles) */}
                     <td>
                       <AdminNewsActions
                         id={item.id}
@@ -189,8 +192,6 @@ export default async function AdminNewsPage({
                         locale={locale}
                       />
                     </td>
-
-                    {/* Actions d'édition & suppression */}
                     <td>
                       <div className="flex items-center gap-2">
                         <Link
@@ -218,8 +219,8 @@ export default async function AdminNewsPage({
         </div>
 
         {!data.items.length ? (
-          <div className="admin-empty-state">
-            <strong>{ar ? "لا توجد أخبار مسجلة بعد" : "Aucune actualité enregistrée pour le moment"}</strong>
+          <div className="admin-empty-state p-8 text-center">
+            <strong className="text-slate-800">{ar ? "لا توجد أخبار مسجلة بعد" : "Aucune actualité enregistrée pour le moment"}</strong>
           </div>
         ) : null}
 
@@ -244,7 +245,9 @@ export default async function AdminNewsPage({
             {ar ? "التالي" : "Suivant"}
           </Link>
         </nav>
-      </div>
+      </AdminSectionCard>
+
+      <AdminFooter locale={locale} />
     </>
   );
 }

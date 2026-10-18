@@ -14,6 +14,8 @@ import {
   CreditCard,
   Stethoscope,
   Briefcase,
+  Video,
+  MessageSquare,
 } from "lucide-react";
 import { formatMillimes, isLocale } from "@/lib/i18n";
 import { requireAdminPermission } from "@/server/auth/session";
@@ -25,14 +27,23 @@ import {
   parseAdminPeriod,
 } from "@/modules/admin/queries/admin-analytics";
 import { AdminPageHeader } from "@/modules/admin/components/AdminPageHeader";
+import { AdminSectionCard } from "@/modules/admin/components/AdminSectionCard";
+import { AdminActionCard, AdminActionGrid } from "@/modules/admin/components/AdminActionCard";
+import { AdminInfoBanner } from "@/modules/admin/components/AdminInfoBanner";
+import { AdminFooter } from "@/modules/admin/components/AdminFooter";
 import { Distribution, TrendChart } from "@/modules/admin/components/AdminCharts";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminOverview({ params, searchParams }: {
-  params: Promise<{ locale: string }>; searchParams: Promise<{ period?: string }>;
+export default async function AdminOverview({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ period?: string }>;
 }) {
-  const { locale } = await params; if (!isLocale(locale)) notFound();
+  const { locale } = await params;
+  if (!isLocale(locale)) notFound();
   await requireAdminPermission(locale, "overview.read");
   const period = parseAdminPeriod((await searchParams).period);
   const fallbackOverview = {
@@ -171,438 +182,422 @@ export default async function AdminOverview({ params, searchParams }: {
     },
   ];
 
-  return <>
-    <AdminPageHeader
-      locale={locale}
-      eyebrow={ar ? "القيادة التنفيذية والأكاديمية" : "Cockpit Exécutif & Décisionnel"}
-      title={ar ? "لوحة القيادة والمؤشرات" : "Cockpit Plateforme & Pilotage"}
-      description={ar ? "مؤشرات حقيقية ومحدثة تغطي مبيعات التكوين، الضمان المالي، مسار الاعتماد المهني، وتوزيع الممارسين." : "Indicateurs réels : Ventes formations, Séquestre hybride, Pipeline d'agrément et cartographie des praticiens."}
-      actions={
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-          <Link href={`/${locale}/admin/marketing`} className="admin-primary-button">
-            <TrendingUp size={15} />
-            <span>{ar ? "تحليل الجمهور والتسويق" : "Marketing & Audience"}</span>
-          </Link>
-          <form className="admin-period-form" method="get">
-            <label htmlFor="period">{ar ? "الفترة" : "Période"}</label>
-            <select id="period" name="period" defaultValue={period}>
-              <option value="7d">{ar ? "آخر 7 أيام" : "7 derniers jours"}</option>
-              <option value="30d">{ar ? "آخر 30 يوم" : "30 derniers jours"}</option>
-              <option value="90d">{ar ? "آخر 90 يوم" : "90 derniers jours"}</option>
-              <option value="365d">{ar ? "سنة كاملة" : "1 an"}</option>
-            </select>
-            <button type="submit">{ar ? "تطبيق" : "Appliquer"}</button>
-          </form>
-        </div>
-      }
-    />
+  return (
+    <div className="space-y-6">
+      <AdminPageHeader
+        locale={locale}
+        eyebrow={ar ? "القيادة التنفيذية والأكاديمية" : "Cockpit Exécutif & Décisionnel"}
+        title={ar ? "لوحة القيادة والمؤشرات" : "Cockpit Plateforme & Pilotage"}
+        description={
+          ar
+            ? "مؤشرات حقيقية ومحدثة تغطي مبيعات التكوين، الضمان المالي، مسار الاعتماد المهني، وتوزيع الممارسين."
+            : "Indicateurs réels : Ventes formations, Séquestre hybride, Pipeline d'agrément et cartographie des praticiens."
+        }
+        actions={
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <Link
+              href={`/${locale}/admin/marketing`}
+              className="h-9 px-3.5 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-[13px] font-medium text-slate-700 inline-flex items-center gap-1.5 transition-colors shadow-2xs"
+            >
+              <TrendingUp className="h-4 w-4 text-[#0056D2]" />
+              <span>{ar ? "تحليل الجمهور والتسويق" : "Marketing & Audience"}</span>
+            </Link>
 
-    <section className="admin-kpi-grid" aria-label={ar ? "المؤشرات الرئيسية" : "Indicateurs clés"}>
-      {kpis.map((kpi) => {
-        const IconComponent = kpi.icon;
-        return (
-          <article key={kpi.label} className="admin-kpi-card">
-            <div className="admin-kpi-header">
-              <span className={`admin-kpi-icon is-${kpi.tone}`} aria-hidden="true">
-                <IconComponent size={20} strokeWidth={1.75} />
-              </span>
-              <span className="admin-kpi-period">{period}</span>
+            <form className="flex items-center gap-1.5" method="get">
+              <label htmlFor="period" className="sr-only">
+                {ar ? "الفترة" : "Période"}
+              </label>
+              <select
+                id="period"
+                name="period"
+                defaultValue={period}
+                className="h-9 px-3 rounded-md border border-slate-300 bg-white text-[13px] font-medium text-[#0A192F] focus:border-[#0056D2] focus:ring-1 focus:ring-[#0056D2] outline-none shadow-2xs"
+              >
+                <option value="7d">{ar ? "7 أيام" : "7 derniers jours"}</option>
+                <option value="30d">{ar ? "30 يوم" : "30 derniers jours"}</option>
+                <option value="90d">{ar ? "90 يوم" : "90 derniers jours"}</option>
+                <option value="365d">{ar ? "سنة كاملة" : "1 an"}</option>
+              </select>
+              <button
+                type="submit"
+                className="h-9 px-3.5 rounded-md bg-[#0056D2] hover:bg-[#00419E] text-white text-[13px] font-semibold transition-colors shadow-2xs cursor-pointer"
+              >
+                {ar ? "تطبيق" : "Appliquer"}
+              </button>
+            </form>
+          </div>
+        }
+      />
+
+      {/* Info Status Banner */}
+      <AdminInfoBanner>
+        {ar
+          ? "وحدة تحكم الإدارة متصلة بقاعدة البيانات الحية. جميع المؤشرات والعمليات يتم تحديثها فوريًا على الخادم."
+          : "Console d'administration connectée à la base de production PostgreSQL. Toutes les métriques opérationnelles sont calculées en temps réel."}
+      </AdminInfoBanner>
+
+      {/* Quick Action Navigation Grid */}
+      <AdminSectionCard
+        title={ar ? "الوصول السريع إلى الأدوات التنفيذية" : "Outils & Raccourcis Opérationnels"}
+        infoTooltip={ar ? "روابط سريعة لأكثر المهام استخداماً في الإدارة" : "Accès direct aux modules les plus fréquemment sollicités"}
+      >
+        <AdminActionGrid>
+          <AdminActionCard
+            title={ar ? "إدارة التكوينات والمحتوى" : "Gestion des Formations & Modules"}
+            description={ar ? "إضافة وتعديل الدورات، رفع الفيديوهات وتنظيم الوحدات التعليمية." : "Créer et éditer les cours, vidéos Cloudflare Stream, chapitres et leçons."}
+            icon={BookOpen}
+            badge={ar ? `${overview.publishedCourses} دورة` : `${overview.publishedCourses} cours`}
+            href={`/${locale}/admin/courses`}
+          />
+          <AdminActionCard
+            title={ar ? "إدارة الحسابات والمستخدمين" : "Utilisateurs & Profils"}
+            description={ar ? "البحث، ترقية الحسابات، مراجعة الوثائق وتعيين الأدوار والصلاحيات." : "Filtrer les comptes, attribuer des rôles et instruire les agréments professionnels."}
+            icon={Users}
+            badge={ar ? `${number.format(overview.totalUsers)} مستخدم` : `${number.format(overview.totalUsers)} comptes`}
+            href={`/${locale}/admin/users`}
+          />
+          <AdminActionCard
+            title={ar ? "واتساب ومركز المحادثات CRM" : "WhatsApp CRM & Messagerie"}
+            description={ar ? "مراسلة المترشحين، استلام الإشعارات وتأكيد المواعيد عبر واتساب." : "Conversations en direct, relances automatiques et notifications WhatsApp Meta Cloud."}
+            icon={MessageSquare}
+            badge="WhatsApp API"
+            href={`/${locale}/admin/crm/whatsapp`}
+          />
+          <AdminActionCard
+            title={ar ? "دليل ومواعيد المرافقين (AVS)" : "Annuaire & Rendez-vous AVS"}
+            description={ar ? "متابعة طلبات المرافقة المدرسية وتأكيد الجلسات الحضورية وعن بعد." : "Instruire les dossiers d'accompagnement scolaire et valider les réservations."}
+            icon={ShieldCheck}
+            badge="Annuaire /avs"
+            href={`/${locale}/admin/avs`}
+          />
+          <AdminActionCard
+            title={ar ? "الندوات التفاعلية والبث المباشر" : "Directs & Webinaires"}
+            description={ar ? "برمجة الندوات، إدارة قوائم الحضور وأكواد الدخول الآمنة." : "Planifier les sessions en direct, listes d'émargement et codes d'accès sécurisés."}
+            icon={Video}
+            badge={ar ? `${overview.upcomingWebinars} قادمة` : `${overview.upcomingWebinars} à venir`}
+            href={`/${locale}/admin/live`}
+          />
+          <AdminActionCard
+            title={ar ? "التقييمات والشهادات الرسمية" : "Évaluations & Certificats"}
+            description={ar ? "مراجعة نتائج الاختبارات الأكاديمية وإصدار الشهادات المعتمدة." : "Vérifier les scores des apprenants et valider la délivrance des diplômes ANEI."}
+            icon={Award}
+            badge={ar ? `${number.format(overview.certificatesIssued)} شهادة` : `${number.format(overview.certificatesIssued)} délivrés`}
+            href={`/${locale}/admin/assessments`}
+          />
+        </AdminActionGrid>
+      </AdminSectionCard>
+
+      {/* Key KPI Performance Section */}
+      <AdminSectionCard
+        title={ar ? "المؤشرات الرئيسية للأداء" : "Indicateurs Clés & Performance"}
+        infoTooltip={ar ? "إحصائيات شاملة للفترة المحددة" : "Métriques consolidées sur la période d'observation"}
+      >
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+          {kpis.map((kpi) => {
+            const IconComponent = kpi.icon;
+            return (
+              <div
+                key={kpi.label}
+                className="p-4 rounded-lg border border-slate-200 bg-white hover:border-slate-300 transition-all shadow-2xs"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="w-8 h-8 rounded-md bg-[#F8FAFC] border border-slate-200 flex items-center justify-center text-[#0A192F]">
+                    <IconComponent className="h-4 w-4 stroke-[1.7]" />
+                  </div>
+                  <span className="text-[11px] font-medium text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+                    {period}
+                  </span>
+                </div>
+                <div className="text-[12px] font-medium text-slate-500 truncate mb-1">{kpi.label}</div>
+                <div className="text-xl sm:text-2xl font-bold text-[#0A192F] tracking-tight">{kpi.value}</div>
+                {kpi.sub && <div className="text-[11px] text-slate-400 mt-1 truncate">{kpi.sub}</div>}
+              </div>
+            );
+          })}
+        </div>
+      </AdminSectionCard>
+
+      {/* Strategic Funnel Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* 1. Academic Promotion Pipeline Funnel */}
+        <AdminSectionCard
+          title={ar ? "مسار ترقية الممارسين" : "Funnel de Promotion AVS & Spécialistes"}
+          infoTooltip={ar ? "مراحل الاعتماد الأكاديمي" : "Progression des candidats à l'agrément officiel"}
+          headerActions={
+            <Link
+              href={`/${locale}/admin/users`}
+              className="text-[12px] font-semibold text-[#0056D2] hover:underline inline-flex items-center gap-1"
+            >
+              <span>{ar ? "إدارة" : "Gérer"}</span>
+              <ArrowUpRight className="h-3 w-3" />
+            </Link>
+          }
+        >
+          <div className="grid grid-cols-3 gap-2.5 text-center">
+            <div className="bg-[#F8FAFC] p-3 rounded-md border border-slate-200">
+              <span className="text-[11px] text-slate-500 block">{ar ? "قيد الدراسة" : "En revue"}</span>
+              <strong className="text-lg font-bold text-amber-600 block mt-1">
+                {overview.candidatesUnderReviewCount}
+              </strong>
+              <small className="text-[10px] text-slate-400">{ar ? "أكملوا التكوين" : "Validés"}</small>
             </div>
-            <span className="admin-kpi-label">{kpi.label}</span>
-            <strong className="admin-kpi-value">{kpi.value}</strong>
-            {kpi.sub ? <small className="admin-kpi-sub">{kpi.sub}</small> : null}
-          </article>
-        );
-      })}
-    </section>
+            <div className="bg-[#F8FAFC] p-3 rounded-md border border-slate-200">
+              <span className="text-[11px] text-slate-500 block">{ar ? "مقابلات ناجحة" : "Entretiens OK"}</span>
+              <strong className="text-lg font-bold text-[#0056D2] block mt-1">
+                {overview.passedInterviewsCount}
+              </strong>
+              <small className="text-[10px] text-slate-400">{ar ? "جاهزون للاعتماد" : "Prêts"}</small>
+            </div>
+            <div className="bg-emerald-50/70 p-3 rounded-md border border-emerald-200/80">
+              <span className="text-[11px] text-emerald-800 block">{ar ? "معتمدون رسميًا" : "Agréés"}</span>
+              <strong className="text-lg font-bold text-emerald-700 block mt-1">
+                {overview.approvedPractitionersCount}
+              </strong>
+              <small className="text-[10px] text-emerald-600">{ar ? "في الدليل" : "En ligne"}</small>
+            </div>
+          </div>
+        </AdminSectionCard>
 
-    {/* Cockpit Executive Cards */}
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "1.25rem", margin: "1.5rem 0" }}>
-      {/* 1. Academic Promotion Pipeline Funnel */}
-      <article className="admin-surface" style={{ padding: "1.25rem", borderRadius: "12px", border: "1px solid #E2E8F0" }}>
-        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-          <div>
-            <span style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", color: "#B58D3D", letterSpacing: "0.08em" }}>
-              {ar ? "المسار الأكاديمي" : "Pipeline d'Agrément"}
-            </span>
-            <h2 style={{ fontSize: "1.125rem", fontWeight: 700, color: "#142B47", margin: "2px 0 0" }}>
-              {ar ? "مسار ترقية الممارسين" : "Funnel de Promotion AVS & Spécialistes"}
-            </h2>
+        {/* 2. Hybrid Escrow & Financial Performance */}
+        <AdminSectionCard
+          title={ar ? "الضمان المالي والعمولات" : "Séquestre & Ventilation Tarifs"}
+          infoTooltip={ar ? "توزيع الإيرادات بين الفيديو والعيادة" : "Ventilation hybride visio sous séquestre vs cabinet 0%"}
+          headerActions={
+            <Link
+              href={`/${locale}/admin/payments`}
+              className="text-[12px] font-semibold text-[#0056D2] hover:underline inline-flex items-center gap-1"
+            >
+              <span>{ar ? "تفاصيل" : "Paiements"}</span>
+              <ArrowUpRight className="h-3 w-3" />
+            </Link>
+          }
+        >
+          <div className="grid grid-cols-2 gap-2.5">
+            <div className="bg-[#EFF6FF] p-3 rounded-md border border-[#BFDBFE]">
+              <span className="text-[11px] text-[#1E40AF] block truncate">
+                {ar ? "استشارات فيديو (15%)" : "Consultations Visio (15%)"}
+              </span>
+              <strong className="text-base font-bold text-[#1D4ED8] block mt-1">
+                {formatMillimes(overview.activeEscrowMillimes, locale)}
+              </strong>
+              <small className="text-[10px] text-blue-600 block mt-0.5">
+                {ar ? "محمية بالضمان المالي" : "Sous séquestre"}
+              </small>
+            </div>
+            <div className="bg-[#F8FAFC] p-3 rounded-md border border-slate-200">
+              <span className="text-[11px] text-slate-600 block truncate">
+                {ar ? "استشارات بالعيادة (0%)" : "Séances Cabinet (0%)"}
+              </span>
+              <strong className="text-base font-bold text-[#0A192F] block mt-1">
+                {number.format(overview.inPersonConsultationsCount)} {ar ? "جلسة" : "RDV"}
+              </strong>
+              <small className="text-[10px] text-slate-500 block mt-0.5">
+                {ar ? "دفع مباشر 100%" : "100% direct praticien"}
+              </small>
+            </div>
           </div>
-          <Link href={`/${locale}/admin/users`} style={{ fontSize: "0.8125rem", color: "#0056D2", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
-            <span>{ar ? "إدارة المستخدمين" : "Gérer"}</span>
-            <ArrowUpRight size={14} />
-          </Link>
-        </header>
+        </AdminSectionCard>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.75rem", textAlign: "center" }}>
-          <div style={{ background: "#F8FAFC", padding: "0.875rem", borderRadius: "8px", border: "1px solid #E2E8F0" }}>
-            <span style={{ fontSize: "0.75rem", color: "#64748B", display: "block" }}>{ar ? "قيد الدراسة" : "En revue"}</span>
-            <strong style={{ fontSize: "1.375rem", color: "#D97706", display: "block", marginTop: 2 }}>{overview.candidatesUnderReviewCount}</strong>
-            <small style={{ fontSize: "0.6875rem", color: "#94A3B8" }}>{ar ? "أكملوا التكوين" : "Formations validées"}</small>
+        {/* 3. Webinar-to-Course Conversion Funnel */}
+        <AdminSectionCard
+          title={ar ? "تحويل الندوات إلى تكوينات" : "Funnel Webinaires ➔ Formations"}
+          infoTooltip={ar ? "تحويل المسجلين بالندوات لدورات مدفوعة" : "Taux de transformation des webinaires vers les cours"}
+          headerActions={
+            <Link
+              href={`/${locale}/admin/live`}
+              className="text-[12px] font-semibold text-[#0056D2] hover:underline inline-flex items-center gap-1"
+            >
+              <span>{ar ? "الندوات" : "Webinaires"}</span>
+              <ArrowUpRight className="h-3 w-3" />
+            </Link>
+          }
+        >
+          <div className="grid grid-cols-3 gap-2.5 text-center">
+            <div className="bg-[#F8FAFC] p-3 rounded-md border border-slate-200">
+              <span className="text-[11px] text-slate-500 block">{ar ? "المسجلون" : "Inscrits"}</span>
+              <strong className="text-lg font-bold text-[#0A192F] block mt-1">
+                {overview.webinarRegistrationsCount}
+              </strong>
+              <small className="text-[10px] text-slate-400">{ar ? "مشاركون" : "Participants"}</small>
+            </div>
+            <div className="bg-[#F8FAFC] p-3 rounded-md border border-slate-200">
+              <span className="text-[11px] text-slate-500 block">{ar ? "تحويل" : "Convertis"}</span>
+              <strong className="text-lg font-bold text-[#0056D2] block mt-1">
+                {overview.webinarToCourseConversionsCount}
+              </strong>
+              <small className="text-[10px] text-slate-400">{ar ? "في الدورات" : "Formations"}</small>
+            </div>
+            <div className="bg-emerald-50/70 p-3 rounded-md border border-emerald-200/80">
+              <span className="text-[11px] text-emerald-800 block">{ar ? "النسبة" : "Taux"}</span>
+              <strong className="text-lg font-bold text-emerald-700 block mt-1">
+                {overview.webinarConversionRate}%
+              </strong>
+              <small className="text-[10px] text-emerald-600">{ar ? "تحويل" : "Ratio"}</small>
+            </div>
           </div>
-          <div style={{ background: "#F8FAFC", padding: "0.875rem", borderRadius: "8px", border: "1px solid #E2E8F0" }}>
-            <span style={{ fontSize: "0.75rem", color: "#64748B", display: "block" }}>{ar ? "مقابلات ناجحة" : "Entretiens OK"}</span>
-            <strong style={{ fontSize: "1.375rem", color: "#0284C7", display: "block", marginTop: 2 }}>{overview.passedInterviewsCount}</strong>
-            <small style={{ fontSize: "0.6875rem", color: "#94A3B8" }}>{ar ? "جاهزون للاعتماد" : "Prêts pour Sudo"}</small>
-          </div>
-          <div style={{ background: "#F0FDF4", padding: "0.875rem", borderRadius: "8px", border: "1px solid #BBF7D0" }}>
-            <span style={{ fontSize: "0.75rem", color: "#166534", display: "block" }}>{ar ? "معتمدون رسميًا" : "Agréés ANEI"}</span>
-            <strong style={{ fontSize: "1.375rem", color: "#15803D", display: "block", marginTop: 2 }}>{overview.approvedPractitionersCount}</strong>
-            <small style={{ fontSize: "0.6875rem", color: "#16A34A" }}>{ar ? "في الدليل العام" : "En ligne dans l'annuaire"}</small>
-          </div>
-        </div>
-      </article>
-
-      {/* 2. Hybrid Escrow & Financial Performance */}
-      <article className="admin-surface" style={{ padding: "1.25rem", borderRadius: "12px", border: "1px solid #E2E8F0" }}>
-        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-          <div>
-            <span style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", color: "#B58D3D", letterSpacing: "0.08em" }}>
-              {ar ? "النموذج الهجين" : "Modèle Hybride"}
-            </span>
-            <h2 style={{ fontSize: "1.125rem", fontWeight: 700, color: "#142B47", margin: "2px 0 0" }}>
-              {ar ? "الضمان المالي والعمولات" : "Séquestre & Ventilation Tarifs"}
-            </h2>
-          </div>
-          <Link href={`/${locale}/admin/payments`} style={{ fontSize: "0.8125rem", color: "#0056D2", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
-            <span>{ar ? "تفاصيل المدفوعات" : "Paiements"}</span>
-            <ArrowUpRight size={14} />
-          </Link>
-        </header>
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
-          <div style={{ background: "#EFF6FF", padding: "0.875rem", borderRadius: "8px", border: "1px solid #BFDBFE" }}>
-            <span style={{ fontSize: "0.75rem", color: "#1E40AF", display: "block" }}>{ar ? "استشارات فيديو (15% عمولة)" : "Consultations Visio (15%)"}</span>
-            <strong style={{ fontSize: "1.125rem", color: "#1D4ED8", display: "block", marginTop: 2 }}>
-              {formatMillimes(overview.activeEscrowMillimes, locale)}
-            </strong>
-            <small style={{ fontSize: "0.6875rem", color: "#3B82F6" }}>{ar ? "محمية بالضمان المالي" : "Sous séquestre plateforme"}</small>
-          </div>
-          <div style={{ background: "#F8FAFC", padding: "0.875rem", borderRadius: "8px", border: "1px solid #E2E8F0" }}>
-            <span style={{ fontSize: "0.75rem", color: "#475569", display: "block" }}>{ar ? "استشارات بالعيادة (0% عمولة)" : "Séances Cabinet (0% ANEI)"}</span>
-            <strong style={{ fontSize: "1.125rem", color: "#0F172A", display: "block", marginTop: 2 }}>
-              {number.format(overview.inPersonConsultationsCount)} {ar ? "جلسة" : "RDV"}
-            </strong>
-            <small style={{ fontSize: "0.6875rem", color: "#64748B" }}>{ar ? "دفع مباشر 100% للممارس" : "100% direct praticien"}</small>
-          </div>
-        </div>
-      </article>
-
-      {/* 3. Webinar-to-Course Conversion Funnel */}
-      <article className="admin-surface" style={{ padding: "1.25rem", borderRadius: "12px", border: "1px solid #E2E8F0" }}>
-        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-          <div>
-            <span style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", color: "#B58D3D", letterSpacing: "0.08em" }}>
-              {ar ? "أثر الندوات" : "Acquisition Événementielle"}
-            </span>
-            <h2 style={{ fontSize: "1.125rem", fontWeight: 700, color: "#142B47", margin: "2px 0 0" }}>
-              {ar ? "تحويل الندوات إلى تكوينات" : "Funnel Webinaires ➔ Formations"}
-            </h2>
-          </div>
-          <Link href={`/${locale}/admin/live`} style={{ fontSize: "0.8125rem", color: "#0056D2", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
-            <span>{ar ? "الندوات" : "Webinaires"}</span>
-            <ArrowUpRight size={14} />
-          </Link>
-        </header>
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.75rem", textAlign: "center" }}>
-          <div style={{ background: "#F8FAFC", padding: "0.875rem", borderRadius: "8px", border: "1px solid #E2E8F0" }}>
-            <span style={{ fontSize: "0.75rem", color: "#64748B", display: "block" }}>{ar ? "المسجلون" : "Inscrits"}</span>
-            <strong style={{ fontSize: "1.375rem", color: "#082D55", display: "block", marginTop: 2 }}>{overview.webinarRegistrationsCount}</strong>
-            <small style={{ fontSize: "0.6875rem", color: "#94A3B8" }}>{ar ? "كل الندوات" : "Participants"}</small>
-          </div>
-          <div style={{ background: "#F8FAFC", padding: "0.875rem", borderRadius: "8px", border: "1px solid #E2E8F0" }}>
-            <span style={{ fontSize: "0.75rem", color: "#64748B", display: "block" }}>{ar ? "التحقوا بالدورة" : "Convertis"}</span>
-            <strong style={{ fontSize: "1.375rem", color: "#0284C7", display: "block", marginTop: 2 }}>{overview.webinarToCourseConversionsCount}</strong>
-            <small style={{ fontSize: "0.6875rem", color: "#94A3B8" }}>{ar ? "دورة مرتبطة" : "Formations liées"}</small>
-          </div>
-          <div style={{ background: "#F0FDF4", padding: "0.875rem", borderRadius: "8px", border: "1px solid #BBF7D0" }}>
-            <span style={{ fontSize: "0.75rem", color: "#166534", display: "block" }}>{ar ? "نسبة التحويل" : "Taux Conv."}</span>
-            <strong style={{ fontSize: "1.375rem", color: "#15803D", display: "block", marginTop: 2 }}>{overview.webinarConversionRate}%</strong>
-            <small style={{ fontSize: "0.6875rem", color: "#16A34A" }}>{ar ? "تحويل مباشر" : "Webinar-to-Course"}</small>
-          </div>
-        </div>
-      </article>
-    </div>
-
-    {/* 4 Pillars of Registration & Demographic Intelligence */}
-    <div style={{ margin: "2rem 0" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "1rem" }}>
-        <div>
-          <span style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", color: "#0056D2", letterSpacing: "0.08em" }}>
-            {ar ? "الذكاء الديموغرافي وقنوات التسجيل" : "Intelligence Démographique & Acquisition"}
-          </span>
-          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#142B47", margin: "2px 0 0" }}>
-            {ar ? "تحليل التسجيلات الجديدة والتوازن الإقليمي" : "Cockpit d'Onboarding & Équilibrage Territorial"}
-          </h2>
-        </div>
-        <Link href={`/${locale}/admin/users`} style={{ fontSize: "0.8125rem", color: "#0056D2", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
-          <span>{ar ? "إدارة المستخدمين الكاملة" : "Gestion Utilisateurs"}</span>
-          <ArrowUpRight size={14} />
-        </Link>
+        </AdminSectionCard>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.25rem" }}>
-        {/* Pillar 1: Category Distribution */}
-        <article className="admin-surface" style={{ padding: "1.25rem", borderRadius: "12px", border: "1px solid #E2E8F0" }}>
-          <header style={{ marginBottom: "1rem" }}>
-            <span style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", color: "#64748B" }}>
-              {ar ? "الفئات الرئيسية" : "Catégories"}
-            </span>
-            <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "#142B47", margin: "2px 0 0" }}>
-              {ar ? "توزيع المستخدمين" : "Répartition par Profil"}
+      {/* Onboarding & Demographic Intelligence Section */}
+      <AdminSectionCard
+        title={ar ? "الذكاء الديموغرافي وقنوات التسجيل والتوازن الإقليمي" : "Intelligence Démographique & Équilibrage Territorial"}
+        infoTooltip={ar ? "تحليل الطلب حسب الولاية ونوع الاضطراب" : "Répartition géographique et adéquation de l'offre et de la demande"}
+        headerActions={
+          <Link
+            href={`/${locale}/admin/users`}
+            className="text-[12px] font-semibold text-[#0056D2] hover:underline inline-flex items-center gap-1"
+          >
+            <span>{ar ? "عرض المستخدمين" : "Consulter utilisateurs"}</span>
+            <ArrowUpRight className="h-3 w-3" />
+          </Link>
+        }
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {/* Pillar 1: Categories */}
+          <div className="p-4 rounded-md border border-slate-200 bg-[#F8FAFC]/50">
+            <h3 className="text-[13px] font-bold text-[#0A192F] mb-3">
+              {ar ? "توزيع المستخدمين حسب الفئة" : "Répartition par Profil"}
             </h3>
-          </header>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-            {onboardingAnalytics.categories.map((cat) => (
-              <div key={cat.label} style={{ fontSize: "0.8125rem" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.25rem" }}>
-                  <span style={{ fontWeight: 600, color: "#334155" }}>{cat.label}</span>
-                  <span style={{ fontWeight: 700, color: "#0A192F" }}>
-                    {cat.count} ({cat.percentage}%)
-                  </span>
+            <div className="space-y-3">
+              {onboardingAnalytics.categories.map((cat) => (
+                <div key={cat.label} className="text-[12px]">
+                  <div className="flex justify-between mb-1">
+                    <span className="font-medium text-slate-700">{cat.label}</span>
+                    <span className="font-bold text-[#0A192F]">
+                      {cat.count} ({cat.percentage}%)
+                    </span>
+                  </div>
+                  <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-[#0A192F] rounded-full"
+                      style={{ width: `${Math.min(100, Math.max(5, cat.percentage))}%` }}
+                    />
+                  </div>
                 </div>
-                <div style={{ height: "6px", width: "100%", background: "#F1F5F9", borderRadius: "999px", overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${Math.min(100, Math.max(5, cat.percentage))}%`, background: "#0A192F", borderRadius: "999px" }} />
-                </div>
-              </div>
-            ))}
-          </div>
-          {onboardingAnalytics.subSpecialties.length > 0 && (
-            <div style={{ marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px dashed #E2E8F0" }}>
-              <span style={{ fontSize: "0.6875rem", fontWeight: 700, textTransform: "uppercase", color: "#94A3B8", display: "block", marginBottom: "0.375rem" }}>
-                {ar ? "أبرز تخصصات العيادات" : "Sous-spécialités cliniques"}
-              </span>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.375rem" }}>
-                {onboardingAnalytics.subSpecialties.map((s) => (
-                  <span key={s.label} style={{ fontSize: "0.6875rem", padding: "2px 8px", background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "6px", color: "#475569" }}>
-                    {s.label} ({s.count})
-                  </span>
-                ))}
-              </div>
+              ))}
             </div>
-          )}
-        </article>
+          </div>
 
-        {/* Pillar 2: Territorial Balancing */}
-        <article className="admin-surface" style={{ padding: "1.25rem", borderRadius: "12px", border: "1px solid #E2E8F0" }}>
-          <header style={{ marginBottom: "1rem" }}>
-            <span style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", color: "#64748B" }}>
-              {ar ? "الخريطة الجغرافية" : "Territoire"}
-            </span>
-            <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "#142B47", margin: "2px 0 0" }}>
+          {/* Pillar 2: Territorial Balancing */}
+          <div className="p-4 rounded-md border border-slate-200 bg-[#F8FAFC]/50">
+            <h3 className="text-[13px] font-bold text-[#0A192F] mb-3">
               {ar ? "التوازن الإقليمي (أسر vs ممارسون)" : "Équilibre Régional (Familles / Praticiens)"}
             </h3>
-          </header>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
-            {onboardingAnalytics.territorialBalancing.slice(0, 5).map((row) => (
-              <div key={row.governorate} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.8125rem", padding: "0.375rem 0", borderBottom: "1px solid #F8FAFC" }}>
-                <div>
-                  <strong style={{ color: "#1E293B", display: "block" }}>{row.governorate}</strong>
-                  <span style={{ fontSize: "0.6875rem", color: "#64748B" }}>
-                    {row.learnersCount} {ar ? "متعلم/أسرة" : "apprenants"} • {row.practitionersCount} {ar ? "ممارس" : "praticiens"}
+            <div className="space-y-2">
+              {onboardingAnalytics.territorialBalancing.slice(0, 5).map((row) => (
+                <div
+                  key={row.governorate}
+                  className="flex items-center justify-between text-[12px] py-1 border-b border-slate-200/60 last:border-0"
+                >
+                  <div>
+                    <strong className="text-slate-800 block leading-tight">{row.governorate}</strong>
+                    <span className="text-[10.5px] text-slate-400">
+                      {row.learnersCount} {ar ? "متعلم" : "apprenants"} • {row.practitionersCount} {ar ? "ممارس" : "praticiens"}
+                    </span>
+                  </div>
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                      row.practitionersCount === 0
+                        ? "bg-rose-50 text-rose-700 border-rose-200"
+                        : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    }`}
+                  >
+                    {row.ratio}
                   </span>
                 </div>
-                <span style={{
-                  fontSize: "0.6875rem",
-                  fontWeight: 700,
-                  padding: "3px 8px",
-                  borderRadius: "6px",
-                  background: row.practitionersCount === 0 ? "#FEF2F2" : "#F0FDF4",
-                  color: row.practitionersCount === 0 ? "#DC2626" : "#16A34A",
-                  border: `1px solid ${row.practitionersCount === 0 ? "#FECACA" : "#BBF7D0"}`,
-                }}>
-                  {row.ratio}
-                </span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </article>
 
-        {/* Pillar 3: Pathologies Demand vs Supply */}
-        <article className="admin-surface" style={{ padding: "1.25rem", borderRadius: "12px", border: "1px solid #E2E8F0" }}>
-          <header style={{ marginBottom: "1rem" }}>
-            <span style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", color: "#64748B" }}>
-              {ar ? "الاحتياجات والاضطرابات" : "Besoins & Pathologies"}
-            </span>
-            <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "#142B47", margin: "2px 0 0" }}>
-              {ar ? "تغطية الاحتياجات (طلب الأسر vs الممارسون)" : "Couverture des Besoins (Demande vs Offre)"}
+          {/* Pillar 3: Pathologies */}
+          <div className="p-4 rounded-md border border-slate-200 bg-[#F8FAFC]/50">
+            <h3 className="text-[13px] font-bold text-[#0A192F] mb-3">
+              {ar ? "تغطية الاحتياجات (طلب vs عرض)" : "Couverture des Besoins (Demande vs Offre)"}
             </h3>
-          </header>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
-            {onboardingAnalytics.pathologiesCoverage.slice(0, 5).map((patho) => (
-              <div key={patho.name} style={{ fontSize: "0.8125rem" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.25rem" }}>
-                  <span style={{ fontWeight: 600, color: "#334155" }}>{patho.name}</span>
-                  <span style={{ fontSize: "0.6875rem", color: "#64748B" }}>
-                    {ar ? "طلب:" : "Demande:"} <b style={{ color: "#0A192F" }}>{patho.learnersDemand}</b> • {ar ? "عرض:" : "Offre:"} <b style={{ color: "#0056D2" }}>{patho.practitionersSupply}</b>
-                  </span>
+            <div className="space-y-3">
+              {onboardingAnalytics.pathologiesCoverage.slice(0, 5).map((patho) => (
+                <div key={patho.name} className="text-[12px]">
+                  <div className="flex justify-between mb-1">
+                    <span className="font-medium text-slate-700">{patho.name}</span>
+                    <span className="text-[10.5px] text-slate-500">
+                      {ar ? "طلب:" : "Demande:"} <b className="text-[#0A192F]">{patho.learnersDemand}</b> • {ar ? "عرض:" : "Offre:"} <b className="text-[#0056D2]">{patho.practitionersSupply}</b>
+                    </span>
+                  </div>
+                  <div className="h-1.5 w-full bg-slate-200 rounded-full flex overflow-hidden">
+                    <div
+                      className="h-full bg-[#0056D2]"
+                      style={{ width: `${Math.min(100, Math.max(10, patho.learnersDemand * 10))}%` }}
+                    />
+                    <div
+                      className="h-full bg-emerald-500"
+                      style={{ width: `${Math.min(100, Math.max(10, patho.practitionersSupply * 10))}%` }}
+                    />
+                  </div>
                 </div>
-                <div style={{ height: "6px", width: "100%", background: "#F1F5F9", borderRadius: "999px", display: "flex", overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${Math.min(100, Math.max(10, patho.learnersDemand * 10))}%`, background: "#0056D2" }} />
-                  <div style={{ height: "100%", width: `${Math.min(100, Math.max(10, patho.practitionersSupply * 10))}%`, background: "#10B981" }} />
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </article>
+        </div>
+      </AdminSectionCard>
 
-        {/* Pillar 4: Acquisition Channels */}
-        <article className="admin-surface" style={{ padding: "1.25rem", borderRadius: "12px", border: "1px solid #E2E8F0" }}>
-          <header style={{ marginBottom: "1rem" }}>
-            <span style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", color: "#64748B" }}>
-              {ar ? "القنوات التسويقية" : "Canaux d'Acquisition"}
-            </span>
-            <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "#142B47", margin: "2px 0 0" }}>
-              {ar ? "مصادر التسجيل الأولية" : "Origine des Inscriptions"}
-            </h3>
-          </header>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
-            {onboardingAnalytics.acquisitionSources.map((src) => (
-              <div key={src.source} style={{ fontSize: "0.8125rem" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.25rem" }}>
-                  <span style={{ fontWeight: 600, color: "#334155" }}>{src.label}</span>
-                  <span style={{ fontWeight: 700, color: "#0A192F" }}>
-                    {src.count} ({src.percentage}%)
-                  </span>
-                </div>
-                <div style={{ height: "6px", width: "100%", background: "#F1F5F9", borderRadius: "999px", overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${Math.min(100, Math.max(5, src.percentage))}%`, background: "#B58D3D", borderRadius: "999px" }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </article>
+      {/* Growth Trend & Distributions Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <AdminSectionCard
+          title={ar ? "تطور التسجيلات والمستخدمين" : "Évolution des Inscriptions & Utilisateurs"}
+          infoTooltip={ar ? "مخطط زمني للمنحنى اليومي" : "Évolution chronologique sur la période"}
+        >
+          <TrendChart points={growth} locale={locale} />
+        </AdminSectionCard>
+
+        <AdminSectionCard
+          title={ar ? "التخصصات المهنية والعيادات" : "Disciplines & Spécialités"}
+          infoTooltip={ar ? "توزيع الممارسين حسب التخصص" : "Répartition des praticiens par discipline d'exercice"}
+        >
+          <Distribution
+            rows={distributions.disciplines || []}
+            locale={locale}
+            empty={ar ? "لا توجد بيانات" : "Aucune donnée"}
+          />
+        </AdminSectionCard>
       </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <AdminSectionCard
+          title={ar ? "أكثر الدورات تسجيلاً" : "Formations les Plus Suivies"}
+          infoTooltip={ar ? "ترتيب الدورات حسب الإقبال" : "Top des cours par volume d'apprenants"}
+        >
+          <Distribution
+            rows={distributions.topCourses}
+            locale={locale}
+            empty={ar ? "لا توجد تسجيلات" : "Aucune inscription"}
+          />
+        </AdminSectionCard>
+
+        <AdminSectionCard
+          title={ar ? "توزيع الأدوار والصلاحيات" : "Répartition des Rôles"}
+          infoTooltip={ar ? "توزيع المستخدمين حسب الرتبة" : "Statut des comptes de la plateforme"}
+        >
+          <Distribution
+            rows={distributions.roles}
+            locale={locale}
+            empty={ar ? "لا توجد بيانات" : "Aucune donnée"}
+          />
+        </AdminSectionCard>
+
+        <AdminSectionCard
+          title={ar ? "طرق الدخول والمصادقة" : "Fournisseurs de Connexion"}
+          infoTooltip={ar ? "Google vs البريد الإلكتروني" : "Part de Google OAuth vs authentification par e-mail"}
+        >
+          <Distribution
+            rows={distributions.providers}
+            locale={locale}
+            empty={ar ? "لا توجد حسابات" : "Aucun compte"}
+          />
+        </AdminSectionCard>
+      </div>
+
+      {/* Admin Footer */}
+      <AdminFooter locale={locale} />
     </div>
-
-    <section className="admin-dashboard-grid">
-      <article className="admin-surface admin-span-2">
-        <header>
-          <div>
-            <span>{ar ? "النمو" : "Croissance"}</span>
-            <h2>{ar ? "المستخدمون والتسجيلات" : "Utilisateurs et inscriptions"}</h2>
-          </div>
-        </header>
-        <TrendChart points={growth} locale={locale} />
-      </article>
-
-      {/* Practitioner Disciplines Distribution */}
-      <article className="admin-surface">
-        <header>
-          <div>
-            <span>{ar ? "المهن والتخصصات" : "Disciplines & Métiers"}</span>
-            <h2>{ar ? "توزيع الممارسين" : "Répartition par Discipline"}</h2>
-          </div>
-          <Link href={`/${locale}/admin/avs`}>
-            <span>{ar ? "عرض" : "Voir"}</span>
-            <ArrowUpRight size={13} className="admin-directional-icon" />
-          </Link>
-        </header>
-        <Distribution rows={distributions.disciplines || []} locale={locale} empty={ar ? "لا توجد بيانات" : "Aucune donnée"} />
-      </article>
-
-      {/* Practitioner Governorates Distribution */}
-      <article className="admin-surface">
-        <header>
-          <div>
-            <span>{ar ? "الجغرافيا" : "Territoire"}</span>
-            <h2>{ar ? "الممارسون حسب الولاية" : "Praticiens par Gouvernorat"}</h2>
-          </div>
-          <Link href={`/${locale}/specialistes`}>
-            <span>{ar ? "عرض" : "Voir"}</span>
-            <ArrowUpRight size={13} className="admin-directional-icon" />
-          </Link>
-        </header>
-        <Distribution rows={distributions.governorates || []} locale={locale} empty={ar ? "لا توجد بيانات" : "Aucune donnée"} />
-      </article>
-
-      <article className="admin-surface">
-        <header>
-          <div>
-            <span>{ar ? "الحسابات" : "Comptes"}</span>
-            <h2>{ar ? "توزيع الأدوار" : "Répartition des rôles"}</h2>
-          </div>
-          <Link href={`/${locale}/admin/users`}>
-            <span>{ar ? "عرض" : "Voir"}</span>
-            <ArrowUpRight size={13} className="admin-directional-icon" />
-          </Link>
-        </header>
-        <Distribution rows={distributions.roles} locale={locale} empty={ar ? "لا توجد بيانات" : "Aucune donnée"} />
-      </article>
-
-      <article className="admin-surface">
-        <header>
-          <div>
-            <span>{ar ? "المصادقة" : "Authentification"}</span>
-            <h2>{ar ? "مزودو الدخول" : "Fournisseurs de connexion"}</h2>
-          </div>
-        </header>
-        <Distribution rows={distributions.providers} locale={locale} empty={ar ? "لا توجد حسابات" : "Aucun compte"} />
-      </article>
-
-      <article className="admin-surface">
-        <header>
-          <div>
-            <span>{ar ? "التعلّم" : "Apprentissage"}</span>
-            <h2>{ar ? "أكثر الدورات تسجيلاً" : "Formations les plus suivies"}</h2>
-          </div>
-          <Link href={`/${locale}/admin/courses`}>
-            <span>{ar ? "عرض" : "Voir"}</span>
-            <ArrowUpRight size={13} className="admin-directional-icon" />
-          </Link>
-        </header>
-        <Distribution rows={distributions.topCourses} locale={locale} empty={ar ? "لا توجد تسجيلات" : "Aucune inscription"} />
-      </article>
-
-      <article className="admin-surface admin-finance-card">
-        <header>
-          <div>
-            <span>{ar ? "التجارة" : "Commerce"}</span>
-            <h2>{ar ? "المدفوعات" : "Paiements"}</h2>
-          </div>
-          <Link href={`/${locale}/admin/payments`}>
-            <span>{ar ? "عرض" : "Voir"}</span>
-            <ArrowUpRight size={13} className="admin-directional-icon" />
-          </Link>
-        </header>
-        <div className="admin-finance-body">
-          <div className="admin-finance-main">
-            <span className="admin-finance-label">{ar ? "الإيرادات المحصلة" : "Chiffre d'affaires"}</span>
-            <strong>{formatMillimes(overview.revenueMillimes, locale)}</strong>
-          </div>
-          <div className="admin-finance-breakdown">
-            <span className="admin-stat-tag is-success">
-              {ar ? "ناجحة" : "Réussis"} <b>{overview.successfulPayments}</b>
-            </span>
-            <span className="admin-stat-tag is-failed">
-              {ar ? "فاشلة" : "Échoués"} <b>{overview.failedPayments}</b>
-            </span>
-          </div>
-        </div>
-      </article>
-
-      <article className="admin-surface admin-alert-card">
-        <header>
-          <div>
-            <span>{ar ? "الدعم" : "Support"}</span>
-            <h2>{ar ? "رسائل في الانتظار" : "Contacts en attente"}</h2>
-          </div>
-          <Link href={`/${locale}/admin/contacts`}>
-            <span>{ar ? "معالجة" : "Traiter"}</span>
-            <ArrowUpRight size={13} className="admin-directional-icon" />
-          </Link>
-        </header>
-        <div className="admin-alert-body">
-          <strong>{number.format(overview.pendingContacts)}</strong>
-          <p>
-            {overview.pendingContacts > 0
-              ? (ar ? "رسائل جديدة تتطلب المتابعة والرد." : "Demandes de contact nécessitant un traitement.")
-              : (ar ? "جميع رسائل الدعم تمت معالجتها." : "Toutes les demandes de contact sont traitées.")}
-          </p>
-        </div>
-      </article>
-    </section>
-  </>;
+  );
 }

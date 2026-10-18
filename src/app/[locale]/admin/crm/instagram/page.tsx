@@ -3,6 +3,7 @@ import { isLocale } from "@/lib/i18n";
 import { requireAdminPermission } from "@/server/auth/session";
 import { AdminPageHeader } from "@/modules/admin/components/AdminPageHeader";
 import { AdminOmnichannelCrm } from "@/components/admin/AdminOmnichannelCrm";
+import { AdminFooter } from "@/modules/admin/components/AdminFooter";
 import type { Locale } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -34,6 +35,8 @@ export default async function AdminInstagramCRMPage({
         initialChannel="INSTAGRAM"
         locale={locale as Locale}
       />
+
+      <AdminFooter locale={locale} />
     </>
   );
 }

@@ -343,7 +343,7 @@ export function LoginWizard({
             </>
           )}
 
-          <form onSubmit={handleCredentialsSubmit} className="space-y-5" noValidate>
+          <form onSubmit={handleCredentialsSubmit} className="auth-form space-y-5" noValidate>
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
                 {ar ? "البريد الإلكتروني" : "Adresse e-mail"} <span className="text-red-500">*</span>

@@ -6,6 +6,7 @@ import { isLocale } from "@/lib/i18n";
 import { requireAdminPermission } from "@/server/auth/session";
 import { getLiveSessionsForAdmin } from "@/server/queries/live";
 import { AdminLiveManager } from "@/components/admin/AdminLiveManager";
+import { AdminFooter } from "@/modules/admin/components/AdminFooter";
 import type { Locale } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -33,13 +34,14 @@ export default async function AdminLivePage({
   ]);
 
   return (
-    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "1rem" }}>
+    <div className="space-y-6">
       <AdminLiveManager
         locale={locale as Locale}
         initialSessions={initialSessions}
         courses={coursesList}
         userRole={String(session.user.role)}
       />
+      <AdminFooter locale={locale as Locale} />
     </div>
   );
 }
