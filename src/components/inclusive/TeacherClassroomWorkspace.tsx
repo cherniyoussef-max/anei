@@ -545,15 +545,15 @@ export function TeacherClassroomWorkspace({
 
         {/* Global Student Selector in Header */}
         {students.length > 0 && (
-          <div className="flex items-center gap-3 bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-200">
-            <span className="text-xs font-semibold text-slate-600">
+          <div className="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-2 sm:gap-3 bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-200">
+            <span className="text-xs font-semibold text-slate-600 shrink-0">
               {ar ? "التلميذ المحدد :" : "Élève actif :"}
             </span>
             <select
               value={currentStudentIndex}
               onChange={(e) => setCurrentStudentIndex(Number(e.target.value))}
               aria-label={ar ? "اختر التلميذ" : "Sélectionner un élève"}
-              className="text-xs font-bold text-[#0A192F] bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#0056D2]"
+              className="text-xs font-bold text-[#0A192F] bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#0056D2] max-w-[200px] sm:max-w-xs truncate"
             >
               {students.map((st, idx) => (
                 <option key={st.id} value={idx}>

@@ -1,5 +1,6 @@
 import { db } from "@/server/db";
 import {
+  user,
   teacherClassrooms,
   teacherClassroomStudents,
   partnerEstablishments,
@@ -297,4 +298,35 @@ export async function getSpecialistWorkspaceData(specialistUserId?: string) {
     })),
     tips,
   };
+}
+
+/**
+ * Public showcase getters for accessible preview routes (/espace-enseignant, /espace-etablissement, /espace-specialiste)
+ */
+async function getShowcaseFallbackUserId(): Promise<string> {
+  const [firstUser] = await db.select({ id: user.id }).from(user).limit(1);
+  return firstUser?.id || "d799d1ac-a1b3-4892-b67e-3d481c679d4d";
+}
+
+export async function getShowcaseTeacherClassroom() {
+  const existing = await db.select().from(teacherClassrooms).limit(1);
+  if (existing.length > 0) {
+    return getOrCreateTeacherClassroom(existing[0].teacherUserId);
+  }
+  const fallbackId = await getShowcaseFallbackUserId();
+  return getOrCreateTeacherClassroom(fallbackId);
+}
+
+export async function getShowcaseEstablishmentProfile() {
+  const existing = await db.select().from(partnerEstablishments).limit(1);
+  if (existing.length > 0) {
+    return getOrCreatePartnerEstablishment(existing[0].managerUserId);
+  }
+  const fallbackId = await getShowcaseFallbackUserId();
+  return getOrCreatePartnerEstablishment(fallbackId);
+}
+
+export async function getShowcaseSpecialistWorkspaceData() {
+  const fallbackId = await getShowcaseFallbackUserId();
+  return getSpecialistWorkspaceData(fallbackId);
 }
