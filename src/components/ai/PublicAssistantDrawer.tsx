@@ -1,7 +1,22 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { MessageSquare, X, Send, Sparkles, BookOpen, ShieldCheck, ChevronDown, ChevronUp, Bot, User, ThumbsUp, ThumbsDown } from "lucide-react";
+import Link from "next/link";
+import {
+  X,
+  Send,
+  BookOpen,
+  ShieldCheck,
+  ChevronDown,
+  ChevronUp,
+  Bot,
+  User,
+  ThumbsUp,
+  ThumbsDown,
+  RotateCcw,
+  ArrowRight,
+  ArrowLeft,
+} from "lucide-react";
 
 interface Citation {
   id: string;
@@ -25,18 +40,105 @@ interface PublicAssistantDrawerProps {
 
 const SUGGESTIONS = {
   fr: [
-    "👤 Comment créer un compte et m'inscrire ?",
-    "🎓 Quelle formation choisir pour ma situation ?",
-    "🧩 Mon enfant a un TSA (autisme), que recommandez-vous ?",
-    "💼 Comment devenir accompagnant scolaire (AVS) certifié ?",
+    { label: "👤 Comment créer un compte et m'inscrire ?", query: "Comment créer un compte et s'inscrire sur la plateforme ?" },
+    { label: "🎓 Quelle formation choisir pour ma situation ?", query: "Quelle formation recommandez-vous selon ma situation ?" },
+    { label: "🧩 Mon enfant a un TSA (autisme), que faire ?", query: "Mon enfant a un trouble du spectre de l'autisme (TSA), que recommandez-vous ?" },
+    { label: "💼 Comment devenir accompagnant scolaire (AVS) ?", query: "Comment devenir accompagnant scolaire AVS certifié ?" },
+    { label: "💳 Quels sont les tarifs et moyens de paiement ?", query: "Quels sont les tarifs des formations et les moyens de paiement ?" },
   ],
   ar: [
-    "👤 كيف أنشئ حساباً وأسجل في المنصة؟",
-    "🎓 ما هي الدورة المناسبة لوضعيتي؟",
-    "🧩 طفلي يعاني من طيف التوحد (TSA)، بماذا تنصحني؟",
-    "💼 كيف أصبح مرافقاً مدرسياً (AVS) معتمداً؟",
+    { label: "👤 كيف أنشئ حساباً وأسجل في المنصة؟", query: "كيف أنشئ حساباً جديداً وأسجل في المنصة؟" },
+    { label: "🎓 ما هي الدورة المناسبة لوضعيتي؟", query: "ما هي الدورة التكوينية الأنسب لوضعيتي الحالية؟" },
+    { label: "🧩 طفلي يعاني من طيف التوحد (TSA)، بماذا تنصحني؟", query: "طفلي يعاني من طيف التوحد (TSA)، كيف أساعده وما هي الدورة المقترحة؟" },
+    { label: "💼 كيف أصبح مرافقاً مدرسياً (AVS) معتمداً؟", query: "كيف أصبح مرافقاً مدرسياً AVS معتمداً عبر المنصة؟" },
+    { label: "💳 ما هي أسعار الدورات وطرق الدفع؟", query: "ما هي أسعار التكوينات وطرق الدفع المتاحة؟" },
   ],
 };
+
+/**
+ * Formats message text into interactive HTML with styled links and bold markdown
+ */
+function FormattedMessage({ text, locale }: { text: string; locale: "fr" | "ar" }) {
+  const isRtl = locale === "ar";
+
+  // Split lines
+  const lines = text.split("\n");
+
+  return (
+    <div className="space-y-1.5 leading-relaxed text-xs sm:text-sm">
+      {lines.map((line, idx) => {
+        if (!line.trim()) {
+          return <div key={idx} className="h-1" />;
+        }
+
+        // Render bullet lines
+        const isBullet = /^[-*•]\s+/.test(line);
+        const isNumbered = /^\d+\.\s+/.test(line);
+        const cleanLine = isBullet ? line.replace(/^[-*•]\s+/, "") : line;
+
+        // Parse markdown bold **text** and links
+        const parts = cleanLine.split(/(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\)|\/(?:fr|ar)\/[a-z0-9\-_/]+)/g);
+
+        const content = parts.map((part, pIdx) => {
+          if (!part) return null;
+
+          // Bold markdown
+          if (part.startsWith("**") && part.endsWith("**")) {
+            return (
+              <strong key={pIdx} className="font-semibold text-slate-900">
+                {part.slice(2, -2)}
+              </strong>
+            );
+          }
+
+          // Markdown link [Title](Url)
+          const linkMatch = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+          if (linkMatch) {
+            const [, title, url] = linkMatch;
+            return (
+              <Link
+                key={pIdx}
+                href={url}
+                className="inline-flex items-center gap-1 font-semibold text-[#002B49] bg-amber-500/10 hover:bg-amber-500/20 px-2 py-0.5 rounded-md border border-amber-500/30 transition-colors mx-0.5"
+              >
+                <span>{title}</span>
+                {isRtl ? <ArrowLeft className="w-3 h-3 text-[#B58D3D]" /> : <ArrowRight className="w-3 h-3 text-[#B58D3D]" />}
+              </Link>
+            );
+          }
+
+          // Raw internal path like /fr/formations/... or /ar/auth/register
+          if (part.startsWith(`/${locale}/`) || part.startsWith("/fr/") || part.startsWith("/ar/")) {
+            return (
+              <Link
+                key={pIdx}
+                href={part}
+                className="inline-flex items-center gap-1 font-semibold text-[#002B49] underline decoration-amber-500/60 hover:text-[#B58D3D] transition-colors mx-0.5"
+              >
+                <span>{part}</span>
+              </Link>
+            );
+          }
+
+          return <span key={pIdx}>{part}</span>;
+        });
+
+        if (isBullet || isNumbered) {
+          return (
+            <div key={idx} className="flex items-start gap-2 ps-1">
+              <span className="text-[#B58D3D] font-bold select-none shrink-0 mt-0.5">
+                {isNumbered ? line.match(/^\d+\./)?.[0] : "•"}
+              </span>
+              <span className="flex-1">{content}</span>
+            </div>
+          );
+        }
+
+        return <p key={idx}>{content}</p>;
+      })}
+    </div>
+  );
+}
 
 export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -84,6 +186,12 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
 
   const toggleCitation = (msgId: string) => {
     setExpandedCitations((prev) => ({ ...prev, [msgId]: !prev[msgId] }));
+  };
+
+  const resetChat = () => {
+    setMessages([]);
+    setInput("");
+    setIsLoading(false);
   };
 
   const handleSend = async (textToSend?: string) => {
@@ -143,7 +251,7 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
 
           try {
             const parsed = JSON.parse(dataStr);
-            if (eventType === "citations" && parsed.citations) {
+            if (eventType === "citations" && parsed.citations && parsed.citations.length > 0) {
               setMessages((prev) =>
                 prev.map((msg) =>
                   msg.id === assistantMessageId
@@ -179,7 +287,7 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
             ? {
                 ...msg,
                 content: isRtl
-                  ? `عذراً، حدث خطأ: ${errMsg}`
+                  ? `عذراً، حدث خطأ أثناء المعالجة: ${errMsg}`
                   : `Désolé, une erreur est survenue : ${errMsg}`,
                 isStreaming: false,
               }
@@ -204,15 +312,15 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
           onClick={() => setIsOpen(true)}
           className={`fixed bottom-6 ${
             isRtl ? "left-6" : "right-6"
-          } z-40 flex items-center gap-2.5 px-4 py-3 bg-[#002B49] text-white rounded-full shadow-lg hover:bg-[#001f35] border border-[#DDA74A]/40 transition-all duration-300 hover:scale-105 active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#DDA74A]`}
-          aria-label={isRtl ? "فتح المساعد الذكي للأكاديمية" : "Ouvrir l'assistant IA ANEI"}
+          } z-40 flex items-center gap-2.5 px-4 py-3 bg-[#002B49] text-white rounded-full shadow-xl hover:bg-[#001f35] border border-[#B58D3D]/50 transition-all duration-300 hover:scale-105 active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#B58D3D]`}
+          aria-label={isRtl ? "فتح مساعد ANEI" : "Ouvrir l'assistant ANEI"}
         >
-          <div className="relative">
-            <MessageSquare className="w-5 h-5 text-[#DDA74A]" />
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-[#DDA74A] rounded-full animate-pulse" />
+          <div className="relative flex items-center justify-center">
+            <Bot className="w-5 h-5 text-[#DDA74A]" />
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full ring-2 ring-[#002B49] animate-pulse" />
           </div>
-          <span className="text-sm font-medium tracking-wide">
-            {isRtl ? "مساعد الأكاديمية" : "Assistant ANEI"}
+          <span className="text-sm font-semibold tracking-wide" style={{ color: "#ffffff" }}>
+            {isRtl ? "مساعد ANEI" : "Assistant ANEI"}
           </span>
         </button>
       )}
@@ -220,70 +328,89 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
       {/* Drawer Overlay / Modal */}
       {isOpen && (
         <aside
-          aria-label={isRtl ? "مساعد الأكاديمية" : "Assistant IA ANEI"}
+          aria-label={isRtl ? "مساعد ANEI" : "Assistant ANEI"}
           dir={isRtl ? "rtl" : "ltr"}
           className={`fixed bottom-6 ${
             isRtl ? "left-6" : "right-6"
-          } z-50 w-[92vw] sm:w-[440px] h-[600px] max-h-[85vh] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-300`}
+          } z-50 w-[92vw] sm:w-[440px] h-[610px] max-h-[86vh] bg-white rounded-2xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-300`}
         >
-          {/* Header */}
-          <div className="bg-[#002B49] text-white px-5 py-4 flex items-center justify-between border-b border-[#DDA74A]/30">
+          {/* Header with High-Contrast Typography & Professional Bot Icon */}
+          <div className="bg-[#002B49] text-white px-5 py-3.5 flex items-center justify-between border-b border-[#B58D3D]/30 shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#DDA74A]/20 flex items-center justify-center border border-[#DDA74A]/40">
-                <Sparkles className="w-4 h-4 text-[#DDA74A]" />
+              <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center border border-[#B58D3D]/50 text-[#DDA74A]">
+                <Bot className="w-5 h-5 text-[#DDA74A]" />
               </div>
-              <div>
-                <h3 className="text-sm font-semibold tracking-wide text-white flex items-center gap-1.5">
-                  {isRtl ? "مساعد ANEI الذكي" : "Assistant ANEI"}
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-[#DDA74A]/20 text-[#DDA74A] border border-[#DDA74A]/30">
-                    Guide & Conseil
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold tracking-tight text-white" style={{ color: "#ffffff" }}>
+                    {isRtl ? "مساعد ANEI الذكي" : "Assistant ANEI"}
                   </span>
-                </h3>
-                <p className="text-xs text-slate-300">
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#B58D3D] text-white shadow-xs">
+                    {isRtl ? "دليل معتمد" : "Guide Officiel"}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-200 font-normal mt-0.5" style={{ color: "#e2e8f0" }}>
                   {isRtl ? "إنشاء حساب، استشارات وتوجيه للتكوين" : "Création de compte, conseil & formations"}
                 </p>
               </div>
             </div>
 
-            <button
-              onClick={() => setIsOpen(false)}
-              className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-1 focus:ring-[#DDA74A]"
-              aria-label={isRtl ? "إغلاق" : "Fermer"}
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-1">
+              {messages.length > 0 && (
+                <button
+                  type="button"
+                  onClick={resetChat}
+                  className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-1 focus:ring-[#B58D3D]"
+                  title={isRtl ? "محادثة جديدة" : "Nouvelle conversation"}
+                  aria-label={isRtl ? "محادثة جديدة" : "Nouvelle conversation"}
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-1 focus:ring-[#B58D3D]"
+                aria-label={isRtl ? "إغلاق" : "Fermer"}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/70">
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center px-4 space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-[#002B49]/5 flex items-center justify-center text-[#002B49]">
-                  <Bot className="w-6 h-6" />
+                <div className="w-12 h-12 rounded-2xl bg-[#002B49]/10 flex items-center justify-center text-[#002B49] border border-[#002B49]/15">
+                  <Bot className="w-6 h-6 text-[#002B49]" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-semibold text-slate-800">
-                    {isRtl ? "كيف يمكنني مساعدتك اليوم؟" : "Comment puis-je vous aider ?"}
+                  <h4 className="text-sm font-bold text-slate-900">
+                    {isRtl ? "مرحباً بكم في الأكاديمية الوطنية" : "Bienvenue à l'Académie"}
                   </h4>
-                  <p className="text-xs text-slate-500 mt-1 max-w-[300px]">
+                  <p className="text-xs text-slate-600 mt-1 max-w-[310px] leading-relaxed">
                     {isRtl
-                      ? "إرشادك لإنشاء حساب، الإجابة عن استفساراتك، واقتراح الدورة الأنسب لوضعيتك للتسجيل."
+                      ? "أنا هنا لمساعدتكم في إنشاء حساب، الإجابة عن استفساراتكم، واقتراح الدورة الأنسب لوضعيتكم."
                       : "Créer un compte, répondre à vos questions ou vous recommander la formation certifiante adaptée à votre situation."}
                   </p>
                 </div>
 
-                {/* Suggestions */}
-                <div className="w-full space-y-2 pt-2">
-                  <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider text-left rtl:text-right">
-                    {isRtl ? "أسئلة شائعة:" : "Questions fréquentes :"}
+                {/* Suggestions List */}
+                <div className="w-full space-y-2 pt-1">
+                  <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider text-left rtl:text-right">
+                    {isRtl ? "أسئلة شائعة واقتراحات :" : "Questions fréquentes & orientations :"}
                   </p>
-                  {suggestions.map((suggestion, idx) => (
+                  {suggestions.map((item, idx) => (
                     <button
                       key={idx}
-                      onClick={() => handleSend(suggestion)}
-                      className="w-full text-left rtl:text-right text-xs px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-[#DDA74A] hover:bg-[#DDA74A]/5 text-slate-700 transition-all text-ellipsis overflow-hidden"
+                      onClick={() => handleSend(item.query)}
+                      className="w-full text-left rtl:text-right text-xs px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-[#B58D3D] hover:bg-[#B58D3D]/5 text-slate-700 font-medium transition-all shadow-xs flex items-center justify-between group"
                     >
-                      {suggestion}
+                      <span className="truncate">{item.label}</span>
+                      <span className="text-slate-400 group-hover:text-[#B58D3D] transition-colors shrink-0 ms-2">
+                        {isRtl ? <ArrowLeft className="w-3.5 h-3.5" /> : <ArrowRight className="w-3.5 h-3.5" />}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -297,7 +424,7 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
                   } space-y-1.5`}
                 >
                   <div
-                    className={`flex items-start gap-2 max-w-[88%] ${
+                    className={`flex items-start gap-2 max-w-[90%] ${
                       msg.role === "user" ? "flex-row-reverse" : "flex-row"
                     }`}
                   >
@@ -305,40 +432,45 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
                       className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs ${
                         msg.role === "user"
                           ? "bg-[#002B49] text-white"
-                          : "bg-[#DDA74A]/20 text-[#002B49] border border-[#DDA74A]/30"
+                          : "bg-white text-[#002B49] border border-slate-200 shadow-xs"
                       }`}
                     >
-                      {msg.role === "user" ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
+                      {msg.role === "user" ? <User className="w-3.5 h-3.5" /> : <Bot className="w-4 h-4 text-[#B58D3D]" />}
                     </div>
 
                     <div
-                      className={`px-4 py-3 rounded-2xl text-xs sm:text-sm leading-relaxed whitespace-pre-wrap ${
+                      className={`px-4 py-3 rounded-2xl shadow-xs ${
                         msg.role === "user"
                           ? "bg-[#002B49] text-white rounded-br-none rtl:rounded-bl-none rtl:rounded-br-2xl"
-                          : "bg-white text-slate-800 border border-slate-200/80 shadow-sm rounded-bl-none rtl:rounded-br-none rtl:rounded-bl-2xl"
+                          : "bg-white text-slate-800 border border-slate-200/90 rounded-bl-none rtl:rounded-br-none rtl:rounded-bl-2xl"
                       }`}
                     >
-                      {msg.content || (msg.isStreaming ? (
-                        <span className="inline-flex items-center gap-1 text-slate-400">
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" />
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce [animation-delay:0.2s]" />
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce [animation-delay:0.4s]" />
+                      {msg.role === "user" ? (
+                        <p className="text-xs sm:text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                      ) : msg.content ? (
+                        <FormattedMessage text={msg.content} locale={locale} />
+                      ) : msg.isStreaming ? (
+                        <span className="inline-flex items-center gap-1.5 text-slate-400 py-1">
+                          <span className="w-2 h-2 rounded-full bg-[#B58D3D] animate-bounce" />
+                          <span className="w-2 h-2 rounded-full bg-[#002B49] animate-bounce [animation-delay:0.2s]" />
+                          <span className="w-2 h-2 rounded-full bg-slate-400 animate-bounce [animation-delay:0.4s]" />
                         </span>
-                      ) : null)}
+                      ) : null}
                     </div>
                   </div>
 
-                  {/* Citations Accordion */}
+                  {/* Citations Accordion (Only displayed when actual references exist) */}
                   {msg.citations && msg.citations.length > 0 && (
-                    <div className="w-[88%] mr-9 rtl:mr-0 rtl:ml-9 text-xs">
+                    <div className="w-[88%] ms-9 rtl:ms-0 rtl:me-9 text-xs">
                       <button
+                        type="button"
                         onClick={() => toggleCitation(msg.id)}
-                        className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500 hover:text-[#002B49] transition-colors py-1"
+                        className="flex items-center gap-1.5 text-[11px] font-medium text-slate-600 hover:text-[#002B49] transition-colors py-1"
                       >
-                        <BookOpen className="w-3 h-3 text-[#DDA74A]" />
+                        <BookOpen className="w-3.5 h-3.5 text-[#B58D3D]" />
                         <span>
                           {isRtl
-                            ? `${msg.citations.length} مراجع رسمية من الأكاديمية`
+                            ? `${msg.citations.length} مراجع رسمية من الأرشيف`
                             : `${msg.citations.length} source(s) officielle(s) ANEI`}
                         </span>
                         {expandedCitations[msg.id] ? (
@@ -348,9 +480,20 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
                         )}
                       </button>
 
+                      {expandedCitations[msg.id] && (
+                        <div className="mt-1 space-y-1.5 bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs">
+                          {msg.citations.map((c) => (
+                            <div key={c.id} className="text-[11px] text-slate-600 border-s-2 border-[#B58D3D] ps-2 py-0.5">
+                              <span className="font-semibold text-slate-800 block">{c.title}</span>
+                              <span className="text-[10px] text-slate-400">{c.source}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
                       {/* Feedback buttons */}
                       {!msg.isStreaming && msg.content && (
-                        <div className="flex items-center gap-1.5 pt-1 text-[11px] text-slate-400">
+                        <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-400">
                           <button
                             type="button"
                             onClick={() => handleFeedback(msg.id, "HELPFUL", msg.content, msg.citations)}
@@ -388,8 +531,8 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
           </div>
 
           {/* Ethical Disclaimer */}
-          <div className="px-4 py-1.5 bg-slate-50 border-t border-slate-100 flex items-center justify-center gap-1.5 text-[10px] text-slate-500">
-            <ShieldCheck className="w-3 h-3 text-emerald-600 shrink-0" />
+          <div className="px-4 py-2 bg-slate-100/80 border-t border-slate-200 flex items-center justify-center gap-1.5 text-[10px] text-slate-500 shrink-0">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
             <span>
               {isRtl
                 ? "مساعد استرشادي رسمي — لا يغني عن الاستشارة الطبية أو النفسية المتخصصة."
@@ -403,7 +546,7 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
               e.preventDefault();
               handleSend();
             }}
-            className="p-3 bg-white border-t border-slate-200 flex items-center gap-2"
+            className="p-3 bg-white border-t border-slate-200 flex items-center gap-2 shrink-0"
           >
             <input
               ref={inputRef}
@@ -412,16 +555,16 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
               onChange={(e) => setInput(e.target.value)}
               placeholder={
                 isRtl
-                  ? "اكتب استفسارك هنا..."
-                  : "Posez votre question à l'assistant..."
+                  ? "اكتب سؤالك هنا (إنشاء حساب، توجيه، تكوين)..."
+                  : "Posez votre question (création de compte, formation)..."
               }
               disabled={isLoading}
-              className="flex-1 px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-[#002B49] focus:bg-white transition-all disabled:opacity-60"
+              className="flex-1 px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-[#002B49] focus:bg-white transition-all disabled:opacity-60 text-slate-900"
             />
             <button
               type="submit"
               disabled={isLoading || !input.trim()}
-              className="p-2.5 rounded-xl bg-[#002B49] text-white hover:bg-[#001f35] transition-colors disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#DDA74A]"
+              className="p-2.5 rounded-xl bg-[#002B49] text-white hover:bg-[#001f35] transition-colors disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#B58D3D] shrink-0"
               aria-label={isRtl ? "إرسال" : "Envoyer"}
             >
               <Send className="w-4 h-4 rtl:rotate-180" />

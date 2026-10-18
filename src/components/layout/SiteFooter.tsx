@@ -54,7 +54,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
                 aria-label={ar ? "الرئيسية ANEI" : "Accueil ANEI"}
               >
                 <Image
-                  src="/brand/anei-mark-white-wing.webp"
+                  src="/brand/anei-mark-white-wing.webp?v=white"
                   alt={ar ? "الأكاديمية الوطنية للتربية الدامجة" : "Académie Nationale de l’Éducation Inclusive"}
                   width={56}
                   height={32}

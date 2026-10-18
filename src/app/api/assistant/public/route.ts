@@ -85,7 +85,10 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. SSE Streaming Response with Citations
-    const citations = ragResult.sources.map((s) => ({
+    const isGreeting = /^(hi|hello|bonjour|salut|salam|coucou|مرحبا|سلام|أهلا|اهلا|صباح الخير|مساء الخير)[\s!.]*$/i.test(message.trim());
+    const isAccountOrNavQuestion = /(créer.*compte|inscription|inscrire|connecter|connexion|تسجيل|إنشاء.*حساب|دخول)/i.test(message);
+
+    const citations = (isGreeting || isAccountOrNavQuestion) ? [] : ragResult.sources.map((s) => ({
       id: s.id,
       title: s.fileName.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
       source: `[${s.folderName} / ${s.fileName}]`,
