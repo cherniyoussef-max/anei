@@ -4,6 +4,8 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useMemo, useState } from "react";
 import type { Locale } from "@/types";
+import { authClient } from "@/lib/auth-client";
+import { GoogleMark } from "@/components/auth/GoogleMark";
 import { AuthWizardProgress } from "@/components/auth/AuthWizardProgress";
 import { getDelegationsForGovernorate } from "@/lib/tunisia/locations";
 import {
@@ -54,14 +56,51 @@ export const TUNISIA_GOVERNORATES_BILINGUAL = [
 
 export type CategoryChoice = "LEARNER" | "AVS" | "SPECIALIST";
 
-export function RegisterWizard({ locale }: { locale: Locale }) {
+export function RegisterWizard({
+  locale,
+  googleConfigured = false,
+}: {
+  locale: Locale;
+  googleConfigured?: boolean;
+}) {
   const router = useRouter();
   const search = useSearchParams();
   const ar = locale === "ar";
 
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function handleGoogle() {
+    if (googleLoading || loading) return;
+    setGoogleLoading(true);
+    setError(null);
+
+    try {
+      const destination = `/${locale}/complete-profile`;
+      const errorCallbackURL = `/${locale}/inscription?${new URLSearchParams({
+        error: "google_auth_failed",
+      })}`;
+
+      const res = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: destination,
+        errorCallbackURL,
+      });
+
+      if (res?.error) {
+        throw new Error(res.error.message || "GOOGLE_AUTH_ERROR");
+      }
+    } catch {
+      setError(
+        ar
+          ? "تعذر التسجيل باستخدام حساب Google. يُرجى متابعة التسجيل أدناه."
+          : "Échec de connexion avec Google. Veuillez poursuivre l'inscription ci-dessous.",
+      );
+      setGoogleLoading(false);
+    }
+  }
 
   // Step 1: Category
   const [category, setCategory] = useState<CategoryChoice>(() => {
@@ -345,7 +384,37 @@ export function RegisterWizard({ locale }: { locale: Locale }) {
         {/* STEP 1: CATEGORY SELECTION CARDS                          */}
         {/* ========================================================= */}
         {step === 1 && (
-          <div className="space-y-4 mb-8" role="radiogroup" aria-label={ar ? "اختر صفتك" : "Choisissez votre profil"}>
+          <>
+            {googleConfigured && (
+              <div className="mb-6">
+                <button
+                  type="button"
+                  onClick={handleGoogle}
+                  disabled={loading || googleLoading}
+                  className="w-full h-12 flex items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold transition-all shadow-2xs hover:border-slate-300 disabled:opacity-50 cursor-pointer"
+                >
+                  <GoogleMark size={18} />
+                  <span>
+                    {googleLoading
+                      ? ar
+                        ? "جارٍ الاتصال..."
+                        : "Connexion en cours..."
+                      : ar
+                        ? "التسجيل السريع باستخدام Google"
+                        : "Inscription rapide avec Google"}
+                  </span>
+                </button>
+                <div className="relative my-6 text-center">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-slate-200" />
+                  </div>
+                  <span className="relative bg-white px-3 text-xs text-slate-400 uppercase font-medium">
+                    {ar ? "أو اختيار صفتك والتسجيل المخصص" : "ou choisir votre profil pour vous inscrire"}
+                  </span>
+                </div>
+              </div>
+            )}
+            <div className="space-y-4 mb-8" role="radiogroup" aria-label={ar ? "اختر صفتك" : "Choisissez votre profil"}>
             {/* Card 1: Learner / Parent / Educator */}
             <div
               onClick={() => setCategory("LEARNER")}
@@ -505,7 +574,8 @@ export function RegisterWizard({ locale }: { locale: Locale }) {
               </div>
             </div>
           </div>
-        )}
+        </>
+      )}
 
         {/* ========================================================= */}
         {/* STEP 2: COORDINATES & GEOGRAPHIC LOCATION                 */}

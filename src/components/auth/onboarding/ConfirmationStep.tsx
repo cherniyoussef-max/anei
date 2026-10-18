@@ -1,66 +1,36 @@
-import Image from "next/image";
-import { Icon } from "@/components/ui/Icon";
+import { CheckCircle2, ShieldCheck, ArrowRight, ArrowLeft } from "lucide-react";
 
 export function ConfirmationStep({ ar, onContinue }: { ar: boolean; onContinue: () => void }) {
+  const ArrowIcon = ar ? ArrowLeft : ArrowRight;
+
   return (
-    <div className="wizard-confirm text-center py-4" role="status" aria-live="polite">
-      <div
-        style={{
-          width: 104,
-          height: 104,
-          margin: "0 auto 16px",
-          borderRadius: "50%",
-          background: "#fdfbf7",
-          border: "2px solid #eedec4",
-          overflow: "hidden",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          boxShadow: "0 10px 26px rgba(8, 45, 85, 0.12)",
-        }}
-      >
-        <Image
-          src="/media/auth-guide-celebrate.webp"
-          alt=""
-          width={104}
-          height={104}
-          className="object-cover"
-          priority
-        />
+    <div className="w-full text-center py-6" role="status" aria-live="polite">
+      <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-200/80 flex items-center justify-center text-emerald-600 mx-auto mb-5 shadow-xs">
+        <ShieldCheck className="w-8 h-8" />
       </div>
 
-      <div
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 6,
-          background: "#ecfdf5",
-          color: "#059669",
-          padding: "4px 12px",
-          borderRadius: 999,
-          fontWeight: 750,
-          fontSize: "0.78rem",
-          marginBottom: 10,
-          border: "1px solid #a7f3d0",
-        }}
-      >
-        <Icon name="check" size={14} />
+      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 mb-3">
+        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
         <span>{ar ? "تم إكمال الملف بنجاح" : "Profil validé avec succès"}</span>
       </div>
 
-      <h2 style={{ fontSize: "1.45rem", fontWeight: 800, color: "#082d55", margin: "0 0 8px" }}>
-        {ar ? "مرحبًا بك في الأكاديمية!" : "Bienvenue dans l’Académie !"}
+      <h2 className="text-2xl font-bold text-[#0A192F] tracking-tight mb-2">
+        {ar ? "مرحبًا بك في المنصة!" : "Bienvenue sur ANEI !"}
       </h2>
 
-      <p style={{ color: "#64748b", fontSize: "0.88rem", lineHeight: 1.5, margin: "0 auto 22px", maxWidth: "44ch" }}>
+      <p className="text-sm text-slate-500 max-w-md mx-auto leading-relaxed mb-6">
         {ar
           ? "تم حفظ بياناتك وتخصيص مسارك التعليمي. سننقلك الآن لتأكيد جلستك والبدء في استكشاف دوراتك."
           : "Vos informations sont enregistrées et votre espace est prêt. Nous vous accompagnons pour confirmer votre session et démarrer."}
       </p>
 
-      <button type="button" className="btn btn-primary btn-block auth-submit-btn" onClick={onContinue}>
+      <button
+        type="button"
+        className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[#0A192F] hover:bg-[#112240] text-white text-sm font-semibold transition-all shadow-xs"
+        onClick={onContinue}
+      >
         <span>{ar ? "الانتقال إلى مساحتي" : "Accéder à mon espace"}</span>
-        <span aria-hidden="true">{ar ? " ←" : " →"}</span>
+        <ArrowIcon className="w-4 h-4" />
       </button>
     </div>
   );

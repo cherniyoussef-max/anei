@@ -16,6 +16,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import type { Locale } from "@/types";
+import { AuthWizardProgress } from "@/components/auth/AuthWizardProgress";
 
 export function ResetPasswordWizard({ locale }: { locale: Locale }) {
   const router = useRouter();
@@ -230,25 +231,23 @@ export function ResetPasswordWizard({ locale }: { locale: Locale }) {
 
   // 3. Valid Token: Password Reset Form
   return (
-    <div className="w-full bg-white rounded-2xl border border-slate-200/90 p-8 sm:p-10 shadow-xs animate-fade-in">
-      <div className="text-center mb-8">
-        <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-slate-100 flex items-center justify-center text-[#0A192F]">
-          <Lock className="w-6 h-6 text-[#0A192F]" />
-        </div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-[#0A192F] tracking-tight mb-2">
-          {ar ? "كلمة مرور جديدة" : "Nouveau mot de passe"}
-        </h1>
-        <p className="text-slate-600 text-sm leading-relaxed max-w-md mx-auto">
-          {ar
+    <div className="w-full animate-fade-in">
+      <AuthWizardProgress
+        currentStep={2}
+        totalSteps={2}
+        stepTitle={ar ? "كلمة مرور جديدة" : "Nouveau mot de passe"}
+        stepSubtitle={
+          ar
             ? "اختر كلمة مرور قوية لا تقل عن 15 حرفاً لتأمين حسابك على الأكاديمية."
-            : "Choisissez un mot de passe robuste d'au moins 15 caractères pour sécuriser votre compte."}
+            : "Choisissez un mot de passe robuste d'au moins 15 caractères pour sécuriser votre compte."
+        }
+        locale={locale}
+      />
+      {emailParam && (
+        <p className="mb-6 -mt-4 text-xs font-semibold text-slate-500 font-mono">
+          {emailParam}
         </p>
-        {emailParam && (
-          <p className="mt-2 text-xs font-semibold text-slate-500 font-mono">
-            {emailParam}
-          </p>
-        )}
-      </div>
+      )}
 
       {submitError ? (
         <div

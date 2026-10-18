@@ -2,8 +2,18 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Icon } from "@/components/ui/Icon";
+import {
+  Mail,
+  MessageSquare,
+  Clock,
+  ArrowRight,
+  ArrowLeft,
+  AlertCircle,
+  Loader2,
+  CheckCircle2,
+} from "lucide-react";
 import type { Locale } from "@/types";
+import { AuthWizardProgress } from "@/components/auth/AuthWizardProgress";
 
 type Channel = { channel: "EMAIL" | "WHATSAPP"; destinationMasked: string };
 
@@ -121,10 +131,10 @@ export function VerificationChannelForm({ locale }: { locale: Locale }) {
 
   if (loading) {
     return (
-      <div className="auth-loading-state" style={{ padding: "40px 0", textAlign: "center" }}>
-        <div className="button-spinner" style={{ margin: "0 auto 12px" }} />
-        <p className="text-slate-500" style={{ fontSize: "0.88rem" }}>
-          {ar ? "جارٍ استرداد وسائل الأمان المتاحة..." : "Chargement des options de sécurité..."}
+      <div className="w-full text-center py-16 animate-fade-in">
+        <Loader2 className="w-8 h-8 animate-spin text-[#0056D2] mx-auto mb-4" />
+        <p className="text-slate-500 text-sm font-medium">
+          {ar ? "جارٍ استرداد خيارات الأمان..." : "Chargement des options de sécurité..."}
         </p>
       </div>
     );
@@ -132,21 +142,53 @@ export function VerificationChannelForm({ locale }: { locale: Locale }) {
 
   if (!channels.length) {
     return (
-      <div className="form-error" role="alert">
-        {ar ? "لا توجد قناة تحقق متاحة لحسابك." : "Aucun canal de vérification disponible pour votre compte."}
+      <div className="w-full animate-fade-in">
+        <div role="alert" className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm flex items-start gap-3 shadow-xs">
+          <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+          <div className="flex-1 font-medium">
+            {ar ? "لا توجد قناة تحقق متاحة لحسابك." : "Aucun canal de vérification disponible pour votre compte."}
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="auth-form" aria-busy={sending}>
+    <div className="w-full animate-fade-in" aria-busy={sending}>
+      <AuthWizardProgress
+        currentStep={2}
+        totalSteps={2}
+        stepTitle={ar ? "تأكيد جلسة العمل الآمنة (OTP)" : "Code de vérification"}
+        stepSubtitle={
+          challengeId
+            ? ar
+              ? `أدخل رمز الأمان المكون من 6 أرقام المرسل إلى ${selectedChannel?.destinationMasked || ""}.`
+              : `Entrez le code de sécurité à 6 chiffres envoyé à ${selectedChannel?.destinationMasked || ""}.`
+            : ar
+            ? "اختر طريقة استلام رمز أمان لمرة واحدة (صالح لمدة 5 دقائق) لتأكيد جلستك وحماية حسابك."
+            : "Choisissez un canal pour recevoir votre code à usage unique (valable 5 minutes) et sécuriser votre accès."
+        }
+        locale={locale}
+      />
+
+      {error ? (
+        <div
+          role="alert"
+          className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm flex items-start gap-3 shadow-xs"
+        >
+          <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+          <div className="flex-1 font-medium">{error}</div>
+        </div>
+      ) : null}
+
       {!challengeId ? (
-        <>
-          <div className="auth-channel-selector" role="radiogroup" aria-label={ar ? "طريقة التحقق" : "Canal de vérification"}>
-            <span className="auth-channel-title">
-              {ar ? "طريقة استلام رمز الأمان:" : "Mode d’envoi du code de sécurité :"}
+        <div className="space-y-6">
+          <div className="space-y-3">
+            <span className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-2">
+              {ar ? "طريقة استلام رمز الأمان :" : "Mode d’envoi du code de sécurité :"}
             </span>
-            <div className="auth-channel-grid">
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {channels.map((entry) => {
                 const isEmail = entry.channel === "EMAIL";
                 const isSelected = selected === entry.channel;
@@ -156,20 +198,28 @@ export function VerificationChannelForm({ locale }: { locale: Locale }) {
                     key={entry.channel}
                     role="radio"
                     aria-checked={isSelected}
-                    className={`auth-channel-card ${isSelected ? "is-selected" : ""}`}
                     onClick={() => setSelected(entry.channel)}
+                    className={`p-4 rounded-xl border-2 transition-all flex items-center gap-3 text-start ${
+                      isSelected
+                        ? "border-[#0A192F] bg-white shadow-2xs text-[#0A192F]"
+                        : "border-slate-200 bg-white hover:border-slate-300 text-slate-600"
+                    }`}
                   >
-                    <div className="channel-icon-wrap">
-                      <Icon name={isEmail ? "mail" : "phone"} size={18} />
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                      isEmail ? "bg-blue-50 text-[#0056D2]" : "bg-emerald-50 text-emerald-600"
+                    }`}>
+                      {isEmail ? <Mail className="w-4 h-4" /> : <MessageSquare className="w-4 h-4" />}
                     </div>
-                    <div className="channel-info">
-                      <strong>{isEmail ? (ar ? "البريد الإلكتروني" : "Email sécurisé") : "WhatsApp"}</strong>
-                      <small>{entry.destinationMasked}</small>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-bold leading-tight">
+                        {isEmail ? (ar ? "البريد الإلكتروني" : "Email sécurisé") : "WhatsApp"}
+                      </div>
+                      <div className="text-[11px] text-slate-400 font-mono truncate mt-0.5">
+                        {entry.destinationMasked}
+                      </div>
                     </div>
                     {isSelected && (
-                      <span className="channel-check" aria-hidden="true">
-                        <Icon name="check" size={13} />
-                      </span>
+                      <CheckCircle2 className="w-4 h-4 text-[#0056D2] shrink-0" />
                     )}
                   </button>
                 );
@@ -178,113 +228,112 @@ export function VerificationChannelForm({ locale }: { locale: Locale }) {
           </div>
 
           <button
-            className="btn btn-primary btn-block auth-submit-btn"
             type="button"
             onClick={sendOtp}
             disabled={!selected || sending}
+            className="w-full h-12 rounded-xl bg-[#0A192F] hover:bg-[#0056D2] text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-xs transition-all disabled:opacity-40"
           >
             {sending ? (
-              ar ? "جارٍ إرسال الرمز..." : "Envoi du code..."
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>{ar ? "جارٍ إرسال الرمز..." : "Envoi du code..."}</span>
+              </>
             ) : (
               <>
                 <span>{ar ? "إرسال رمز التحقق" : "Envoyer le code de vérification"}</span>
-                <span aria-hidden="true">{ar ? " ←" : " →"}</span>
+                <ArrowRight className="w-4 h-4 rtl:rotate-180" />
               </>
             )}
           </button>
-        </>
+        </div>
       ) : (
-        <div className="auth-otp-box">
-          <div className="auth-otp-header">
-            <label htmlFor="auth-otp-input" className="auth-otp-label">
-              <span>{ar ? "رمز التحقق السري (6 أرقام)" : "Code de vérification (6 chiffres)"}</span>
-            </label>
-            <span className="auth-otp-badge">
-              <Icon name="clock" size={12} />
-              <span>{ar ? "صالح لمدة 5 دقائق" : "Valable 5 minutes"}</span>
-            </span>
-          </div>
+        <div className="space-y-6">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label htmlFor="auth-otp-input" className="block text-xs font-semibold uppercase tracking-wider text-slate-600">
+                {ar ? "رمز التحقق السري (6 أرقام)" : "Code de vérification (6 chiffres)"} <span className="text-red-500">*</span>
+              </label>
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                <Clock className="w-3 h-3 text-amber-600" />
+                <span>{ar ? "صالح لمدة 5 دقائق" : "Valable 5 minutes"}</span>
+              </span>
+            </div>
 
-          <input
-            id="auth-otp-input"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            pattern="[0-9]{6}"
-            maxLength={6}
-            value={code}
-            onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && code.length === 6 && !sending) {
-                e.preventDefault();
-                verifyOtp();
-              }
-            }}
-            placeholder="••••••"
-            className="auth-otp-input"
-            autoFocus
-          />
+            <input
+              id="auth-otp-input"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]{6}"
+              maxLength={6}
+              value={code}
+              onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && code.length === 6 && !sending) {
+                  e.preventDefault();
+                  verifyOtp();
+                }
+              }}
+              placeholder="••••••"
+              className="w-full h-14 text-center tracking-[0.5em] text-2xl font-mono font-bold rounded-xl border border-slate-300 bg-white text-slate-900 focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-all shadow-2xs"
+              autoFocus
+            />
 
-          <div className="auth-otp-meta">
-            <span className="otp-destination">
-              <Icon name={selectedChannel?.channel === "EMAIL" ? "mail" : "phone"} size={13} />
-              <span>{selectedChannel?.destinationMasked}</span>
-            </span>
-            {expiresAt && (
-              <span className="otp-expiry">
-                <Icon name="clock" size={13} />
-                <span>
+            <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+              <span className="inline-flex items-center gap-1.5 font-medium">
+                {selectedChannel?.channel === "EMAIL" ? <Mail className="w-3.5 h-3.5" /> : <MessageSquare className="w-3.5 h-3.5" />}
+                <span className="font-mono">{selectedChannel?.destinationMasked}</span>
+              </span>
+              {expiresAt && (
+                <span className="text-[11px] text-slate-400">
                   {ar ? "ينتهي عند:" : "Expire à :"} {new Date(expiresAt).toLocaleTimeString(locale === "ar" ? "ar-TN" : "fr-TN", { hour: "2-digit", minute: "2-digit" })}
                 </span>
-              </span>
-            )}
+              )}
+            </div>
           </div>
 
           <button
-            className="btn btn-primary btn-block auth-submit-btn"
             type="button"
             onClick={verifyOtp}
             disabled={sending || code.length !== 6}
+            className="w-full h-12 rounded-xl bg-[#0A192F] hover:bg-[#0056D2] text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-xs transition-all disabled:opacity-40"
           >
             {sending ? (
-              ar ? "جارٍ التحقق..." : "Vérification..."
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>{ar ? "جارٍ التحقق..." : "Vérification en cours..."}</span>
+              </>
             ) : (
               <>
                 <span>{ar ? "تأكيد الرمز والمتابعة" : "Confirmer et accéder"}</span>
-                <span aria-hidden="true">{ar ? " ←" : " →"}</span>
+                <ArrowRight className="w-4 h-4 rtl:rotate-180" />
               </>
             )}
           </button>
 
-          <div className="auth-otp-actions" style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "8px" }}>
+          <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
             <button
               type="button"
-              className="btn btn-ghost btn-block auth-back-step-btn"
               onClick={sendOtp}
               disabled={sending || cooldown > 0}
+              className="font-semibold text-[#0056D2] hover:underline disabled:opacity-50"
             >
               {cooldown > 0
-                ? (ar ? `إعادة الإرسال متاحة خلال (${cooldown} ث)` : `Renvoyer disponible dans (${cooldown} s)`)
+                ? (ar ? `إعادة الإرسال بعد (${cooldown} ثانية)` : `Renvoyer le code (${cooldown}s)`)
                 : (ar ? "إعادة إرسال رمز جديد" : "Renvoyer un nouveau code")}
             </button>
 
             <button
               type="button"
-              className="auth-link-btn"
               onClick={handleBackToChannels}
               disabled={sending}
-              style={{ marginTop: "4px", textAlign: "center" }}
+              className="text-slate-500 hover:text-[#0A192F] inline-flex items-center gap-1 font-semibold transition-colors"
             >
-              {ar ? "← تغيير وسيلة الاستلام" : "← Changer de canal de réception"}
+              <ArrowLeft className="w-3.5 h-3.5 rtl:rotate-180" />
+              <span>{ar ? "تغيير وسيلة الاستلام" : "Changer de canal"}</span>
             </button>
           </div>
         </div>
       )}
-
-      {error ? (
-        <div className="form-error" role="alert" style={{ marginTop: "12px" }}>
-          {error}
-        </div>
-      ) : null}
     </div>
   );
 }

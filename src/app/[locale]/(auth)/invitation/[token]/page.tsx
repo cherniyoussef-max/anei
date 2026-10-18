@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { isLocale } from "@/lib/i18n";
 import { InvitationClaimFlow } from "@/components/interactive/InvitationClaimFlow";
-import { AuthShowcase } from "@/components/auth/AuthShowcase";
+import { AuthShell } from "@/components/auth/AuthShell";
 
 export const dynamic = "force-dynamic";
 
@@ -17,11 +17,10 @@ export default async function InvitationPage({ params }: { params: Promise<{ loc
   if (!isLocale(locale) || !token || token.length < 16 || token.length > 512) notFound();
 
   return (
-    <section className="auth-section">
-      <div className="container auth-grid">
-        <AuthShowcase locale={locale} mode="register" stage="verify" />
+    <AuthShell locale={locale} mode="register">
+      <div className="w-full">
         <InvitationClaimFlow token={token} locale={locale} />
       </div>
-    </section>
+    </AuthShell>
   );
 }

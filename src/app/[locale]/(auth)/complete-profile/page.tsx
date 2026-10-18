@@ -4,7 +4,7 @@ import { requirePrimaryUser } from "@/server/auth/session";
 import { resolveOnboardingState, onboardingPathFor } from "@/server/auth/onboarding";
 import { getUserPersonas } from "@/server/queries/personas";
 import { CompleteProfileForm } from "@/components/auth/CompleteProfileForm";
-import { AuthShowcase } from "@/components/auth/AuthShowcase";
+import { AuthShell } from "@/components/auth/AuthShell";
 import type { Persona } from "@/modules/personas/domain/permissions";
 
 export const dynamic = "force-dynamic";
@@ -21,13 +21,10 @@ export default async function CompleteProfilePage({ params }: { params: Promise<
   const initialPersona = (memberships.find((row) => row.isPrimary)?.persona as Persona | undefined) ?? null;
 
   return (
-    <section className="auth-section">
-      <div className="container auth-grid">
-        <AuthShowcase locale={locale} mode="register" />
-        <div className="auth-card">
-          <CompleteProfileForm locale={locale} email={session.user.email} name={session.user.name} initialPersona={initialPersona} />
-        </div>
+    <AuthShell locale={locale} mode="register">
+      <div className="w-full">
+        <CompleteProfileForm locale={locale} email={session.user.email} name={session.user.name} initialPersona={initialPersona} />
       </div>
-    </section>
+    </AuthShell>
   );
 }

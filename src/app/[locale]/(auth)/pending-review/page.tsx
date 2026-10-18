@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import { isLocale } from "@/lib/i18n";
 import { PageHero } from "@/components/ui/PageHero";
 import { Icon } from "@/components/ui/Icon";
 import { requireUser } from "@/server/auth/session";
 import { getUserPersonas } from "@/server/queries/personas";
+import { GraduationCap, ShieldCheck, Stethoscope, UserCheck } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -14,13 +14,6 @@ const personaLabel: Record<string, { fr: string; ar: string }> = {
   AVS: { fr: "Accompagnant (AVS)", ar: "مرافق حياة مدرسية" },
   SPECIALIST: { fr: "Spécialiste de santé", ar: "أخصائي رعاية" },
   ORGANIZATION: { fr: "Établissement / Organisation", ar: "مؤسسة تعليمية" },
-};
-
-const PERSONA_FIGURINE: Record<string, string> = {
-  TEACHER: "/media/persona-teacher.webp",
-  AVS: "/media/persona-avs.webp",
-  SPECIALIST: "/media/persona-specialist.webp",
-  ORGANIZATION: "/media/persona-institution.webp",
 };
 
 const statusLabel: Record<string, { fr: string; ar: string }> = {
@@ -38,7 +31,7 @@ export default async function PendingReviewPage({ params }: { params: Promise<{ 
   const primary = memberships.find((row) => row.isPrimary);
   const persona = primary ? personaLabel[primary.persona] : undefined;
   const status = primary ? statusLabel[primary.status] : undefined;
-  const figurine = primary && primary.persona in PERSONA_FIGURINE ? PERSONA_FIGURINE[primary.persona] : "/media/auth-guide-welcome.webp";
+  const personaKey = primary?.persona;
 
   return (
     <>
@@ -55,14 +48,16 @@ export default async function PendingReviewPage({ params }: { params: Promise<{ 
           <div className="pending-review-layout">
             <div className="pending-review-card">
               <div className="pending-review-head">
-                <div className="pending-review-avatar">
-                  <Image
-                    src={figurine}
-                    alt=""
-                    width={64}
-                    height={64}
-                    className="object-cover"
-                  />
+                <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[#0056D2] shrink-0 shadow-xs">
+                  {personaKey === "TEACHER" ? (
+                    <GraduationCap className="w-7 h-7" />
+                  ) : personaKey === "AVS" ? (
+                    <ShieldCheck className="w-7 h-7" />
+                  ) : personaKey === "SPECIALIST" ? (
+                    <Stethoscope className="w-7 h-7" />
+                  ) : (
+                    <UserCheck className="w-7 h-7" />
+                  )}
                 </div>
                 <div className="pending-review-title">
                   <span className="pending-status-badge">
