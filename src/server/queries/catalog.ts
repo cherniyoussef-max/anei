@@ -65,7 +65,7 @@ export async function getPublicCourseCategories(): Promise<string[]> {
       const cached = await redis.get("cache:catalog:categories");
       if (cached) {
         const parsed = JSON.parse(cached) as string[];
-        cachedCategories = { data: parsed, expiresAt: now + 60_000 };
+        cachedCategories = { data: parsed, expiresAt: now + 600_000 };
         return parsed;
       }
     }
@@ -75,12 +75,12 @@ export async function getPublicCourseCategories(): Promise<string[]> {
 
   const rows = await db.selectDistinct({ value: courses.category }).from(courses).where(publicCourseFilter).orderBy(asc(courses.category));
   const result = rows.map((row) => row.value).filter(Boolean);
-  cachedCategories = { data: result, expiresAt: now + 60_000 };
+  cachedCategories = { data: result, expiresAt: now + 600_000 };
 
   try {
     const redis = await getRedis();
     if (redis) {
-      await redis.set("cache:catalog:categories", JSON.stringify(result), { EX: 180 });
+      await redis.set("cache:catalog:categories", JSON.stringify(result), { EX: 600 });
     }
   } catch {
     // Non-blocking cache write failure
@@ -89,7 +89,24 @@ export async function getPublicCourseCategories(): Promise<string[]> {
   return result;
 }
 
-export async function searchPublishedCourses(input: CourseSearchInput = {}) {
+type PublishedCoursesSearchResult = {
+  items: (typeof courses.$inferSelect)[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  categories: string[];
+};
+
+let defaultSearchCache: { data: PublishedCoursesSearchResult; expiresAt: number } | null = null;
+
+export async function searchPublishedCourses(input: CourseSearchInput = {}): Promise<PublishedCoursesSearchResult> {
+  const isDefault = (!input.page || input.page === 1) && (!input.pageSize || input.pageSize === 12) && !input.q && !input.category && !input.level && !input.mode && !input.price && !input.sort;
+  const now = Date.now();
+  if (isDefault && defaultSearchCache && defaultSearchCache.expiresAt > now) {
+    return defaultSearchCache.data;
+  }
+
   const { page, pageSize, offset } = pageBounds(input.page, input.pageSize);
   const q = normalizedQuery(input.q);
   const filters: SQL[] = [publicCourseFilter];
@@ -136,7 +153,21 @@ export async function searchPublishedCourses(input: CourseSearchInput = {}) {
     db.select().from(courses).where(where).orderBy(...order).limit(pageSize).offset(offset),
     getPublicCourseCategories(),
   ]);
-  return { items, total, page, pageSize, totalPages: Math.max(1, Math.ceil(total / pageSize)), categories };
+
+  const result: PublishedCoursesSearchResult = {
+    items,
+    total,
+    page,
+    pageSize,
+    totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    categories,
+  };
+
+  if (isDefault) {
+    defaultSearchCache = { data: result, expiresAt: now + 180_000 };
+  }
+
+  return result;
 }
 
 export async function listPublishedCourses() {

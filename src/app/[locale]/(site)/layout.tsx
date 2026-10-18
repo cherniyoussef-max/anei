@@ -61,7 +61,6 @@ export default async function SiteLayout({ children, params }: Readonly<{ childr
     }
   }
 
-  const isHome = pathname === `/${locale}` || pathname === `/${locale}/` || pathname === "/";
   const isAssistantPage = pathname.includes("/assistant");
   let pushedWebinars: Awaited<ReturnType<typeof getPushedLiveWebinars>> = [];
   try {
@@ -76,7 +75,7 @@ export default async function SiteLayout({ children, params }: Readonly<{ childr
       <SiteHeader locale={locale} initialUser={initialUser} />
       <main id="main-content" tabIndex={-1}>{children}</main>
       <SiteFooter locale={locale} />
-      {!isHome && !isAssistantPage && <PublicAssistantDrawer locale={locale as "fr" | "ar"} />}
+      {!isAssistantPage && <PublicAssistantDrawer locale={locale as "fr" | "ar"} />}
     </div>
   );
 }

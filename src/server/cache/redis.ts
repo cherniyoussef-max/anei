@@ -2,41 +2,75 @@ import "server-only";
 import { createClient } from "redis";
 import { env } from "@/server/env";
 
+function isLoopback(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase();
+    return host === "localhost" || host === "127.0.0.1" || host === "::1";
+  } catch {
+    return false;
+  }
+}
+
 function createRedisClient(url: string) {
-  return createClient({ url });
+  return createClient({
+    url,
+    socket: {
+      connectTimeout: 400,
+      reconnectStrategy: false,
+    },
+  });
 }
 
 type RedisClient = ReturnType<typeof createRedisClient>;
 type RedisGlobal = typeof globalThis & {
-  __aneiRedis?: RedisClient;
-  __aneiRedisConnect?: Promise<RedisClient>;
+  __aneiRedis?: RedisClient | null;
+  __aneiRedisConnect?: Promise<RedisClient | null>;
+  __aneiRedisFailedUntil?: number;
 };
 
 const shared = globalThis as RedisGlobal;
 
 function buildClient(): RedisClient | null {
   if (!env.REDIS_URL) return null;
-  const client = createRedisClient(env.REDIS_URL);
-  client.on("error", (error) => {
-    if (env.NODE_ENV !== "test") console.error("[redis]", error instanceof Error ? error.message : error);
-  });
-  return client;
+  if ((process.env.VERCEL === "1" || env.NODE_ENV === "production") && isLoopback(env.REDIS_URL)) {
+    return null;
+  }
+  try {
+    const client = createRedisClient(env.REDIS_URL);
+    client.on("error", (error) => {
+      if (env.NODE_ENV !== "test") console.warn("[redis]", error instanceof Error ? error.message : error);
+    });
+    return client;
+  } catch {
+    return null;
+  }
 }
 
 export const redis: RedisClient | null = env.REDIS_URL
-  ? (shared.__aneiRedis ?? (shared.__aneiRedis = buildClient()!))
+  ? (shared.__aneiRedis !== undefined ? shared.__aneiRedis : (shared.__aneiRedis = buildClient()))
   : null;
 
 export async function getRedis(): Promise<RedisClient | null> {
   if (!redis) return null;
+  if (shared.__aneiRedisFailedUntil && Date.now() < shared.__aneiRedisFailedUntil) {
+    return null;
+  }
   if (redis.isOpen) return redis;
-  shared.__aneiRedisConnect ??= redis.connect();
+
   try {
-    await shared.__aneiRedisConnect;
-    return redis;
-  } catch (error) {
+    shared.__aneiRedisConnect ??= Promise.race([
+      redis.connect().then(() => redis),
+      new Promise<null>((_, reject) =>
+        setTimeout(() => reject(new Error("Redis connect timeout (400ms)")), 400),
+      ),
+    ]);
+    const client = await shared.__aneiRedisConnect;
+    return client;
+  } catch {
+    shared.__aneiRedisFailedUntil = Date.now() + 60_000;
     shared.__aneiRedisConnect = undefined;
-    throw error;
+    return null;
   }
 }
 

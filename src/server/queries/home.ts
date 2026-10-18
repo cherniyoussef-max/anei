@@ -35,7 +35,7 @@ export async function getHomeStats() {
       const cached = await redis.get(HOME_STATS_CACHE_KEY);
       if (cached) {
         const parsed = JSON.parse(cached);
-        memoryCache = { data: parsed, expiresAt: now + 60_000 };
+        memoryCache = { data: parsed, expiresAt: now + 300_000 };
         return parsed;
       }
     }
@@ -44,7 +44,7 @@ export async function getHomeStats() {
   }
 
   const stats = await fetchHomeStatsFromDb();
-  memoryCache = { data: stats, expiresAt: now + 60_000 };
+  memoryCache = { data: stats, expiresAt: now + 300_000 };
 
   try {
     const redis = await getRedis();

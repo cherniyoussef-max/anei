@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, Sparkles } from "lucide-react";
+import { Search } from "lucide-react";
 import type { Locale } from "@/types";
 import { AneiLogo } from "@/components/brand/AneiLogo";
 import { MobileMenu } from "@/components/interactive/MobileMenu";
@@ -17,7 +17,6 @@ export function SiteHeader({ locale, initialUser }: { locale: Locale; initialUse
     ["", ar ? "الرئيسية" : "Accueil"],
     ["formations", ar ? "التكوين" : "Formations"],
     ["bibliotheque", ar ? "المكتبة" : "Bibliothèque"],
-    ["assistant", ar ? "المساعد الذكي" : "Assistant IA"],
     ["avs", ar ? "دليل AVS" : "AVS"],
     ["specialistes", ar ? "الأخصائيون" : "Spécialistes"],
     ["webinaires", ar ? "الندوات" : "Webinaires"],
@@ -56,15 +55,10 @@ export function SiteHeader({ locale, initialUser }: { locale: Locale; initialUse
                   className={`relative flex items-center px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 rounded-lg ${
                     isActive
                       ? "bg-slate-900/[0.06] text-slate-950 font-semibold after:absolute after:bottom-0 after:inset-x-3 after:h-[2px] after:rounded-full after:bg-slate-900"
-                      : segment === "assistant"
-                      ? "text-slate-800 hover:text-slate-950 hover:bg-amber-500/10 font-medium"
                       : "text-slate-600 hover:text-slate-950 hover:bg-slate-100/60"
                   }`}
                   aria-current={isActive ? "page" : undefined}
                 >
-                  {segment === "assistant" && (
-                    <Sparkles size={13} className="text-[#B58D3D] inline me-1.5 flex-none" />
-                  )}
                   {label}
                 </Link>
               );

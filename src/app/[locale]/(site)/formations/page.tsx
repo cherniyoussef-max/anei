@@ -35,10 +35,12 @@ export default async function CoursesPage({ params, searchParams }: { params: Pr
       : undefined,
   };
   const page = pageNumber(one(raw.page));
-  const data = await publicDataOr("courses", () => searchPublishedCourses({ ...filters, page }), {
-    items: [], total: 0, page, pageSize: 12, totalPages: 1, categories: [],
-  });
-  const session = await publicDataOr("courses-session", getSession, null);
+  const [data, session] = await Promise.all([
+    publicDataOr("courses", () => searchPublishedCourses({ ...filters, page }), {
+      items: [], total: 0, page, pageSize: 12, totalPages: 1, categories: [],
+    }),
+    publicDataOr("courses-session", getSession, null),
+  ]);
   const enrollmentByCourseId = new Map(
     session
       ? (await publicDataOr("courses-enrollments", () => getEnrollmentProgressForCourses(session.user.id, data.items.map((course) => course.id)), []))

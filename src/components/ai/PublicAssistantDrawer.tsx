@@ -25,16 +25,16 @@ interface PublicAssistantDrawerProps {
 
 const SUGGESTIONS = {
   fr: [
-    "🎯 Adapter un exercice pour élève TDAH / DYS",
-    "🧩 Que faire face à une crise ou refus de tâche ?",
-    "📋 Créer une grille d'observation / PEI",
-    "💡 Expliquer simplement le TDAH, la Dyslexie ou le TSA",
+    "👤 Comment créer un compte et m'inscrire ?",
+    "🎓 Quelle formation choisir pour ma situation ?",
+    "🧩 Mon enfant a un TSA (autisme), que recommandez-vous ?",
+    "💼 Comment devenir accompagnant scolaire (AVS) certifié ?",
   ],
   ar: [
-    "🎯 تكييف تمرين لتلميذ TDAH أو عسر التعلّم",
-    "🧩 التعامل مع نوبة غضب أو تفريغ حسي",
-    "📋 إعداد شبكة ملاحظة وخطة مرافقة (PEI)",
-    "💡 شرح مبسط لاضطراب فرط الحركة أو التوحد",
+    "👤 كيف أنشئ حساباً وأسجل في المنصة؟",
+    "🎓 ما هي الدورة المناسبة لوضعيتي؟",
+    "🧩 طفلي يعاني من طيف التوحد (TSA)، بماذا تنصحني؟",
+    "💼 كيف أصبح مرافقاً مدرسياً (AVS) معتمداً؟",
   ],
 };
 
@@ -234,13 +234,13 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
               </div>
               <div>
                 <h3 className="text-sm font-semibold tracking-wide text-white flex items-center gap-1.5">
-                  {isRtl ? "المساعد التربوي الدامج" : "Assistant Éducation Inclusive"}
+                  {isRtl ? "مساعد ANEI الذكي" : "Assistant ANEI"}
                   <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-[#DDA74A]/20 text-[#DDA74A] border border-[#DDA74A]/30">
-                    Officiel
+                    Guide & Conseil
                   </span>
                 </h3>
                 <p className="text-xs text-slate-300">
-                  {isRtl ? "إرشاد الأولياء والعائلات" : "Orientation & ressources ANEI"}
+                  {isRtl ? "إنشاء حساب، استشارات وتوجيه للتكوين" : "Création de compte, conseil & formations"}
                 </p>
               </div>
             </div>
@@ -263,12 +263,12 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold text-slate-800">
-                    {isRtl ? "مرحباً بكم في الأكاديمية" : "Bienvenue à l'Académie"}
+                    {isRtl ? "كيف يمكنني مساعدتك اليوم؟" : "Comment puis-je vous aider ?"}
                   </h4>
-                  <p className="text-xs text-slate-500 mt-1 max-w-[280px]">
+                  <p className="text-xs text-slate-500 mt-1 max-w-[300px]">
                     {isRtl
-                      ? "اطرحوا أسئلتكم حول برامجنا، مرافقة AVS، أو التربية الدامجة."
-                      : "Posez vos questions sur nos formations, l'accompagnement AVS ou nos ressources."}
+                      ? "إرشادك لإنشاء حساب، الإجابة عن استفساراتك، واقتراح الدورة الأنسب لوضعيتك للتسجيل."
+                      : "Créer un compte, répondre à vos questions ou vous recommander la formation certifiante adaptée à votre situation."}
                   </p>
                 </div>
 

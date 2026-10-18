@@ -19,7 +19,7 @@ export function MobileMenu({ locale }: { locale: Locale }) {
   const pathname = usePathname();
   const ar = locale === "ar";
   const en = locale === "en";
-  const links = [["", c.nav.home], ["formations", c.nav.courses], ["bibliotheque", c.nav.library], ["assistant", ar ? "المساعد الذكي" : en ? "AI Assistant" : "Assistant IA"], ["avs", c.nav.avs], ["specialistes", c.nav.specialists], ["webinaires", c.nav.webinars], ["actualites", c.nav.news], ["about", c.nav.about], ["contact", c.nav.contact]];
+  const links = [["", c.nav.home], ["formations", c.nav.courses], ["bibliotheque", c.nav.library], ["avs", c.nav.avs], ["specialistes", c.nav.specialists], ["webinaires", c.nav.webinars], ["actualites", c.nav.news], ["about", c.nav.about], ["contact", c.nav.contact]];
   const localeOrder: Locale[] = ["fr", "en", "ar"];
   const localeLabel: Record<Locale, string> = { fr: "Français", en: "English", ar: "العربية" };
   const nextLocale = localeOrder[(localeOrder.indexOf(locale) + 1) % localeOrder.length];
