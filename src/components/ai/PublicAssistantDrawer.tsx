@@ -489,10 +489,10 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
           dir={isRtl ? "rtl" : "ltr"}
           className={`fixed bottom-5 sm:bottom-6 ${
             isRtl ? "left-5 sm:left-6" : "right-5 sm:right-6"
-          } z-50 w-[370px] sm:w-[388px] h-[520px] max-h-[calc(100vh-6rem)] rounded-2xl border border-slate-200/90 bg-white shadow-[0_12px_40px_-8px_rgba(10,25,47,0.16)] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200`}
+          } z-50 w-[380px] sm:w-[400px] h-[535px] max-h-[calc(100vh-5rem)] rounded-2xl border border-slate-200/90 bg-white shadow-[0_12px_40px_-8px_rgba(10,25,47,0.16)] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200`}
         >
           {/* 1. Minimalist & Institutional Header (Light Surface, No Sparkles, No Online Pill) */}
-          <div className="bg-white border-b border-slate-200/80 px-4 py-3.5 flex items-center justify-between shrink-0">
+          <div className="bg-white border-b border-slate-200/80 px-4 py-3 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="shrink-0 flex items-center justify-center">
                 <AneiLogo locale={locale} variant="mark" withText={false} height={22} className="shrink-0" />
@@ -538,11 +538,11 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
           </div>
 
           {/* 2. Body: Clean Welcome Bubble & Untruncated Suggestions (Zero Scrollbar on Open) */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#F8FAFC]/50 [scrollbar-width:thin]">
+          <div className="flex-1 overflow-y-auto p-3.5 space-y-2.5 bg-[#F8FAFC]/50 [scrollbar-width:thin]">
             {messages.length === 0 ? (
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-2.5">
                 {/* Natural Welcome Bubble */}
-                <div className="rounded-xl border border-slate-200/70 bg-[#F8FAFC] p-3.5 text-[13px] text-slate-700 leading-relaxed shadow-2xs">
+                <div className="rounded-xl border border-slate-200/70 bg-[#F8FAFC] p-3 text-[12.5px] text-slate-700 leading-relaxed shadow-2xs">
                   {isLearnerPath
                     ? (isRtl
                         ? "مرحباً بك. كيف يمكنني مرافقتك اليوم في متابعة دروسك، المراجعة أو الاستعداد لاختبار الشهادة؟"
@@ -559,7 +559,7 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
                       key={idx}
                       type="button"
                       onClick={() => handleSend(item.query)}
-                      className="w-full text-start px-3.5 py-2.5 rounded-xl border border-slate-200/90 bg-white hover:bg-[#F8FAFC] hover:border-slate-300 text-[12.5px] font-medium text-[#0A192F] leading-snug transition-all flex items-center justify-between gap-2 cursor-pointer shadow-2xs group"
+                      className="w-full text-start px-3.5 py-2.5 rounded-xl border border-slate-200/90 bg-white hover:bg-[#F8FAFC] hover:border-slate-300 text-[12px] font-medium text-[#0A192F] leading-snug transition-all flex items-center justify-between gap-2 cursor-pointer shadow-2xs group"
                     >
                       <span className="flex-1 text-slate-800 font-medium">{item.label}</span>
                       <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-slate-700 shrink-0 rtl:rotate-180 transition-colors" />
