@@ -13,11 +13,12 @@ import { consumeRateLimit } from "@/server/security/rate-limit";
 import { getRequestId } from "@/server/auth/request-id";
 import { recordAuthEvent } from "@/server/auth/events";
 import { env } from "@/server/env";
+import type { LegacyProfileType } from "@/modules/personas/domain/permissions";
 
 export const dynamic = "force-dynamic";
 
 export const registerWizardSchema = z.object({
-  category: z.enum(["LEARNER", "AVS", "SPECIALIST"]),
+  category: z.enum(["LEARNER", "STUDENT", "PARENT", "TEACHER", "AVS", "SPECIALIST", "ORGANIZATION"]),
   firstName: z.string().trim().min(1).max(80),
   lastName: z.string().trim().min(1).max(80),
   email: z.string().trim().email().toLowerCase(),
@@ -28,11 +29,20 @@ export const registerWizardSchema = z.object({
   city: z.string().trim().min(1).max(120),
   acquisitionSource: z.string().trim().max(100).optional(),
   ageGroup: z.string().trim().max(50).optional(),
-  // Learner fields
+  // Learner & Student fields
   subRole: z.string().trim().max(80).optional(),
   educationLevel: z.string().trim().max(120).optional(),
   institutionName: z.string().trim().max(160).optional(),
   interests: z.array(z.string().trim().max(60)).optional(),
+  // Parent fields
+  childNeeds: z.array(z.string().trim().max(60)).optional(),
+  childCycle: z.string().trim().max(100).optional(),
+  childSchool: z.string().trim().max(160).optional(),
+  familyPriorities: z.array(z.string().trim().max(80)).optional(),
+  // Teacher fields
+  teachingCycle: z.string().trim().max(100).optional(),
+  discipline: z.string().trim().max(120).optional(),
+  teacherObjectives: z.array(z.string().trim().max(80)).optional(),
   // AVS fields
   accompanimentType: z.string().trim().max(100).optional(),
   schoolsCovered: z.string().trim().max(255).optional(),
@@ -50,6 +60,12 @@ export const registerWizardSchema = z.object({
   licenseOrOrderNumber: z.string().trim().max(80).optional(),
   inPersonPriceMillimes: z.number().int().min(0).max(1000000).optional(),
   bio: z.string().trim().max(2000).optional(),
+  // Organization fields
+  organizationName: z.string().trim().max(160).optional(),
+  organizationType: z.string().trim().max(120).optional(),
+  representativeRole: z.string().trim().max(120).optional(),
+  organizationSize: z.string().trim().max(60).optional(),
+  organizationNeeds: z.array(z.string().trim().max(80)).optional(),
   // Security
   password: z.string().min(15).max(128),
   locale: z.enum(["fr", "ar"]).default("fr"),
@@ -100,7 +116,25 @@ export async function POST(request: Request) {
   }
 
   const normalizedPhone = normalizeTunisiaPhone(data.phone) || data.phone.trim();
-  const profileType = data.category === "AVS" ? "avs" : data.category === "SPECIALIST" ? "specialist" : "learner";
+  const rawCat = data.category;
+  const isStudent = rawCat === "STUDENT" || rawCat === "LEARNER";
+  const isParent = rawCat === "PARENT";
+  const isTeacher = rawCat === "TEACHER";
+  const isAvs = rawCat === "AVS";
+  const isSpecialist = rawCat === "SPECIALIST";
+  const isOrg = rawCat === "ORGANIZATION";
+
+  const profileType: LegacyProfileType = isAvs
+    ? "avs"
+    : isSpecialist
+    ? "specialist"
+    : isParent
+    ? "parent"
+    : isTeacher
+    ? "teacher"
+    : isOrg
+    ? "institution"
+    : "learner";
 
   // 1. Create account via Better Auth
   let signUpRes;
@@ -149,7 +183,7 @@ export async function POST(request: Request) {
         privacyAccepted: true as const,
       };
 
-      if (data.category === "LEARNER") {
+      if (isStudent) {
         await completeUserProfileTx(
           tx,
           createdUserId,
@@ -158,14 +192,54 @@ export async function POST(request: Request) {
             requestedPersona: "STUDENT",
             educationLevel: data.educationLevel || "Licence / Études supérieures",
             institutionName: data.institutionName || "Académie ANEI",
-            subRole: data.subRole,
+            subRole: data.subRole || "Étudiant / En reconversion",
             interests: data.interests || [],
           },
           now,
           null,
           false,
         );
-      } else if (data.category === "AVS") {
+        await tx
+          .update(personaMembership)
+          .set({ status: "ACTIVE", updatedAt: now })
+          .where(and(eq(personaMembership.userId, createdUserId), eq(personaMembership.persona, "STUDENT")));
+      } else if (isParent) {
+        await completeUserProfileTx(
+          tx,
+          createdUserId,
+          {
+            ...common,
+            requestedPersona: "PARENT",
+          },
+          now,
+          null,
+          false,
+        );
+        await tx
+          .update(personaMembership)
+          .set({ status: "ACTIVE", updatedAt: now })
+          .where(and(eq(personaMembership.userId, createdUserId), eq(personaMembership.persona, "PARENT")));
+      } else if (isTeacher) {
+        await completeUserProfileTx(
+          tx,
+          createdUserId,
+          {
+            ...common,
+            requestedPersona: "TEACHER",
+            discipline: data.discipline || "Pédagogie inclusive",
+            qualification: data.qualification || "Cadre éducatif",
+            experienceYears: data.experienceYears ?? 3,
+            professionalInstitution: data.institutionName || "Établissement scolaire",
+          },
+          now,
+          null,
+          false,
+        );
+        await tx
+          .update(personaMembership)
+          .set({ status: "ACTIVE", updatedAt: now })
+          .where(and(eq(personaMembership.userId, createdUserId), eq(personaMembership.persona, "TEACHER")));
+      } else if (isAvs) {
         await completeUserProfileTx(
           tx,
           createdUserId,
@@ -192,7 +266,7 @@ export async function POST(request: Request) {
           .update(personaMembership)
           .set({ status: "ACTIVE", updatedAt: now })
           .where(and(eq(personaMembership.userId, createdUserId), eq(personaMembership.persona, "AVS")));
-      } else {
+      } else if (isSpecialist) {
         await completeUserProfileTx(
           tx,
           createdUserId,
@@ -221,11 +295,32 @@ export async function POST(request: Request) {
           .update(personaMembership)
           .set({ status: "ACTIVE", updatedAt: now })
           .where(and(eq(personaMembership.userId, createdUserId), eq(personaMembership.persona, "SPECIALIST")));
+      } else if (isOrg) {
+        await completeUserProfileTx(
+          tx,
+          createdUserId,
+          {
+            ...common,
+            requestedPersona: "ORGANIZATION",
+            organizationName: data.organizationName || data.institutionName || "Établissement Partenaire ANEI",
+            organizationType: data.organizationType || "École privée",
+            representativeRole: data.representativeRole || "Directeur / Coordinateur",
+          },
+          now,
+          null,
+          false,
+        );
+        await tx
+          .update(personaMembership)
+          .set({ status: "ACTIVE", updatedAt: now })
+          .where(and(eq(personaMembership.userId, createdUserId), eq(personaMembership.persona, "ORGANIZATION")));
       }
 
       // 3. Record structured Onboarding Analytics for Super Admin Cockpit
       const recordedPathologies = data.interventionDomains?.length
         ? data.interventionDomains
+        : data.childNeeds?.length
+        ? data.childNeeds
         : data.interests?.length
         ? data.interests
         : [];
@@ -235,8 +330,20 @@ export async function POST(request: Request) {
         .values({
           userId: createdUserId,
           category: data.category,
-          subRole: data.category === "LEARNER" ? data.subRole : data.specialty,
-          specialty: data.category === "SPECIALIST" ? (data.specialty || "Orthophoniste") : (data.category === "AVS" ? "AVS" : null),
+          subRole: isStudent
+            ? data.subRole
+            : isParent
+            ? "Parent d'élève"
+            : isTeacher
+            ? data.discipline || "Enseignant"
+            : isOrg
+            ? data.organizationType || "Établissement"
+            : data.specialty,
+          specialty: isSpecialist
+            ? (data.specialty || "Orthophoniste")
+            : isAvs
+            ? "AVS"
+            : null,
           governorate: data.governorate,
           city: data.city,
           acquisitionSource: data.acquisitionSource || "DIRECT",
@@ -250,6 +357,12 @@ export async function POST(request: Request) {
             schoolsCovered: data.schoolsCovered,
             workplaceName: data.workplaceName,
             licenseNumber: data.licenseOrOrderNumber,
+            childCycle: data.childCycle,
+            childSchool: data.childSchool,
+            teachingCycle: data.teachingCycle,
+            organizationName: data.organizationName,
+            organizationType: data.organizationType,
+            representativeRole: data.representativeRole,
           },
           createdAt: now,
           updatedAt: now,
@@ -283,12 +396,22 @@ export async function POST(request: Request) {
     },
   });
 
-  // 5. Intelligent redirect determination
+  // 5. Intelligent redirect determination - Each category has its own dedicated dashboard
   let redirectUrl = `/${data.locale}/dashboard`;
   if (env.AUTH_REQUIRE_EMAIL_VERIFICATION && !signUpRes.user.emailVerified) {
     redirectUrl = `/${data.locale}/verify-email?email=${encodeURIComponent(data.email)}`;
-  } else if (data.category === "SPECIALIST" || data.category === "AVS") {
-    redirectUrl = `/${data.locale}/dashboard/praticien`;
+  } else if (isParent) {
+    redirectUrl = `/${data.locale}/parent`;
+  } else if (isTeacher) {
+    redirectUrl = `/${data.locale}/teacher`;
+  } else if (isAvs) {
+    redirectUrl = `/${data.locale}/avs/espace`;
+  } else if (isSpecialist) {
+    redirectUrl = `/${data.locale}/specialist`;
+  } else if (isOrg) {
+    redirectUrl = `/${data.locale}/organization`;
+  } else {
+    redirectUrl = `/${data.locale}/dashboard`;
   }
 
   return NextResponse.json({

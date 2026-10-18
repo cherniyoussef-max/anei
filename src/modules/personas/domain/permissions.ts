@@ -24,16 +24,14 @@ export function defaultStatusFor(persona: Persona): PersonaStatus {
   return isProfessionalPersona(persona) ? "PENDING_REVIEW" : "ACTIVE";
 }
 
-// Legacy `user.profileType` values (kept for backward compatibility) mapped
-// onto canonical personas.
-export const profileTypeToPersona: Record<string, Persona> = {
+export const profileTypeToPersona = {
   learner: "STUDENT",
   teacher: "TEACHER",
   avs: "AVS",
   parent: "PARENT",
   specialist: "SPECIALIST",
   institution: "ORGANIZATION",
-};
+} as const;
 
 export type LegacyProfileType = keyof typeof profileTypeToPersona;
 
@@ -48,7 +46,7 @@ export type LegacyProfileType = keyof typeof profileTypeToPersona;
  * supported values instead of defaulting.
  */
 export function legacyPersonaFromProfileType(profileType: string): Persona {
-  return profileTypeToPersona[profileType] ?? "STUDENT";
+  return (profileTypeToPersona as Record<string, Persona>)[profileType] ?? "STUDENT";
 }
 
 /**

@@ -57,8 +57,8 @@ export const TUNISIA_GOVERNORATES_BILINGUAL = [
   { fr: "Zaghouan", ar: "زغوان" },
 ];
 
-export type CategoryChoice = "LEARNER" | "AVS" | "SPECIALIST";
-export type ProfileTypeChoice = "STUDENT" | "PARENT" | "TEACHER" | "AVS" | "SPECIALIST";
+export type CategoryChoice = "LEARNER" | "STUDENT" | "PARENT" | "TEACHER" | "AVS" | "SPECIALIST" | "ORGANIZATION";
+export type ProfileTypeChoice = "STUDENT" | "PARENT" | "TEACHER" | "AVS" | "SPECIALIST" | "ORGANIZATION";
 
 export interface ProfileTypeItem {
   id: ProfileTypeChoice;
@@ -78,7 +78,7 @@ export interface ProfileTypeItem {
 export const PROFILE_DEFINITIONS: ProfileTypeItem[] = [
   {
     id: "STUDENT",
-    category: "LEARNER",
+    category: "STUDENT",
     subRole: "Étudiant / En reconversion",
     icon: GraduationCap,
     image: "/media/persona-student.webp",
@@ -86,27 +86,27 @@ export const PROFILE_DEFINITIONS: ProfileTypeItem[] = [
     titleAr: "طالب / متعلم",
     descriptionFr: "Suivre des formations certifiantes, développer ses compétences en éducation inclusive et obtenir des diplômes et attestations officielles ANEI.",
     descriptionAr: "متابعة الدورات التدريبية المعتمدة، اكتساب مهارات التربية الدامجة ونيل الشهادات التخصصية الرسمية.",
-    badgesFr: ["Formations en ligne", "Certificats ANEI", "Auto-formation"],
-    badgesAr: ["تكوين عبر الإنترنت", "شهادات ANEI", "تعلم ذاتي"],
+    badgesFr: ["Espace Apprenant", "Formations certifiantes", "Diplômes ANEI"],
+    badgesAr: ["فضاء المتعلم", "دورات معتمدة", "شهادات رسمية"],
     badgeColorClass: "bg-slate-100 text-slate-700",
   },
   {
     id: "PARENT",
-    category: "LEARNER",
+    category: "PARENT",
     subRole: "Parent d'un enfant à besoin spécifique",
     icon: HeartHandshake,
     image: "/media/persona-parent.webp",
     titleFr: "Parent d'élève",
     titleAr: "ولي أمر",
-    descriptionFr: "Accompagner son enfant, réserver des séances avec des AVS ou Spécialistes certifiés et accéder aux guides d'accompagnement familial.",
-    descriptionAr: "مرافقة الطفل، حجز حصص مباشرة مع مرافقين مدرسيين وأخصائيين والوصول إلى أدلة الدعم الأسري المعتمدة.",
-    badgesFr: ["Accompagnement familial", "Réservation AVS", "Réseau Spécialistes"],
-    badgesAr: ["دعم أسري", "حجز AVS", "أخصائيون معتمدون"],
+    descriptionFr: "Accompagner son enfant, réserver des séances avec des AVS ou Spécialistes certifiés et accéder à votre Espace Famille dédié.",
+    descriptionAr: "مرافقة الطفل، حجز حصص مباشرة مع مرافقين مدرسيين وأخصائيين والوصول إلى فضاء العائلة المخصص.",
+    badgesFr: ["Espace Famille", "Réservation AVS", "Suivi spécialistes"],
+    badgesAr: ["فضاء العائلة", "حجز AVS", "أخصائيون معتمدون"],
     badgeColorClass: "bg-emerald-50 text-emerald-700 border border-emerald-100",
   },
   {
     id: "TEACHER",
-    category: "LEARNER",
+    category: "TEACHER",
     subRole: "Enseignant / Cadre éducatif",
     icon: BookOpen,
     image: "/media/persona-teacher.webp",
@@ -114,8 +114,8 @@ export const PROFILE_DEFINITIONS: ProfileTypeItem[] = [
     titleAr: "مربي / إطار تربوي",
     descriptionFr: "Mettre en place des adaptations pédagogiques (PEI/GEVA-Sco), gérer une classe inclusive et collaborer avec les familles et spécialistes.",
     descriptionAr: "تطبيق التكييفات البيداغوجية، إدارة الأقسام الدامجة والتنسيق المتكامل مع الأسر والأخصائيين والمرافقين.",
-    badgesFr: ["Pédagogie inclusive", "Outils & PEI", "Cadre scolaire"],
-    badgesAr: ["تربية دامجة", "أدوات و PEI", "وسط مدرسي"],
+    badgesFr: ["Espace Formateur", "Pédagogie inclusive", "Outils & PEI"],
+    badgesAr: ["فضاء المربي", "تربية دامجة", "أدوات و PEI"],
     badgeColorClass: "bg-amber-50 text-amber-800 border border-amber-100",
   },
   {
@@ -128,8 +128,8 @@ export const PROFILE_DEFINITIONS: ProfileTypeItem[] = [
     titleAr: "مرافق حياة مدرسية (AVS)",
     descriptionFr: "Accompagner les élèves en milieu scolaire ou à domicile, valoriser vos interventions et apparaître automatiquement dans l'annuaire certifié /avs.",
     descriptionAr: "مرافقة التلاميذ في المدارس أو المنازل، توثيق الخبرات والظهور التلقائي في الدليل الرسمي لمرافقي الحياة المدرسية.",
-    badgesFr: ["Annuaire officiel /avs", "0% commission présentiel", "Missions scolaires"],
-    badgesAr: ["دليل /avs الرسمي", "0% عمولة حضوري", "مهام مدرسية"],
+    badgesFr: ["Espace AVS", "Annuaire officiel /avs", "0% commission présentiel"],
+    badgesAr: ["فضاء AVS", "دليل /avs الرسمي", "0% عمولة حضوري"],
     badgeColorClass: "bg-blue-50 text-blue-700 border border-blue-100",
   },
   {
@@ -142,9 +142,23 @@ export const PROFILE_DEFINITIONS: ProfileTypeItem[] = [
     titleAr: "أخصائي عيادي وصاحب عيادة",
     descriptionFr: "Orthophoniste, Psychologue, Psychomotricien, Ergothérapeute — référencer votre cabinet dans /specialistes et recevoir des rendez-vous.",
     descriptionAr: "أخصائي تخاطب، نفساني، حركي، وظيفي — نشر العيادة في دليل /specialistes وإدارة الحجوزات والاستشارات الحضورية وعن بعد.",
-    badgesFr: ["Annuaire /specialistes", "Cabinet & Téléconsultation", "Prise de RDV"],
-    badgesAr: ["دليل /specialistes", "عيادة واستشارات", "مواعيد مباشرة"],
+    badgesFr: ["Espace Spécialiste", "Annuaire /specialistes", "Cabinet & Téléconsultation"],
+    badgesAr: ["فضاء الأخصائي", "دليل /specialistes", "عيادة واستشارات"],
     badgeColorClass: "bg-purple-50 text-purple-700 border border-purple-100",
+  },
+  {
+    id: "ORGANIZATION",
+    category: "ORGANIZATION",
+    subRole: "Établissement & Organisation",
+    icon: Building2,
+    image: "/media/persona-institution.webp",
+    titleFr: "Établissement & Organisation",
+    titleAr: "مؤسسة تعليمية / منظمة",
+    descriptionFr: "Écoles, centres médico-éducatifs, associations et universités — former vos équipes, certifier votre structure et piloter vos cohortes d'inclusion.",
+    descriptionAr: "المدارس، المراكز التربوية والجمعيات — تدريب الفرق، اعتماد المؤسسات الدامجة وإدارة المجموعات والشراكات المؤسسية.",
+    badgesFr: ["Espace Organisation", "Formation d'équipes", "Gestion des cohortes"],
+    badgesAr: ["فضاء المؤسسة", "تدريب الفرق", "إدارة المجموعات"],
+    badgeColorClass: "bg-indigo-50 text-indigo-700 border border-indigo-100",
   },
 ];
 
@@ -201,19 +215,17 @@ export function RegisterWizard({
     if (roleParam === "specialist" || roleParam === "cabinet") return "SPECIALIST";
     if (roleParam === "parent") return "PARENT";
     if (roleParam === "teacher" || roleParam === "enseignant") return "TEACHER";
+    if (roleParam === "institution" || roleParam === "organization") return "ORGANIZATION";
     return "STUDENT";
   });
 
-  const category: CategoryChoice = useMemo(() => {
-    if (profileType === "AVS") return "AVS";
-    if (profileType === "SPECIALIST") return "SPECIALIST";
-    return "LEARNER";
-  }, [profileType]);
+  const category: CategoryChoice = profileType;
 
   const [subRole, setSubRole] = useState<string>(() => {
     const roleParam = search.get("role")?.toLowerCase();
     if (roleParam === "parent") return "Parent d'un enfant à besoin spécifique";
     if (roleParam === "teacher" || roleParam === "enseignant") return "Enseignant / Cadre éducatif";
+    if (roleParam === "institution" || roleParam === "organization") return "Établissement & Organisation";
     return "Étudiant / En reconversion";
   });
 
@@ -225,6 +237,8 @@ export function RegisterWizard({
       setSubRole("Parent d'un enfant à besoin spécifique");
     } else if (pt === "TEACHER") {
       setSubRole("Enseignant / Cadre éducatif");
+    } else if (pt === "ORGANIZATION") {
+      setSubRole("Établissement & Organisation");
     }
   };
 
@@ -238,10 +252,29 @@ export function RegisterWizard({
   const [acquisitionSource, setAcquisitionSource] = useState("FACEBOOK_INSTAGRAM");
   const [ageGroup, setAgeGroup] = useState("26-35");
 
-  // Step 3: Learner
+  // Step 3: Learner / Student
   const [educationLevel, setEducationLevel] = useState("Licence");
   const [institutionName, setInstitutionName] = useState("");
   const [interests, setInterests] = useState<string[]>(["Autisme (TSA)", "Troubles DYS"]);
+
+  // Step 3: Parent
+  const [childNeeds, setChildNeeds] = useState<string[]>(["Autisme (TSA)", "Troubles DYS"]);
+  const [childCycle, setChildCycle] = useState("Primaire");
+  const [childSchool, setChildSchool] = useState("");
+  const [familyPriorities, setFamilyPriorities] = useState<string[]>([
+    "Trouver un(e) AVS certifié(e)",
+    "Suivi avec des spécialistes",
+  ]);
+
+  // Step 3: Teacher
+  const [teachingCycle, setTeachingCycle] = useState("Primaire");
+  const [discipline, setDiscipline] = useState("");
+  const [teacherSchool, setTeacherSchool] = useState("");
+  const [teacherExperienceYears, setTeacherExperienceYears] = useState(5);
+  const [teacherObjectives, setTeacherObjectives] = useState<string[]>([
+    "Élaboration de PEI & GEVA-Sco",
+    "Différenciation des apprentissages",
+  ]);
 
   // Step 3: AVS
   const [accompanimentType, setAccompanimentType] = useState("Maternelle & Primaire");
@@ -265,6 +298,16 @@ export function RegisterWizard({
   const [inPersonRateTnd, setInPersonRateTnd] = useState(40);
   const [specOnlineRateTnd, setSpecOnlineRateTnd] = useState(35);
   const [specBio, setSpecBio] = useState("");
+
+  // Step 3: Organization
+  const [organizationType, setOrganizationType] = useState("École privée");
+  const [organizationName, setOrganizationName] = useState("");
+  const [representativeRole, setRepresentativeRole] = useState("Directeur / Chef d'établissement");
+  const [organizationSize, setOrganizationSize] = useState("50 à 200 personnes");
+  const [organizationNeeds, setOrganizationNeeds] = useState<string[]>([
+    "Formation certifiante des équipes",
+    "Convention de partenariat ANEI",
+  ]);
 
   // Step 4: Security
   const [password, setPassword] = useState("");
@@ -346,26 +389,26 @@ export function RegisterWizard({
             : "Ces informations permettent de personnaliser votre compte, d'émettre vos certificats et de vous joindre.",
         };
       case 3:
-        if (profileType === "PARENT") {
+        if (profileType === "STUDENT") {
           return {
-            title: ar ? "إعداد ملف المرافقة الأسرية" : "Profil d'accompagnement familial",
+            title: ar ? "الملف التعليمي والمجالات ذات الأولوية" : "Profil d'apprentissage & centres d'intérêt",
             subtitle: ar
-              ? "خصّصوا احتياجات طفلكم واهتماماتكم للحصول على أفضل التوجيهات والموارد."
-              : "Personnalisez vos besoins d'accompagnement pour recevoir des guides et recommandations ciblés.",
+              ? "حدّدوا مساركم واهتماماتكم لتخصيص بيئة التعلم واقتراح الدورات الأنسب لكم."
+              : "Précisez votre parcours et vos thématiques prioritaires pour personnaliser votre espace d'apprentissage.",
+          };
+        } else if (profileType === "PARENT") {
+          return {
+            title: ar ? "ملف الطفل واحتياجات المرافقة الأسرية" : "Profil de l'enfant & besoins d'accompagnement",
+            subtitle: ar
+              ? "تساعدنا هذه المعلومات على توجيهكم نحو أفضل مرافقي الحياة المدرسية والأخصائيين المعتمدين."
+              : "Ces informations permettent de vous orienter vers les meilleurs AVS et praticiens spécialisés pour votre enfant.",
           };
         } else if (profileType === "TEACHER") {
           return {
-            title: ar ? "الملف المهني للأستاذ والمربي" : "Profil professionnel d'enseignant",
+            title: ar ? "الإطار التربوي والصف الدامج" : "Cadre pédagogique & classe inclusive",
             subtitle: ar
-              ? "حدّدوا إطاركم التدريسي ومجالات التكييف البيداغوجي ذات الأولوية."
-              : "Précisez votre établissement d'exercice et vos priorités d'aménagements pédagogiques.",
-          };
-        } else if (profileType === "STUDENT") {
-          return {
-            title: ar ? "تخصيص المسار التعليمي" : "Personnalisez votre parcours d'apprenant",
-            subtitle: ar
-              ? "خصّصوا اهتماماتكم ومساركم التعليمي للحصول على أفضل التوصيات التدريبية."
-              : "Personnalisez vos recommandations de formation et vos parcours d'apprentissage certifiants.",
+              ? "حدّدوا مستواكم واحتياجاتكم البيداغوجية للوصول إلى أدوات تكييف المناهج وتصميم PEI."
+              : "Renseignez vos cycles et outils prioritaires pour accéder aux ressources d'adaptation pédagogique et PEI.",
           };
         } else if (profileType === "AVS") {
           return {
@@ -374,12 +417,19 @@ export function RegisterWizard({
               ? "ستُعرض هذه التفاصيل على بطاقتكم في الدليل الرسمي لمرافقي الحياة المدرسية /avs."
               : "Ces détails seront affichés sur votre profil dans l'annuaire officiel des AVS.",
           };
-        } else {
+        } else if (profileType === "SPECIALIST") {
           return {
             title: ar ? "إعداد بطاقتكم العيادية في دليل الأخصائيين" : "Configurez votre fiche de Spécialiste & Cabinet",
             subtitle: ar
               ? "سيتم إدراج عيادتكم تلقائيًا في دليل /specialistes مع وسائل الاتصال وجدول المواعيد."
               : "Votre profil sera automatiquement référencé dans l'annuaire /specialistes avec vos coordonnées et créneaux.",
+          };
+        } else {
+          return {
+            title: ar ? "بيانات المؤسسة واحتياجات التكوين" : "Profil de l'établissement & besoins institutionnels",
+            subtitle: ar
+              ? "خصّصوا احتياجات فرقكم التعليمية والتربوية للاستفادة من برامج الشراكة والاعتماد المؤسسي."
+              : "Définissez les besoins de vos équipes pour bénéficier de nos conventions partenariales et programmes de certification.",
           };
         }
       case 4:
@@ -413,7 +463,7 @@ export function RegisterWizard({
     setError(null);
 
     const payload = {
-      category,
+      category: profileType,
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       email: email.trim().toLowerCase(),
@@ -426,14 +476,29 @@ export function RegisterWizard({
       password,
       referredByCode: search.get("ref")?.trim() || undefined,
       // Category specifics
-      ...(category === "LEARNER"
+      ...(profileType === "STUDENT"
         ? {
             subRole,
             educationLevel,
             institutionName: institutionName.trim() || undefined,
             interests,
           }
-        : category === "AVS"
+        : profileType === "PARENT"
+        ? {
+            childNeeds,
+            childCycle,
+            childSchool: childSchool.trim() || undefined,
+            familyPriorities,
+          }
+        : profileType === "TEACHER"
+        ? {
+            teachingCycle,
+            discipline: discipline.trim() || undefined,
+            institutionName: teacherSchool.trim() || undefined,
+            experienceYears: Number(teacherExperienceYears) || 3,
+            teacherObjectives,
+          }
+        : profileType === "AVS"
         ? {
             accompanimentType,
             schoolsCovered: schoolsCovered.trim() || undefined,
@@ -446,7 +511,8 @@ export function RegisterWizard({
             onlineVisioPriceMillimes: Math.round(onlineRateTnd * 1000),
             bio: avsBio.trim() || undefined,
           }
-        : {
+        : profileType === "SPECIALIST"
+        ? {
             specialty,
             workplaceName: workplaceName.trim() || undefined,
             workplaceAddress: workplaceAddress.trim() || undefined,
@@ -456,6 +522,13 @@ export function RegisterWizard({
             inPersonPriceMillimes: Math.round(inPersonRateTnd * 1000),
             onlineVisioPriceMillimes: Math.round(specOnlineRateTnd * 1000),
             bio: specBio.trim() || undefined,
+          }
+        : {
+            organizationName: organizationName.trim() || undefined,
+            organizationType,
+            representativeRole: representativeRole.trim() || undefined,
+            organizationSize,
+            organizationNeeds,
           }),
     };
 
@@ -829,35 +902,35 @@ export function RegisterWizard({
         )}
 
         {/* ========================================================= */}
-        {/* STEP 3: DYNAMIC CATEGORY FIELDS                           */}
+        {/* STEP 3: STUDENT DEDICATED QUESTIONNAIRE                   */}
         {/* ========================================================= */}
-        {step === 3 && category === "LEARNER" && (
+        {step === 3 && profileType === "STUDENT" && (
           <div className="space-y-5 mb-8">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-2">
-                {ar ? "الصّفة الدقيقة" : "Sous-profil d'apprenant"}
+                {ar ? "الصّفة الدقيقة لمساركم" : "Votre profil d'apprenant"}
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[
                   {
-                    id: "Parent d'un enfant à besoin spécifique",
-                    label: ar ? "ولي أمر طفل ذو حاجة خصوصية" : "Parent d'enfant",
-                    icon: HeartHandshake,
-                  },
-                  {
-                    id: "Enseignant / Cadre éducatif",
-                    label: ar ? "مدرس / إطار تربوي" : "Enseignant / Éducateur",
-                    icon: BookOpen,
-                  },
-                  {
-                    id: "Étudiant / Futur AVS",
-                    label: ar ? "طالب / مترشح لمرافقة AVS" : "Étudiant / Futur AVS",
+                    id: "Étudiant en sciences de l'éducation / rééducation",
+                    label: ar ? "طالب في علوم التربية أو التأهيل" : "Étudiant sciences de l'éducation",
                     icon: GraduationCap,
                   },
                   {
-                    id: "Professionnel de santé",
-                    label: ar ? "ممارس صحي أو مهتم" : "Professionnel de santé",
-                    icon: Stethoscope,
+                    id: "Candidat futur AVS",
+                    label: ar ? "مترشح لمهنة مرافق مدرسي AVS" : "Candidat futur AVS",
+                    icon: ShieldCheck,
+                  },
+                  {
+                    id: "En reconversion professionnelle",
+                    label: ar ? "في إطار إعادة توجيه مهني" : "En reconversion professionnelle",
+                    icon: BookOpen,
+                  },
+                  {
+                    id: "Apprenant libre / Autodidacte",
+                    label: ar ? "متعلم حر / مهتم بالمجال" : "Apprenant libre / Autodidacte",
+                    icon: Sparkles,
                   },
                 ].map((item) => {
                   const IconCmp = item.icon;
@@ -885,28 +958,33 @@ export function RegisterWizard({
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
                   {ar ? "المستوى الدراسي" : "Niveau d'études"}
                 </label>
-                <select
-                  value={educationLevel}
-                  onChange={(e) => setEducationLevel(e.target.value)}
-                  className="w-full h-12 px-4 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors"
-                >
-                  <option value="Baccalauréat">Baccalauréat</option>
-                  <option value="Licence">Licence</option>
-                  <option value="Master">Master</option>
-                  <option value="Doctorat">Doctorat</option>
-                  <option value="Formation professionnelle">Formation professionnelle</option>
-                </select>
+                <div className="relative">
+                  <select
+                    value={educationLevel}
+                    onChange={(e) => setEducationLevel(e.target.value)}
+                    className="w-full h-12 px-4 pe-9 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors appearance-none cursor-pointer text-slate-800 font-medium"
+                  >
+                    <option value="Baccalauréat">Baccalauréat</option>
+                    <option value="Licence">Licence</option>
+                    <option value="Master">Master</option>
+                    <option value="Doctorat">Doctorat</option>
+                    <option value="Formation professionnelle">Formation professionnelle</option>
+                  </select>
+                  <span className="absolute inset-y-0 end-0 flex items-center pe-3 pointer-events-none text-slate-400">
+                    <ChevronDown className="w-4 h-4" />
+                  </span>
+                </div>
               </div>
 
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
-                  {ar ? "المؤسسة أو الهيئة (اختياري)" : "Établissement / Institution"}
+                  {ar ? "المؤسسة أو الجامعة (اختياري)" : "Établissement / Université"}
                 </label>
                 <input
                   type="text"
                   value={institutionName}
                   onChange={(e) => setInstitutionName(e.target.value)}
-                  placeholder={ar ? "اسم المدرسة أو الجامعة" : "Ex. École primaire, Faculté..."}
+                  placeholder={ar ? "اسم الكلية أو المعهد" : "Ex. Faculté des Sciences Humaines..."}
                   className="w-full h-12 px-4 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors"
                 />
               </div>
@@ -914,7 +992,7 @@ export function RegisterWizard({
 
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-2">
-                {ar ? "المجالات ذات الأولوية" : "Centres d'intérêt prioritaires"}
+                {ar ? "المجالات التدريبية ذات الأولوية" : "Thématiques prioritaires à explorer"}
               </label>
               <div className="flex flex-wrap gap-2">
                 {[
@@ -932,6 +1010,228 @@ export function RegisterWizard({
                       key={tag}
                       onClick={() => {
                         setInterests((prev) =>
+                          isChecked ? prev.filter((t) => t !== tag) : [...prev, tag],
+                        );
+                      }}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                        isChecked
+                          ? "bg-[#0A192F] text-white border-[#0A192F]"
+                          : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* STEP 3: PARENT DEDICATED QUESTIONNAIRE                    */}
+        {/* ========================================================= */}
+        {step === 3 && profileType === "PARENT" && (
+          <div className="space-y-5 mb-8">
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-2">
+                {ar ? "حاجيات ومواصفات طفلكم" : "Profil & besoins spécifiques de votre enfant"}
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  "Autisme (TSA)",
+                  "Troubles DYS (Dyslexie, Dyspraxie...)",
+                  "TDAH (Attention / Hyperactivité)",
+                  "Trisomie 21 & Retard global",
+                  "Polyhandicap & Moteur",
+                  "Difficultés scolaires & langage",
+                ].map((tag) => {
+                  const isChecked = childNeeds.includes(tag);
+                  return (
+                    <button
+                      type="button"
+                      key={tag}
+                      onClick={() => {
+                        setChildNeeds((prev) =>
+                          isChecked ? prev.filter((t) => t !== tag) : [...prev, tag],
+                        );
+                      }}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                        isChecked
+                          ? "bg-[#0A192F] text-white border-[#0A192F]"
+                          : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+                  {ar ? "المرحلة الدراسية للطفل" : "Cycle scolaire de l'enfant"}
+                </label>
+                <div className="relative">
+                  <select
+                    value={childCycle}
+                    onChange={(e) => setChildCycle(e.target.value)}
+                    className="w-full h-12 px-4 pe-9 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors appearance-none cursor-pointer text-slate-800 font-medium"
+                  >
+                    <option value="Maternelle">{ar ? "التعليم التحضيري / الروضة" : "Maternelle"}</option>
+                    <option value="Primaire">{ar ? "التعليم الابتدائي" : "Primaire"}</option>
+                    <option value="Collège">{ar ? "التعليم الإعدادي" : "Collège"}</option>
+                    <option value="Lycée">{ar ? "التعليم الثانوي" : "Lycée"}</option>
+                    <option value="Établissement spécialisé">{ar ? "مركز تربية مختصة" : "Établissement spécialisé"}</option>
+                  </select>
+                  <span className="absolute inset-y-0 end-0 flex items-center pe-3 pointer-events-none text-slate-400">
+                    <ChevronDown className="w-4 h-4" />
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+                  {ar ? "المدرسة أو المؤسسة الحالية (اختياري)" : "Établissement scolaire actuel"}
+                </label>
+                <input
+                  type="text"
+                  value={childSchool}
+                  onChange={(e) => setChildSchool(e.target.value)}
+                  placeholder={ar ? "اسم المدرسة الابتدائية أو الإعدادية" : "Ex. École primaire Al Manar..."}
+                  className="w-full h-12 px-4 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-2">
+                {ar ? "أولويات الدعم التي تبحثون عنها" : "Vos besoins prioritaires pour la famille"}
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  "Trouver un(e) AVS certifié(e)",
+                  "Suivi avec des spécialistes (Orthophonie...)",
+                  "Aménagements d'examens & PEI",
+                  "Guidance parentale & formations ANEI",
+                ].map((tag) => {
+                  const isChecked = familyPriorities.includes(tag);
+                  return (
+                    <button
+                      type="button"
+                      key={tag}
+                      onClick={() => {
+                        setFamilyPriorities((prev) =>
+                          isChecked ? prev.filter((t) => t !== tag) : [...prev, tag],
+                        );
+                      }}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                        isChecked
+                          ? "bg-[#0A192F] text-white border-[#0A192F]"
+                          : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* STEP 3: TEACHER DEDICATED QUESTIONNAIRE                   */}
+        {/* ========================================================= */}
+        {step === 3 && profileType === "TEACHER" && (
+          <div className="space-y-5 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+                  {ar ? "الطور التعليمي" : "Cycle d'enseignement"}
+                </label>
+                <div className="relative">
+                  <select
+                    value={teachingCycle}
+                    onChange={(e) => setTeachingCycle(e.target.value)}
+                    className="w-full h-12 px-4 pe-9 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors appearance-none cursor-pointer text-slate-800 font-medium"
+                  >
+                    <option value="Primaire">{ar ? "التعليم الابتدائي" : "Primaire"}</option>
+                    <option value="Collège">{ar ? "التعليم الإعدادي" : "Collège"}</option>
+                    <option value="Lycée">{ar ? "التعليم الثانوي" : "Lycée"}</option>
+                    <option value="Supérieur">{ar ? "التعليم العالي" : "Enseignement supérieur"}</option>
+                    <option value="Éducation spécialisée">{ar ? "التربية المختصة" : "Éducation spécialisée"}</option>
+                  </select>
+                  <span className="absolute inset-y-0 end-0 flex items-center pe-3 pointer-events-none text-slate-400">
+                    <ChevronDown className="w-4 h-4" />
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+                  {ar ? "المادة أو الاختصاص الرئيسي" : "Discipline / Matière principale"}
+                </label>
+                <input
+                  type="text"
+                  value={discipline}
+                  onChange={(e) => setDiscipline(e.target.value)}
+                  placeholder={ar ? "اللغة العربية، الفرنسية، الرياضيات..." : "Ex. Français, Mathématiques, Éveil..."}
+                  className="w-full h-12 px-4 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+                  {ar ? "المؤسسة التربوية" : "Établissement scolaire"}
+                </label>
+                <input
+                  type="text"
+                  value={teacherSchool}
+                  onChange={(e) => setTeacherSchool(e.target.value)}
+                  placeholder={ar ? "المدرسة الابتدائية النموذجية..." : "Ex. École primaire pilote, Collège..."}
+                  className="w-full h-12 px-4 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+                  {ar ? "سنوات الخبرة التعليمية" : "Années d'expérience"}
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="45"
+                  value={teacherExperienceYears}
+                  onChange={(e) => setTeacherExperienceYears(Number(e.target.value))}
+                  className="w-full h-12 px-4 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-2">
+                {ar ? "أولويات التطوير البيداغوجي الدامج" : "Outils pédagogiques prioritaires recherchés"}
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  "Élaboration de PEI & GEVA-Sco",
+                  "Différenciation des apprentissages",
+                  "Co-intervention avec l'AVS en classe",
+                  "Aménagement des évaluations",
+                  "Gestion des comportements défis",
+                ].map((tag) => {
+                  const isChecked = teacherObjectives.includes(tag);
+                  return (
+                    <button
+                      type="button"
+                      key={tag}
+                      onClick={() => {
+                        setTeacherObjectives((prev) =>
                           isChecked ? prev.filter((t) => t !== tag) : [...prev, tag],
                         );
                       }}
@@ -1191,6 +1491,123 @@ export function RegisterWizard({
         )}
 
         {/* ========================================================= */}
+        {/* STEP 3: ORGANIZATION DEDICATED QUESTIONNAIRE              */}
+        {/* ========================================================= */}
+        {step === 3 && profileType === "ORGANIZATION" && (
+          <div className="space-y-5 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+                  {ar ? "نوع المؤسسة / الهيكل" : "Type d'organisation / structure"} <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <select
+                    value={organizationType}
+                    onChange={(e) => setOrganizationType(e.target.value)}
+                    className="w-full h-12 px-4 pe-9 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors appearance-none cursor-pointer text-slate-800 font-medium"
+                  >
+                    <option value="École privée">{ar ? "مدرسة أو معهد خاص" : "École ou lycée privé"}</option>
+                    <option value="École publique">{ar ? "مؤسسة تربوية عمومية" : "Établissement scolaire public"}</option>
+                    <option value="Centre médico-éducatif">{ar ? "مركز طبي تربوي أو تأهيلي" : "Centre médico-éducatif"}</option>
+                    <option value="Association d'inclusion">{ar ? "جمعية أو منظمة مجتمعية" : "Association d'inclusion"}</option>
+                    <option value="Université">{ar ? "جامعة أو معهد عالي" : "Université / Institut supérieur"}</option>
+                    <option value="Entreprise inclusive">{ar ? "مؤسسة أو شركة مشغلة" : "Entreprise engagée RSE"}</option>
+                  </select>
+                  <span className="absolute inset-y-0 end-0 flex items-center pe-3 pointer-events-none text-slate-400">
+                    <ChevronDown className="w-4 h-4" />
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+                  {ar ? "اسم المؤسسة أو الهيكل" : "Nom officiel de l'établissement"} <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={organizationName}
+                  onChange={(e) => setOrganizationName(e.target.value)}
+                  placeholder={ar ? "مثال: مدرسة قرطاج الدولية" : "Ex. Groupe Scolaire Carthage..."}
+                  className="w-full h-12 px-4 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+                  {ar ? "صفتكم داخل المؤسسة" : "Fonction du représentant"}
+                </label>
+                <input
+                  type="text"
+                  value={representativeRole}
+                  onChange={(e) => setRepresentativeRole(e.target.value)}
+                  placeholder={ar ? "مدير، منسق بيداغوجي، مسؤول تكوين..." : "Ex. Directeur, Coordinateur pédagogique..."}
+                  className="w-full h-12 px-4 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+                  {ar ? "حجم الفريق / المتعلمين المستهدفين" : "Effectif concerné"}
+                </label>
+                <div className="relative">
+                  <select
+                    value={organizationSize}
+                    onChange={(e) => setOrganizationSize(e.target.value)}
+                    className="w-full h-12 px-4 pe-9 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors appearance-none cursor-pointer text-slate-800 font-medium"
+                  >
+                    <option value="Moins de 50">{ar ? "أقل من 50 شخصًا" : "Moins de 50 personnes"}</option>
+                    <option value="50 à 200">{ar ? "من 50 إلى 200 شخص" : "50 à 200 personnes"}</option>
+                    <option value="200 à 500">{ar ? "من 200 إلى 500 شخص" : "200 à 500 personnes"}</option>
+                    <option value="Plus de 500">{ar ? "أكثر من 500 شخص" : "Plus de 500 personnes"}</option>
+                  </select>
+                  <span className="absolute inset-y-0 end-0 flex items-center pe-3 pointer-events-none text-slate-400">
+                    <ChevronDown className="w-4 h-4" />
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-2">
+                {ar ? "أولويات الشراكة المؤسسية" : "Objectifs prioritaires de votre convention"}
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  "Formation certifiante des équipes",
+                  "Convention de partenariat ANEI",
+                  "Accréditation établissement inclusif",
+                  "Recrutement d'AVS qualifiés",
+                  "Audit d'accessibilité & inclusion",
+                ].map((tag) => {
+                  const isChecked = organizationNeeds.includes(tag);
+                  return (
+                    <button
+                      type="button"
+                      key={tag}
+                      onClick={() => {
+                        setOrganizationNeeds((prev) =>
+                          isChecked ? prev.filter((t) => t !== tag) : [...prev, tag],
+                        );
+                      }}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                        isChecked
+                          ? "bg-[#0A192F] text-white border-[#0A192F]"
+                          : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================= */}
         {/* STEP 4: SECURITY & RECAPITULATIVE SUMMARY                 */}
         {/* ========================================================= */}
         {step === 4 && (
@@ -1207,6 +1624,8 @@ export function RegisterWizard({
                     <BookOpen className="w-5 h-5" />
                   ) : profileType === "PARENT" ? (
                     <HeartHandshake className="w-5 h-5" />
+                  ) : profileType === "ORGANIZATION" ? (
+                    <Building2 className="w-5 h-5" />
                   ) : (
                     <GraduationCap className="w-5 h-5" />
                   )}
@@ -1217,13 +1636,15 @@ export function RegisterWizard({
                   </h3>
                   <p className="text-xs text-slate-500">
                     {profileType === "SPECIALIST"
-                      ? `${specialty} • ${governorate}`
+                      ? `${specialty} • ${workplaceName || governorate} (${city})`
                       : profileType === "AVS"
-                      ? `AVS • ${governorate}`
+                      ? `AVS • ${governorate} (${city})`
                       : profileType === "TEACHER"
                       ? `${ar ? "أستاذ / مربي" : "Enseignant / Éducateur"} • ${governorate} (${city})`
                       : profileType === "PARENT"
                       ? `${ar ? "ولي أمر" : "Parent d'élève"} • ${governorate} (${city})`
+                      : profileType === "ORGANIZATION"
+                      ? `${organizationType} • ${organizationName || governorate} (${city})`
                       : `${ar ? "طالب / متعلم" : "Apprenant / Étudiant"} • ${governorate} (${city})`}
                   </p>
                 </div>
@@ -1249,6 +1670,39 @@ export function RegisterWizard({
                     {ar
                       ? "سيتم نشر بطاقتكم المهنية في الدليل الرسمي فور إنشاء الحساب."
                       : "Votre fiche professionnelle sera publiée dans l'annuaire dès la création du compte."}
+                  </span>
+                </div>
+              )}
+
+              {profileType === "ORGANIZATION" && (
+                <div className="mt-3.5 p-2.5 rounded-xl bg-indigo-50 border border-indigo-200/80 text-indigo-800 text-xs flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-indigo-600 shrink-0" />
+                  <span className="font-medium">
+                    {ar
+                      ? "سيتم إعداد مساحة المؤسسة الخاصة بكم لتسجيل فرقكم وإدارة التدريب."
+                      : "Votre Espace Organisation sera configuré pour inscrire vos collaborateurs et suivre leurs formations."}
+                  </span>
+                </div>
+              )}
+
+              {profileType === "PARENT" && (
+                <div className="mt-3.5 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs flex items-center gap-2">
+                  <HeartHandshake className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span className="font-medium">
+                    {ar
+                      ? "ستتمكنون فورًا من حجز مرافقي الحياة المدرسية والتواصل مع الأخصائيين."
+                      : "Vous aurez un accès direct à l'annuaire des AVS et des praticiens pour votre enfant."}
+                  </span>
+                </div>
+              )}
+
+              {profileType === "TEACHER" && (
+                <div className="mt-3.5 p-2.5 rounded-xl bg-amber-50 border border-amber-200/80 text-amber-800 text-xs flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span className="font-medium">
+                    {ar
+                      ? "سيتم تفعيل وصولكم المباشر إلى أدوات التكييف البيداغوجي وتصميم PEI."
+                      : "Votre accès aux outils d'adaptation pédagogique et PEI sera activé immédiatement."}
                   </span>
                 </div>
               )}
