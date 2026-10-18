@@ -1,0 +1,33 @@
+.git
+.github
+node_modules
+.next
+out
+.env*
+!.env.example
+!.env.production.example
+.DS_Store
+*.swp
+*.swo
+coverage
+playwright-report
+test-results
+tests
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+sbom.cdx.json
+*.zip
+*.tsbuildinfo
+graphify-out/
+.serena/
+*.before-ai-stack.bak
+docs/archive/
+.claude/
+.vercel
+/Les chapitres/
+/TDAH/
+/Trouble d'apprentissage/
+/fiche TDAH/
+*.docx
