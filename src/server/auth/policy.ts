@@ -1,10 +1,12 @@
 import { APIError } from "better-auth/api";
 import { parseRegistrationProfileType } from "@/modules/personas/domain/permissions";
+import { normalizeCanonicalEmail } from "@/lib/auth/canonical-identity";
 
 export type NewAuthUser = Record<string, unknown> & {
   role?: unknown;
   locale?: unknown;
   profileType?: unknown;
+  email?: unknown;
 };
 
 /**
@@ -27,8 +29,12 @@ export function enforceNewUserDefaults<T extends NewAuthUser>(data: T) {
     }
     profileType = parsed;
   }
+
+  const email = typeof data.email === "string" ? normalizeCanonicalEmail(data.email) : data.email;
+
   return {
     ...data,
+    email,
     role: "USER" as const,
     locale: data.locale === "ar" ? ("ar" as const) : ("fr" as const),
     profileType,

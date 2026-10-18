@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useMemo, useState } from "react";
 import type { Locale } from "@/types";
@@ -8,6 +9,13 @@ import { authClient } from "@/lib/auth-client";
 import { GoogleMark } from "@/components/auth/GoogleMark";
 import { AuthWizardProgress } from "@/components/auth/AuthWizardProgress";
 import { getDelegationsForGovernorate } from "@/lib/tunisia/locations";
+import {
+  validateAndNormalizeCanonicalEmail,
+  validateAndNormalizeTunisianPhone,
+  validatePasswordPolicy,
+  type EmailErrorCode,
+  type PhoneErrorCode,
+} from "@/lib/auth/canonical-identity";
 import {
   GraduationCap,
   Stethoscope,
@@ -252,6 +260,169 @@ export function RegisterWizard({
   const [acquisitionSource, setAcquisitionSource] = useState("FACEBOOK_INSTAGRAM");
   const [ageGroup, setAgeGroup] = useState("26-35");
 
+  // Step 2: Live Uniqueness and Availability State
+  const [emailChecking, setEmailChecking] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<"idle" | "valid" | "error">("idle");
+  const [emailErrorCode, setEmailErrorCode] = useState<EmailErrorCode | null>(null);
+  const [emailErrorMsg, setEmailErrorMsg] = useState<string | null>(null);
+
+  const [phoneChecking, setPhoneChecking] = useState(false);
+  const [phoneStatus, setPhoneStatus] = useState<"idle" | "valid" | "error">("idle");
+  const [phoneErrorCode, setPhoneErrorCode] = useState<PhoneErrorCode | null>(null);
+  const [phoneErrorMsg, setPhoneErrorMsg] = useState<string | null>(null);
+
+  async function checkEmailAvailability(emailVal = email): Promise<boolean> {
+    const val = (emailVal || "").trim();
+    if (!val) {
+      setEmailStatus("idle");
+      setEmailErrorCode(null);
+      setEmailErrorMsg(null);
+      return false;
+    }
+
+    // Client-side quick check
+    const clientCheck = validateAndNormalizeCanonicalEmail(val);
+    if (!clientCheck.success) {
+      setEmailStatus("error");
+      setEmailErrorCode(clientCheck.error);
+      setEmailErrorMsg(
+        clientCheck.error === "DISPOSABLE_DOMAIN"
+          ? ar
+            ? "عناوين البريد الإلكتروني المؤقتة غير مسموح بها."
+            : "Les adresses e-mail temporaires ne sont pas acceptées."
+          : ar
+            ? "صيغة البريد الإلكتروني غير صالحة."
+            : "Format d'adresse e-mail invalide.",
+      );
+      return false;
+    }
+
+    setEmailChecking(true);
+    try {
+      const res = await fetch("/api/auth/check-availability", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: val }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.emailAvailable) {
+        setEmailStatus("valid");
+        setEmailErrorCode(null);
+        setEmailErrorMsg(null);
+        return true;
+      } else {
+        setEmailStatus("error");
+        setEmailErrorCode(data.emailErrorCode || "EMAIL_TAKEN");
+        if (data.emailErrorCode === "EMAIL_TAKEN") {
+          setEmailErrorMsg(
+            ar
+              ? "هذا البريد الإلكتروني مسجل بالفعل في الأكاديمية."
+              : "Cette adresse e-mail est déjà associée à un compte ANEI.",
+          );
+        } else if (data.emailErrorCode === "DISPOSABLE_DOMAIN") {
+          setEmailErrorMsg(
+            ar
+              ? "عناوين البريد الإلكتروني المؤقتة غير مسموح بها."
+              : "Les adresses e-mail temporaires ne sont pas acceptées.",
+          );
+        } else {
+          setEmailErrorMsg(
+            ar ? "صيغة البريد الإلكتروني غير صالحة." : "Format d'adresse e-mail invalide.",
+          );
+        }
+        return false;
+      }
+    } catch {
+      return true;
+    } finally {
+      setEmailChecking(false);
+    }
+  }
+
+  async function checkPhoneAvailability(digits = phoneDigits): Promise<boolean> {
+    const d = (digits || "").trim();
+    if (!d) {
+      setPhoneStatus("idle");
+      setPhoneErrorCode(null);
+      setPhoneErrorMsg(null);
+      return false;
+    }
+
+    // Client-side quick check
+    const clientCheck = validateAndNormalizeTunisianPhone(d);
+    if (!clientCheck.success) {
+      setPhoneStatus("error");
+      setPhoneErrorCode(clientCheck.error);
+      if (clientCheck.error === "INVALID_LENGTH") {
+        setPhoneErrorMsg(
+          ar
+            ? "يجب إدخال 8 أرقام كاملة بعد الرمز +216."
+            : "Le numéro doit comporter exactement 8 chiffres après +216.",
+        );
+      } else if (clientCheck.error === "INVALID_PREFIX") {
+        setPhoneErrorMsg(
+          ar
+            ? "يجب أن يبدأ الرقم بمشغل تونسي صالح (2، 4، 5، 7 أو 9)."
+            : "Le numéro doit débuter par un préfixe d'opérateur valide (2, 4, 5, 7 ou 9).",
+        );
+      } else {
+        setPhoneErrorMsg(
+          ar
+            ? "رقم غير صالح (تسلسل أرقام وهمي أو متكرر)."
+            : "Numéro de téléphone invalide (séquence fictive ou répétitive).",
+        );
+      }
+      return false;
+    }
+
+    setPhoneChecking(true);
+    try {
+      const res = await fetch("/api/auth/check-availability", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: `+216${d}` }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.phoneAvailable) {
+        setPhoneStatus("valid");
+        setPhoneErrorCode(null);
+        setPhoneErrorMsg(null);
+        return true;
+      } else {
+        setPhoneStatus("error");
+        setPhoneErrorCode(data.phoneErrorCode || "PHONE_TAKEN");
+        if (data.phoneErrorCode === "PHONE_TAKEN") {
+          setPhoneErrorMsg(
+            ar
+              ? "رقم الهاتف هذا مسجل بالفعل في الأكاديمية."
+              : "Ce numéro de téléphone est déjà associé à un compte ANEI.",
+          );
+        } else if (data.phoneErrorCode === "INVALID_PREFIX") {
+          setPhoneErrorMsg(
+            ar
+              ? "يجب أن يبدأ الرقم بمشغل تونسي صالح (2، 4، 5، 7 أو 9)."
+              : "Le numéro doit débuter par un préfixe d'opérateur valide (2, 4, 5, 7 ou 9).",
+          );
+        } else if (data.phoneErrorCode === "DUMMY_SEQUENCE") {
+          setPhoneErrorMsg(
+            ar
+              ? "رقم الهاتف غير صالح (تسلسل وهمي)."
+              : "Numéro invalide (séquence fictive ou répétitive).",
+          );
+        } else {
+          setPhoneErrorMsg(
+            ar ? "رقم الهاتف غير صالح." : "Numéro de téléphone invalide.",
+          );
+        }
+        return false;
+      }
+    } catch {
+      return true;
+    } finally {
+      setPhoneChecking(false);
+    }
+  }
+
   // Step 3: Learner / Student
   const [educationLevel, setEducationLevel] = useState("Licence");
   const [institutionName, setInstitutionName] = useState("");
@@ -335,17 +506,26 @@ export function RegisterWizard({
   // Password Strength Calculation (4 segments)
   const passwordCriteria = useMemo(() => {
     return {
-      length: password.length >= 15,
+      length: password.length >= 10,
       hasUpper: /[A-Z]/.test(password),
       hasLower: /[a-z]/.test(password),
       hasNumberOrSymbol: /[\d\W]/.test(password),
     };
   }, [password]);
 
+  const passwordPolicyResult = useMemo(() => {
+    return validatePasswordPolicy(password, {
+      firstName,
+      lastName,
+      email,
+      phone: phoneDigits,
+    });
+  }, [password, firstName, lastName, email, phoneDigits]);
+
   const passwordScore = useMemo(() => {
     let score = 0;
     if (password.length >= 10) score++;
-    if (passwordCriteria.length) score++;
+    if (password.length >= 14) score++;
     if (passwordCriteria.hasUpper && passwordCriteria.hasLower) score++;
     if (passwordCriteria.hasNumberOrSymbol) score++;
     return score;
@@ -356,20 +536,36 @@ export function RegisterWizard({
     return (
       firstName.trim().length > 0 &&
       lastName.trim().length > 0 &&
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) &&
+      email.trim().length > 0 &&
+      emailStatus !== "error" &&
       phoneDigits.trim().length === 8 &&
+      phoneStatus !== "error" &&
       governorate.length > 0 &&
       city.length > 0
     );
-  }, [firstName, lastName, email, phoneDigits, governorate, city]);
+  }, [firstName, lastName, email, emailStatus, phoneDigits, phoneStatus, governorate, city]);
 
   const canProceedStep4 = useMemo(() => {
     return (
       passwordCriteria.length &&
+      passwordPolicyResult.valid &&
       password === confirmPassword &&
       termsAccepted
     );
-  }, [passwordCriteria.length, password, confirmPassword, termsAccepted]);
+  }, [passwordCriteria.length, passwordPolicyResult.valid, password, confirmPassword, termsAccepted]);
+
+  async function handleNextStep() {
+    if (step === 2) {
+      const emailOk = await checkEmailAvailability(email);
+      const phoneOk = await checkPhoneAvailability(phoneDigits);
+      if (!emailOk || !phoneOk) return;
+      setStep(3);
+      return;
+    }
+    if (step < 4) {
+      setStep((prev) => (prev + 1) as 1 | 2 | 3 | 4);
+    }
+  }
 
   // Step titles & subtitles
   const stepMeta = useMemo(() => {
@@ -446,15 +642,15 @@ export function RegisterWizard({
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (step < 4) {
-      setStep((prev) => (prev + 1) as 1 | 2 | 3 | 4);
+      await handleNextStep();
       return;
     }
 
     if (!canProceedStep4) {
       setError(
         ar
-          ? "يرجى التحقق من كلمة المرور (15 حرفًا على الأقل) والموافقة على الشروط."
-          : "Veuillez vérifier votre mot de passe (15 caractères minimum requis) et accepter les conditions.",
+          ? "يرجى التحقق من معايير كلمة المرور وتطابقها والموافقة على الشروط."
+          : "Veuillez vérifier les critères du mot de passe et accepter les conditions générales.",
       );
       return;
     }
@@ -718,9 +914,23 @@ export function RegisterWizard({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
-                {ar ? "البريد الإلكتروني" : "Adresse e-mail"} <span className="text-red-500">*</span>
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600">
+                  {ar ? "البريد الإلكتروني" : "Adresse e-mail"} <span className="text-red-500">*</span>
+                </label>
+                {emailChecking && (
+                  <span className="text-xs text-slate-400 inline-flex items-center gap-1 font-medium">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span>{ar ? "جارٍ التحقق..." : "Vérification..."}</span>
+                  </span>
+                )}
+                {!emailChecking && emailStatus === "valid" && (
+                  <span className="text-xs text-emerald-600 font-semibold inline-flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>{ar ? "متاح" : "Disponible"}</span>
+                  </span>
+                )}
+              </div>
               <div className="relative">
                 <span className="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none text-slate-400">
                   <Mail className="w-4 h-4" />
@@ -729,11 +939,54 @@ export function RegisterWizard({
                   type="email"
                   required
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (emailStatus !== "idle") {
+                      setEmailStatus("idle");
+                      setEmailErrorCode(null);
+                      setEmailErrorMsg(null);
+                    }
+                  }}
+                  onBlur={() => {
+                    if (email.trim().length > 0) {
+                      checkEmailAvailability(email);
+                    }
+                  }}
                   placeholder="nom@exemple.com"
-                  className="w-full h-12 auth-input-with-icon !ps-11 pe-4 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors text-left dir-ltr"
+                  className={`w-full h-12 auth-input-with-icon !ps-11 pe-10 rounded-xl border bg-white text-sm outline-hidden transition-colors text-left dir-ltr ${
+                    emailStatus === "error"
+                      ? "border-red-500 ring-1 ring-red-500 bg-red-50/20"
+                      : emailStatus === "valid"
+                      ? "border-emerald-500 ring-1 ring-emerald-500/20"
+                      : "border-slate-300 focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F]"
+                  }`}
                 />
+                <span className="absolute inset-y-0 end-0 flex items-center pe-3 pointer-events-none">
+                  {emailChecking ? (
+                    <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
+                  ) : emailStatus === "error" ? (
+                    <AlertCircle className="w-4 h-4 text-red-500" />
+                  ) : emailStatus === "valid" ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  ) : null}
+                </span>
               </div>
+              {emailStatus === "error" && emailErrorMsg && (
+                <div className="text-xs text-red-600 mt-1.5 flex items-start gap-1.5 font-medium">
+                  <AlertCircle className="w-3.5 h-3.5 text-red-600 shrink-0 mt-0.5" />
+                  <div className="flex-1 flex flex-wrap items-center gap-1">
+                    <span>{emailErrorMsg}</span>
+                    {emailErrorCode === "EMAIL_TAKEN" && (
+                      <Link
+                        href={`/${locale}/connexion?email=${encodeURIComponent(email.trim())}`}
+                        className="underline font-bold text-[#0056D2] hover:text-[#0A192F] transition-colors"
+                      >
+                        {ar ? "تسجيل الدخول ←" : "Se connecter →"}
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>
@@ -742,17 +995,30 @@ export function RegisterWizard({
                   {ar ? "رقم الهاتف الرسمي (تونس)" : "Numéro de téléphone (+216)"} <span className="text-red-500">*</span>
                 </label>
                 <span className="text-[11px] font-mono text-slate-400">
-                  {phoneDigits.length === 8 ? (
+                  {phoneChecking ? (
+                    <span className="text-xs text-slate-400 inline-flex items-center gap-1 font-medium">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <span>{ar ? "جارٍ التحقق..." : "Vérification..."}</span>
+                    </span>
+                  ) : phoneStatus === "valid" ? (
                     <span className="text-emerald-600 font-semibold inline-flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3" />
-                      <span>{ar ? "8 أرقام (مكتمل)" : "8 chiffres (Valide)"}</span>
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>{ar ? "8 أرقام (متاح)" : "8 chiffres (Disponible)"}</span>
                     </span>
                   ) : (
                     <span>{phoneDigits.length}/8 {ar ? "أرقام" : "chiffres"}</span>
                   )}
                 </span>
               </div>
-              <div className="flex rounded-xl border border-slate-300 bg-white overflow-hidden focus-within:border-[#0A192F] focus-within:ring-1 focus-within:ring-[#0A192F] transition-colors shadow-2xs">
+              <div
+                className={`flex rounded-xl border bg-white overflow-hidden transition-colors shadow-2xs ${
+                  phoneStatus === "error"
+                    ? "border-red-500 ring-1 ring-red-500 bg-red-50/20"
+                    : phoneStatus === "valid"
+                    ? "border-emerald-500 ring-1 ring-emerald-500/20"
+                    : "border-slate-300 focus-within:border-[#0A192F] focus-within:ring-1 focus-within:ring-[#0A192F]"
+                }`}
+              >
                 <div
                   className="inline-flex items-center gap-1.5 px-3.5 bg-slate-50 border-e border-slate-200 text-xs font-semibold text-slate-700 select-none shrink-0"
                   dir="ltr"
@@ -771,6 +1037,16 @@ export function RegisterWizard({
                     onChange={(e) => {
                       const digits = e.target.value.replace(/\D/g, "").slice(0, 8);
                       setPhoneDigits(digits);
+                      if (phoneStatus !== "idle") {
+                        setPhoneStatus("idle");
+                        setPhoneErrorCode(null);
+                        setPhoneErrorMsg(null);
+                      }
+                    }}
+                    onBlur={() => {
+                      if (phoneDigits.length === 8) {
+                        checkPhoneAvailability(phoneDigits);
+                      }
                     }}
                     onKeyDown={(e) => {
                       if (
@@ -785,16 +1061,33 @@ export function RegisterWizard({
                       }
                     }}
                     placeholder="98 123 456"
-                    className="w-full h-12 px-3.5 text-sm font-medium tracking-wide text-slate-800 placeholder:text-slate-400 bg-transparent outline-none dir-ltr text-left"
+                    className="w-full h-12 px-3.5 pe-10 text-sm font-medium tracking-wide text-slate-800 placeholder:text-slate-400 bg-transparent outline-none dir-ltr text-left"
                     dir="ltr"
                   />
+                  <span className="absolute inset-y-0 end-0 flex items-center pe-3 pointer-events-none">
+                    {phoneChecking ? (
+                      <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
+                    ) : phoneStatus === "error" ? (
+                      <AlertCircle className="w-4 h-4 text-red-500" />
+                    ) : phoneStatus === "valid" ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    ) : null}
+                  </span>
                 </div>
               </div>
-              <p className="text-[11px] text-slate-400 mt-1">
-                {ar
-                  ? "أدخل 8 أرقام فقط (مثال: 98123456 أو 20123456). الرمز الدولي +216 محدد مسبقاً."
-                  : "Saisissez uniquement les 8 chiffres du numéro (ex. 98 123 456). L'indicatif +216 est pré-configuré."}
-              </p>
+              {phoneStatus === "error" && phoneErrorMsg && (
+                <div data-error-code={phoneErrorCode || undefined} className="text-xs text-red-600 mt-1.5 flex items-start gap-1.5 font-medium">
+                  <AlertCircle className="w-3.5 h-3.5 text-red-600 shrink-0 mt-0.5" />
+                  <span>{phoneErrorMsg}</span>
+                </div>
+              )}
+              {phoneStatus !== "error" && (
+                <p className="text-[11px] text-slate-400 mt-1">
+                  {ar
+                    ? "أدخل 8 أرقام فقط (مثال: 98123456 أو 20123456). يبدأ بـ 2، 4، 5، 7 أو 9."
+                    : "8 chiffres débutant par un opérateur tunisien (2, 4, 5, 7 ou 9). L'indicatif +216 est pré-configuré."}
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1717,14 +2010,24 @@ export function RegisterWizard({
                 <p className="text-[11px] text-slate-500">
                   {passwordCriteria.length ? (
                     <span className="text-emerald-700 font-medium">
-                      {ar ? "الطول مطابق (15 حرفًا فأكثر)" : "Longueur conforme (15 caractères ou plus)"}
+                      {ar ? "الطول مطابق (10 أحرف فأكثر)" : "Longueur conforme (10 caractères ou plus)"}
                     </span>
                   ) : (
                     <span>
-                      {ar ? "مطلوب 15 حرفًا على الأقل لضمان أمان الحساب." : "15 caractères minimum requis par la sécurité ANEI."}
+                      {ar ? "مطلوب 10 أحرف على الأقل لضمان أمان الحساب." : "10 caractères minimum requis par la sécurité ANEI."}
                     </span>
                   )}
                 </p>
+                {password && passwordPolicyResult.errors.includes("PASSWORD_CONTAINS_PERSONAL_INFO") && (
+                  <p className="text-xs text-red-600 mt-1.5 flex items-center gap-1 font-medium">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    <span>
+                      {ar
+                        ? "يجب ألا تحتوي كلمة المرور على اسمك، بريدك أو رقم هاتفك."
+                        : "Le mot de passe ne doit pas contenir votre nom, prénom, e-mail ou téléphone."}
+                    </span>
+                  </p>
+                )}
               </div>
             </div>
 
@@ -1792,12 +2095,21 @@ export function RegisterWizard({
           {step < 4 ? (
             <button
               type="button"
-              disabled={step === 2 && !canProceedStep2}
-              onClick={() => setStep((prev) => (prev + 1) as 1 | 2 | 3 | 4)}
+              disabled={step === 2 && (!canProceedStep2 || emailChecking || phoneChecking)}
+              onClick={handleNextStep}
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0A192F] hover:bg-[#0056D2] text-white font-semibold text-sm px-7 py-3.5 shadow-xs transition-all disabled:opacity-40"
             >
-              <span>{ar ? "متابعة" : "Continuer"}</span>
-              <ArrowRight className="w-4 h-4 rtl:rotate-180" />
+              {emailChecking || phoneChecking ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>{ar ? "جارٍ التحقق..." : "Vérification..."}</span>
+                </>
+              ) : (
+                <>
+                  <span>{ar ? "متابعة" : "Continuer"}</span>
+                  <ArrowRight className="w-4 h-4 rtl:rotate-180" />
+                </>
+              )}
             </button>
           ) : (
             <button

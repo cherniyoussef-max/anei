@@ -5,7 +5,10 @@ import { db } from "@/server/db";
 import { personaMembership, user, userOnboardingAnalytics } from "@/server/db/schema";
 import { auth } from "@/server/auth";
 import { completeUserProfileTx } from "@/server/auth/profile";
-import { normalizeTunisiaPhone } from "@/lib/tunisia/phone";
+import {
+  checkIdentityAvailability,
+  validatePasswordPolicy,
+} from "@/server/auth/identity-normalizer";
 import { TUNISIA_GOVERNORATE_NAMES } from "@/lib/tunisia/locations";
 import { isTrustedMutation } from "@/server/security/origin";
 import { readLimitedJson } from "@/server/security/request-body";
@@ -98,24 +101,112 @@ export async function POST(request: Request) {
   const data = parsed.data;
   const ar = data.locale === "ar";
 
-  // Check if email already taken
-  const [existing] = await db
-    .select({ id: user.id })
-    .from(user)
-    .where(eq(user.email, data.email))
-    .limit(1);
+  // 1. Password policy verification
+  const passwordCheck = validatePasswordPolicy(data.password, {
+    firstName: data.firstName,
+    lastName: data.lastName,
+    email: data.email,
+    phone: data.phone,
+  });
 
-  if (existing) {
+  if (!passwordCheck.valid) {
     return NextResponse.json(
       {
-        error: "EMAIL_ALREADY_EXISTS",
-        message: ar ? "البريد الإلكتروني مسجل بالفعل في الأكاديمية" : "Cette adresse e-mail est déjà associée à un compte.",
+        error: "WEAK_PASSWORD",
+        reasons: passwordCheck.errors,
+        message: ar
+          ? "كلمة المرور لا تستوفي المعايير الأمنية المطلوبة (10 أحرف على الأقل، أحرف كبيرة وصغيرة، أرقام ورموز خاصة، وبدون بيانات شخصية)."
+          : "Le mot de passe ne respecte pas les critères de sécurité ANEI (majuscule, minuscule, chiffre, symbole et absence d'informations personnelles).",
       },
-      { status: 409 },
+      { status: 400 },
     );
   }
 
-  const normalizedPhone = normalizeTunisiaPhone(data.phone) || data.phone.trim();
+  // 2. Strict identity availability check (Canonical email + Phone + Disposable domain check)
+  const availability = await checkIdentityAvailability(db, {
+    email: data.email,
+    phone: data.phone,
+  });
+
+  if (!availability.emailAvailable) {
+    if (availability.emailErrorCode === "EMAIL_TAKEN") {
+      return NextResponse.json(
+        {
+          error: "EMAIL_ALREADY_EXISTS",
+          message: ar
+            ? "البريد الإلكتروني مسجل بالفعل في الأكاديمية"
+            : "Cette adresse e-mail est déjà associée à un compte ANEI.",
+        },
+        { status: 409 },
+      );
+    }
+    if (availability.emailErrorCode === "DISPOSABLE_DOMAIN") {
+      return NextResponse.json(
+        {
+          error: "DISPOSABLE_EMAIL",
+          message: ar
+            ? "يرجى استخدام بريد إلكتروني رسمي وموثوق (النطاقات المؤقتة محظورة)."
+            : "Les adresses e-mail temporaires ou jetables ne sont pas autorisées.",
+        },
+        { status: 400 },
+      );
+    }
+    return NextResponse.json(
+      {
+        error: "INVALID_EMAIL",
+        message: ar ? "صيغة البريد الإلكتروني غير صالحة." : "Format d'adresse e-mail invalide.",
+      },
+      { status: 400 },
+    );
+  }
+
+  if (!availability.phoneAvailable) {
+    if (availability.phoneErrorCode === "PHONE_TAKEN") {
+      return NextResponse.json(
+        {
+          error: "PHONE_ALREADY_EXISTS",
+          message: ar
+            ? "رقم الهاتف مسجل بالفعل في الأكاديمية"
+            : "Ce numéro de téléphone est déjà associé à un compte ANEI.",
+        },
+        { status: 409 },
+      );
+    }
+    if (availability.phoneErrorCode === "INVALID_PREFIX") {
+      return NextResponse.json(
+        {
+          error: "INVALID_PHONE_PREFIX",
+          message: ar
+            ? "رقم الهاتف يجب أن يبدأ برقم مشغل تونسي صالح (2، 4، 5، 7 أو 9)."
+            : "Le numéro doit débuter par un préfixe d'opérateur tunisien valide (2, 4, 5, 7 ou 9).",
+        },
+        { status: 400 },
+      );
+    }
+    if (availability.phoneErrorCode === "DUMMY_SEQUENCE") {
+      return NextResponse.json(
+        {
+          error: "DUMMY_PHONE_SEQUENCE",
+          message: ar
+            ? "رقم الهاتف غير صالح (تسلسل أرقام وهمي أو متكرر)."
+            : "Numéro de téléphone invalide (séquence fictive ou répétitive).",
+        },
+        { status: 400 },
+      );
+    }
+    return NextResponse.json(
+      {
+        error: "INVALID_PHONE_LENGTH",
+        message: ar
+          ? "رقم الهاتف التونسي يجب أن يحتوي على 8 أرقام بعد +216."
+          : "Le numéro de téléphone tunisien doit comporter exactement 8 chiffres après +216.",
+      },
+      { status: 400 },
+    );
+  }
+
+  const canonicalEmail = availability.emailNormalized;
+  const canonicalPhone = availability.phoneNormalized;
   const rawCat = data.category;
   const isStudent = rawCat === "STUDENT" || rawCat === "LEARNER";
   const isParent = rawCat === "PARENT";
@@ -142,7 +233,7 @@ export async function POST(request: Request) {
     signUpRes = await auth.api.signUpEmail({
       body: {
         name: `${data.firstName} ${data.lastName}`.trim(),
-        email: data.email,
+        email: canonicalEmail,
         password: data.password,
         locale: data.locale,
         profileType,
@@ -152,6 +243,17 @@ export async function POST(request: Request) {
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes("unique") || msg.includes("already exists") || msg.includes("ALREADY_EXISTS")) {
+      return NextResponse.json(
+        {
+          error: "EMAIL_ALREADY_EXISTS",
+          message: ar
+            ? "البريد الإلكتروني مسجل بالفعل في الأكاديمية"
+            : "Cette adresse e-mail est déjà associée à un compte ANEI.",
+        },
+        { status: 409 },
+      );
+    }
     return NextResponse.json({ error: "SIGNUP_FAILED", message: msg }, { status: 400 });
   }
 
@@ -168,13 +270,13 @@ export async function POST(request: Request) {
       // Set phone column on user
       await tx
         .update(user)
-        .set({ phone: normalizedPhone, updatedAt: now })
+        .set({ phone: canonicalPhone, updatedAt: now })
         .where(eq(user.id, createdUserId));
 
       const common = {
         firstName: data.firstName,
         lastName: data.lastName,
-        phoneNumber: normalizedPhone,
+        phoneNumber: canonicalPhone,
         country: "Tunisie",
         governorate: data.governorate,
         city: data.city,
@@ -380,6 +482,17 @@ export async function POST(request: Request) {
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes("unique") || msg.includes("already exists") || msg.includes("23505")) {
+      return NextResponse.json(
+        {
+          error: "PHONE_ALREADY_EXISTS",
+          message: ar
+            ? "رقم الهاتف مسجل بالفعل في الأكاديمية"
+            : "Ce numéro de téléphone est déjà associé à un compte ANEI.",
+        },
+        { status: 409 },
+      );
+    }
     return NextResponse.json({ error: "PROFILE_PROVISIONING_FAILED", message: msg }, { status: 500 });
   }
 

@@ -44,6 +44,7 @@ export const user = pgTable(
   },
   (table) => [
     uniqueIndex("user_email_unique").on(table.email),
+    uniqueIndex("user_phone_unique").on(table.phone).where(sql`${table.phone} IS NOT NULL AND ${table.phone} != ''`),
     index("user_role_idx").on(table.role),
     index("user_created_at_idx").on(table.createdAt),
     check("user_role_check", sql`${table.role} in ('USER','ADMIN','SUPER_ADMIN')`),

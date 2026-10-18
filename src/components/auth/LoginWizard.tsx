@@ -7,6 +7,7 @@ import type { Locale } from "@/types";
 import { authClient } from "@/lib/auth-client";
 import { AuthWizardProgress } from "@/components/auth/AuthWizardProgress";
 import { GoogleMark } from "@/components/auth/GoogleMark";
+import { normalizeCanonicalEmail } from "@/lib/auth/canonical-identity";
 import {
   Lock,
   Mail,
@@ -117,16 +118,25 @@ export function LoginWizard({
     setLoading(true);
     setError(null);
 
+    const canonicalEmail = normalizeCanonicalEmail(email);
+
     try {
       const result = await authClient.signIn.email({
-        email: email.trim(),
+        email: canonicalEmail,
         password,
       });
 
       if (result.error) {
         if (result.error.code === "EMAIL_NOT_VERIFIED") {
-          router.push(`/${locale}/verify-email?email=${encodeURIComponent(email.trim())}`);
+          router.push(`/${locale}/verify-email?email=${encodeURIComponent(canonicalEmail)}`);
           return;
+        }
+        if (result.error.code === "TOO_MANY_ATTEMPTS" || (result.error as { status?: number }).status === 429) {
+          throw new Error(
+            ar
+              ? "تم حظر محاولات تسجيل الدخول مؤقتًا لكثرة المحاولات الفاشلة. يُرجى الانتظار 15 دقيقة."
+              : "Trop de tentatives de connexion échouées. Compte temporairement protégé, réessayez dans 15 minutes.",
+          );
         }
         throw new Error(
           ar
