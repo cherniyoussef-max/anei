@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/server/auth/session";
-import { retrieveKnowledgeChunks } from "@/server/ai/retriever";
-import { buildTeacherAssistantPrompt } from "@/server/ai/prompts";
-import { getLLMProvider } from "@/server/ai/llm-provider";
+import { getHybridRAGEngine } from "@/server/ai/hybrid-rag-engine";
 import { checkAndConsumeAiQuota, recordAiUsageLog } from "@/server/ai/meter";
 import { consumeRateLimit } from "@/server/security/rate-limit";
 import { isTrustedMutation } from "@/server/security/origin";
@@ -59,7 +57,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { message, locale, courseId } = parsed.data;
+    const { message, locale, courseId: _courseId } = parsed.data;
 
     // 2. Token-Drain Protection & Rate Limiting (Teacher tier)
     const rate = await consumeRateLimit(`assistant:teacher:${user.id}`, 30, 60);
@@ -88,54 +86,37 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. Hybrid Retrieval with Teacher Visibility Permissions
-    const chunks = await retrieveKnowledgeChunks({
-      query: message,
-      locale,
-      audience: "TEACHER",
-      userId: user.id,
-      role,
-      courseId,
-      limit: 6,
-    });
-
-    // 4. Pedagogical Prompt Construction
-    const systemPrompt = buildTeacherAssistantPrompt(locale, chunks);
-
-    // 5. Invoke LLM Provider
+    // 3. Hybrid Agentic RAG Retrieval & Generation
     const startTime = Date.now();
-    const provider = getLLMProvider();
-
-    const output = await provider.chat({
-      userId: user.id,
-      locale,
-      courseId,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: message },
-      ],
+    const ragEngine = getHybridRAGEngine();
+    const ragResult = await ragEngine.generateTeacherResponse(message, locale, {
+      role: profileType === "specialist" ? "specialist" : "teacher",
     });
 
     const durationMs = Date.now() - startTime;
+    const outputText = ragResult.answer;
 
     // Record usage
     recordAiUsageLog({
       userId: user.id,
-      provider: provider.name,
-      inputTokens: output.usage?.inputTokens ?? 350,
-      outputTokens: output.usage?.outputTokens ?? 250,
+      provider: "azure-openai",
+      inputTokens: Math.ceil(message.length / 3) + 600,
+      outputTokens: Math.ceil(outputText.length / 3),
       durationMs,
       success: true,
     }).catch(() => undefined);
 
-    // 6. SSE Streaming Response
-    const citations = chunks.map((c) => ({
-      id: c.id,
-      title: c.title,
-      source: c.source,
-      visibility: c.visibility,
-      score: Number(c.score.toFixed(3)),
-      snippet: c.text.slice(0, 180).trim() + "...",
+    // 4. SSE Streaming Response with Citations
+    const citations = ragResult.sources.map((s) => ({
+      id: s.id,
+      title: s.fileName.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
+      source: `[${s.folderName} / ${s.fileName}]`,
+      visibility: "TEACHER",
+      score: Number(s.score.toFixed(3)),
+      snippet: s.text.slice(0, 180).trim() + "...",
+      category: s.category,
+      fileName: s.fileName,
+      sectionTitle: s.sectionTitle,
     }));
 
     const encoder = new TextEncoder();
@@ -145,7 +126,7 @@ export async function POST(req: NextRequest) {
           encoder.encode(`event: citations\ndata: ${JSON.stringify({ citations })}\n\n`),
         );
 
-        const fullText = output.text;
+        const fullText = outputText;
         const words = fullText.split(" ");
         for (let i = 0; i < words.length; i += 3) {
           const slice = words.slice(i, i + 3).join(" ") + (i + 3 < words.length ? " " : "");
@@ -158,7 +139,7 @@ export async function POST(req: NextRequest) {
           encoder.encode(
             `event: done\ndata: ${JSON.stringify({
               finished: true,
-              usage: output.usage,
+              usage: { totalTokens: ragResult.tokensUsed },
             })}\n\n`,
           ),
         );

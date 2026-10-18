@@ -2910,6 +2910,31 @@ export const aiUsageLog = pgTable(
   (table) => [index("ai_usage_log_user_idx").on(table.userId, table.createdAt)],
 );
 
+export const aiFeedbackLog = pgTable(
+  "ai_feedback_log",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
+    conversationId: text("conversation_id").references(() => aiConversation.id, { onDelete: "set null" }),
+    messageId: text("message_id"),
+    rating: text("rating").notNull(), // 'HELPFUL' | 'UNHELPFUL'
+    comment: text("comment"),
+    queryText: text("query_text"),
+    responseText: text("response_text"),
+    sourcesUsed: jsonb("sources_used"),
+    category: text("category"),
+    locale: text("locale").notNull().default("fr"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("ai_feedback_log_user_idx").on(table.userId, table.createdAt),
+    index("ai_feedback_log_rating_idx").on(table.rating, table.createdAt),
+    check("ai_feedback_log_rating_check", sql`${table.rating} in ('HELPFUL','UNHELPFUL')`),
+  ],
+);
+
+export type AiFeedbackLogRow = typeof aiFeedbackLog.$inferSelect;
+
 // -----------------------------------------------------------------------------
 // Phase 10C/10D/10E: automation + MCP foundation.
 //

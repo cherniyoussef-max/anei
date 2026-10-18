@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/server/auth/session";
-import { retrieveKnowledgeChunks } from "@/server/ai/retriever";
-import { buildPublicAssistantPrompt } from "@/server/ai/prompts";
-import { getLLMProvider } from "@/server/ai/llm-provider";
+import { getHybridRAGEngine } from "@/server/ai/hybrid-rag-engine";
 import { checkAndConsumeAiQuota, recordAiUsageLog } from "@/server/ai/meter";
 import { consumeRateLimit, requestFingerprint } from "@/server/security/rate-limit";
 import { isTrustedMutation } from "@/server/security/origin";
@@ -67,52 +65,35 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 2. Hybrid Retrieval with Database Visibility Isolation
-    const chunks = await retrieveKnowledgeChunks({
-      query: message,
-      locale,
-      audience: "PUBLIC",
-      userId,
-      limit: 4,
-    });
-
-    // 3. Prompt Construction with Strict Guardrails
-    const systemPrompt = buildPublicAssistantPrompt(locale, chunks);
-
-    // 4. Invoke LLM Provider
+    // 2. Hybrid Agentic RAG Retrieval & Generation
     const startTime = Date.now();
-    const provider = getLLMProvider();
-
-    const output = await provider.chat({
-      userId: userId ?? `guest-${requestFingerprint(req)}`,
-      locale,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: message },
-      ],
-    });
-
+    const ragEngine = getHybridRAGEngine();
+    const ragResult = await ragEngine.generateTeacherResponse(message, locale);
     const durationMs = Date.now() - startTime;
+    const outputText = ragResult.answer;
 
     // Record usage asynchronously
     if (userId) {
       recordAiUsageLog({
         userId,
-        provider: provider.name,
-        inputTokens: output.usage?.inputTokens ?? 200,
-        outputTokens: output.usage?.outputTokens ?? 100,
+        provider: "azure-openai",
+        inputTokens: Math.ceil(message.length / 3) + 400,
+        outputTokens: Math.ceil(outputText.length / 3),
         durationMs,
         success: true,
       }).catch(() => undefined);
     }
 
-    // 5. SSE Streaming Response
-    const citations = chunks.map((c) => ({
-      id: c.id,
-      title: c.title,
-      source: c.source,
-      score: Number(c.score.toFixed(3)),
-      snippet: c.text.slice(0, 160).trim() + "...",
+    // 3. SSE Streaming Response with Citations
+    const citations = ragResult.sources.map((s) => ({
+      id: s.id,
+      title: s.fileName.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
+      source: `[${s.folderName} / ${s.fileName}]`,
+      score: Number(s.score.toFixed(3)),
+      snippet: s.text.slice(0, 160).trim() + "...",
+      category: s.category,
+      fileName: s.fileName,
+      sectionTitle: s.sectionTitle,
     }));
 
     const encoder = new TextEncoder();
@@ -124,7 +105,7 @@ export async function POST(req: NextRequest) {
         );
 
         // Stream text in readable word chunks
-        const fullText = output.text;
+        const fullText = outputText;
         const words = fullText.split(" ");
         for (let i = 0; i < words.length; i += 3) {
           const slice = words.slice(i, i + 3).join(" ") + (i + 3 < words.length ? " " : "");
@@ -138,7 +119,7 @@ export async function POST(req: NextRequest) {
           encoder.encode(
             `event: done\ndata: ${JSON.stringify({
               finished: true,
-              usage: output.usage,
+              usage: { totalTokens: ragResult.tokensUsed },
             })}\n\n`,
           ),
         );

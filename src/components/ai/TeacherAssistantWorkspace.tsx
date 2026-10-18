@@ -13,6 +13,8 @@ import {
   Bot,
   User,
   SlidersHorizontal,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 
 interface Citation {
@@ -40,38 +42,38 @@ interface TeacherAssistantWorkspaceProps {
 const TEMPLATES = {
   fr: [
     {
-      title: "Différenciation TDAH",
-      prompt: "Comment structurer une séance de lecture et adapter les consignes pour un élève présentant un TDAH avec impulsivité ?",
+      title: "🎯 Adapter un exercice (TDAH / DYS)",
+      prompt: "Comment adapter un exercice de français ou de mathématiques et ses consignes pour un élève présentant un TDAH ou une dyslexie ?",
     },
     {
-      title: "Adaptation Dyslexie",
-      prompt: "Proposez une grille d'évaluation adaptée en histoire-géographie pour un collégien avec dyslexie sévère (supports visuels, barème).",
+      title: "🧩 Gérer une crise ou un refus de tâche",
+      prompt: "Que faire immédiatement face à une crise, une agitation motrice sévère ou un refus de tâche en classe ?",
     },
     {
-      title: "Aménagement TSA",
-      prompt: "Quelles routines prévisibles et aides visuelles mettre en place pour faciliter les transitions en classe d'un élève avec autisme ?",
+      title: "📋 Grille d'observation & PEI",
+      prompt: "Aidez-moi à concevoir une grille d'observation des comportements et des objectifs concrets pour un plan d'accompagnement (PEI).",
     },
     {
-      title: "Objectifs PAI / PPS",
-      prompt: "Aidez-moi à formuler 3 objectifs pédagogiques mesurables et réalistes pour le projet personnalisé de scolarisation d'un élève.",
+      title: "💡 Expliquer simplement un trouble",
+      prompt: "Comment expliquer de manière simple, déculpabilisante et positive le TDAH, la Dyslexie ou le TSA à l'élève et à ses camarades ?",
     },
   ],
   ar: [
     {
-      title: "تمايز بيداغوجي (TDAH)",
-      prompt: "كيف يمكن هيكلة حصة قراءة وتكييف التعليمات لتلميذ يعاني من فرط الحركة وتشتت الانتباه مع الاندفاعية؟",
+      title: "🎯 تكييف تمرين أو اختبار (TDAH / DYS)",
+      prompt: "كيف يمكن تكييف تمرين في مادة اللغة أو الرياضيات وتبسيط التعليمات لتلميذ من ذوي فرط الحركة أو عسر القراءة والكتابة؟",
     },
     {
-      title: "تكييف تقييم (عسر القراءة DYS)",
-      prompt: "اقترح شبكة تقييم مكيفة في مادة الإيقاظ العلمي لتلميذ يعاني من عسر قراءة حاد (دعائم بصرية وسلم نقاط مرن).",
+      title: "🧩 التعامل مع نوبة غضب أو رفض المهمة",
+      prompt: "ما هي الخطوات الإجرائية الفورية للتعامل مع نوبة غضب، تفريغ حسي، أو رفض أداء المهمة داخل الفصل المدرسي؟",
     },
     {
-      title: "تنظيم بيئة التعلم (طيف التوحد TSA)",
-      prompt: "ما هي الروتينات اليومية والوسائل البصرية الموصى بها لتسهيل الانتقال بين الأنشطة لتلميذ من ذوي طيف التوحد؟",
+      title: "📋 إعداد شبكة ملاحظة وخطة مرافقة (PEI)",
+      prompt: "ساعدني في إعداد شبكة ملاحظة دقيقة للسلوكيات وتحديد أهداف بيداغوجية لمشروع الدمج الفردي للتلميذ.",
     },
     {
-      title: "أهداف الخطة الفردية (PPS/PAI)",
-      prompt: "ساعدني في صياغة 3 أهداف بيداغوجية دقيقة وقابلة للقياس لمشروع الدمج المدرسي الفردي لتلميذ مدمج.",
+      title: "💡 شرح مبسط للاضطراب",
+      prompt: "كيف أشرح بطريقة علمية مبسطة وإيجابية اضطراب فرط الحركة، عسر التعلّم أو طيف التوحد للتلميذ وزملائه في القسم؟",
     },
   ],
 };
@@ -99,6 +101,27 @@ export function TeacherAssistantWorkspace({
     await navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const [feedbackGiven, setFeedbackGiven] = useState<Record<string, "HELPFUL" | "UNHELPFUL">>({});
+
+  const handleFeedback = async (msgId: string, rating: "HELPFUL" | "UNHELPFUL", content: string, citations?: Citation[]) => {
+    setFeedbackGiven((prev) => ({ ...prev, [msgId]: rating }));
+    try {
+      await fetch("/api/ai/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rating,
+          responseText: content,
+          sourcesUsed: citations,
+          locale,
+          messageId: msgId,
+        }),
+      });
+    } catch {
+      // Ignore network errors
+    }
   };
 
   const handleReset = () => {
@@ -346,22 +369,53 @@ export function TeacherAssistantWorkspace({
                         )}
                       </div>
 
-                      <button
-                        onClick={() => handleCopy(msg.id, msg.content)}
-                        className="flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-slate-800 py-1 px-2 rounded hover:bg-slate-100 transition-colors"
-                      >
-                        {copiedId === msg.id ? (
-                          <>
-                            <Check className="w-3.5 h-3.5 text-emerald-600" />
-                            <span className="text-emerald-600">{isRtl ? "تم النسخ" : "Copié"}</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3.5 h-3.5" />
-                            <span>{isRtl ? "نسخ الملاحظات" : "Copier la fiche"}</span>
-                          </>
-                        )}
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleCopy(msg.id, msg.content)}
+                          className="flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-slate-800 py-1 px-2 rounded hover:bg-slate-100 transition-colors"
+                        >
+                          {copiedId === msg.id ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                              <span className="text-emerald-600">{isRtl ? "تم النسخ" : "Copié"}</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>{isRtl ? "نسخ الملاحظات" : "Copier la fiche"}</span>
+                            </>
+                          )}
+                        </button>
+
+                        <div className="flex items-center gap-1 border-s border-slate-200 ps-1.5 ms-1">
+                          <button
+                            type="button"
+                            onClick={() => handleFeedback(msg.id, "HELPFUL", msg.content, msg.citations)}
+                            className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded transition-colors ${
+                              feedbackGiven[msg.id] === "HELPFUL"
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold"
+                                : "text-slate-500 hover:text-emerald-600 hover:bg-slate-100"
+                            }`}
+                            title={isRtl ? "مفيد" : "Utile"}
+                          >
+                            <ThumbsUp className="w-3.5 h-3.5" />
+                            <span>{isRtl ? "مفيد" : "Utile"}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleFeedback(msg.id, "UNHELPFUL", msg.content, msg.citations)}
+                            className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded transition-colors ${
+                              feedbackGiven[msg.id] === "UNHELPFUL"
+                                ? "bg-rose-50 text-rose-700 border border-rose-200 font-semibold"
+                                : "text-slate-500 hover:text-rose-600 hover:bg-slate-100"
+                            }`}
+                            title={isRtl ? "بحاجة لتحسين" : "À améliorer"}
+                          >
+                            <ThumbsDown className="w-3.5 h-3.5" />
+                            <span>{isRtl ? "بحاجة لتحسين" : "À améliorer"}</span>
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   )}
 

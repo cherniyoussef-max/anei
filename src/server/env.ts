@@ -95,6 +95,11 @@ const schema = z.object({
   OPENAI_MODEL: z.string().default("gpt-4o-mini"),
   AI_EMBEDDING_MODEL: z.string().default("text-embedding-3-small"),
   AI_EMBEDDING_DIMENSIONS: z.coerce.number().int().positive().default(1536),
+  AZURE_OPENAI_ENDPOINT: optionalTrimmed,
+  AZURE_OPENAI_API_KEY: optionalTrimmed,
+  AZURE_OPENAI_API_VERSION: z.string().default("2024-10-21"),
+  AZURE_OPENAI_CHAT_DEPLOYMENT: z.string().default("anei-teacher-agent"),
+  AZURE_OPENAI_EMBEDDING_DEPLOYMENT: z.string().default("anei-rag-embeddings"),
 });
 
 const parsed = schema.parse(process.env);

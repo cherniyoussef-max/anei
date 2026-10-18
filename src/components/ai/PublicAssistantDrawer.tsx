@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { MessageSquare, X, Send, Sparkles, BookOpen, ShieldCheck, ChevronDown, ChevronUp, Bot, User } from "lucide-react";
+import { MessageSquare, X, Send, Sparkles, BookOpen, ShieldCheck, ChevronDown, ChevronUp, Bot, User, ThumbsUp, ThumbsDown } from "lucide-react";
 
 interface Citation {
   id: string;
@@ -25,14 +25,16 @@ interface PublicAssistantDrawerProps {
 
 const SUGGESTIONS = {
   fr: [
-    "Comment demander un accompagnant AVS ?",
-    "Quelles formations sont ouvertes aux familles ?",
-    "Qu'est-ce que l'éducation inclusive ?",
+    "🎯 Adapter un exercice pour élève TDAH / DYS",
+    "🧩 Que faire face à une crise ou refus de tâche ?",
+    "📋 Créer une grille d'observation / PEI",
+    "💡 Expliquer simplement le TDAH, la Dyslexie ou le TSA",
   ],
   ar: [
-    "كيفية طلب مرافقة مدرسية (AVS)؟",
-    "ما هي الدورات التدريبية المتاحة للأولياء؟",
-    "ما هو مفهوم التربية الدامجة في الأكاديمية؟",
+    "🎯 تكييف تمرين لتلميذ TDAH أو عسر التعلّم",
+    "🧩 التعامل مع نوبة غضب أو تفريغ حسي",
+    "📋 إعداد شبكة ملاحظة وخطة مرافقة (PEI)",
+    "💡 شرح مبسط لاضطراب فرط الحركة أو التوحد",
   ],
 };
 
@@ -42,6 +44,26 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [expandedCitations, setExpandedCitations] = useState<Record<string, boolean>>({});
+  const [feedbackGiven, setFeedbackGiven] = useState<Record<string, "HELPFUL" | "UNHELPFUL">>({});
+
+  const handleFeedback = async (msgId: string, rating: "HELPFUL" | "UNHELPFUL", content: string, citations?: Citation[]) => {
+    setFeedbackGiven((prev) => ({ ...prev, [msgId]: rating }));
+    try {
+      await fetch("/api/ai/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rating,
+          responseText: content,
+          sourcesUsed: citations,
+          locale,
+          messageId: msgId,
+        }),
+      });
+    } catch {
+      // Ignore network errors
+    }
+  };
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -326,21 +348,35 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
                         )}
                       </button>
 
-                      {expandedCitations[msg.id] && (
-                        <div className="mt-1 space-y-1.5 p-2 rounded-lg bg-white border border-slate-200/80">
-                          {msg.citations.map((c, i) => (
-                            <div key={i} className="border-b border-slate-100 last:border-b-0 pb-1.5 last:pb-0">
-                              <div className="flex items-center justify-between text-[11px] font-semibold text-[#002B49]">
-                                <span>{c.title}</span>
-                                <span className="text-[10px] text-slate-400 font-normal">
-                                  {Math.round(c.score * 100)}% pertinence
-                                </span>
-                              </div>
-                              <p className="text-[10px] text-slate-500 italic mt-0.5 line-clamp-2">
-                                &ldquo;{c.snippet}&rdquo;
-                              </p>
-                            </div>
-                          ))}
+                      {/* Feedback buttons */}
+                      {!msg.isStreaming && msg.content && (
+                        <div className="flex items-center gap-1.5 pt-1 text-[11px] text-slate-400">
+                          <button
+                            type="button"
+                            onClick={() => handleFeedback(msg.id, "HELPFUL", msg.content, msg.citations)}
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                              feedbackGiven[msg.id] === "HELPFUL"
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                : "text-slate-500 hover:text-emerald-600 hover:bg-slate-100"
+                            }`}
+                            title={isRtl ? "مفيد" : "Utile"}
+                          >
+                            <ThumbsUp className="w-3 h-3" />
+                            <span>{isRtl ? "مفيد" : "Utile"}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleFeedback(msg.id, "UNHELPFUL", msg.content, msg.citations)}
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                              feedbackGiven[msg.id] === "UNHELPFUL"
+                                ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                : "text-slate-500 hover:text-rose-600 hover:bg-slate-100"
+                            }`}
+                            title={isRtl ? "بحاجة لتحسين" : "À améliorer"}
+                          >
+                            <ThumbsDown className="w-3 h-3" />
+                            <span>{isRtl ? "بحاجة لتحسين" : "À améliorer"}</span>
+                          </button>
                         </div>
                       )}
                     </div>
