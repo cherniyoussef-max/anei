@@ -7,6 +7,7 @@ import { auditLogs, courseModules, lessons } from "@/server/db/schema";
 import { isTrustedMutation } from "@/server/security/origin";
 import { readLimitedJson } from "@/server/security/request-body";
 import { lessonMediaReferenceSchema, mediaProviderSchema, resolveMediaRef, InvalidLessonMediaError } from "@/server/services/lesson-media";
+import { invalidateAdminCourseCurriculumCache } from "@/modules/admin/queries/admin-learning";
 
 const idSchema = z.string().uuid();
 const patchSchema = z.object({
@@ -92,6 +93,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     entityId: id.data,
     metadata: { mediaProvider: nextProvider, mediaRefChanged: rawMediaRef !== existing.mediaRef },
   });
+  invalidateAdminCourseCurriculumCache(existing.courseId);
   return NextResponse.json({ lesson });
 }
 
@@ -107,5 +109,6 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   const [lesson] = await db.delete(lessons).where(eq(lessons.id, id.data)).returning({ id: lessons.id, courseId: lessons.courseId });
   if (!lesson) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
   await db.insert(auditLogs).values({ actorUserId: session.user.id, action: "lesson.delete", entityType: "lesson", entityId: id.data, metadata: { courseId: lesson.courseId } });
+  invalidateAdminCourseCurriculumCache(lesson.courseId);
   return NextResponse.json({ ok: true });
 }

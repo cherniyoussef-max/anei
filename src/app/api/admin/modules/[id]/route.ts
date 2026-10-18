@@ -6,6 +6,7 @@ import { db } from "@/server/db";
 import { auditLogs, courseModules } from "@/server/db/schema";
 import { isTrustedMutation } from "@/server/security/origin";
 import { readLimitedJson } from "@/server/security/request-body";
+import { invalidateAdminCourseCurriculumCache } from "@/modules/admin/queries/admin-learning";
 
 const idSchema = z.string().uuid();
 const patchSchema = z.object({
@@ -59,6 +60,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return updated;
   });
   await db.insert(auditLogs).values({ actorUserId: session.user.id, action: "course_module.update", entityType: "course_module", entityId: id.data, metadata: { courseId: existing.courseId } });
+  invalidateAdminCourseCurriculumCache(existing.courseId);
   return NextResponse.json({ module: courseModule });
 }
 
@@ -74,5 +76,6 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   const [deletedModule] = await db.delete(courseModules).where(eq(courseModules.id, id.data)).returning({ id: courseModules.id, courseId: courseModules.courseId });
   if (!deletedModule) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
   await db.insert(auditLogs).values({ actorUserId: session.user.id, action: "course_module.delete", entityType: "course_module", entityId: id.data, metadata: { courseId: deletedModule.courseId } });
+  invalidateAdminCourseCurriculumCache(deletedModule.courseId);
   return NextResponse.json({ ok: true });
 }

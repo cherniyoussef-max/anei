@@ -118,12 +118,37 @@ export async function getAdminCourseEditorBase(courseId: string) {
   return course ?? null;
 }
 
+export const adminLessonCurriculumColumns = {
+  id: lessons.id,
+  courseId: lessons.courseId,
+  moduleId: lessons.moduleId,
+  position: lessons.position,
+  titleFr: lessons.titleFr,
+  titleAr: lessons.titleAr,
+  descriptionFr: lessons.descriptionFr,
+  descriptionAr: lessons.descriptionAr,
+  durationSeconds: lessons.durationSeconds,
+  videoUrl: lessons.videoUrl,
+  documentUrl: lessons.documentUrl,
+  preview: lessons.preview,
+  mediaProvider: lessons.mediaProvider,
+  mediaRef: lessons.mediaRef,
+  createdAt: lessons.createdAt,
+};
+
 export async function getAdminCourseCurriculum(courseId: string) {
-  const [modules, lessonRows] = await Promise.all([
-    db.select().from(courseModules).where(eq(courseModules.courseId, courseId)).orderBy(asc(courseModules.position)),
-    db.select().from(lessons).where(eq(lessons.courseId, courseId)).orderBy(asc(lessons.position)),
-  ]);
-  return { modules, lessons: lessonRows };
+  return withLearningCache(`admin:course:${courseId}:curriculum`, async () => {
+    const [modules, lessonRows] = await Promise.all([
+      db.select().from(courseModules).where(eq(courseModules.courseId, courseId)).orderBy(asc(courseModules.position)),
+      db.select(adminLessonCurriculumColumns).from(lessons).where(eq(lessons.courseId, courseId)).orderBy(asc(lessons.position)),
+    ]);
+    return { modules, lessons: lessonRows };
+  });
+}
+
+export function invalidateAdminCourseCurriculumCache(courseId: string) {
+  memoryCache.delete(`admin:course:${courseId}:curriculum`);
+  import("@/server/cache/redis").then(({ getRedis }) => getRedis()).then((r) => r?.del(`admin:course:${courseId}:curriculum`)).catch(() => {});
 }
 
 export async function getAdminCourseAssessments(courseId: string) {

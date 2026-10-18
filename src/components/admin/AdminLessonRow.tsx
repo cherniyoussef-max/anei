@@ -19,6 +19,11 @@ export function AdminLessonRow({ locale, courseId, lesson, modules = [] }: { loc
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [state, setState] = useState<"idle" | "loading" | "error">("idle");
+  const [position, setPosition] = useState(lesson.position);
+  const [currentTitleFr, setCurrentTitleFr] = useState(lesson.titleFr);
+  const [currentTitleAr, setCurrentTitleAr] = useState(lesson.titleAr);
+  const [currentDuration, setCurrentDuration] = useState(lesson.durationSeconds);
+  const [currentMediaProvider, setCurrentMediaProvider] = useState(lesson.mediaProvider);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -51,22 +56,49 @@ export function AdminLessonRow({ locale, courseId, lesson, modules = [] }: { loc
       payload.documentUrl = documentObjectKey;
     }
 
-    const res = await fetch(`/api/admin/lessons/${lesson.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-    if (res.ok) { setEditing(false); setState("idle"); router.refresh(); } else setState("error");
+    try {
+      const res = await fetch(`/api/admin/lessons/${lesson.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      if (res.ok) {
+        setCurrentTitleFr(payload.titleFr as string);
+        setCurrentTitleAr(payload.titleAr as string);
+        setCurrentDuration(payload.durationSeconds as number);
+        if (mediaProvider) setCurrentMediaProvider(mediaProvider);
+        setPosition(payload.position as number);
+        setEditing(false);
+        setState("idle");
+        router.refresh();
+      } else {
+        setState("error");
+      }
+    } catch {
+      setState("error");
+    }
   }
 
   async function move(delta: 1 | -1) {
-    const nextPosition = lesson.position + delta;
+    const nextPosition = position + delta;
     if (nextPosition < 1) return;
+    const prevPosition = position;
+    setPosition(nextPosition);
     setState("loading");
-    const res = await fetch(`/api/admin/lessons/${lesson.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ position: nextPosition }) });
-    setState(res.ok ? "idle" : "error");
-    if (res.ok) router.refresh();
+    try {
+      const res = await fetch(`/api/admin/lessons/${lesson.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ position: nextPosition }) });
+      if (res.ok) {
+        setState("idle");
+        router.refresh();
+      } else {
+        setPosition(prevPosition);
+        setState("error");
+      }
+    } catch {
+      setPosition(prevPosition);
+      setState("error");
+    }
   }
 
   if (!editing) return <article>
-    <b>{lesson.position}</b>
-    <div><strong>{ar ? lesson.titleAr : lesson.titleFr}</strong><small>{lesson.mediaProvider === "cloudflare_stream" ? "Cloudflare Stream ⚡" : lesson.mediaProvider} · {Math.round(lesson.durationSeconds / 60)} min</small></div>
+    <b>{position}</b>
+    <div><strong>{ar ? currentTitleAr : currentTitleFr}</strong><small>{currentMediaProvider === "cloudflare_stream" ? "Cloudflare Stream ⚡" : currentMediaProvider} · {Math.round(currentDuration / 60)} min</small></div>
     <div className="admin-list-actions">
       <button type="button" className="btn btn-ghost btn-sm" disabled={state === "loading"} onClick={() => move(-1)} aria-label={ar ? "نقل لأعلى" : "Monter"}>↑</button>
       <button type="button" className="btn btn-ghost btn-sm" disabled={state === "loading"} onClick={() => move(1)} aria-label={ar ? "نقل لأسفل" : "Descendre"}>↓</button>

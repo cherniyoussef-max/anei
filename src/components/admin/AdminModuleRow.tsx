@@ -12,28 +12,56 @@ export function AdminModuleRow({ locale, module, lessonCount }: { locale: Locale
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [state, setState] = useState<"idle" | "loading" | "error">("idle");
+  const [position, setPosition] = useState(module.position);
+  const [currentTitleFr, setCurrentTitleFr] = useState(module.titleFr);
+  const [currentTitleAr, setCurrentTitleAr] = useState(module.titleAr);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setState("loading");
     const f = new FormData(event.currentTarget);
     const payload = { position: Number(f.get("position")), titleFr: String(f.get("titleFr")), titleAr: String(f.get("titleAr")), descriptionFr: String(f.get("descriptionFr") || ""), descriptionAr: String(f.get("descriptionAr") || "") };
-    const res = await fetch(`/api/admin/modules/${module.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-    if (res.ok) { setEditing(false); setState("idle"); router.refresh(); } else setState("error");
+    try {
+      const res = await fetch(`/api/admin/modules/${module.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      if (res.ok) {
+        setPosition(payload.position);
+        setCurrentTitleFr(payload.titleFr);
+        setCurrentTitleAr(payload.titleAr);
+        setEditing(false);
+        setState("idle");
+        router.refresh();
+      } else {
+        setState("error");
+      }
+    } catch {
+      setState("error");
+    }
   }
 
   async function move(delta: 1 | -1) {
-    const nextPosition = module.position + delta;
+    const nextPosition = position + delta;
     if (nextPosition < 1) return;
+    const prevPosition = position;
+    setPosition(nextPosition);
     setState("loading");
-    const res = await fetch(`/api/admin/modules/${module.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ position: nextPosition }) });
-    setState(res.ok ? "idle" : "error");
-    if (res.ok) router.refresh();
+    try {
+      const res = await fetch(`/api/admin/modules/${module.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ position: nextPosition }) });
+      if (res.ok) {
+        setState("idle");
+        router.refresh();
+      } else {
+        setPosition(prevPosition);
+        setState("error");
+      }
+    } catch {
+      setPosition(prevPosition);
+      setState("error");
+    }
   }
 
   if (!editing) return <article>
-    <b>{module.position}</b>
-    <div><strong>{ar ? module.titleAr : module.titleFr}</strong><small>{lessonCount} {ar ? "دروس" : "leçons"}</small></div>
+    <b>{position}</b>
+    <div><strong>{ar ? currentTitleAr : currentTitleFr}</strong><small>{lessonCount} {ar ? "دروس" : "leçons"}</small></div>
     <div className="admin-list-actions">
       <button type="button" className="btn btn-ghost btn-sm" disabled={state === "loading"} onClick={() => move(-1)} aria-label={ar ? "نقل لأعلى" : "Monter"}>↑</button>
       <button type="button" className="btn btn-ghost btn-sm" disabled={state === "loading"} onClick={() => move(1)} aria-label={ar ? "نقل لأسفل" : "Descendre"}>↓</button>

@@ -87,13 +87,35 @@ async function withDashboardCache<T>(cacheKey: string, compute: () => Promise<T>
   return value;
 }
 
+let avsBookingColumnsChecked = false;
+async function ensureAvsBookingColumns() {
+  if (avsBookingColumnsChecked) return;
+  try {
+    await db.execute(sql`
+      ALTER TABLE "avs_booking_requests"
+        ADD COLUMN IF NOT EXISTS "amount_millimes" integer NOT NULL DEFAULT 35000,
+        ADD COLUMN IF NOT EXISTS "platform_fee_millimes" integer NOT NULL DEFAULT 3500,
+        ADD COLUMN IF NOT EXISTS "avs_payout_millimes" integer NOT NULL DEFAULT 31500,
+        ADD COLUMN IF NOT EXISTS "payment_status" text NOT NULL DEFAULT 'HELD_IN_ESCROW',
+        ADD COLUMN IF NOT EXISTS "payment_method" text,
+        ADD COLUMN IF NOT EXISTS "payment_reference" text,
+        ADD COLUMN IF NOT EXISTS "paid_at" timestamp with time zone,
+        ADD COLUMN IF NOT EXISTS "escrow_released_at" timestamp with time zone,
+        ADD COLUMN IF NOT EXISTS "refunded_at" timestamp with time zone;
+    `);
+    avsBookingColumnsChecked = true;
+  } catch (error) {
+    logger.warn("admin.ensure_avs_columns_warning", { error: String(error) });
+  }
+}
+
 type OverviewRow = {
   total_users: number; new_users: number; active_learners: number;
   published_courses: number; enrollments: number; completed_enrollments: number;
   certificates: number; upcoming_webinars: number; pending_contacts: number;
   revenue_millimes: number; successful_payments: number; failed_payments: number;
-  active_escrow_millimes: number; platform_commissions_millimes: number;
-  in_person_consultations_count: number; candidates_under_review_count: number;
+  active_escrow_millimes?: number; platform_commissions_millimes?: number;
+  in_person_consultations_count?: number; candidates_under_review_count: number;
   passed_interviews_count: number; approved_practitioners_count: number;
   course_sales_count: number;
   webinar_registrations_count: number;
@@ -105,38 +127,68 @@ export async function getAdminOverview(period: AdminPeriod) {
 }
 
 async function computeAdminOverview(period: AdminPeriod) {
+  await ensureAvsBookingColumns();
   const days = periodDays[period];
-  const result = await db.execute<OverviewRow>(sql`
-    select
-      (select count(*)::int from "user") as total_users,
-      (select count(*)::int from "user" where created_at >= now() - (${days} * interval '1 day')) as new_users,
-      (select count(distinct user_id)::int from enrollments where status = 'active') as active_learners,
-      (select count(*)::int from courses where published = true) as published_courses,
-      (select count(*)::int from enrollments) as enrollments,
-      (select count(*)::int from enrollments where status = 'completed') as completed_enrollments,
-      (select count(*)::int from certificates) as certificates,
-      (select count(*)::int from webinars where published = true and starts_at >= now()) as upcoming_webinars,
-      (select count(*)::int from contact_messages where status = 'new') as pending_contacts,
-      (select coalesce(sum(amount_millimes),0)::int from orders where status = 'paid'
-        and created_at >= now() - (${days} * interval '1 day')) as revenue_millimes,
-      (select count(*)::int from payments where status = 'paid'
-        and created_at >= now() - (${days} * interval '1 day')) as successful_payments,
-      (select count(*)::int from payments where status = 'failed'
-        and created_at >= now() - (${days} * interval '1 day')) as failed_payments,
-      (select coalesce(sum(amount_millimes), 0)::int from avs_booking_requests where escrow_status = 'HELD_IN_ESCROW') as active_escrow_millimes,
-      (select coalesce(sum(platform_fee_millimes), 0)::int from avs_booking_requests where status in ('CONFIRMED', 'COMPLETED')) as platform_commissions_millimes,
-      (select count(*)::int from avs_booking_requests where payment_mode = 'PAY_ON_SITE') as in_person_consultations_count,
-      (select count(*)::int from "user" where professional_post_status = 'CANDIDATE_UNDER_REVIEW') as candidates_under_review_count,
-      (select count(*)::int from practitioner_promotions where interview_status = 'PASSED') as passed_interviews_count,
-      (select count(*)::int from "user" where professional_post_status in ('APPROVED_AVS', 'APPROVED_SPECIALIST')) as approved_practitioners_count,
-      (select count(*)::int from orders where status = 'paid') as course_sales_count,
-      (select count(*)::int from webinar_registrations) as webinar_registrations_count,
-      (select count(distinct e.user_id)::int from webinar_registrations wr
-        inner join webinars w on w.id = wr.webinar_id
-        inner join enrollments e on e.user_id = wr.user_id and e.course_id = w.course_id
-        where w.course_id is not null) as webinar_to_course_conversions_count
-  `);
-  const row = result.rows[0];
+
+  let row: Partial<OverviewRow> = {};
+  try {
+    const result = await db.execute<OverviewRow>(sql`
+      select
+        (select count(*)::int from "user") as total_users,
+        (select count(*)::int from "user" where created_at >= now() - (${days} * interval '1 day')) as new_users,
+        (select count(distinct user_id)::int from enrollments where status = 'active') as active_learners,
+        (select count(*)::int from courses where published = true) as published_courses,
+        (select count(*)::int from enrollments) as enrollments,
+        (select count(*)::int from enrollments where status = 'completed') as completed_enrollments,
+        (select count(*)::int from certificates) as certificates,
+        (select count(*)::int from webinars where published = true and starts_at >= now()) as upcoming_webinars,
+        (select count(*)::int from contact_messages where status = 'new') as pending_contacts,
+        (select coalesce(sum(amount_millimes),0)::int from orders where status = 'paid'
+          and created_at >= now() - (${days} * interval '1 day')) as revenue_millimes,
+        (select count(*)::int from payments where status = 'paid'
+          and created_at >= now() - (${days} * interval '1 day')) as successful_payments,
+        (select count(*)::int from payments where status = 'failed'
+          and created_at >= now() - (${days} * interval '1 day')) as failed_payments,
+        (select count(*)::int from "user" where professional_post_status = 'CANDIDATE_UNDER_REVIEW') as candidates_under_review_count,
+        (select count(*)::int from practitioner_promotions where interview_status = 'PASSED') as passed_interviews_count,
+        (select count(*)::int from "user" where professional_post_status in ('APPROVED_AVS', 'APPROVED_SPECIALIST')) as approved_practitioners_count,
+        (select count(*)::int from orders where status = 'paid') as course_sales_count,
+        (select count(*)::int from webinar_registrations) as webinar_registrations_count,
+        (select count(distinct e.user_id)::int from webinar_registrations wr
+          inner join webinars w on w.id = wr.webinar_id
+          inner join enrollments e on e.user_id = wr.user_id and e.course_id = w.course_id
+          where w.course_id is not null) as webinar_to_course_conversions_count
+    `);
+    row = result.rows[0] ?? {};
+  } catch (error) {
+    logger.error("admin.overview_primary_query_failed", { error: String(error) });
+  }
+
+  // Safe isolated query for booking / escrow metrics so column drift never breaks the dashboard
+  let activeEscrowMillimes = 0;
+  let platformCommissionsMillimes = 0;
+  let inPersonConsultationsCount = 0;
+  try {
+    const avsMetrics = await db.execute<{
+      active_escrow: number;
+      commissions: number;
+      in_person: number;
+    }>(sql`
+      select
+        coalesce(sum(case when escrow_status = 'HELD_IN_ESCROW' then amount_millimes else 0 end), 0)::int as active_escrow,
+        coalesce(sum(case when status in ('CONFIRMED', 'COMPLETED') then platform_fee_millimes else 0 end), 0)::int as commissions,
+        coalesce(sum(case when payment_mode = 'PAY_ON_SITE' then 1 else 0 end), 0)::int as in_person
+      from avs_booking_requests
+    `);
+    if (avsMetrics.rows[0]) {
+      activeEscrowMillimes = avsMetrics.rows[0].active_escrow ?? 0;
+      platformCommissionsMillimes = avsMetrics.rows[0].commissions ?? 0;
+      inPersonConsultationsCount = avsMetrics.rows[0].in_person ?? 0;
+    }
+  } catch (error) {
+    logger.warn("admin.overview_avs_metrics_fallback", { error: String(error) });
+  }
+
   const webinarRegistrationsCount = row?.webinar_registrations_count ?? 0;
   const webinarToCourseConversionsCount = row?.webinar_to_course_conversions_count ?? 0;
   const webinarConversionRate = webinarRegistrationsCount > 0
@@ -150,16 +202,16 @@ async function computeAdminOverview(period: AdminPeriod) {
     activeLearners: row?.active_learners ?? 0,
     publishedCourses: row?.published_courses ?? 0,
     enrollments: row?.enrollments ?? 0,
-    completionRate: row?.enrollments ? Math.round((row.completed_enrollments / row.enrollments) * 1000) / 10 : 0,
+    completionRate: row?.enrollments ? Math.round(((row.completed_enrollments ?? 0) / row.enrollments) * 1000) / 10 : 0,
     certificatesIssued: row?.certificates ?? 0,
     upcomingWebinars: row?.upcoming_webinars ?? 0,
     pendingContacts: row?.pending_contacts ?? 0,
     revenueMillimes: row?.revenue_millimes ?? 0,
     successfulPayments: row?.successful_payments ?? 0,
     failedPayments: row?.failed_payments ?? 0,
-    activeEscrowMillimes: row?.active_escrow_millimes ?? 0,
-    platformCommissionsMillimes: row?.platform_commissions_millimes ?? 0,
-    inPersonConsultationsCount: row?.in_person_consultations_count ?? 0,
+    activeEscrowMillimes,
+    platformCommissionsMillimes,
+    inPersonConsultationsCount,
     candidatesUnderReviewCount: row?.candidates_under_review_count ?? 0,
     passedInterviewsCount: row?.passed_interviews_count ?? 0,
     approvedPractitionersCount: row?.approved_practitioners_count ?? 0,
@@ -178,23 +230,28 @@ export async function getAdminGrowth(period: AdminPeriod) {
 
 async function computeAdminGrowth(period: AdminPeriod) {
   const days = periodDays[period];
-  const result = await db.execute<GrowthRow>(sql`
-    with buckets as (
-      select generate_series(
-        date_trunc('day', now() - (${days - 1} * interval '1 day')),
-        date_trunc('day', now()), interval '1 day'
-      ) as bucket
-    ), u as (
-      select date_trunc('day', created_at) bucket, count(*)::int value
-      from "user" where created_at >= now() - (${days} * interval '1 day') group by 1
-    ), e as (
-      select date_trunc('day', enrolled_at) bucket, count(*)::int value
-      from enrollments where enrolled_at >= now() - (${days} * interval '1 day') group by 1
-    )
-    select buckets.bucket, coalesce(u.value,0)::int users, coalesce(e.value,0)::int enrollments
-    from buckets left join u using(bucket) left join e using(bucket) order by buckets.bucket
-  `);
-  return result.rows.map((row) => ({ date: row.bucket, users: row.users, enrollments: row.enrollments }));
+  try {
+    const result = await db.execute<GrowthRow>(sql`
+      with buckets as (
+        select generate_series(
+          date_trunc('day', now() - (${days - 1} * interval '1 day')),
+          date_trunc('day', now()), interval '1 day'
+        ) as bucket
+      ), u as (
+        select date_trunc('day', created_at) bucket, count(*)::int value
+        from "user" where created_at >= now() - (${days} * interval '1 day') group by 1
+      ), e as (
+        select date_trunc('day', enrolled_at) bucket, count(*)::int value
+        from enrollments where enrolled_at >= now() - (${days} * interval '1 day') group by 1
+      )
+      select buckets.bucket, coalesce(u.value,0)::int users, coalesce(e.value,0)::int enrollments
+      from buckets left join u using(bucket) left join e using(bucket) order by buckets.bucket
+    `);
+    return result.rows.map((row) => ({ date: row.bucket, users: row.users, enrollments: row.enrollments }));
+  } catch (error) {
+    logger.error("admin.growth_failed", { error: String(error) });
+    return [];
+  }
 }
 
 type DistributionRow = { label: string; value: number; id?: string };
@@ -203,37 +260,42 @@ export async function getAdminDistributions() {
 }
 
 async function computeAdminDistributions() {
-  const [roles, providers, courses, governorates, disciplines] = await Promise.all([
-    db.execute<DistributionRow>(sql`select role label, count(*)::int value from "user" group by role order by value desc`),
-    db.execute<DistributionRow>(sql`
-      select case when provider_id = 'credential' then 'email' else provider_id end label,
-        count(distinct user_id)::int value
-      from account group by 1 order by value desc
-    `),
-    db.execute<DistributionRow>(sql`
-      select c.id, c.title_fr label, count(e.id)::int value from courses c
-      left join enrollments e on e.course_id = c.id
-      group by c.id, c.title_fr order by value desc, c.title_fr limit 6
-    `),
-    db.execute<DistributionRow>(sql`
-      select coalesce(governorate_fr, 'Tunis') label, count(*)::int value
-      from avs_profiles where visible = true
-      group by 1 order by value desc limit 8
-    `),
-    db.execute<DistributionRow>(sql`
-      select case when directory_type = 'AVS' then 'AVS / Accompagnant' else coalesce(category, 'Spécialiste') end label,
-        count(*)::int value
-      from avs_profiles where visible = true
-      group by 1 order by value desc limit 8
-    `),
-  ]);
-  return {
-    roles: roles.rows,
-    providers: providers.rows,
-    topCourses: courses.rows,
-    governorates: governorates.rows,
-    disciplines: disciplines.rows,
-  };
+  try {
+    const [roles, providers, courses, governorates, disciplines] = await Promise.all([
+      db.execute<DistributionRow>(sql`select role label, count(*)::int value from "user" group by role order by value desc`).catch(() => ({ rows: [] })),
+      db.execute<DistributionRow>(sql`
+        select case when provider_id = 'credential' then 'email' else provider_id end label,
+          count(distinct user_id)::int value
+        from account group by 1 order by value desc
+      `).catch(() => ({ rows: [] })),
+      db.execute<DistributionRow>(sql`
+        select c.id, c.title_fr label, count(e.id)::int value from courses c
+        left join enrollments e on e.course_id = c.id
+        group by c.id, c.title_fr order by value desc, c.title_fr limit 6
+      `).catch(() => ({ rows: [] })),
+      db.execute<DistributionRow>(sql`
+        select coalesce(governorate_fr, 'Tunis') label, count(*)::int value
+        from avs_profiles where visible = true
+        group by 1 order by value desc limit 8
+      `).catch(() => ({ rows: [] })),
+      db.execute<DistributionRow>(sql`
+        select case when directory_type = 'AVS' then 'AVS / Accompagnant' else coalesce(category, 'Spécialiste') end label,
+          count(*)::int value
+        from avs_profiles where visible = true
+        group by 1 order by value desc limit 8
+      `).catch(() => ({ rows: [] })),
+    ]);
+    return {
+      roles: roles.rows,
+      providers: providers.rows,
+      topCourses: courses.rows,
+      governorates: governorates.rows,
+      disciplines: disciplines.rows,
+    };
+  } catch (error) {
+    logger.error("admin.distributions_failed", { error: String(error) });
+    return { roles: [], providers: [], topCourses: [], governorates: [], disciplines: [] };
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -262,130 +324,141 @@ export async function getAdminOnboardingAnalytics(): Promise<OnboardingAnalytics
 }
 
 async function computeAdminOnboardingAnalytics(): Promise<OnboardingAnalyticsData> {
-  const [categoriesRes, subSpecialtiesRes, territorialRes, sourcesRes, pathologiesRes] = await Promise.all([
-    db.execute<{ category: string; count: number }>(sql`
-      select
-        coalesce(o.category, case when u.profile_type = 'avs' then 'AVS' when u.profile_type = 'specialist' then 'SPECIALIST' else 'LEARNER' end) as category,
-        count(*)::int as count
-      from "user" u
-      left join user_onboarding_analytics o on o.user_id = u.id
-      group by 1
-      order by count desc
-    `),
-    db.execute<{ label: string; count: number }>(sql`
-      select coalesce(category, specialty_fr) as label, count(*)::int as count
-      from avs_profiles
-      where visible = true and directory_type = 'SPECIALIST'
-      group by 1
-      order by count desc
-      limit 6
-    `),
-    db.execute<{ governorate: string; learners_count: number; practitioners_count: number }>(sql`
-      with learner_gov as (
-        select coalesce(o.governorate, p.governorate, 'Tunis') as gov, count(*)::int as cnt
+  try {
+    const [categoriesRes, subSpecialtiesRes, territorialRes, sourcesRes, pathologiesRes] = await Promise.all([
+      db.execute<{ category: string; count: number }>(sql`
+        select
+          coalesce(o.category, case when u.profile_type = 'avs' then 'AVS' when u.profile_type = 'specialist' then 'SPECIALIST' else 'LEARNER' end) as category,
+          count(*)::int as count
         from "user" u
         left join user_onboarding_analytics o on o.user_id = u.id
-        left join user_profile p on p.user_id = u.id
-        where coalesce(o.category, u.profile_type) in ('LEARNER', 'learner', 'parent')
         group by 1
-      ),
-      practitioner_gov as (
-        select coalesce(governorate_fr, 'Tunis') as gov, count(*)::int as cnt
+        order by count desc
+      `).catch(() => ({ rows: [] })),
+      db.execute<{ label: string; count: number }>(sql`
+        select coalesce(category, specialty_fr) as label, count(*)::int as count
         from avs_profiles
-        where visible = true
+        where visible = true and directory_type = 'SPECIALIST'
         group by 1
-      )
-      select
-        coalesce(l.gov, p.gov) as governorate,
-        coalesce(l.cnt, 0)::int as learners_count,
-        coalesce(p.cnt, 0)::int as practitioners_count
-      from learner_gov l
-      full outer join practitioner_gov p on l.gov = p.gov
-      order by learners_count desc, practitioners_count desc
-      limit 8
-    `),
-    db.execute<{ source: string; count: number }>(sql`
-      select
-        coalesce(acquisition_source, 'DIRECT') as source,
-        count(*)::int as count
-      from user_onboarding_analytics
-      group by 1
-      order by count desc
-    `),
-    db.execute<{ name: string; learners_count: number; practitioners_count: number }>(sql`
-      with p_list as (
-        select unnest(array['Autisme (TSA)', 'Troubles DYS', 'TDAH', 'Trisomie 21', 'Retard de langage', 'Troubles sensoriels']) as name
-      )
-      select
-        p.name,
-        coalesce((select count(*)::int from user_onboarding_analytics o where p.name = any(o.pathologies)), 0) as learners_count,
-        coalesce((select count(*)::int from avs_profiles a where a.visible = true and p.name = any(a.intervention_domains)), 0) as practitioners_count
-      from p_list p
-      order by learners_count desc, practitioners_count desc
-    `),
-  ]);
+        order by count desc
+        limit 6
+      `).catch(() => ({ rows: [] })),
+      db.execute<{ governorate: string; learners_count: number; practitioners_count: number }>(sql`
+        with learner_gov as (
+          select coalesce(o.governorate, p.governorate, 'Tunis') as gov, count(*)::int as cnt
+          from "user" u
+          left join user_onboarding_analytics o on o.user_id = u.id
+          left join user_profile p on p.user_id = u.id
+          where coalesce(o.category, u.profile_type) in ('LEARNER', 'learner', 'parent')
+          group by 1
+        ),
+        practitioner_gov as (
+          select coalesce(governorate_fr, 'Tunis') as gov, count(*)::int as cnt
+          from avs_profiles
+          where visible = true
+          group by 1
+        )
+        select
+          coalesce(l.gov, p.gov) as governorate,
+          coalesce(l.cnt, 0)::int as learners_count,
+          coalesce(p.cnt, 0)::int as practitioners_count
+        from learner_gov l
+        full outer join practitioner_gov p on l.gov = p.gov
+        order by learners_count desc, practitioners_count desc
+        limit 8
+      `).catch(() => ({ rows: [] })),
+      db.execute<{ source: string; count: number }>(sql`
+        select
+          coalesce(acquisition_source, 'DIRECT') as source,
+          count(*)::int as count
+        from user_onboarding_analytics
+        group by 1
+        order by count desc
+      `).catch(() => ({ rows: [] })),
+      db.execute<{ name: string; learners_count: number; practitioners_count: number }>(sql`
+        with p_list as (
+          select unnest(array['Autisme (TSA)', 'Troubles DYS', 'TDAH', 'Trisomie 21', 'Retard de langage', 'Troubles sensoriels']) as name
+        )
+        select
+          p.name,
+          coalesce((select count(*)::int from user_onboarding_analytics o where p.name = any(o.pathologies)), 0) as learners_count,
+          coalesce((select count(*)::int from avs_profiles a where a.visible = true and p.name = any(a.intervention_domains)), 0) as practitioners_count
+        from p_list p
+        order by learners_count desc, practitioners_count desc
+      `).catch(() => ({ rows: [] })),
+    ]);
 
-  const totalUsers = categoriesRes.rows.reduce((sum, r) => sum + r.count, 0) || 1;
-  const categories = categoriesRes.rows.map((r) => {
-    const label = r.category === "LEARNER"
-      ? "Apprenants & Familles"
-      : r.category === "AVS"
-      ? "Accompagnants AVS"
-      : "Spécialistes Cliniciens";
-    return {
-      label,
+    const totalUsers = categoriesRes.rows.reduce((sum, r) => sum + r.count, 0) || 1;
+    const categories = categoriesRes.rows.map((r) => {
+      const label = r.category === "LEARNER"
+        ? "Apprenants & Familles"
+        : r.category === "AVS"
+        ? "Accompagnants AVS"
+        : "Spécialistes Cliniciens";
+      return {
+        label,
+        count: r.count,
+        percentage: Math.round((r.count / totalUsers) * 100),
+      };
+    });
+
+    const totalSources = sourcesRes.rows.reduce((sum, r) => sum + r.count, 0) || 1;
+    const sourceLabels: Record<string, string> = {
+      FACEBOOK_INSTAGRAM: "Meta Ads (Facebook / Instagram)",
+      WHATSAPP: "WhatsApp Direct",
+      RECOMMENDATION: "Recommandation médicale / scolaire",
+      GOOGLE: "Recherche Google",
+      WEBINAR: "Webinaires ANEI",
+      WORD_OF_MOUTH: "Bouche-à-oreille",
+      DIRECT: "Accès Direct",
+    };
+
+    const acquisitionSources = (sourcesRes.rows.length > 0 ? sourcesRes.rows : [{ source: "DIRECT", count: 1 }]).map((r) => ({
+      source: r.source,
+      label: sourceLabels[r.source] || r.source,
       count: r.count,
-      percentage: Math.round((r.count / totalUsers) * 100),
-    };
-  });
+      percentage: Math.round((r.count / totalSources) * 100),
+    }));
 
-  const totalSources = sourcesRes.rows.reduce((sum, r) => sum + r.count, 0) || 1;
-  const sourceLabels: Record<string, string> = {
-    FACEBOOK_INSTAGRAM: "Meta Ads (Facebook / Instagram)",
-    WHATSAPP: "WhatsApp Direct",
-    RECOMMENDATION: "Recommandation médicale / scolaire",
-    GOOGLE: "Recherche Google",
-    WEBINAR: "Webinaires ANEI",
-    WORD_OF_MOUTH: "Bouche-à-oreille",
-    DIRECT: "Accès Direct",
-  };
+    const territorialBalancing = territorialRes.rows.map((r) => {
+      const l = r.learners_count;
+      const p = r.practitioners_count;
+      let ratio = "Équilibré";
+      if (p === 0 && l > 0) ratio = "Déficit (0 praticien)";
+      else if (p > 0 && l / p > 10) ratio = "Tension Forte";
+      else if (p > 0) ratio = `1 / ${Math.round(l / p || 1)}`;
 
-  const acquisitionSources = (sourcesRes.rows.length > 0 ? sourcesRes.rows : [{ source: "DIRECT", count: 1 }]).map((r) => ({
-    source: r.source,
-    label: sourceLabels[r.source] || r.source,
-    count: r.count,
-    percentage: Math.round((r.count / totalSources) * 100),
-  }));
+      return {
+        governorate: r.governorate,
+        learnersCount: l,
+        practitionersCount: p,
+        ratio,
+      };
+    });
 
-  const territorialBalancing = territorialRes.rows.map((r) => {
-    const l = r.learners_count;
-    const p = r.practitioners_count;
-    let ratio = "Équilibré";
-    if (p === 0 && l > 0) ratio = "Déficit (0 praticien)";
-    else if (p > 0 && l / p > 10) ratio = "Tension Forte";
-    else if (p > 0) ratio = `1 / ${Math.round(l / p || 1)}`;
+    const pathologiesCoverage = pathologiesRes.rows.map((r) => ({
+      name: r.name,
+      learnersDemand: r.learners_count,
+      practitionersSupply: r.practitioners_count,
+    }));
 
     return {
-      governorate: r.governorate,
-      learnersCount: l,
-      practitionersCount: p,
-      ratio,
+      categories,
+      subSpecialties: subSpecialtiesRes.rows,
+      territorialBalancing,
+      pathologiesCoverage,
+      acquisitionSources,
     };
-  });
-
-  const pathologiesCoverage = pathologiesRes.rows.map((r) => ({
-    name: r.name,
-    learnersDemand: r.learners_count,
-    practitionersSupply: r.practitioners_count,
-  }));
-
-  return {
-    categories,
-    subSpecialties: subSpecialtiesRes.rows,
-    territorialBalancing,
-    pathologiesCoverage,
-    acquisitionSources,
-  };
+  } catch (error) {
+    logger.error("admin.onboarding_analytics_failed", { error: String(error) });
+    return {
+      categories: [],
+      subSpecialties: [],
+      territorialBalancing: [],
+      pathologiesCoverage: [],
+      acquisitionSources: [],
+    };
+  }
 }
 
 // -----------------------------------------------------------------------------

@@ -35,11 +35,51 @@ export default async function AdminOverview({ params, searchParams }: {
   const { locale } = await params; if (!isLocale(locale)) notFound();
   await requireAdminPermission(locale, "overview.read");
   const period = parseAdminPeriod((await searchParams).period);
+  const fallbackOverview = {
+    period,
+    totalUsers: 0,
+    newUsers: 0,
+    activeLearners: 0,
+    publishedCourses: 0,
+    enrollments: 0,
+    completionRate: 0,
+    certificatesIssued: 0,
+    upcomingWebinars: 0,
+    pendingContacts: 0,
+    revenueMillimes: 0,
+    successfulPayments: 0,
+    failedPayments: 0,
+    activeEscrowMillimes: 0,
+    platformCommissionsMillimes: 0,
+    inPersonConsultationsCount: 0,
+    candidatesUnderReviewCount: 0,
+    passedInterviewsCount: 0,
+    approvedPractitionersCount: 0,
+    courseSalesCount: 0,
+    webinarRegistrationsCount: 0,
+    webinarToCourseConversionsCount: 0,
+    webinarConversionRate: 0,
+  };
+  const fallbackDistributions = {
+    roles: [],
+    providers: [],
+    topCourses: [],
+    governorates: [],
+    disciplines: [],
+  };
+  const fallbackOnboarding = {
+    categories: [],
+    subSpecialties: [],
+    territorialBalancing: [],
+    pathologiesCoverage: [],
+    acquisitionSources: [],
+  };
+
   const [overview, growth, distributions, onboardingAnalytics] = await Promise.all([
-    getAdminOverview(period),
-    getAdminGrowth(period),
-    getAdminDistributions(),
-    getAdminOnboardingAnalytics(),
+    getAdminOverview(period).catch(() => fallbackOverview),
+    getAdminGrowth(period).catch(() => []),
+    getAdminDistributions().catch(() => fallbackDistributions),
+    getAdminOnboardingAnalytics().catch(() => fallbackOnboarding),
   ]);
   const ar = locale === "ar";
   const number = new Intl.NumberFormat(ar ? "ar-TN" : "fr-FR");

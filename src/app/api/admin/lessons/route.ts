@@ -7,6 +7,7 @@ import { and, eq } from "drizzle-orm";
 import { isTrustedMutation } from "@/server/security/origin";
 import { readLimitedJson } from "@/server/security/request-body";
 import { lessonMediaReferenceSchema, mediaProviderSchema, resolveMediaRef, InvalidLessonMediaError } from "@/server/services/lesson-media";
+import { invalidateAdminCourseCurriculumCache } from "@/modules/admin/queries/admin-learning";
 
 const mediaReference = lessonMediaReferenceSchema;
 const schema = z.object({
@@ -48,6 +49,7 @@ export async function POST(request: Request) {
   try {
     const [lesson] = await db.insert(lessons).values({ ...parsed.data, mediaRef }).returning();
     await db.insert(auditLogs).values({ actorUserId: session.user.id, action: "lesson.create", entityType: "lesson", entityId: lesson.id, metadata: { courseId: lesson.courseId } });
+    invalidateAdminCourseCurriculumCache(lesson.courseId);
     return NextResponse.json({ lesson }, { status: 201 });
   } catch {
     return NextResponse.json({ error: "POSITION_ALREADY_USED" }, { status: 409 });

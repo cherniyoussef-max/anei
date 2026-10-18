@@ -6,6 +6,7 @@ import { db } from "@/server/db";
 import { auditLogs, courseModules, courses } from "@/server/db/schema";
 import { isTrustedMutation } from "@/server/security/origin";
 import { readLimitedJson } from "@/server/security/request-body";
+import { invalidateAdminCourseCurriculumCache } from "@/modules/admin/queries/admin-learning";
 
 const schema = z.object({
   courseId: z.string().uuid(),
@@ -30,5 +31,6 @@ export async function POST(request: Request) {
   if (duplicate) return NextResponse.json({ error: "POSITION_ALREADY_USED" }, { status: 409 });
   const [module] = await db.insert(courseModules).values(parsed.data).returning();
   await db.insert(auditLogs).values({ actorUserId: session.user.id, action: "course_module.create", entityType: "course_module", entityId: module.id, metadata: { courseId: module.courseId } });
+  invalidateAdminCourseCurriculumCache(module.courseId);
   return NextResponse.json({ module }, { status: 201 });
 }

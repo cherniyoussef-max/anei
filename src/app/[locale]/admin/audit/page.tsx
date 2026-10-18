@@ -1,52 +1,7 @@
-import { notFound } from "next/navigation";
-import Link from "next/link";
-import { formatDate, isLocale } from "@/lib/i18n";
-import { requireAdmin } from "@/server/auth/session";
-import { searchAuditLogs } from "@/server/queries/admin";
-import { AdminPageHeader } from "@/modules/admin/components/AdminPageHeader";
+import { redirect } from "next/navigation";
+import { isLocale } from "@/lib/i18n";
 
-export const dynamic = "force-dynamic";
-
-export default async function AdminAuditPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+export default async function AdminAuditPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
-  if (!isLocale(locale)) notFound();
-  await requireAdmin(locale);
-  const query = await searchParams;
-  const q = typeof query.q === "string" ? query.q : undefined;
-  const page = typeof query.page === "string" ? Number(query.page) : 1;
-  const data = await searchAuditLogs({ q, page });
-  const ar = locale === "ar";
-  const href = (p: number) => {
-    const next = new URLSearchParams();
-    if (q) next.set("q", q);
-    next.set("page", String(p));
-    return `/${locale}/admin/audit?${next}`;
-  };
-
-  return <>
-    <AdminPageHeader locale={locale} eyebrow="Security"
-      title={ar ? "سجل التدقيق" : "Journal d’audit"}
-      description={ar ? "سجل العمليات الحساسة والإدارية." : "Traçabilité des opérations sensibles et administratives."} />
-    <form className="admin-filter-panel" method="get" role="search">
-      <label><span>{ar ? "البحث" : "Recherche"}</span><input name="q" defaultValue={q} placeholder={ar ? "الإجراء أو الكيان" : "Action ou entité"} /></label>
-      <button className="admin-primary-button">{ar ? "بحث" : "Rechercher"}</button>
-    </form>
-    <div className="admin-table-surface">
-      <div className="admin-table-scroll"><table className="admin-data-table">
-        <thead><tr><th>{ar ? "الإجراء" : "Action"}</th><th>{ar ? "الكيان" : "Entité"}</th><th>{ar ? "الممثل" : "Acteur"}</th><th>{ar ? "التاريخ" : "Date"}</th></tr></thead>
-        <tbody>{data.items.map((item) => <tr key={item.id}>
-          <td>{item.action}</td>
-          <td>{item.entityType}{item.entityId ? ` · ${item.entityId.slice(0, 8)}` : ""}</td>
-          <td className="mono">{item.actorUserId?.slice(0, 8) ?? "system"}</td>
-          <td>{formatDate(item.createdAt, locale)}</td>
-        </tr>)}</tbody>
-      </table></div>
-      {!data.items.length ? <div className="admin-empty-state"><strong>{ar ? "لا توجد نتائج" : "Aucun résultat"}</strong><p>{ar ? "غيّر معايير البحث." : "Modifiez les critères de recherche."}</p></div> : null}
-      <nav className="admin-pagination" aria-label={ar ? "ترقيم الصفحات" : "Pagination"}>
-        <Link aria-disabled={data.page <= 1} tabIndex={data.page <= 1 ? -1 : undefined} href={href(Math.max(1, data.page - 1))}>{ar ? "السابق" : "Précédent"}</Link>
-        <span>{ar ? `صفحة ${data.page} من ${data.totalPages}` : `Page ${data.page} sur ${data.totalPages}`}</span>
-        <Link aria-disabled={data.page >= data.totalPages} tabIndex={data.page >= data.totalPages ? -1 : undefined} href={href(Math.min(data.totalPages, data.page + 1))}>{ar ? "التالي" : "Suivant"}</Link>
-      </nav>
-    </div>
-  </>;
+  redirect(`/${isLocale(locale) ? locale : "fr"}/admin`);
 }

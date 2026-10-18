@@ -60,8 +60,6 @@ export function AdminShell({ children, locale, user }: {
       { href: `${base}/news`, icon: "book", fr: "Actualités", ar: "الأخبار" },
       { href: `${base}/avs`, icon: "award", fr: "Annuaire & RDV AVS", ar: "دليل ومواعيد المرافقين" },
       { href: `${base}/care`, icon: "users", fr: "Suivis spécialistes", ar: "متابعات المختصين" },
-      { href: `${base}/audit`, icon: "shield", fr: "Journal d’audit", ar: "سجل التدقيق" },
-      { href: `${base}/system`, icon: "spark", fr: "Système", ar: "النظام" },
     ]},
 
   ];
