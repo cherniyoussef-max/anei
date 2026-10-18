@@ -49,6 +49,17 @@
 | `ENABLE_ADMIN_MFA` | no until implementation | all | no | MFA rollout flag. Production currently fails closed when true. | `false` |
 | `SEED_DEMO_DATA` | dev/test only | dev/test | no | Enables demo seed outside production. Production rejects true. | `true` |
 
+## Azure AI Foundry & Hybrid RAG
+
+| Name | Required | Target environments | Secret? | Purpose | Example |
+|---|---:|---:|---:|---|---|
+| `AZURE_OPENAI_ENDPOINT` | yes (for AI) | all | no | Azure AI Foundry / OpenAI endpoint | `https://ycherni496-4106-resource.openai.azure.com` |
+| `AZURE_OPENAI_API_KEY` | yes (for AI) | all | **yes** | Azure AI Foundry API Key | provider secret |
+| `AZURE_OPENAI_API_VERSION` | optional | all | no | API version (defaults to `2024-10-21`) | `2024-10-21` |
+| `AZURE_OPENAI_CHAT_DEPLOYMENT` | optional | all | no | Deployment name for Chat model (default `anei-teacher-agent`) | `anei-teacher-agent` |
+| `AZURE_OPENAI_EMBEDDING_DEPLOYMENT` | optional | all | no | Deployment name for Embeddings (default `anei-rag-embeddings`) | `anei-rag-embeddings` |
+
+
 ## One-time privileged bootstrap
 These are command-only values for `npm run db:bootstrap-admin`, then they should be removed from the shell/job:
 
