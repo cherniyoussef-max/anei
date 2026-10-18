@@ -292,7 +292,7 @@ export default async function AdminOverview({
         title={ar ? "المؤشرات الرئيسية للأداء" : "Indicateurs Clés & Performance"}
         infoTooltip={ar ? "إحصائيات شاملة للفترة المحددة" : "Métriques consolidées sur la période d'observation"}
       >
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="admin-kpi-grid grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
           {kpis.map((kpi) => {
             const IconComponent = kpi.icon;
             return (

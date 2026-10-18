@@ -167,10 +167,10 @@ export function AdminShell({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [mobileOpen]);
 
-  const sidebarContent = (
-    <aside className="w-64 bg-slate-50/95 border-e border-slate-200 h-screen sticky top-0 flex flex-col select-none shrink-0 z-30">
+  const sidebarInner = (
+    <div className="h-full flex flex-col min-h-0">
       {/* 1. Top Account Switcher */}
-      <div className="h-14 px-4 flex items-center justify-between border-b border-slate-200/80 bg-white/70">
+      <div className="h-14 px-4 flex items-center justify-between border-b border-slate-200/80 bg-white/70 shrink-0">
         <Link href={base} className="flex items-center gap-2.5 min-w-0 flex-1 group">
           <AneiLogo locale={locale} variant="mark" withText={false} height={26} priority />
           <div className="flex flex-col min-w-0 leading-tight">
@@ -186,8 +186,8 @@ export function AdminShell({
       </div>
 
       {/* 2. Quick Search (Ctrl+K) */}
-      <div className="px-3 pt-3 pb-2">
-        <div className="w-full h-8 px-2.5 rounded-md border border-slate-200/90 bg-white text-[13px] text-slate-600 placeholder:text-slate-400 flex items-center justify-between shadow-2xs hover:border-slate-300 focus-within:border-[#0056D2] transition-colors">
+      <div className="px-3 pt-3 pb-2 shrink-0">
+        <div className="w-full h-8 px-2.5 rounded-md border border-slate-200/90 bg-white flex items-center gap-1.5 shadow-2xs hover:border-slate-300 focus-within:border-[#0056D2] focus-within:ring-1 focus-within:ring-[#0056D2]/20 transition-all">
           <Search className="h-3.5 w-3.5 text-slate-400 shrink-0" />
           <input
             ref={searchInputRef}
@@ -195,16 +195,27 @@ export function AdminShell({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={ar ? "بحث سريع..." : "Recherche rapide..."}
-            className="w-full bg-transparent border-0 px-2 text-[12.5px] text-[#0A192F] placeholder:text-slate-400 focus:outline-none"
+            className="admin-search-input flex-1 min-w-0 text-[12.5px] text-[#0A192F] placeholder:text-slate-400 focus:outline-none"
           />
-          <kbd className="text-[10.5px] font-medium text-slate-400 bg-slate-100 border border-slate-200 px-1 py-0.5 rounded shrink-0">
-            Ctrl K
-          </kbd>
+          {searchQuery ? (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="p-0.5 rounded text-slate-400 hover:text-slate-600 focus:outline-none"
+              aria-label={ar ? "مسح البحث" : "Effacer la recherche"}
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          ) : (
+            <kbd className="text-[10px] font-medium text-slate-400 bg-slate-100 border border-slate-200/90 px-1.5 py-0.5 rounded shrink-0 select-none">
+              Ctrl K
+            </kbd>
+          )}
         </div>
       </div>
 
       {/* 3. Navigation Groups */}
-      <nav className="flex-1 overflow-y-auto px-2.5 py-2 space-y-4 scrollbar-thin scrollbar-thumb-slate-200" aria-label={ar ? "التنقل الإداري" : "Navigation d’administration"}>
+      <nav className="flex-1 overflow-y-auto px-2.5 py-2 space-y-4 scrollbar-thin scrollbar-thumb-slate-200 min-h-0" aria-label={ar ? "التنقل الإداري" : "Navigation d’administration"}>
         {filteredGroups.map((group) => (
           <div key={group.fr}>
             <div className="px-2 pt-2 pb-1 text-[11px] font-medium text-slate-400 tracking-normal select-none">
@@ -253,7 +264,7 @@ export function AdminShell({
       </nav>
 
       {/* 4. Bottom Profile Card */}
-      <div className="p-3 border-t border-slate-200/80 bg-white/60 flex items-center justify-between">
+      <div className="p-3 border-t border-slate-200/80 bg-white/60 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="w-7 h-7 rounded-full bg-[#0A192F] text-white text-[11px] font-bold flex items-center justify-center shrink-0">
             {user.name ? user.name.slice(0, 2).toUpperCase() : "AD"}
@@ -264,13 +275,15 @@ export function AdminShell({
           </div>
         </div>
       </div>
-    </aside>
+    </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex" dir={ar ? "rtl" : "ltr"}>
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:block shrink-0">{sidebarContent}</div>
+    <div className="min-h-screen bg-[#F8FAFC]" dir={ar ? "rtl" : "ltr"}>
+      {/* Desktop Fixed Sidebar */}
+      <aside className="hidden lg:flex fixed inset-y-0 start-0 z-30 w-64 h-screen bg-slate-50/95 border-e border-slate-200 flex-col select-none">
+        {sidebarInner}
+      </aside>
 
       {/* Mobile Drawer */}
       {mobileOpen && (
@@ -279,7 +292,7 @@ export function AdminShell({
             className="fixed inset-0 bg-slate-900/40 backdrop-blur-2xs transition-opacity"
             onClick={() => setMobileOpen(false)}
           />
-          <div className="relative w-64 max-w-[85vw] bg-white h-full z-10 shadow-2xl flex flex-col">
+          <div className="relative w-64 max-w-[85vw] bg-slate-50 h-full z-10 shadow-2xl flex flex-col">
             <div className="absolute top-3 end-3 z-20">
               <button
                 type="button"
@@ -290,13 +303,13 @@ export function AdminShell({
                 <X className="h-5 w-5" />
               </button>
             </div>
-            {sidebarContent}
+            {sidebarInner}
           </div>
         </div>
       )}
 
-      {/* Main Column */}
-      <div className="flex-1 flex flex-col min-w-0">
+      {/* Main Column offset by sidebar width on desktop */}
+      <div className="lg:ps-64 flex flex-col min-h-screen min-w-0">
         {/* Top Header Bar */}
         <header className="sticky top-0 z-20 h-14 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between select-none">
           {/* Left: Hamburger (mobile) + Breadcrumbs */}

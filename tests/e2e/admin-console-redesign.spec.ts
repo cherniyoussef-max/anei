@@ -29,8 +29,11 @@ async function loginAsAdmin(page: import("@playwright/test").Page) {
   const form = page.locator(".auth-form");
   await form.locator('input[type="email"]').fill("admin@anei.local");
   await form.locator('input[type="password"]').fill("DemoAdmin!!2026");
-  await form.locator('button[type="submit"]').click();
-  await page.waitForTimeout(1000);
+  const [response] = await Promise.all([
+    page.waitForResponse((res) => res.url().includes("/api/auth/sign-in") && res.status() === 200, { timeout: 15000 }).catch(() => null),
+    form.locator('button[type="submit"]').click(),
+  ]);
+  await page.waitForTimeout(500);
   await assureCurrentTestSession(page);
 }
 
