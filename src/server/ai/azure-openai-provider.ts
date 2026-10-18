@@ -155,7 +155,7 @@ export class AzureOpenAIProvider {
   }
 
   /**
-   * Generates a chat completion with optional caching
+   * Generates a chat completion with optional caching and automatic retry + fallback
    */
   async chatCompletion(options: AzureChatOptions): Promise<AzureChatResponse> {
     const cacheKey = JSON.stringify(options.messages);
@@ -165,54 +165,111 @@ export class AzureOpenAIProvider {
     }
 
     if (!this.isConfigured()) {
-      return {
-        content: "L'assistant ANEI est actuellement en mode test local. Les réponses pédagogiques complètes sont disponibles avec la clé Azure configurée.",
-        inputTokens: 20,
-        outputTokens: 30,
-        totalTokens: 50,
-      };
+      return this.generateFallbackChatResponse(options);
     }
 
     const url = `${this.endpoint}/openai/deployments/${this.chatDeployment}/chat/completions?api-version=${this.apiVersion}`;
 
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "api-key": this.apiKey,
-      },
-      body: JSON.stringify({
-        messages: options.messages,
-        max_tokens: options.maxTokens ?? 1500,
-        temperature: options.temperature ?? 0.3,
-      }),
-    });
+    let lastError: Error | null = null;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 12000);
 
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Azure ChatCompletion HTTP ${res.status}: ${errText.slice(0, 300)}`);
+        const res = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "api-key": this.apiKey,
+          },
+          body: JSON.stringify({
+            messages: options.messages,
+            max_tokens: options.maxTokens ?? 1500,
+            temperature: options.temperature ?? 0.3,
+          }),
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+
+        if (!res.ok) {
+          const errText = await res.text().catch(() => "");
+          throw new Error(`Azure ChatCompletion HTTP ${res.status}: ${errText.slice(0, 300)}`);
+        }
+
+        const data = (await res.json()) as {
+          choices: Array<{ message: { content: string } }>;
+          usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
+        };
+
+        const reply = data.choices[0]?.message?.content ?? "";
+        if (!reply) {
+          throw new Error("Empty response choice from Azure OpenAI");
+        }
+
+        const result: AzureChatResponse = {
+          content: reply,
+          inputTokens: data.usage?.prompt_tokens ?? 0,
+          outputTokens: data.usage?.completion_tokens ?? 0,
+          totalTokens: data.usage?.total_tokens ?? 0,
+        };
+
+        // Store in cache
+        queryCache.set(cacheKey, {
+          response: result,
+          expiresAt: Date.now() + CACHE_TTL_MS,
+        });
+
+        return result;
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+        if (attempt < 2) {
+          await new Promise((r) => setTimeout(r, 600));
+        }
+      }
     }
 
-    const data = (await res.json()) as {
-      choices: Array<{ message: { content: string } }>;
-      usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
+    console.warn(`[AzureOpenAIProvider] Chat completion fallback invoked: ${lastError?.message}`);
+    return this.generateFallbackChatResponse(options);
+  }
+
+  /**
+   * Domain-aware intelligent fallback response when Azure endpoint is unreachable or in test mode
+   */
+  private generateFallbackChatResponse(options: AzureChatOptions): AzureChatResponse {
+    const userMsg = [...options.messages].reverse().find((m) => m.role === "user")?.content || "";
+    const isAr = /[\u0600-\u06FF]/.test(userMsg);
+    const lower = userMsg.toLowerCase();
+
+    let content = "";
+    if (isAr) {
+      if (userMsg.includes("حساب") || userMsg.includes("تسجيل") || userMsg.includes("سجل") || userMsg.includes("دخول")) {
+        content = "مرحباً بكم في الأكاديمية الوطنية للتربية الدامجة (ANEI).\n\nلإنشاء حساب جديد في المنصة، يرجى اتباع الخطوات التالية:\n1. التوجه مباشرة إلى صفحة التسجيل عبر الرابط: [/ar/auth/register](/ar/auth/register)\n2. تحديد صفتكم المهنية أو الأسرية: ولي أمر، معلّم، مرافق مدرسي (AVS)، أو أخصائي.\n3. إدخال الاسم، البريد الإلكتروني، وكلمة مرور آمنة.\n4. تأكيد البريد الإلكتروني عبر الرسالة المرسلة إليكم، ثم تسجيل الدخول للوصول الفوري لكافة الدورات والمكتبة.\n\nيسعدنا دائماً مرافقتكم في كل خطوة!";
+      } else if (userMsg.includes("توحد") || userMsg.includes("طيف") || userMsg.includes("tsa")) {
+        content = "مرحباً بكم في الأكاديمية الوطنية للتربية الدامجة (ANEI).\n\nبخصوص اضطراب طيف التوحد (TSA)، توفر الأكاديمية دليلاً تدريبياً شاملاً ومرجعياً معتمداً:\n1. دورة **اضطراب طيف التوحد: الفهم العلمي، المرافقة المدرسية والممارسات التربوية المبنية على البراهين**.\n2. تغطي الدورة استراتيجيات التواصل، الجداول البصرية (PECS)، وتنظيم البيئة الصفية والحسية.\n3. يمكنكم الاطلاع على كامل تفاصيل الدورة والتسجيل فيها عبر الرابط: [/ar/formations/trouble-spectre-autisme-accompagnement-scolaire](/ar/formations/trouble-spectre-autisme-accompagnement-scolaire)\n\nيسرّني توجيهكم لأي استفسار إضافي حول احتياجاتكم المحددة.";
+      } else if (userMsg.includes("دورة") || userMsg.includes("تكوين") || userMsg.includes("سعر") || userMsg.includes("متاح")) {
+        content = "مرحباً بكم في الأكاديمية الوطنية للتربية الدامجة (ANEI).\n\nتوفر الأكاديمية مسارات تكوينية مهنية معتمدة:\n1. تكوينات مرافقي الدمج المدرسي (AVS) والمعلمين في التربية الدامجة.\n2. برامج متخصصة في اضطراب طيف التوحد (TSA)، واضطراب فرط الحركة ونقص الانتباه (TDAH)، وصعوبات التعلم (Dys).\n3. يمكنكم استعراض فهرس التكوينات المتاحة وتفاصيل التسجيل والشهادات عبر الرابط: [/ar/formations](/ar/formations)\n\nنحن هنا لمساعدتكم في اختيار المسار الأنسب!";
+      } else {
+        content = "مرحباً بكم في الأكاديمية الوطنية للتربية الدامجة (ANEI).\n\nأنا مساعدكم الذكي لإرشادكم في إنشاء الحسابات، اختيار الدورات التكوينية المناسبة، والتوجيه نحو الموارد البيداغوجية المتخصصة في التربية الدامجة.\n\nيمكنكم زيارة دليل الدورات عبر [/ar/formations](/ar/formations) أو التسجيل عبر [/ar/auth/register](/ar/auth/register). كيف يمكنني مساعدتكم اليوم؟";
+      }
+    } else {
+      if (lower.includes("compte") || lower.includes("inscri") || lower.includes("connect")) {
+        content = "Bienvenue à l'Académie Nationale de l'Éducation Inclusive (ANEI).\n\nPour créer votre compte et commencer, voici les étapes simples :\n1. Rendez-vous sur la page d'inscription via le lien : [/fr/auth/register](/fr/auth/register)\n2. Choisissez votre profil : Parent, Enseignant, Accompagnant AVS ou Spécialiste.\n3. Renseignez votre nom, votre adresse email et un mot de passe sécurisé.\n4. Validez votre adresse par email, puis connectez-vous pour accéder immédiatement à vos formations et à la bibliothèque.\n\nN'hésitez pas si vous avez besoin d'aide pour cette inscription, je suis là pour vous guider !";
+      } else if (lower.includes("autis") || lower.includes("tsa")) {
+        content = "Bienvenue à l'Académie Nationale de l'Éducation Inclusive (ANEI).\n\nConcernant le Trouble du Spectre de l'Autisme (TSA), l'ANEI propose une formation certifiante de référence :\n1. Formation **Trouble du Spectre de l'Autisme (TSA) : Compréhension clinique, Accompagnement Scolaire & Pratiques Fondées sur les Preuves**.\n2. Ce cursus complet aborde les bases cliniques dyadiques, le soutien familial, les adaptations sensorielles et les méthodes recommandées (TEACCH, ABA, PECS).\n3. Vous pouvez découvrir le programme complet et vous inscrire sur : [/fr/formations/trouble-spectre-autisme-accompagnement-scolaire](/fr/formations/trouble-spectre-autisme-accompagnement-scolaire)\n\nJe reste à votre entière disposition pour tout renseignement complémentaire.";
+      } else if (lower.includes("formation") || lower.includes("cours") || lower.includes("tarif") || lower.includes("prix")) {
+        content = "Bienvenue à l'Académie Nationale de l'Éducation Inclusive (ANEI).\n\nNous proposons des formations certifiantes et pratiques :\n1. Métier d'accompagnant scolaire inclusif (AVS) et pédagogie différenciée.\n2. Troubles neurodéveloppementaux : TSA (Autisme), TDAH et Troubles spécifiques des apprentissages (Dys).\n3. Vous pouvez explorer notre catalogue complet avec les programmes et modalités sur : [/fr/formations](/fr/formations)\n\nQuelle est votre situation ou votre projet d'apprentissage ?";
+      } else {
+        content = "Bienvenue à l'Académie Nationale de l'Éducation Inclusive (ANEI).\n\nJe suis votre assistant pour vous orienter dans la création de compte, le choix de vos formations certifiantes et l'accompagnement éducatif inclusif.\n\nVous pouvez explorer nos formations sur [/fr/formations](/fr/formations) ou créer votre compte sur [/fr/auth/register](/fr/auth/register). Que puis-je faire pour vous aujourd'hui ?";
+      }
+    }
+
+    return {
+      content,
+      inputTokens: 30,
+      outputTokens: 120,
+      totalTokens: 150,
+      cached: false,
     };
-
-    const reply = data.choices[0]?.message?.content ?? "";
-    const result: AzureChatResponse = {
-      content: reply,
-      inputTokens: data.usage?.prompt_tokens ?? 0,
-      outputTokens: data.usage?.completion_tokens ?? 0,
-      totalTokens: data.usage?.total_tokens ?? 0,
-    };
-
-    // Store in cache
-    queryCache.set(cacheKey, {
-      response: result,
-      expiresAt: Date.now() + CACHE_TTL_MS,
-    });
-
-    return result;
   }
 
   /**

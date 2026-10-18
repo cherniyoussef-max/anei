@@ -73,11 +73,15 @@ function FormattedMessage({ text, locale }: { text: string; locale: "fr" | "ar" 
 
         // Render bullet lines
         const isBullet = /^[-*•]\s+/.test(line);
-        const isNumbered = /^\d+\.\s+/.test(line);
-        const cleanLine = isBullet ? line.replace(/^[-*•]\s+/, "") : line;
+        const isNumbered = /^\d+[\.\)]\s+/.test(line);
+        const cleanLine = isBullet
+          ? line.replace(/^[-*•]\s+/, "")
+          : isNumbered
+          ? line.replace(/^\d+[\.\)]\s+/, "")
+          : line;
 
-        // Parse markdown bold **text** and links
-        const parts = cleanLine.split(/(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\)|\/(?:fr|ar)\/[a-z0-9\-_/]+)/g);
+        // Parse markdown bold **text**, `code/link`, [Title](Url) and internal paths
+        const parts = cleanLine.split(/(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\)|(?:\/)?(?:fr|ar)\/[a-zA-Z0-9\-_/]+)/g);
 
         const content = parts.map((part, pIdx) => {
           if (!part) return null;
@@ -88,6 +92,35 @@ function FormattedMessage({ text, locale }: { text: string; locale: "fr" | "ar" 
               <strong key={pIdx} className="font-semibold text-slate-900">
                 {part.slice(2, -2)}
               </strong>
+            );
+          }
+
+          // Backtick code / inline link
+          if (part.startsWith("`") && part.endsWith("`")) {
+            const rawContent = part.slice(1, -1).trim();
+            const normalizedLink = rawContent.startsWith("/")
+              ? rawContent
+              : rawContent.startsWith("fr/") || rawContent.startsWith("ar/")
+              ? `/${rawContent}`
+              : null;
+
+            if (normalizedLink) {
+              return (
+                <Link
+                  key={pIdx}
+                  href={normalizedLink}
+                  className="inline-flex items-center gap-1 font-semibold text-[#002B49] bg-amber-500/10 hover:bg-amber-500/20 px-2 py-0.5 rounded-md border border-amber-500/30 transition-colors mx-0.5"
+                >
+                  <span dir="ltr">{normalizedLink}</span>
+                  {isRtl ? <ArrowLeft className="w-3 h-3 text-[#B58D3D]" /> : <ArrowRight className="w-3 h-3 text-[#B58D3D]" />}
+                </Link>
+              );
+            }
+
+            return (
+              <code key={pIdx} className="bg-slate-100 text-slate-800 text-[11px] font-mono px-1.5 py-0.5 rounded">
+                {rawContent}
+              </code>
             );
           }
 
@@ -107,15 +140,23 @@ function FormattedMessage({ text, locale }: { text: string; locale: "fr" | "ar" 
             );
           }
 
-          // Raw internal path like /fr/formations/... or /ar/auth/register
-          if (part.startsWith(`/${locale}/`) || part.startsWith("/fr/") || part.startsWith("/ar/")) {
+          // Raw internal path like /fr/formations/... or ar/auth/register
+          const trimmedPart = part.trim();
+          if (
+            trimmedPart.startsWith(`/${locale}/`) ||
+            trimmedPart.startsWith("/fr/") ||
+            trimmedPart.startsWith("/ar/") ||
+            trimmedPart.startsWith("fr/") ||
+            trimmedPart.startsWith("ar/")
+          ) {
+            const normalized = trimmedPart.startsWith("/") ? trimmedPart : `/${trimmedPart}`;
             return (
               <Link
                 key={pIdx}
-                href={part}
+                href={normalized}
                 className="inline-flex items-center gap-1 font-semibold text-[#002B49] underline decoration-amber-500/60 hover:text-[#B58D3D] transition-colors mx-0.5"
               >
-                <span>{part}</span>
+                <span dir="ltr">{normalized}</span>
               </Link>
             );
           }
@@ -127,7 +168,7 @@ function FormattedMessage({ text, locale }: { text: string; locale: "fr" | "ar" 
           return (
             <div key={idx} className="flex items-start gap-2 ps-1">
               <span className="text-[#B58D3D] font-bold select-none shrink-0 mt-0.5">
-                {isNumbered ? line.match(/^\d+\./)?.[0] : "•"}
+                {isNumbered ? line.match(/^\d+[\.\)]/)?.[0] : "•"}
               </span>
               <span className="flex-1">{content}</span>
             </div>
@@ -309,6 +350,7 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
       {/* Floating Trigger Button */}
       {!isOpen && (
         <button
+          data-testid="public-assistant-trigger"
           onClick={() => setIsOpen(true)}
           className={`fixed bottom-6 ${
             isRtl ? "left-6" : "right-6"
@@ -328,6 +370,7 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
       {/* Drawer Overlay / Modal */}
       {isOpen && (
         <aside
+          data-testid="public-assistant-drawer"
           aria-label={isRtl ? "مساعد ANEI" : "Assistant ANEI"}
           dir={isRtl ? "rtl" : "ltr"}
           className={`fixed bottom-6 ${
@@ -549,6 +592,7 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
             className="p-3 bg-white border-t border-slate-200 flex items-center gap-2 shrink-0"
           >
             <input
+              data-testid="public-assistant-input"
               ref={inputRef}
               type="text"
               value={input}
@@ -562,6 +606,7 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
               className="flex-1 px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-[#002B49] focus:bg-white transition-all disabled:opacity-60 text-slate-900"
             />
             <button
+              data-testid="public-assistant-send"
               type="submit"
               disabled={isLoading || !input.trim()}
               className="p-2.5 rounded-xl bg-[#002B49] text-white hover:bg-[#001f35] transition-colors disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#B58D3D] shrink-0"
