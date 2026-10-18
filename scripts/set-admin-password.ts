@@ -2,7 +2,7 @@ import "dotenv/config";
 import { and, eq } from "drizzle-orm";
 import { auth } from "../src/server/auth";
 import { db } from "../src/server/db";
-import { account, user } from "../src/server/db/schema";
+import { account, personaMembership, user } from "../src/server/db/schema";
 
 async function main() {
   const email = process.env.ADMIN_EMAIL?.trim().toLowerCase() || process.argv[2]?.trim().toLowerCase();
@@ -19,11 +19,21 @@ async function main() {
     process.exit(1);
   }
 
-  // Ensure role is SUPER_ADMIN and email is verified
+  // Ensure role is SUPER_ADMIN, profile_type is institution, and email is verified
   await db
     .update(user)
-    .set({ role: "SUPER_ADMIN", emailVerified: true, updatedAt: new Date() })
+    .set({
+      role: "SUPER_ADMIN",
+      profileType: "institution",
+      emailVerified: true,
+      updatedAt: new Date(),
+    })
     .where(eq(user.id, existingUser.id));
+
+  // Remove any learner/student persona membership
+  await db
+    .delete(personaMembership)
+    .where(and(eq(personaMembership.userId, existingUser.id), eq(personaMembership.persona, "STUDENT")));
 
   if (password) {
     const context = await auth.$context;
