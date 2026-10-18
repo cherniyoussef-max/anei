@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   Linkedin,
   Facebook,
@@ -8,7 +9,6 @@ import {
 } from "lucide-react";
 import type { Locale } from "@/types";
 import { env } from "@/server/env";
-import { AneiLogo } from "@/components/brand/AneiLogo";
 
 export function SiteFooter({ locale }: { locale: Locale }) {
   const ar = locale === "ar";
@@ -41,9 +41,9 @@ export function SiteFooter({ locale }: { locale: Locale }) {
     <footer className="footer-root v5-site-footer" role="contentinfo">
 
       {/* =====================================================================
-          ÉTAGE 2 : CORPS DU FOOTER SOMBRE (NAVY PROFOND #0A192F)
+          ÉTAGE 2 : CORPS DU FOOTER SOMBRE (NAVY BLEU #173B5D)
           ===================================================================== */}
-      <div className="bg-[#0A192F] text-slate-300 py-14 lg:py-16">
+      <div className="bg-[#173b5d] text-slate-200 py-14 lg:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8">
             {/* Colonne 1 : Identité & Mission */}
@@ -53,19 +53,20 @@ export function SiteFooter({ locale }: { locale: Locale }) {
                 className="footer-crest inline-flex items-center gap-3.5 group hover:opacity-95 transition-opacity"
                 aria-label={ar ? "الرئيسية ANEI" : "Accueil ANEI"}
               >
-                <AneiLogo
-                  locale={locale}
-                  variant="mark"
-                  withText={false}
-                  height={34}
-                  className="footer-brand-logo shrink-0"
+                <Image
+                  src="/brand/anei-mark-white-wing.webp"
+                  alt={ar ? "الأكاديمية الوطنية للتربية الدامجة" : "Académie Nationale de l’Éducation Inclusive"}
+                  width={56}
+                  height={32}
+                  className="h-8 sm:h-9 w-auto object-contain shrink-0"
+                  unoptimized
                 />
                 <div className="flex flex-col">
-                  <span className="font-bold text-white text-[15px] sm:text-[16px] leading-snug font-sans group-hover:text-white/95 transition-colors">
-                    {ar ? "الأكاديمية الوطنية للتربية الدامجة" : "Académie Nationale de l’Éducation Inclusive"}
+                  <span className="font-bold text-white text-[15px] sm:text-[16px] leading-snug font-sans tracking-tight">
+                    الأكاديمية الوطنية للتربية الدامجة
                   </span>
-                  <span className="text-[11px] font-semibold text-[#C5A059] uppercase tracking-wider mt-0.5">
-                    {ar ? "التربية الدامجة في تونس" : "Éducation Inclusive · Tunisie"}
+                  <span className="text-[11px] sm:text-[12px] font-normal text-white/90 leading-tight mt-0.5">
+                    L&apos;Académie Nationale de l&apos;Éducation Inclusive
                   </span>
                 </div>
               </Link>
@@ -182,7 +183,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
       {/* =====================================================================
           ÉTAGE 3 : BARRE LÉGALE INFÉRIEURE (COPYRIGHT & LIENS LÉGAUX)
           ===================================================================== */}
-      <div className="bg-[#071324] border-t border-white/[0.08] py-5">
+      <div className="bg-[#0f2842] border-t border-white/[0.08] py-5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
           <span>
             {ar

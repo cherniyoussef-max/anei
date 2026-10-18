@@ -16,6 +16,7 @@ import {
 import type { Locale } from "@/types";
 import type { listHomeAvs, listHomeCourses, listHomeWebinars } from "@/server/queries/catalog";
 import { AneiLogoAnimated } from "@/components/brand/AneiLogoAnimated";
+import { HomePillarsBar } from "@/components/sections/HomePillarsBar";
 
 type CourseRow = Awaited<ReturnType<typeof listHomeCourses>>[number];
 type WebinarRow = Awaited<ReturnType<typeof listHomeWebinars>>[number];
@@ -445,6 +446,9 @@ export function AcademyHome({
           </div>
         </div>
       </section>
+
+      {/* 8. ACADEMY CORE PILLARS (TRUST & VALUES) */}
+      <HomePillarsBar locale={locale} />
     </div>
   );
 }
