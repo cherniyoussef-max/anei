@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
@@ -17,6 +17,11 @@ import {
   ArrowLeft,
   Sparkles,
   ArrowUp,
+  Compass,
+  HelpCircle,
+  HeartHandshake,
+  CreditCard,
+  CheckCircle2,
 } from "lucide-react";
 
 interface Citation {
@@ -41,10 +46,10 @@ interface PublicAssistantDrawerProps {
 
 const LEARNER_SUGGESTIONS = {
   fr: [
-    { label: "Synthétiser les points clés de ma formation", query: "Je prépare mon évaluation certifiante. Peux-tu me faire une synthèse des points clés indispensables de ma formation ?" },
-    { label: "Comment réussir mon test certifiant (QCM 80%) ?", query: "Quels sont les concepts et questions clés à maîtriser absolument pour réussir l'examen certifiant ?" },
-    { label: "S'entraîner avec des questions types", query: "Pose-moi une question d'entraînement pour tester ma compréhension de mes leçons et évalue ma réponse." },
-    { label: "Aménagements concrets en classe (TEACCH & ABC)", query: "Quels sont les aménagements scolaires et pratiques fondées sur les preuves essentiels de mon cours ?" },
+    { label: "Synthétiser les points clés de ma formation", query: "Je prépare mon évaluation certifiante. Peux-tu me faire une synthèse des points clés indispensables de ma formation ?", icon: BookOpen },
+    { label: "Comment réussir mon test certifiant (QCM 80%) ?", query: "Quels sont les concepts et questions clés à maîtriser absolument pour réussir l'examen certifiant ?", icon: CheckCircle2 },
+    { label: "S'entraîner avec des questions types", query: "Pose-moi une question d'entraînement pour tester ma compréhension de mes leçons et évalue ma réponse.", icon: HelpCircle },
+    { label: "Aménagements concrets en classe (TEACCH & ABC)", query: "Quels sont les aménagements scolaires et pratiques fondées sur les preuves essentiels de mon cours ?", icon: ShieldCheck },
   ],
   ar: [
     { label: "مراجعة النقاط الأساسية لدورتي التكوينية", query: "أستعد للتقييم النهائي، هل يمكنك تلخيص المفاهيم الأساسية لدورتي التكوينية ومساعدتي على المراجعة؟" },
@@ -56,11 +61,11 @@ const LEARNER_SUGGESTIONS = {
 
 const SUGGESTIONS = {
   fr: [
-    { label: "Comment créer un compte et m'inscrire ?", query: "Comment créer un compte et s'inscrire sur la plateforme ?" },
-    { label: "Quelle formation choisir pour ma situation ?", query: "Quelle formation recommandez-vous selon ma situation ?" },
-    { label: "Mon enfant a un TSA (autisme), que faire ?", query: "Mon enfant a un trouble du spectre de l'autisme (TSA), que recommandez-vous ?" },
-    { label: "Comment devenir accompagnant scolaire (AVS) ?", query: "Comment devenir accompagnant scolaire AVS certifié ?" },
-    { label: "Quels sont les tarifs et moyens de paiement ?", query: "Quels sont les tarifs des formations et les moyens de paiement ?" },
+    { label: "Comment créer un compte et m'inscrire ?", query: "Comment créer un compte et s'inscrire sur la plateforme ?", icon: HelpCircle },
+    { label: "Quelle formation choisir pour ma situation ?", query: "Quelle formation recommandez-vous selon ma situation ?", icon: Compass },
+    { label: "Mon enfant a un TSA (autisme), que faire ?", query: "Mon enfant a un trouble du spectre de l'autisme (TSA), que recommandez-vous ?", icon: HeartHandshake },
+    { label: "Comment devenir accompagnant scolaire (AVS) ?", query: "Comment devenir accompagnant scolaire AVS certifié ?", icon: ShieldCheck },
+    { label: "Quels sont les tarifs et moyens de paiement ?", query: "Quels sont les tarifs des formations et les moyens de paiement ?", icon: CreditCard },
   ],
   ar: [
     { label: "كيف أنشئ حساباً وأسجل في المنصة؟", query: "كيف أنشئ حساباً جديداً وأسجل في المنصة؟" },
@@ -381,6 +386,30 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
     handleSendRef.current = handleSend;
   });
 
+  const isMac = useSyncExternalStore(
+    () => () => {},
+    () => (typeof navigator !== "undefined" ? /Mac|iPod|iPhone|iPad/.test(navigator.userAgent || "") : false),
+    () => false,
+  );
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        const target = e.target as HTMLElement | null;
+        const isEditing = target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
+        if (!isEditing || target === textareaRef.current) {
+          e.preventDefault();
+          setIsOpen((prev) => !prev);
+        }
+      } else if (e.key === "Escape" && isOpen) {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
+
   useEffect(() => {
     const handleOpenEvent = (e: Event) => {
       setIsOpen(true);
@@ -398,74 +427,88 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
 
   return (
     <>
-      {/* Floating Trigger Button - Hidden on learner routes to avoid duplication */}
+      {/* High-Tech Floating Trigger Capsule (Linear / Apple / Raycast inspired) */}
       {!isOpen && !isLearnerPath && (
         <button
           data-testid="public-assistant-trigger"
           onClick={() => setIsOpen(true)}
-          className={`fixed bottom-6 ${
-            isRtl ? "left-6" : "right-6"
-          } z-40 inline-flex items-center gap-2 px-3.5 py-2.5 bg-[#0A192F] hover:bg-[#0056D2] text-white text-[13px] font-medium rounded-full shadow-lg border border-slate-700/60 transition-all duration-200 hover:shadow-xl group cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0056D2]`}
+          className={`fixed bottom-5 sm:bottom-6 ${
+            isRtl ? "left-5 sm:left-6" : "right-5 sm:right-6"
+          } z-40 group inline-flex items-center gap-2.5 h-11 pl-3 pr-2.5 rtl:pl-2.5 rtl:pr-3 rounded-full bg-[#0A192F]/95 hover:bg-[#0A192F] backdrop-blur-xl text-white text-[13px] font-semibold tracking-[-0.01em] border border-white/15 hover:border-white/30 shadow-[0_10px_25px_-5px_rgba(10,25,47,0.35),0_8px_10px_-6px_rgba(10,25,47,0.2),inset_0_1px_0_rgba(255,255,255,0.18)] hover:shadow-[0_16px_35px_-5px_rgba(0,86,210,0.4),0_10px_15px_-5px_rgba(10,25,47,0.25),inset_0_1px_0_rgba(255,255,255,0.3)] transition-all duration-200 ease-out hover:scale-[1.02] active:scale-[0.98] cursor-pointer select-none focus:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0056D2]`}
           aria-label={isRtl ? "فتح مساعد ANEI" : "Ouvrir l'assistant ANEI"}
         >
-          <Sparkles className="w-4 h-4 text-[#B58D3D] group-hover:text-white transition-colors shrink-0" />
-          <span>{isRtl ? "مساعد ANEI" : "Assistant ANEI"}</span>
+          {/* Luminous micro-orb */}
+          <span className="relative flex items-center justify-center w-6 h-6 rounded-full bg-gradient-to-tr from-[#0056D2] via-[#0A192F] to-[#B58D3D] p-[1px] shrink-0 shadow-xs">
+            <span className="w-full h-full rounded-full bg-[#0A192F] flex items-center justify-center">
+              <Sparkles className="w-3.5 h-3.5 text-amber-300 group-hover:text-amber-200 transition-colors" />
+            </span>
+            <span className="absolute -top-0.5 -end-0.5 w-1.5 h-1.5 rounded-full bg-emerald-400 ring-2 ring-[#0A192F] animate-pulse" />
+          </span>
+
+          {/* Label */}
+          <span className="text-white font-medium">{isRtl ? "مساعد ANEI" : "Assistant ANEI"}</span>
+
+          {/* High-tech keyboard hint chip */}
+          <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-md bg-white/10 group-hover:bg-white/15 border border-white/10 text-[10.5px] font-mono font-medium text-slate-300 transition-colors select-none">
+            {isMac ? "⌘K" : "Ctrl K"}
+          </kbd>
         </button>
       )}
 
-      {/* Drawer Overlay / Modal */}
+      {/* Drawer Overlay / Copilot Modal */}
       {isOpen && (
         <aside
           data-testid="public-assistant-drawer"
           aria-label={isRtl ? "مساعد ANEI" : "Assistant ANEI"}
           dir={isRtl ? "rtl" : "ltr"}
-          className={`fixed bottom-6 ${
-            isRtl ? "left-6" : "right-6"
-          } z-50 w-[92vw] sm:w-[460px] h-[600px] max-h-[85vh] bg-white rounded-2xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-300`}
+          className={`fixed bottom-5 sm:bottom-6 ${
+            isRtl ? "left-5 sm:left-6" : "right-5 sm:right-6"
+          } z-50 w-[calc(100vw-2.5rem)] sm:w-[460px] h-[620px] max-h-[85vh] bg-white rounded-2xl sm:rounded-3xl shadow-[0_25px_60px_-15px_rgba(10,25,47,0.25),0_0_0_1px_rgba(10,25,47,0.06)] border border-slate-200/90 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-250`}
         >
           {/* Header with Institutional Branding & Professional Micro-details */}
-          <div className="bg-[#0A192F] text-white px-4 py-3.5 flex items-center justify-between border-b border-slate-800 shrink-0">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center border border-white/10 text-[#B58D3D] shrink-0">
-                <Sparkles className="w-4 h-4" />
+          <div className="bg-[#0A192F] text-white px-4 py-3.5 flex items-center justify-between border-b border-slate-800/80 shrink-0">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="relative w-8 h-8 rounded-xl bg-gradient-to-tr from-[#0056D2] via-[#0A192F] to-[#B58D3D] p-[1px] flex items-center justify-center shrink-0 shadow-xs">
+                <div className="w-full h-full rounded-[11px] bg-[#0A192F] flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-amber-300" />
+                </div>
               </div>
-              <div className="flex flex-col">
+              <div className="flex flex-col min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-[13.5px] font-semibold text-white tracking-tight">
+                  <span className="text-[14px] font-semibold text-white tracking-tight truncate">
                     {isLearnerPath
                       ? (isRtl ? "المرشد البيداغوجي ANEI" : "Tuteur Pédagogique ANEI")
                       : (isRtl ? "مساعد ANEI" : "Assistant ANEI")}
                   </span>
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-white/10 text-slate-300">
-                    {isLearnerPath
-                      ? (isRtl ? "تكوين وشهادة" : "Certifiant")
-                      : (isRtl ? "دليل معتمد" : "Officiel")}
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10.5px] font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/20 shrink-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>{isRtl ? "متاح الآن" : "En ligne"}</span>
                   </span>
                 </div>
-                <p className="text-[11.5px] text-slate-300 font-normal mt-0.5">
+                <p className="text-[11.5px] text-slate-300/90 font-normal truncate mt-0.5">
                   {isLearnerPath
                     ? (isRtl ? "مرافقة المتعلّم، مراجعة الدروس والاستعداد للاختبار" : "Accompagnement, révision & préparation au test certifiant")
-                    : (isRtl ? "إنشاء حساب، استشارات وتوجيه للتكوين" : "Création de compte, conseil & formations")}
+                    : (isRtl ? "توجيه رسمي، استشارات ومعلومات التكوين" : "Orientation officielle, conseil & formations")}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 shrink-0">
               {messages.length > 0 && (
                 <button
                   type="button"
                   onClick={resetChat}
-                  className="p-1.5 rounded-md text-slate-300 hover:text-white hover:bg-white/10 transition-colors focus:outline-none cursor-pointer"
+                  className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors focus:outline-hidden cursor-pointer"
                   title={isRtl ? "محادثة جديدة" : "Nouvelle conversation"}
                   aria-label={isRtl ? "محادثة جديدة" : "Nouvelle conversation"}
                 >
-                  <RotateCcw className="w-3.5 h-3.5" />
+                  <RotateCcw className="w-4 h-4" />
                 </button>
               )}
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 rounded-md text-slate-300 hover:text-white hover:bg-white/10 transition-colors focus:outline-none cursor-pointer"
+                className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors focus:outline-hidden cursor-pointer"
                 aria-label={isRtl ? "إغلاق" : "Fermer"}
               >
                 <X className="w-4 h-4" />
@@ -476,12 +519,14 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
           {/* Messages Area */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3.5 bg-[#F8FAFC]">
             {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center px-4 space-y-3.5">
-                <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-[#0A192F] border border-slate-200">
-                  <Sparkles className="w-5 h-5 text-[#0056D2]" />
+              <div className="h-full flex flex-col items-center justify-center text-center px-4 space-y-4">
+                <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#0056D2] via-[#0A192F] to-[#B58D3D] p-[1px] shadow-sm">
+                  <div className="w-full h-full rounded-[15px] bg-white flex items-center justify-center text-[#0A192F]">
+                    <Sparkles className="w-5 h-5 text-[#0056D2]" />
+                  </div>
                 </div>
                 <div>
-                  <h4 className="text-[14px] font-semibold text-slate-900">
+                  <h4 className="text-[14.5px] font-semibold text-slate-900 tracking-tight">
                     {isLearnerPath
                       ? (isRtl ? "فضاء المتعلّم ANEI · المرشد الذكي" : "Tuteur Pédagogique ANEI")
                       : (isRtl ? "مرحباً بكم في الأكاديمية الوطنية" : "Bienvenue à l'Académie ANEI")}
@@ -493,27 +538,38 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
                           : "Je connais vos formations et leçons. Posez vos questions, révisez les concepts clés et préparez votre test final certifiant.")
                       : (isRtl
                           ? "أنا هنا لمساعدتكم في اختيار التكوين الأنسب، معرفة الإجراءات والتسجيل في المنصة."
-                          : "Je vous accompagne pour découvrir le catalogue, choisir la formation adaptée et vous inscrire sur la plateforme.")}
+                          : "Je réponds à vos questions sur les formations certifiantes, les débouchés AVS, les inscriptions et le fonctionnement de la plateforme.")}
                   </p>
                 </div>
 
                 {/* Suggestions List */}
-                <div className="w-full space-y-1.5 pt-1">
-                  <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider text-left rtl:text-right">
-                    {isRtl ? "اقتراحات سريعة :" : "Suggestions rapides :"}
-                  </p>
-                  {suggestions.map((item, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => handleSend(item.query)}
-                      className="w-full text-left rtl:text-right text-[12px] px-3 py-2 rounded-lg bg-white border border-slate-200 hover:border-[#0056D2] hover:bg-blue-50/40 text-slate-700 font-medium transition-colors shadow-2xs flex items-center justify-between group cursor-pointer"
-                    >
-                      <span className="truncate">{item.label}</span>
-                      <span className="text-slate-400 group-hover:text-[#0056D2] transition-colors shrink-0 ms-2">
-                        {isRtl ? <ArrowLeft className="w-3.5 h-3.5" /> : <ArrowRight className="w-3.5 h-3.5" />}
-                      </span>
-                    </button>
-                  ))}
+                <div className="w-full space-y-2 pt-1">
+                  <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-1">
+                    <span>{isRtl ? "اقتراحات سريعة" : "Suggestions rapides"}</span>
+                    <span className="text-[10px] font-normal normal-case text-slate-400">
+                      {isRtl ? "انقر للمتابعة" : "Cliquer pour envoyer"}
+                    </span>
+                  </div>
+                  {suggestions.map((item, idx) => {
+                    const IconComponent = (item as { icon?: typeof BookOpen }).icon || BookOpen;
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => handleSend(item.query)}
+                        className="w-full text-start text-[12.5px] px-3.5 py-2.5 rounded-xl bg-white border border-slate-200/90 hover:border-[#0056D2] hover:bg-blue-50/30 text-slate-700 font-medium transition-all shadow-2xs flex items-center justify-between group cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="w-6 h-6 rounded-lg bg-slate-100 group-hover:bg-blue-100/60 text-slate-500 group-hover:text-[#0056D2] flex items-center justify-center shrink-0 transition-colors">
+                            <IconComponent className="w-3.5 h-3.5" />
+                          </span>
+                          <span className="truncate">{item.label}</span>
+                        </div>
+                        <span className="text-slate-400 group-hover:text-[#0056D2] transition-colors shrink-0 ms-2">
+                          {isRtl ? <ArrowLeft className="w-3.5 h-3.5" /> : <ArrowRight className="w-3.5 h-3.5" />}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             ) : (
@@ -542,8 +598,8 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
                     <div
                       className={`px-3.5 py-2.5 rounded-2xl shadow-2xs ${
                         msg.role === "user"
-                          ? "bg-[#0056D2] text-white rounded-br-none rtl:rounded-bl-none rtl:rounded-br-2xl"
-                          : "bg-white text-slate-800 border border-slate-200/90 rounded-bl-none rtl:rounded-br-none rtl:rounded-bl-2xl"
+                          ? "bg-[#0A192F] text-white rounded-br-xs rtl:rounded-bl-xs rtl:rounded-br-2xl"
+                          : "bg-white text-slate-800 border border-slate-200/90 rounded-bl-xs rtl:rounded-br-xs rtl:rounded-bl-2xl"
                       }`}
                     >
                       {msg.role === "user" ? (
@@ -554,7 +610,7 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
                         <span className="inline-flex items-center gap-1.5 text-slate-400 py-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#0056D2] animate-bounce" />
                           <span className="w-1.5 h-1.5 rounded-full bg-[#0A192F] animate-bounce [animation-delay:0.2s]" />
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce [animation-delay:0.4s]" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#B58D3D] animate-bounce [animation-delay:0.4s]" />
                         </span>
                       ) : null}
                     </div>
@@ -632,7 +688,7 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
           </div>
 
           {/* Ethical Disclaimer */}
-          <div className="px-4 py-2 bg-slate-100/80 border-t border-slate-200 flex items-center justify-center gap-1.5 text-[10px] text-slate-500 shrink-0">
+          <div className="px-4 py-2 bg-slate-50 border-t border-slate-200/80 flex items-center justify-center gap-1.5 text-[10.5px] text-slate-500 shrink-0">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
             <span>
               {isRtl
@@ -641,19 +697,19 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
             </span>
           </div>
 
-          {/* Input Footer */}
+          {/* Input Footer (Command-Bar style) */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
               handleSend();
             }}
-            className="p-3 bg-white border-t border-slate-200 shrink-0"
+            className="p-3 bg-white border-t border-slate-200/80 shrink-0"
           >
-            <div className="relative rounded-xl border border-slate-200 bg-[#F8FAFC] focus-within:border-[#0056D2] focus-within:bg-white transition-all shadow-2xs p-2">
+            <div className="relative rounded-2xl border border-slate-200 bg-slate-50/80 focus-within:border-[#0056D2] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#0056D2]/10 transition-all shadow-2xs p-2.5">
               <textarea
                 data-testid="public-assistant-input"
                 ref={textareaRef}
-                rows={1}
+                rows={2}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -668,24 +724,26 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
                     : (isRtl ? "اكتب سؤالك هنا..." : "Posez votre question...")
                 }
                 disabled={isLoading}
-                className="public-chat-input w-full text-[13px] text-slate-900 placeholder:text-slate-400 focus:outline-none resize-none leading-relaxed pe-9"
+                className="public-chat-input w-full text-[13px] text-slate-900 placeholder:text-slate-400 focus:outline-none resize-none leading-relaxed pe-9 bg-transparent"
               />
-              <button
-                data-testid="public-assistant-send"
-                type="submit"
-                disabled={isLoading || !input.trim()}
-                className="absolute bottom-2 end-2 w-7 h-7 rounded-lg bg-[#0056D2] hover:bg-[#00419e] text-white disabled:opacity-40 disabled:hover:bg-[#0056D2] transition-colors flex items-center justify-center shadow-2xs cursor-pointer disabled:cursor-not-allowed"
-                aria-label={isRtl ? "إرسال" : "Envoyer"}
-              >
-                <ArrowUp className="w-3.5 h-3.5" />
-              </button>
+              <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 mt-1">
+                <span className="flex items-center gap-1 text-[10.5px] text-slate-400">
+                  <ShieldCheck className="w-3 h-3 text-emerald-600 shrink-0" />
+                  <span>{isRtl ? "قاعدة معرفة ANEI الرسمية" : "IA & RAG Officiel ANEI"}</span>
+                </span>
+                <button
+                  data-testid="public-assistant-send"
+                  type="submit"
+                  disabled={isLoading || !input.trim()}
+                  className="w-7 h-7 rounded-lg bg-[#0056D2] hover:bg-[#00419e] text-white disabled:opacity-40 disabled:hover:bg-[#0056D2] transition-colors flex items-center justify-center shadow-2xs cursor-pointer disabled:cursor-not-allowed"
+                  aria-label={isRtl ? "إرسال" : "Envoyer"}
+                >
+                  <ArrowUp className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
-            <div className="mt-1.5 flex items-center justify-between px-1 text-[10.5px] text-slate-400">
-              <span className="flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3 text-emerald-600 shrink-0" />
-                <span>{isRtl ? "استرشادي رسمي ANEI" : "Conseil indicatif officiel ANEI"}</span>
-              </span>
-              <span>{isRtl ? "Enter للإرسال" : "Entrée pour envoyer"}</span>
+            <div className="mt-1 flex items-center justify-end px-1 text-[10px] text-slate-400">
+              <span>{isRtl ? "Enter للإرسال • Shift+Enter لسطر جديد" : "Entrée pour envoyer • Shift+Entrée pour saut de ligne"}</span>
             </div>
           </form>
         </aside>
