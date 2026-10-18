@@ -3119,6 +3119,146 @@ export const liveAttendances = pgTable(
   ],
 );
 
+// -----------------------------------------------------------------------------
+// Inclusive Classroom & Institutional Tripartite Tables
+// Enseignant ("Ma classe inclusive") ⇄ Établissement ⇄ Spécialiste ⇄ Admin
+// -----------------------------------------------------------------------------
+
+export const teacherClassrooms = pgTable(
+  "teacher_classrooms",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    teacherUserId: text("teacher_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    className: text("class_name").notNull(),
+    palettePreset: text("palette_preset").notNull().default("Classique"),
+    customColorsJson: jsonb("custom_colors_json").$type<Record<string, string>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("teacher_classrooms_teacher_idx").on(table.teacherUserId),
+  ],
+);
+
+export const teacherClassroomStudents = pgTable(
+  "teacher_classroom_students",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    classroomId: text("classroom_id")
+      .notNull()
+      .references(() => teacherClassrooms.id, { onDelete: "cascade" }),
+    teacherUserId: text("teacher_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    displayName: text("display_name").notNull(),
+    difficulties: jsonb("difficulties").notNull().$type<string[]>().default(sql`'[]'::jsonb`),
+    adaptations: jsonb("adaptations").notNull().$type<string[]>().default(sql`'[]'::jsonb`),
+    personalNote: text("personal_note").notNull().default(""),
+    downloadStatus: text("download_status").notNull().default("A_TELECHARGER"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("teacher_classroom_students_classroom_idx").on(table.classroomId),
+    index("teacher_classroom_students_teacher_idx").on(table.teacherUserId),
+  ],
+);
+
+export const partnerEstablishments = pgTable(
+  "partner_establishments",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    managerUserId: text("manager_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    level: text("level").notNull().default("Collège"),
+    region: text("region").notNull().default("Tunis"),
+    studentCount: integer("student_count").notNull().default(0),
+    needsBreakdownJson: jsonb("needs_breakdown_json").notNull().$type<Record<string, number>>().default(sql`'{"dys":0,"tdah":0,"vis":0,"aud":0,"tsa":0,"comp":0}'::jsonb`),
+    existingResourcesJson: jsonb("existing_resources_json").notNull().$type<string[]>().default(sql`'[]'::jsonb`),
+    constraintsJson: jsonb("constraints_json").notNull().$type<string[]>().default(sql`'[]'::jsonb`),
+    partnershipStage: integer("partnership_stage").notNull().default(2),
+    conventionSignedAt: timestamp("convention_signed_at", { withTimezone: true }),
+    selfEvalAnswersJson: jsonb("self_eval_answers_json").$type<Record<string, number>>(),
+    selfEvalScorePercent: integer("self_eval_score_percent"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("partner_establishments_manager_idx").on(table.managerUserId),
+    index("partner_establishments_region_idx").on(table.region),
+  ],
+);
+
+export const establishmentServiceRequests = pgTable(
+  "establishment_service_requests",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    referenceCode: text("reference_code").notNull(),
+    establishmentId: text("establishment_id")
+      .notNull()
+      .references(() => partnerEstablishments.id, { onDelete: "cascade" }),
+    assignedSpecialistUserId: text("assigned_specialist_user_id")
+      .references(() => user.id, { onDelete: "set null" }),
+    serviceType: text("service_type").notNull(),
+    urgency: text("urgency").notNull().default("Normale"),
+    concernedCount: integer("concerned_count").notNull().default(1),
+    situationDescription: text("situation_description").notNull(),
+    stage: integer("stage").notNull().default(0),
+    scheduledRdvJson: jsonb("scheduled_rdv_json").$type<{ d: string; h: string; mo: string }>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("establishment_service_requests_code_unique").on(table.referenceCode),
+    index("establishment_service_requests_est_idx").on(table.establishmentId),
+    index("establishment_service_requests_specialist_idx").on(table.assignedSpecialistUserId),
+    index("establishment_service_requests_stage_idx").on(table.stage),
+  ],
+);
+
+export const serviceRequestMessages = pgTable(
+  "service_request_messages",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    requestId: text("request_id")
+      .notNull()
+      .references(() => establishmentServiceRequests.id, { onDelete: "cascade" }),
+    senderRole: text("sender_role").notNull(),
+    senderName: text("sender_name").notNull(),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("service_request_messages_request_idx").on(table.requestId, table.createdAt),
+  ],
+);
+
+export const specialistClassroomTips = pgTable(
+  "specialist_classroom_tips",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    authorSpecialistUserId: text("author_specialist_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    authorName: text("author_name").notNull(),
+    difficultyKey: text("difficulty_key").notNull(),
+    situationTitle: text("situation_title").notNull(),
+    whatToDo: text("what_to_do").notNull(),
+    whatToAvoid: text("what_to_avoid").notNull(),
+    isPublished: boolean("is_published").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("specialist_classroom_tips_diff_idx").on(table.difficultyKey, table.isPublished),
+    index("specialist_classroom_tips_author_idx").on(table.authorSpecialistUserId),
+  ],
+);
+
 export type LiveSessionProvider = "GOOGLE_MEET" | "JITSI" | "ZOOM" | "MICROSOFT_TEAMS" | "CUSTOM_EMBED";
 export type LiveSessionEmbedMode = "IFRAME_EMBED" | "PORTAL_LAUNCH";
 export type LiveSessionScope = "GLOBAL_WEBINAR" | "COURSE_SPECIFIC";
@@ -3182,3 +3322,10 @@ export type AvsBookingRequestRow = typeof avsBookingRequests.$inferSelect;
 export type PractitionerPromotionRow = typeof practitionerPromotions.$inferSelect;
 export type VideoAssetRow = typeof videoAssets.$inferSelect;
 export type VideoAssetInsert = typeof videoAssets.$inferInsert;
+
+export type TeacherClassroomRow = typeof teacherClassrooms.$inferSelect;
+export type TeacherClassroomStudentRow = typeof teacherClassroomStudents.$inferSelect;
+export type PartnerEstablishmentRow = typeof partnerEstablishments.$inferSelect;
+export type EstablishmentServiceRequestRow = typeof establishmentServiceRequests.$inferSelect;
+export type ServiceRequestMessageRow = typeof serviceRequestMessages.$inferSelect;
+export type SpecialistClassroomTipRow = typeof specialistClassroomTips.$inferSelect;

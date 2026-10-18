@@ -3,7 +3,21 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, GraduationCap, BookOpen, Award, UserCheck, Video, Menu, X, ChevronRight, type LucideIcon } from "lucide-react";
+import {
+  LayoutDashboard,
+  GraduationCap,
+  BookOpen,
+  Award,
+  UserCheck,
+  Video,
+  Menu,
+  X,
+  ChevronRight,
+  Users,
+  Building2,
+  Stethoscope,
+  type LucideIcon,
+} from "lucide-react";
 import type { Locale } from "@/types";
 import { StudentSignOutButton } from "@/components/student/StudentSignOutButton";
 
@@ -13,6 +27,9 @@ function learnerItems(locale: Locale): StudentNavItem[] {
   const base = `/${locale}/dashboard`;
   return [
     { href: base, icon: LayoutDashboard, en: "Dashboard", fr: "Tableau de bord", ar: "لوحة التحكم", shortEn: "Dashboard", shortFr: "Accueil", shortAr: "الرئيسية" },
+    { href: `${base}/classe-inclusive`, icon: Users, en: "My Inclusive Class", fr: "Ma classe inclusive", ar: "قسمي الدامج", shortEn: "Classroom", shortFr: "Classe", shortAr: "قسمي" },
+    { href: `${base}/etablissement`, icon: Building2, en: "Partner School", fr: "Espace établissement", ar: "المؤسسة الشريكة", shortEn: "School", shortFr: "Établissement", shortAr: "المؤسسة" },
+    { href: `${base}/specialiste`, icon: Stethoscope, en: "Specialist Space", fr: "Espace spécialiste", ar: "فضاء الأخصائي", shortEn: "Specialist", shortFr: "Spécialiste", shortAr: "الأخصائي" },
     { href: `${base}/formations`, icon: GraduationCap, en: "My courses", fr: "Mes formations", ar: "دوراتي", shortEn: "Courses", shortFr: "Formations", shortAr: "دوراتي" },
     { href: `/${locale}/learning/live`, icon: Video, en: "Live & Webinars", fr: "Directs & Webinaires", ar: "البث المباشر والندوات", shortEn: "Live", shortFr: "Directs", shortAr: "مباشر" },
     { href: `${base}/ressources`, icon: BookOpen, en: "My resources", fr: "Mes ressources", ar: "مواردي", shortEn: "Resources", shortFr: "Ressources", shortAr: "مواردي" },
