@@ -1662,50 +1662,6 @@ export function RegisterWizard({
                   </span>
                 </div>
               </div>
-
-              {(profileType === "AVS" || profileType === "SPECIALIST") && (
-                <div className="mt-3.5 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span className="font-medium">
-                    {ar
-                      ? "سيتم نشر بطاقتكم المهنية في الدليل الرسمي فور إنشاء الحساب."
-                      : "Votre fiche professionnelle sera publiée dans l'annuaire dès la création du compte."}
-                  </span>
-                </div>
-              )}
-
-              {profileType === "ORGANIZATION" && (
-                <div className="mt-3.5 p-2.5 rounded-xl bg-indigo-50 border border-indigo-200/80 text-indigo-800 text-xs flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-indigo-600 shrink-0" />
-                  <span className="font-medium">
-                    {ar
-                      ? "سيتم إعداد مساحة المؤسسة الخاصة بكم لتسجيل فرقكم وإدارة التدريب."
-                      : "Votre Espace Organisation sera configuré pour inscrire vos collaborateurs et suivre leurs formations."}
-                  </span>
-                </div>
-              )}
-
-              {profileType === "PARENT" && (
-                <div className="mt-3.5 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs flex items-center gap-2">
-                  <HeartHandshake className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span className="font-medium">
-                    {ar
-                      ? "ستتمكنون فورًا من حجز مرافقي الحياة المدرسية والتواصل مع الأخصائيين."
-                      : "Vous aurez un accès direct à l'annuaire des AVS et des praticiens pour votre enfant."}
-                  </span>
-                </div>
-              )}
-
-              {profileType === "TEACHER" && (
-                <div className="mt-3.5 p-2.5 rounded-xl bg-amber-50 border border-amber-200/80 text-amber-800 text-xs flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-amber-600 shrink-0" />
-                  <span className="font-medium">
-                    {ar
-                      ? "سيتم تفعيل وصولكم المباشر إلى أدوات التكييف البيداغوجي وتصميم PEI."
-                      : "Votre accès aux outils d'adaptation pédagogique et PEI sera activé immédiatement."}
-                  </span>
-                </div>
-              )}
             </div>
 
             {/* Password input */}
