@@ -6,6 +6,7 @@ import { StreamLessonPlayer } from "@/components/learning/StreamLessonPlayer";
 import { VideoLessonPlayer } from "@/components/learning/VideoLessonPlayer";
 import { YoutubeLessonPlayer } from "@/components/learning/YoutubeLessonPlayer";
 import { MarkLessonCompleteButton } from "@/components/learning/MarkLessonCompleteButton";
+import { AutismLessonInteractiveContent } from "@/components/learning/AutismLessonInteractiveContent";
 import {
   ArrowLeft,
   ArrowRight,
@@ -405,7 +406,17 @@ export default async function CourseRoomPage({
                   {ar ? activeLesson.titleAr : activeLesson.titleFr}
                 </h1>
 
-                {(ar ? activeLesson.descriptionAr : activeLesson.descriptionFr) ? (
+                {data.course.slug === "trouble-spectre-autisme-accompagnement-scolaire" ? (
+                  <AutismLessonInteractiveContent
+                    courseSlug={data.course.slug}
+                    lessonPosition={activeLesson.position}
+                    locale={locale}
+                    titleFr={activeLesson.titleFr}
+                    titleAr={activeLesson.titleAr}
+                    descriptionFr={activeLesson.descriptionFr}
+                    descriptionAr={activeLesson.descriptionAr}
+                  />
+                ) : (ar ? activeLesson.descriptionAr : activeLesson.descriptionFr) ? (
                   <p className="course-lesson-description">
                     {ar ? activeLesson.descriptionAr : activeLesson.descriptionFr}
                   </p>

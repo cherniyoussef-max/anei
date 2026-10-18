@@ -52,6 +52,7 @@ export default async function LibraryPage({ params, searchParams }: { params: Pr
       level: resource.level,
       priceMillimes: resource.priceMillimes,
       coverImageUrl: resource.coverImageUrl,
+      downloadUrl: resource.downloadUrl,
     };
   });
   const breadcrumbs = [

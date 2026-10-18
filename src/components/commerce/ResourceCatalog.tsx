@@ -18,6 +18,7 @@ export type CatalogResource = {
   level: string;
   priceMillimes: number;
   coverImageUrl?: string | null;
+  downloadUrl?: string | null;
 };
 
 const LEVEL_LABEL: Record<string, { en: string; fr: string; ar: string }> = {
@@ -188,7 +189,32 @@ export function ResourceCatalog({
                   <div><dt>{ar ? "السعر" : en ? "Price" : "Prix"}</dt><dd>{formatMillimes(resource.priceMillimes, locale)}</dd></div>
                 </dl>
                 <div className="resource-checkout-wrap mt-auto">
-                  <CheckoutButton itemType="resource" itemId={resource.id} locale={locale} capabilities={capabilities} label={ar ? "شراء المورد" : en ? "Purchase resource" : "Acheter la ressource"} />
+                  {resource.priceMillimes === 0 ? (
+                    <div className="flex flex-col sm:flex-row items-center gap-2 w-full pt-1">
+                      <a
+                        href={resource.downloadUrl || "/documents/guide-complet-autisme-accompagnement-scolaire-anei.pdf"}
+                        download
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0056D2] hover:bg-[#00419e] text-white text-xs font-semibold shadow-xs transition-colors"
+                      >
+                        <Icon name="download" size={15} />
+                        <span>{ar ? "تحميل الدليل (PDF مجاني)" : "Télécharger le guide (PDF gratuit)"}</span>
+                      </a>
+                      <a
+                        href="/documents/guide-complet-autisme-accompagnement-scolaire-anei.html"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition-colors"
+                        title={ar ? "قراءة أونلاين" : "Consulter en ligne"}
+                      >
+                        <Icon name="eye" size={15} />
+                        <span className="whitespace-nowrap">{ar ? "قراءة" : "Consulter"}</span>
+                      </a>
+                    </div>
+                  ) : (
+                    <CheckoutButton itemType="resource" itemId={resource.id} locale={locale} capabilities={capabilities} label={ar ? "شراء المورد" : en ? "Purchase resource" : "Acheter la ressource"} />
+                  )}
                 </div>
                 <div className="flex items-center gap-1.5 text-[11px] text-slate-500 pt-2">
                   <Icon name="shield" size={12} className="text-emerald-700 flex-none" />

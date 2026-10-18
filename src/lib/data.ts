@@ -132,6 +132,47 @@ export const courses: Course[] = [
     mode: "online",
     level: "beginner",
     accent: "rose"
+  },
+  {
+    slug: "trouble-spectre-autisme-accompagnement-scolaire",
+    category: "special-needs",
+    title: {
+      en: "School Support & Evidence-Based Practices for Autism Spectrum Disorder (ASD)",
+      fr: "Accompagnement Scolaire & Pratiques Recommandées dans les Troubles du Spectre de l'Autisme (TSA)",
+      ar: "المرافقة المدرسية والممارسات الموصى بها في اضطرابات طيف التوحد (TSA)"
+    },
+    description: {
+      en: "Comprehensive accredited pathway for AVS, educators, and specialists: diagnosis, TEACCH spatial structuring, ABC functional behavioral analysis, and evidence-based practices.",
+      fr: "Formation certifiante d'excellence pour AVS, enseignants et spécialistes : diagnostic, structuration spatiale TEACCH, analyse fonctionnelle ABC et pratiques recommandées (EBP).",
+      ar: "مسار تدريبي معتمد وشامل للمرافقين والمعلمين والمختصين: التشخيص النمائي، الهيكلة البصرية TEACCH، التحليل السلوكي ABC والممارسات المعتمدة."
+    },
+    objectives: {
+      en: [
+        "Master neurodevelopmental foundations and DSM-5-TR diagnostic dyad",
+        "Implement TEACCH structured environment and visual schedules",
+        "Apply 28 evidence-based practices (EBP) and prompt fading",
+        "Conduct functional ABC behavioral analysis for challenging behaviors"
+      ],
+      fr: [
+        "Comprendre les fondements neurobiologiques et la dyade diagnostique du DSM-5-TR",
+        "Maîtriser la structuration spatio-temporelle TEACCH et les emplois du temps visuels",
+        "Appliquer les pratiques recommandées (EBP) et l'estompage des guidances",
+        "Conduire une analyse fonctionnelle ABC face aux comportements défis"
+      ],
+      ar: [
+        "فهم الأسس العصبية البيولوجية والثنائي التشخيصي في DSM-5-TR",
+        "إتقان الهيكلة المكانية والزمانية وفق منهجية تيتش والجداول البصرية",
+        "تطبيق الممارسات المبنية على البراهين العلمية والتلاشي المنظم للمساعدة",
+        "تنفيذ التحليل السلوكي الوظيفي ABC للتعامل الوقائي مع السلوكيات التحدّية"
+      ]
+    },
+    duration: "30 h",
+    startDate: "2026-10-18",
+    trainer: "Dr. Salma Ben Amor & Équipe Pédagogique ANEI",
+    price: 0,
+    mode: "online",
+    level: "intermediate",
+    accent: "blue"
   }
 ];
 
@@ -378,6 +419,27 @@ export const resources: Resource[] = [
     type: "manual",
     price: 29,
     accent: "violet"
+  },
+  {
+    id: 5,
+    title: {
+      en: "Comprehensive Reference: Autism Spectrum Disorder (ASD) & Inclusive School Support",
+      fr: "Référentiel Complet : Trouble du Spectre de l'Autisme (TSA) & Accompagnement Scolaire Inclusif",
+      ar: "الدليل الشامل: اضطراب طيف التوحّد ومرافقة التلميذ في الوسط المدرسي والممارسات المبنية على البراهين"
+    },
+    description: {
+      en: "Official 3-chapter reference guide: neurodevelopmental bases, role of AVS, EBP methods and ABC functional analysis.",
+      fr: "Guide officiel de référence en 3 chapitres : bases neurobiologiques, posture de l'AVS, méthodes EBP et analyse ABC.",
+      ar: "دليل مرجعي رسمي في 3 فصول: الأسس النمائية، مهام المرافق، الممارسات المبنية على البراهين والتحليل السلوكي."
+    },
+    audience: {
+      en: "AVS, Teachers, Psychologists, SLPs",
+      fr: "AVS, Enseignants, Psychologues, Orthophonistes",
+      ar: "المرافقون المدرسيون، المعلمون، المختصون النفسيون وأخصائيو التخاطب"
+    },
+    type: "guide",
+    price: 0,
+    accent: "blue"
   }
 ];
 
