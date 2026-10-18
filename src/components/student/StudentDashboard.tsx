@@ -13,14 +13,12 @@ import {
   BookOpen,
   Download,
   ChevronRight,
-  Sparkles,
   CheckCircle2,
   UserCheck,
   ExternalLink,
   ShieldCheck,
   Check,
   HelpCircle,
-  Flame,
   Video,
   type LucideIcon,
 } from "lucide-react";
@@ -191,17 +189,6 @@ export function StudentDashboard({
 
   const [activeTab, setActiveTab] = useState<"in_progress" | "completed" | "certificates">("in_progress");
 
-  // Weekly study goal tracker (Mon - Sun)
-  const weekDays = [
-    { id: "mon", label: ar ? "إث" : "L", num: "1", completed: true, isToday: false },
-    { id: "tue", label: ar ? "ثل" : "M", num: "2", completed: true, isToday: false },
-    { id: "wed", label: ar ? "أر" : "M", num: "3", completed: true, isToday: true },
-    { id: "thu", label: ar ? "خم" : "J", num: "4", completed: false, isToday: false },
-    { id: "fri", label: ar ? "جم" : "V", num: "5", completed: false, isToday: false },
-    { id: "sat", label: ar ? "سب" : "S", num: "6", completed: false, isToday: false },
-    { id: "sun", label: ar ? "أح" : "D", num: "7", completed: false, isToday: false },
-  ];
-
   // Secondary courses list (if continueItem is featured in Hero, other courses in the tab)
   const displayedCourses = activeTab === "completed" 
     ? completedCourses 
@@ -229,53 +216,6 @@ export function StudentDashboard({
               ? "Track your momentum and pick up right where you left off."
               : "Suivez votre rythme d’apprentissage et reprenez exactement là où vous vous êtes arrêté."}
           </p>
-        </div>
-
-        {/* Coursera Weekly Goal / Habit Tracker */}
-        <div className="bg-white border border-[#E2E8F0] rounded-xl p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 mt-4">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-[#F0F6FF] text-[#0056D2] border border-[#BFDBFE] flex items-center justify-center flex-none">
-              <Flame size={20} className="text-[#0056D2]" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <strong className="text-sm font-bold text-[#0F172A]">
-                  {ar ? "الهدف الأسبوعي : 3 من 5 أيام" : en ? "Weekly goal: 3 of 5 days" : "Objectif de la semaine : 3 jours sur 5 complétés"}
-                </strong>
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
-                  🔥 {ar ? "يومان متتاليان" : en ? "2-day streak" : "Série active : 2 jours"}
-                </span>
-              </div>
-              <p className="text-xs text-[#64748B] mt-0.5">
-                {ar
-                  ? "خصص 20 دقيقة يوميًا للحفاظ على وتيرة التعلّم واستكمال مسارك."
-                  : en
-                  ? "Dedicate 20 minutes a day to stay on track for certification."
-                  : "Consacrez 20 minutes par jour pour maintenir votre rythme de certification."}
-              </p>
-            </div>
-          </div>
-
-          {/* 7 Days Tracker */}
-          <div className="flex items-center justify-between sm:justify-start gap-1.5 sm:gap-2 w-full md:w-auto pt-2 md:pt-0 border-t md:border-t-0 border-[#F1F5F9]">
-            {weekDays.map((d) => (
-              <div key={d.id} className="flex flex-col items-center gap-1 flex-1 md:flex-none">
-                <span className="text-[10px] font-semibold text-[#64748B]">{d.label}</span>
-                <div
-                  className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                    d.completed
-                      ? "bg-[#0056D2] text-white shadow-xs"
-                      : d.isToday
-                      ? "border-2 border-[#0056D2] text-[#0056D2] bg-[#F0F6FF]"
-                      : "bg-[#F1F5F9] text-[#94A3B8]"
-                  }`}
-                  title={`${d.label} - ${d.completed ? "Complété" : d.isToday ? "Aujourd'hui" : "À venir"}`}
-                >
-                  {d.completed ? <Check size={13} strokeWidth={3} /> : d.num}
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </header>
 
@@ -389,7 +329,7 @@ export function StudentDashboard({
             <div className="student-empty-hero-copy">
               <div className="student-hero-eyebrow">
                 <span className="student-active-tag">
-                  <Sparkles size={14} className="text-[#0056D2]" />
+                  <GraduationCap size={15} className="text-[#0056D2]" />
                   {ar ? "ابدأ مسارك التعليمي" : "Démarrez votre parcours"}
                 </span>
               </div>
@@ -661,7 +601,7 @@ export function StudentDashboard({
                   <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div className="flex items-start gap-3">
                       <div className="h-9 w-9 rounded-lg bg-[#F0F6FF] text-[#0056D2] border border-[#BFDBFE] flex items-center justify-center flex-none mt-0.5">
-                        <Sparkles size={18} />
+                        <GraduationCap size={18} />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
@@ -1018,31 +958,100 @@ export function StudentDashboard({
         </section>
       </div>
 
-      {/* 6. COURSERA HELP & AI ASSISTANT BANNER */}
-      <section className="student-bottom-banner" aria-label={ar ? "المساعدة والدعم" : "Aide et accompagnement"}>
+      {/* 6. ANEI PEDAGOGICAL TUTOR & EXAM REVISION BANNER */}
+      <section className="student-bottom-banner" aria-label={ar ? "المرشد البيداغوجي والمساعدة" : "Tuteur pédagogique et aide"}>
         <div className="student-bottom-banner-icon" aria-hidden="true">
-          <Sparkles size={22} className="text-[#0056D2]" />
+          <GraduationCap size={24} className="text-[#0056D2]" />
         </div>
         <div className="student-bottom-banner-content">
           <h3>
             {ar
-              ? "هل لديك سؤال أو تحتاج إلى مساعدة بيداغوجية؟"
-              : "Une question sur votre cours ou un besoin d'accompagnement ?"}
+              ? "المرشد البيداغوجي ANEI · مرافقة التعلّم والاستعداد للاختبار النهائي"
+              : "Tuteur Pédagogique ANEI · Accompagnement de votre formation & Réussite au test"}
           </h3>
           <p>
             {ar
-              ? "مساعد ANEI الذكي وفريقنا البيداغوجي متاحون للإجابة على جميع استفساراتك وتوجيهك خطوة بخطوة."
-              : "L'Assistant ANEI et nos référents pédagogiques sont à vos côtés pour vous guider vers la réussite."}
+              ? "مرشدك الذكي يعرف دوراتك ودروسك المسجلة: اطرح أسئلتك، راجع المفاهيم الأساسية واستعد بثقة لاجتياز التقييم النهائي والحصول على شهادتك الرسمية."
+              : "Votre tuteur intelligent connaît vos cours achetés, vos leçons et les notions clés évaluées : posez vos questions, révisez et préparez sereinement votre examen final certifiant."}
           </p>
+
+          {/* Quick Revision Prompt Chips */}
+          <div className="flex flex-wrap items-center gap-2 mt-3 pt-2 border-t border-[#E2E8F0]">
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(
+                    new CustomEvent("anei:open-assistant", {
+                      detail: {
+                        prompt: ar
+                          ? "أستعد للتقييم النهائي، هل يمكنك تلخيص المفاهيم الأساسية لدورتي التكوينية ومساعدتي على المراجعة؟"
+                          : "Je prépare mon évaluation certifiante. Peux-tu me faire une synthèse des points clés indispensables de ma formation ?",
+                      },
+                    })
+                  );
+                }
+              }}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-white text-[#0A192F] border border-[#CBD5E1] hover:border-[#0056D2] hover:bg-[#F0F6FF] transition-all shadow-2xs"
+            >
+              <span>🎓</span>
+              <span>{ar ? "مراجعة النقاط الأساسية لدورتي" : "Réviser les points clés de mon cours"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(
+                    new CustomEvent("anei:open-assistant", {
+                      detail: {
+                        prompt: ar
+                          ? "ما هي المفاهيم الجوهرية والأسئلة الأساسية لاجتياز اختبار الشهادة بنسبة تفوق 80%؟"
+                          : "Quels sont les concepts et questions clés à maîtriser absolument pour réussir l'examen certifiant avec plus de 80% ?",
+                      },
+                    })
+                  );
+                }
+              }}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-white text-[#0A192F] border border-[#CBD5E1] hover:border-[#0056D2] hover:bg-[#F0F6FF] transition-all shadow-2xs"
+            >
+              <span>🎯</span>
+              <span>{ar ? "كيف أجتاز الاختبار النهائي للشهادة؟" : "Comment réussir le test final (80%) ?"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(
+                    new CustomEvent("anei:open-assistant", {
+                      detail: {
+                        prompt: ar
+                          ? "اطرح عليّ سؤالاً تدريبياً لاختبار فهمي للمنهاج، وقيّم إجابتي بيداغوجياً."
+                          : "Pose-moi une question d'entraînement pour tester ma compréhension de mes leçons et évalue ma réponse.",
+                      },
+                    })
+                  );
+                }
+              }}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-white text-[#0A192F] border border-[#CBD5E1] hover:border-[#0056D2] hover:bg-[#F0F6FF] transition-all shadow-2xs"
+            >
+              <span>🧩</span>
+              <span>{ar ? "تدريبي بأسئلة تفاعلية" : "M'entraîner avec des questions types"}</span>
+            </button>
+          </div>
         </div>
         <div className="student-bottom-banner-actions">
-          <Link
-            href={`/${locale}/dashboard?assistant=open`}
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("anei:open-assistant"));
+              }
+            }}
             className="student-banner-btn-gold"
           >
-            <Sparkles size={16} />
-            <span>{ar ? "فتح مساعد ANEI" : "Assistant ANEI"}</span>
-          </Link>
+            <GraduationCap size={16} />
+            <span>{ar ? "فتح المرشد البيداغوجي" : "Ouvrir le Tuteur ANEI"}</span>
+          </button>
           <Link
             href={`/${locale}/contact`}
             className="student-banner-btn-ghost"

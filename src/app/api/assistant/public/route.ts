@@ -5,6 +5,7 @@ import { getHybridRAGEngine } from "@/server/ai/hybrid-rag-engine";
 import { checkAndConsumeAiQuota, recordAiUsageLog } from "@/server/ai/meter";
 import { consumeRateLimit, requestFingerprint } from "@/server/security/rate-limit";
 import { isTrustedMutation } from "@/server/security/origin";
+import { getLearnerCourseAiContext } from "@/server/ai/learner-context";
 
 const requestSchema = z.object({
   message: z.string().trim().min(2, "Message too short").max(1000, "Message exceeds 1000 characters"),
@@ -65,10 +66,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 2. Hybrid Agentic RAG Retrieval & Generation
+    // 2. Hybrid Agentic RAG Retrieval & Generation with Learner Course Context
     const startTime = Date.now();
+    const learnerCourseContext = userId
+      ? await getLearnerCourseAiContext(userId, locale).catch(() => "")
+      : "";
+
     const ragEngine = getHybridRAGEngine();
-    const ragResult = await ragEngine.generateTeacherResponse(message, locale);
+    const ragResult = await ragEngine.generateTeacherResponse(message, locale, undefined, learnerCourseContext);
     const durationMs = Date.now() - startTime;
     const outputText = ragResult.answer;
 

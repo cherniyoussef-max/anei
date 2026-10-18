@@ -360,7 +360,8 @@ export class HybridAgenticRAGEngine {
       grade?: string;
       condition?: string;
       role?: "teacher" | "avs" | "parent" | "specialist";
-    }
+    },
+    learnerCourseContext?: string
   ): Promise<{
     answer: string;
     sources: RetrievedChunkContext[];
@@ -375,7 +376,7 @@ export class HybridAgenticRAGEngine {
     const sources = await this.retrieveChunks(intent, 4);
 
     // 3. Build Expert Pedagogical System Prompt
-    const systemPrompt = buildTeacherAgentSystemPrompt(intent.locale, sources, studentContext);
+    const systemPrompt = buildTeacherAgentSystemPrompt(intent.locale, sources, studentContext, learnerCourseContext);
 
     // 4. Generate Response via Azure OpenAI LLM
     const res = await this.azureProvider.chatCompletion({

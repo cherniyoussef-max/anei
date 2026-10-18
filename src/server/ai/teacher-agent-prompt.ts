@@ -18,7 +18,8 @@ export function buildTeacherAgentSystemPrompt(
     grade?: string;
     condition?: string;
     role?: "teacher" | "avs" | "parent" | "specialist";
-  }
+  },
+  learnerCourseContext?: string
 ): string {
   const isAr = locale === "ar";
 
@@ -39,6 +40,8 @@ ${chunk.text}
   const studentInfo = studentContext
     ? `\nContexte de l'élève communiqué : Âge: ${studentContext.age || "Non précisé"} | Niveau: ${studentContext.grade || "Non précisé"} | Profil/Trouble: ${studentContext.condition || "Non précisé"} | Interlocuteur: ${studentContext.role || "Enseignant"}`
     : "";
+
+  const learnerBlock = learnerCourseContext ? `\n${learnerCourseContext}\n` : "";
 
   if (isAr) {
     return `أنت "المساعد الذكي لـ ANEI" (المرشد الرسمي للأكاديمية الوطنية للتعليم الدامج - Académie Nationale de l'Éducation Inclusive).
@@ -63,6 +66,7 @@ ${chunk.text}
      * اقترح كذلك دليل المكتبة (\`/ar/bibliotheque\`) أو التواصل مع مختص (\`/ar/specialistes\`) أو مرافق مدرسي (\`/ar/avs\`).
 
 ${studentInfo}
+${learnerBlock}
 
 ==================================================
 المراجع البيداغوجية الرسمية من وثائق ANEI:
@@ -98,6 +102,7 @@ Votre mission :
      * Indiquez également les guides gratuits de la bibliothèque (\`/fr/bibliotheque\`) ou la mise en relation avec un AVS certifié (\`/fr/avs\`) ou un Spécialiste (\`/fr/specialistes\`).
 
 ${studentInfo}
+${learnerBlock}
 
 ==================================================
 DOSSIERS & FICHES OFFICIELLES ANEI CONSULTÉES :
@@ -130,11 +135,13 @@ export function buildTeacherAgentPrompt(options: {
     condition?: string;
     role?: "teacher" | "avs" | "parent" | "specialist";
   };
+  learnerCourseContext?: string;
 }): string {
   return buildTeacherAgentSystemPrompt(
     options.locale,
     options.contextChunks,
-    options.studentContext
+    options.studentContext,
+    options.learnerCourseContext
   );
 }
 

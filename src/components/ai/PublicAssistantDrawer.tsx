@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   X,
   Send,
@@ -16,6 +17,7 @@ import {
   RotateCcw,
   ArrowRight,
   ArrowLeft,
+  GraduationCap,
 } from "lucide-react";
 
 interface Citation {
@@ -37,6 +39,21 @@ interface ChatMessage {
 interface PublicAssistantDrawerProps {
   locale?: "fr" | "ar";
 }
+
+const LEARNER_SUGGESTIONS = {
+  fr: [
+    { label: "🎓 Réviser les points clés de ma formation", query: "Je prépare mon évaluation certifiante. Peux-tu me faire une synthèse des points clés indispensables de ma formation ?" },
+    { label: "🎯 Comment réussir mon test certifiant (QCM 80%) ?", query: "Quels sont les concepts et questions clés à maîtriser absolument pour réussir l'examen certifiant ?" },
+    { label: "🧩 M'entraîner avec des questions types", query: "Pose-moi une question d'entraînement pour tester ma compréhension de mes leçons et évalue ma réponse." },
+    { label: "💡 Aménagements concrets en classe (TEACCH & ABC)", query: "Quels sont les aménagements scolaires et pratiques fondées sur les preuves essentiels de mon cours ?" },
+  ],
+  ar: [
+    { label: "🎓 مراجعة النقاط الأساسية لدورتي التكوينية", query: "أستعد للتقييم النهائي، هل يمكنك تلخيص المفاهيم الأساسية لدورتي التكوينية ومساعدتي على المراجعة؟" },
+    { label: "🎯 كيف أجتاز التقييم النهائي للشهادة بنجاح؟", query: "ما هي المفاهيم الجوهرية والأسئلة الأساسية لاجتياز اختبار الشهادة بنسبة تفوق 80%؟" },
+    { label: "🧩 تدريبي بأسئلة تفاعلية لاختبار فهمي", query: "اطرح عليّ سؤالاً تدريبياً لاختبار فهمي للمنهاج، وقيّم إجابتي بيداغوجياً." },
+    { label: "💡 الترتيبات الصفية والممارسات المبنية على البراهين", query: "ما هي أهم التدابير الصفية (TEACCH، شبكة ABC، والتواصل المعزز) الواجب استيعابها في دراستي؟" },
+  ],
+};
 
 const SUGGESTIONS = {
   fr: [
@@ -213,7 +230,22 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
   const counterRef = useRef(0);
 
   const isRtl = locale === "ar";
-  const suggestions = isRtl ? SUGGESTIONS.ar : SUGGESTIONS.fr;
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const isLearnerPath = pathname ? pathname.includes("/dashboard") || pathname.includes("/apprendre") : false;
+
+  useEffect(() => {
+    if (searchParams?.get("assistant") === "open") {
+      const timer = setTimeout(() => {
+        setIsOpen(true);
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
+
+  const suggestions = isLearnerPath
+    ? (isRtl ? LEARNER_SUGGESTIONS.ar : LEARNER_SUGGESTIONS.fr)
+    : (isRtl ? SUGGESTIONS.ar : SUGGESTIONS.fr);
 
   useEffect(() => {
     if (isOpen) {
@@ -345,6 +377,26 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
     }
   };
 
+  const handleSendRef = useRef(handleSend);
+  useEffect(() => {
+    handleSendRef.current = handleSend;
+  });
+
+  useEffect(() => {
+    const handleOpenEvent = (e: Event) => {
+      setIsOpen(true);
+      const customEvent = e as CustomEvent<{ prompt?: string }>;
+      if (customEvent?.detail?.prompt) {
+        handleSendRef.current(customEvent.detail.prompt);
+      }
+    };
+
+    window.addEventListener("anei:open-assistant", handleOpenEvent);
+    return () => {
+      window.removeEventListener("anei:open-assistant", handleOpenEvent);
+    };
+  }, []);
+
   return (
     <>
       {/* Floating Trigger Button */}
@@ -355,14 +407,24 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
           className={`fixed bottom-6 ${
             isRtl ? "left-6" : "right-6"
           } z-40 flex items-center gap-2.5 px-4 py-3 bg-[#002B49] text-white rounded-full shadow-xl hover:bg-[#001f35] border border-[#B58D3D]/50 transition-all duration-300 hover:scale-105 active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#B58D3D]`}
-          aria-label={isRtl ? "فتح مساعد ANEI" : "Ouvrir l'assistant ANEI"}
+          aria-label={
+            isLearnerPath
+              ? (isRtl ? "فتح المرشد البيداغوجي ANEI" : "Ouvrir le Tuteur Pédagogique ANEI")
+              : (isRtl ? "فتح مساعد ANEI" : "Ouvrir l'assistant ANEI")
+          }
         >
           <div className="relative flex items-center justify-center">
-            <Bot className="w-5 h-5 text-[#DDA74A]" />
+            {isLearnerPath ? (
+              <GraduationCap className="w-5 h-5 text-[#DDA74A]" />
+            ) : (
+              <Bot className="w-5 h-5 text-[#DDA74A]" />
+            )}
             <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full ring-2 ring-[#002B49] animate-pulse" />
           </div>
           <span className="text-sm font-semibold tracking-wide" style={{ color: "#ffffff" }}>
-            {isRtl ? "مساعد ANEI" : "Assistant ANEI"}
+            {isLearnerPath
+              ? (isRtl ? "المرشد البيداغوجي" : "Tuteur ANEI")
+              : (isRtl ? "مساعد ANEI" : "Assistant ANEI")}
           </span>
         </button>
       )}
@@ -377,23 +439,33 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
             isRtl ? "left-6" : "right-6"
           } z-50 w-[92vw] sm:w-[440px] h-[610px] max-h-[86vh] bg-white rounded-2xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-300`}
         >
-          {/* Header with High-Contrast Typography & Professional Bot Icon */}
+          {/* Header with High-Contrast Typography & Professional Icon */}
           <div className="bg-[#002B49] text-white px-5 py-3.5 flex items-center justify-between border-b border-[#B58D3D]/30 shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center border border-[#B58D3D]/50 text-[#DDA74A]">
-                <Bot className="w-5 h-5 text-[#DDA74A]" />
+                {isLearnerPath ? (
+                  <GraduationCap className="w-5 h-5 text-[#DDA74A]" />
+                ) : (
+                  <Bot className="w-5 h-5 text-[#DDA74A]" />
+                )}
               </div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold tracking-tight text-white" style={{ color: "#ffffff" }}>
-                    {isRtl ? "مساعد ANEI الذكي" : "Assistant ANEI"}
+                    {isLearnerPath
+                      ? (isRtl ? "المرشد البيداغوجي ANEI" : "Tuteur Pédagogique ANEI")
+                      : (isRtl ? "مساعد ANEI الذكي" : "Assistant ANEI")}
                   </span>
                   <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#B58D3D] text-white shadow-xs">
-                    {isRtl ? "دليل معتمد" : "Guide Officiel"}
+                    {isLearnerPath
+                      ? (isRtl ? "تكوين وشهادة" : "Tuteur Certifiant")
+                      : (isRtl ? "دليل معتمد" : "Guide Officiel")}
                   </span>
                 </div>
                 <p className="text-xs text-slate-200 font-normal mt-0.5" style={{ color: "#e2e8f0" }}>
-                  {isRtl ? "إنشاء حساب، استشارات وتوجيه للتكوين" : "Création de compte, conseil & formations"}
+                  {isLearnerPath
+                    ? (isRtl ? "مرافقة المتعلّم، مراجعة الدروس والاستعداد للاختبار" : "Accompagnement, révision & préparation au test certifiant")
+                    : (isRtl ? "إنشاء حساب، استشارات وتوجيه للتكوين" : "Création de compte, conseil & formations")}
                 </p>
               </div>
             </div>
@@ -426,16 +498,26 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center px-4 space-y-4">
                 <div className="w-12 h-12 rounded-2xl bg-[#002B49]/10 flex items-center justify-center text-[#002B49] border border-[#002B49]/15">
-                  <Bot className="w-6 h-6 text-[#002B49]" />
+                  {isLearnerPath ? (
+                    <GraduationCap className="w-6 h-6 text-[#002B49]" />
+                  ) : (
+                    <Bot className="w-6 h-6 text-[#002B49]" />
+                  )}
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-slate-900">
-                    {isRtl ? "مرحباً بكم في الأكاديمية الوطنية" : "Bienvenue à l'Académie"}
+                    {isLearnerPath
+                      ? (isRtl ? "مرحباً بك في فضاء المتعلّم ANEI" : "Votre Tuteur Pédagogique ANEI")
+                      : (isRtl ? "مرحباً بكم في الأكاديمية الوطنية" : "Bienvenue à l'Académie")}
                   </h4>
                   <p className="text-xs text-slate-600 mt-1 max-w-[310px] leading-relaxed">
-                    {isRtl
-                      ? "أنا هنا لمساعدتكم في إنشاء حساب، الإجابة عن استفساراتكم، واقتراح الدورة الأنسب لوضعيتكم."
-                      : "Créer un compte, répondre à vos questions ou vous recommander la formation certifiante adaptée à votre situation."}
+                    {isLearnerPath
+                      ? (isRtl
+                          ? "أنا مرشدك البيداغوجي المخصص: أعرف دوراتك المسجلة، دروسك، وأساعدك على المراجعة واجتياز التقييم النهائي بنجاح!"
+                          : "Je connais vos formations achetées et vos leçons. Je suis là pour vous aider à comprendre chaque concept, réviser et réussir votre test final certifiant !")
+                      : (isRtl
+                          ? "أنا هنا لمساعدتكم في إنشاء حساب، الإجابة عن استفساراتكم، واقتراح الدورة الأنسب لوضعيتكم."
+                          : "Créer un compte, répondre à vos questions ou vous recommander la formation certifiante adaptée à votre situation.")}
                   </p>
                 </div>
 

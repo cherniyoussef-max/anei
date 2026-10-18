@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { isLocale } from "@/lib/i18n";
 import { requireUser } from "@/server/auth/session";
 import { StudentShell } from "@/components/student/StudentShell";
+import { PublicAssistantDrawer } from "@/components/ai/PublicAssistantDrawer";
 import { getUnreadNotificationCount } from "@/server/queries/account";
 import { getPointsBalance } from "@/server/services/points";
 import { env } from "@/server/env";
@@ -26,16 +27,19 @@ export default async function LearnerLayout({
     impersonation?: { active: boolean; impersonatorId: string; impersonatorName: string; impersonatorEmail: string };
   }).impersonation;
 
+  const assistantEnabled = Boolean(env.OPENAI_API_KEY || env.AZURE_OPENAI_API_KEY);
+
   return (
     <StudentShell
       locale={locale}
       user={{ name: session.user.name, email: session.user.email }}
       pointsBalance={pointsBalance}
       notificationCount={notificationCount}
-      assistantEnabled={Boolean(env.OPENAI_API_KEY || env.AZURE_OPENAI_API_KEY)}
+      assistantEnabled={assistantEnabled}
       impersonation={impersonation}
     >
       <main id="main-content" tabIndex={-1}>{children}</main>
+      {assistantEnabled && <PublicAssistantDrawer locale={locale as "fr" | "ar"} />}
     </StudentShell>
   );
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronRight, Sparkles, Bell } from "lucide-react";
+import { ChevronRight, GraduationCap, Bell } from "lucide-react";
 import type { Locale } from "@/types";
 import { LocaleSwitcher } from "@/components/interactive/LocaleSwitcher";
 
@@ -41,13 +41,18 @@ export function StudentTopbar({ locale, userName, notificationCount = 0, assista
 
       <div className="flex flex-none items-center gap-2 md:gap-3">
         {assistantEnabled ? (
-          <Link
-            className="hidden items-center gap-1.5 rounded-full border border-[#E2E8F0] bg-white px-3 py-1.5 text-sm font-medium text-[#1F1F1F] transition-all duration-200 ease-in-out hover:border-[#0056D2] sm:flex"
-            href={`/${locale}/dashboard?assistant=open`}
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("anei:open-assistant"));
+              }
+            }}
+            className="hidden items-center gap-1.5 rounded-full border border-[#CBD5E1] bg-white px-3 py-1.5 text-sm font-medium text-[#0A192F] transition-all duration-200 ease-in-out hover:border-[#0056D2] hover:bg-[#F0F6FF] sm:flex shadow-xs"
           >
-            <Sparkles className="text-[#0056D2]" size={16} strokeWidth={1.75} />
-            <span>{ar ? "مساعد ANEI" : "Assistant ANEI"}</span>
-          </Link>
+            <GraduationCap className="text-[#0056D2]" size={16} strokeWidth={1.8} />
+            <span>{ar ? "المرشد البيداغوجي" : "Tuteur Pédagogique"}</span>
+          </button>
         ) : null}
 
         <div className="hidden sm:block">
