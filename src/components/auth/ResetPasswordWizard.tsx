@@ -276,7 +276,7 @@ export function ResetPasswordWizard({ locale }: { locale: Locale }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder={ar ? "15 حرفاً على الأقل..." : "15 caractères minimum..."}
-              className="w-full h-12 ps-10 pe-11 rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 text-sm font-medium focus:outline-none focus:border-[#0056D2] focus:ring-2 focus:ring-[#0056D2]/15 transition-all shadow-2xs"
+              className="w-full h-12 auth-input-with-icon auth-input-with-toggle !ps-11 !pe-11 rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 text-sm font-medium focus:outline-none focus:border-[#0056D2] focus:ring-2 focus:ring-[#0056D2]/15 transition-all shadow-2xs"
             />
             <button
               type="button"
@@ -326,7 +326,7 @@ export function ResetPasswordWizard({ locale }: { locale: Locale }) {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder={ar ? "أعد كتابة كلمة المرور..." : "Retapez votre mot de passe..."}
-              className={`w-full h-12 ps-10 pe-11 rounded-xl border bg-white text-slate-900 placeholder:text-slate-400 text-sm font-medium focus:outline-none transition-all shadow-2xs ${
+              className={`w-full h-12 auth-input-with-icon auth-input-with-toggle !ps-11 !pe-11 rounded-xl border bg-white text-slate-900 placeholder:text-slate-400 text-sm font-medium focus:outline-none transition-all shadow-2xs ${
                 confirmPassword.length > 0
                   ? passwordsMatch
                     ? "border-emerald-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15"

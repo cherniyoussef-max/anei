@@ -18,13 +18,16 @@ import {
   Lock,
   Eye,
   EyeOff,
-  Phone,
+
   ArrowRight,
   ArrowLeft,
   Loader2,
   AlertCircle,
   MapPin,
   Sparkles,
+  Building2,
+  ChevronDown,
+  Mail,
 } from "lucide-react";
 
 export const TUNISIA_GOVERNORATES_BILINGUAL = [
@@ -55,6 +58,95 @@ export const TUNISIA_GOVERNORATES_BILINGUAL = [
 ];
 
 export type CategoryChoice = "LEARNER" | "AVS" | "SPECIALIST";
+export type ProfileTypeChoice = "STUDENT" | "PARENT" | "TEACHER" | "AVS" | "SPECIALIST";
+
+export interface ProfileTypeItem {
+  id: ProfileTypeChoice;
+  category: CategoryChoice;
+  subRole: string;
+  icon: typeof GraduationCap;
+  image: string;
+  titleFr: string;
+  titleAr: string;
+  descriptionFr: string;
+  descriptionAr: string;
+  badgesFr: string[];
+  badgesAr: string[];
+  badgeColorClass: string;
+}
+
+export const PROFILE_DEFINITIONS: ProfileTypeItem[] = [
+  {
+    id: "STUDENT",
+    category: "LEARNER",
+    subRole: "Étudiant / En reconversion",
+    icon: GraduationCap,
+    image: "/media/persona-student.webp",
+    titleFr: "Apprenant / Étudiant",
+    titleAr: "طالب / متعلم",
+    descriptionFr: "Suivre des formations certifiantes, développer ses compétences en éducation inclusive et obtenir des diplômes et attestations officielles ANEI.",
+    descriptionAr: "متابعة الدورات التدريبية المعتمدة، اكتساب مهارات التربية الدامجة ونيل الشهادات التخصصية الرسمية.",
+    badgesFr: ["Formations en ligne", "Certificats ANEI", "Auto-formation"],
+    badgesAr: ["تكوين عبر الإنترنت", "شهادات ANEI", "تعلم ذاتي"],
+    badgeColorClass: "bg-slate-100 text-slate-700",
+  },
+  {
+    id: "PARENT",
+    category: "LEARNER",
+    subRole: "Parent d'un enfant à besoin spécifique",
+    icon: HeartHandshake,
+    image: "/media/persona-parent.webp",
+    titleFr: "Parent d'élève",
+    titleAr: "ولي أمر",
+    descriptionFr: "Accompagner son enfant, réserver des séances avec des AVS ou Spécialistes certifiés et accéder aux guides d'accompagnement familial.",
+    descriptionAr: "مرافقة الطفل، حجز حصص مباشرة مع مرافقين مدرسيين وأخصائيين والوصول إلى أدلة الدعم الأسري المعتمدة.",
+    badgesFr: ["Accompagnement familial", "Réservation AVS", "Réseau Spécialistes"],
+    badgesAr: ["دعم أسري", "حجز AVS", "أخصائيون معتمدون"],
+    badgeColorClass: "bg-emerald-50 text-emerald-700 border border-emerald-100",
+  },
+  {
+    id: "TEACHER",
+    category: "LEARNER",
+    subRole: "Enseignant / Cadre éducatif",
+    icon: BookOpen,
+    image: "/media/persona-teacher.webp",
+    titleFr: "Enseignant / Éducateur",
+    titleAr: "مربي / إطار تربوي",
+    descriptionFr: "Mettre en place des adaptations pédagogiques (PEI/GEVA-Sco), gérer une classe inclusive et collaborer avec les familles et spécialistes.",
+    descriptionAr: "تطبيق التكييفات البيداغوجية، إدارة الأقسام الدامجة والتنسيق المتكامل مع الأسر والأخصائيين والمرافقين.",
+    badgesFr: ["Pédagogie inclusive", "Outils & PEI", "Cadre scolaire"],
+    badgesAr: ["تربية دامجة", "أدوات و PEI", "وسط مدرسي"],
+    badgeColorClass: "bg-amber-50 text-amber-800 border border-amber-100",
+  },
+  {
+    id: "AVS",
+    category: "AVS",
+    subRole: "Accompagnant de Vie Scolaire",
+    icon: ShieldCheck,
+    image: "/media/persona-avs.webp",
+    titleFr: "Accompagnant de Vie Scolaire (AVS)",
+    titleAr: "مرافق حياة مدرسية (AVS)",
+    descriptionFr: "Accompagner les élèves en milieu scolaire ou à domicile, valoriser vos interventions et apparaître automatiquement dans l'annuaire certifié /avs.",
+    descriptionAr: "مرافقة التلاميذ في المدارس أو المنازل، توثيق الخبرات والظهور التلقائي في الدليل الرسمي لمرافقي الحياة المدرسية.",
+    badgesFr: ["Annuaire officiel /avs", "0% commission présentiel", "Missions scolaires"],
+    badgesAr: ["دليل /avs الرسمي", "0% عمولة حضوري", "مهام مدرسية"],
+    badgeColorClass: "bg-blue-50 text-blue-700 border border-blue-100",
+  },
+  {
+    id: "SPECIALIST",
+    category: "SPECIALIST",
+    subRole: "Spécialiste & Clinicien",
+    icon: Stethoscope,
+    image: "/media/persona-specialist.webp",
+    titleFr: "Spécialiste & Clinicien",
+    titleAr: "أخصائي عيادي وصاحب عيادة",
+    descriptionFr: "Orthophoniste, Psychologue, Psychomotricien, Ergothérapeute — référencer votre cabinet dans /specialistes et recevoir des rendez-vous.",
+    descriptionAr: "أخصائي تخاطب، نفساني، حركي، وظيفي — نشر العيادة في دليل /specialistes وإدارة الحجوزات والاستشارات الحضورية وعن بعد.",
+    badgesFr: ["Annuaire /specialistes", "Cabinet & Téléconsultation", "Prise de RDV"],
+    badgesAr: ["دليل /specialistes", "عيادة واستشارات", "مواعيد مباشرة"],
+    badgeColorClass: "bg-purple-50 text-purple-700 border border-purple-100",
+  },
+];
 
 export function RegisterWizard({
   locale,
@@ -102,26 +194,51 @@ export function RegisterWizard({
     }
   }
 
-  // Step 1: Category
-  const [category, setCategory] = useState<CategoryChoice>(() => {
+  // Step 1: Profile Type & Category
+  const [profileType, setProfileType] = useState<ProfileTypeChoice>(() => {
     const roleParam = search.get("role")?.toLowerCase();
     if (roleParam === "avs") return "AVS";
-    if (roleParam === "specialist") return "SPECIALIST";
-    return "LEARNER";
+    if (roleParam === "specialist" || roleParam === "cabinet") return "SPECIALIST";
+    if (roleParam === "parent") return "PARENT";
+    if (roleParam === "teacher" || roleParam === "enseignant") return "TEACHER";
+    return "STUDENT";
   });
+
+  const category: CategoryChoice = useMemo(() => {
+    if (profileType === "AVS") return "AVS";
+    if (profileType === "SPECIALIST") return "SPECIALIST";
+    return "LEARNER";
+  }, [profileType]);
+
+  const [subRole, setSubRole] = useState<string>(() => {
+    const roleParam = search.get("role")?.toLowerCase();
+    if (roleParam === "parent") return "Parent d'un enfant à besoin spécifique";
+    if (roleParam === "teacher" || roleParam === "enseignant") return "Enseignant / Cadre éducatif";
+    return "Étudiant / En reconversion";
+  });
+
+  const handleSelectProfileType = (pt: ProfileTypeChoice) => {
+    setProfileType(pt);
+    if (pt === "STUDENT") {
+      setSubRole("Étudiant / En reconversion");
+    } else if (pt === "PARENT") {
+      setSubRole("Parent d'un enfant à besoin spécifique");
+    } else if (pt === "TEACHER") {
+      setSubRole("Enseignant / Cadre éducatif");
+    }
+  };
 
   // Step 2: Coordinates
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("+216 ");
+  const [phoneDigits, setPhoneDigits] = useState("");
   const [governorate, setGovernorate] = useState("Tunis");
   const [city, setCity] = useState("Tunis");
   const [acquisitionSource, setAcquisitionSource] = useState("FACEBOOK_INSTAGRAM");
   const [ageGroup, setAgeGroup] = useState("26-35");
 
   // Step 3: Learner
-  const [subRole, setSubRole] = useState("Parent d'un enfant à besoin spécifique");
   const [educationLevel, setEducationLevel] = useState("Licence");
   const [institutionName, setInstitutionName] = useState("");
   const [interests, setInterests] = useState<string[]>(["Autisme (TSA)", "Troubles DYS"]);
@@ -193,13 +310,15 @@ export function RegisterWizard({
 
   // Step validation
   const canProceedStep2 = useMemo(() => {
-    return firstName.trim().length > 0 &&
+    return (
+      firstName.trim().length > 0 &&
       lastName.trim().length > 0 &&
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) &&
-      phone.trim().replace(/\s+/g, "").length >= 8 &&
+      phoneDigits.trim().length === 8 &&
       governorate.length > 0 &&
-      city.length > 0;
-  }, [firstName, lastName, email, phone, governorate, city]);
+      city.length > 0
+    );
+  }, [firstName, lastName, email, phoneDigits, governorate, city]);
 
   const canProceedStep4 = useMemo(() => {
     return (
@@ -216,7 +335,7 @@ export function RegisterWizard({
         return {
           title: ar ? "ما هي صفتكم داخل الأكاديمية؟" : "Quel est votre profil au sein de l'Académie ANEI ?",
           subtitle: ar
-            ? "حدّدوا صفتكم الرئيسية. تتيح لكم الوصول إلى مساحة عملكم والميزات المخصصة."
+            ? "حدّدوا صفتكم الرئيسية للوصول إلى بيئة التعلم أو بطاقتكم المهنية المعتمدة."
             : "Sélectionnez votre profil principal. Il détermine votre espace de travail et vos fonctionnalités.",
         };
       case 2:
@@ -227,14 +346,28 @@ export function RegisterWizard({
             : "Ces informations permettent de personnaliser votre compte, d'émettre vos certificats et de vous joindre.",
         };
       case 3:
-        if (category === "LEARNER") {
+        if (profileType === "PARENT") {
           return {
-            title: ar ? "حدّدوا صفة ملفكم التعليمي" : "Précisez votre profil d'apprenant",
+            title: ar ? "إعداد ملف المرافقة الأسرية" : "Profil d'accompagnement familial",
             subtitle: ar
-              ? "خصّصوا اهتماماتكم ومساركم التعليمي للحصول على أفضل التوصيات."
-              : "Personnalisez vos recommandations de formation et vos parcours d'apprentissage.",
+              ? "خصّصوا احتياجات طفلكم واهتماماتكم للحصول على أفضل التوجيهات والموارد."
+              : "Personnalisez vos besoins d'accompagnement pour recevoir des guides et recommandations ciblés.",
           };
-        } else if (category === "AVS") {
+        } else if (profileType === "TEACHER") {
+          return {
+            title: ar ? "الملف المهني للأستاذ والمربي" : "Profil professionnel d'enseignant",
+            subtitle: ar
+              ? "حدّدوا إطاركم التدريسي ومجالات التكييف البيداغوجي ذات الأولوية."
+              : "Précisez votre établissement d'exercice et vos priorités d'aménagements pédagogiques.",
+          };
+        } else if (profileType === "STUDENT") {
+          return {
+            title: ar ? "تخصيص المسار التعليمي" : "Personnalisez votre parcours d'apprenant",
+            subtitle: ar
+              ? "خصّصوا اهتماماتكم ومساركم التعليمي للحصول على أفضل التوصيات التدريبية."
+              : "Personnalisez vos recommandations de formation et vos parcours d'apprentissage certifiants.",
+          };
+        } else if (profileType === "AVS") {
           return {
             title: ar ? "إعداد بطاقتكم العامة لمرافق الحياة المدرسية" : "Configurez votre fiche publique d'AVS",
             subtitle: ar
@@ -257,7 +390,7 @@ export function RegisterWizard({
             : "Choisissez un mot de passe robuste pour protéger vos données et vérifiez votre profil.",
         };
     }
-  }, [step, category, ar]);
+  }, [step, profileType, ar]);
 
   // Submit Handler
   async function handleSubmit(e: FormEvent) {
@@ -284,7 +417,7 @@ export function RegisterWizard({
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       email: email.trim().toLowerCase(),
-      phone: phone.trim(),
+      phone: `+216${phoneDigits.trim()}`,
       governorate,
       city,
       acquisitionSource,
@@ -414,166 +547,66 @@ export function RegisterWizard({
                 </div>
               </div>
             )}
-            <div className="space-y-4 mb-8" role="radiogroup" aria-label={ar ? "اختر صفتك" : "Choisissez votre profil"}>
-            {/* Card 1: Learner / Parent / Educator */}
-            <div
-              onClick={() => setCategory("LEARNER")}
-              className={`group cursor-pointer p-4 sm:p-5 rounded-2xl border-2 transition-all flex flex-col sm:flex-row items-start sm:items-center gap-4 ${
-                category === "LEARNER"
-                  ? "border-[#0A192F] bg-slate-50/60 shadow-sm"
-                  : "border-slate-200 hover:border-slate-300 bg-white"
-              }`}
-            >
-              <div className="relative w-full sm:w-24 h-24 rounded-xl overflow-hidden shrink-0 bg-slate-100">
-                <Image
-                  src="/media/domain-pedagogie.webp"
-                  alt="Apprenant & Famille"
-                  fill
-                  className="object-cover"
-                />
-                <span className="absolute top-2 start-2 w-8 h-8 rounded-lg bg-[#0A192F]/80 text-white flex items-center justify-center backdrop-blur-xs">
-                  <GraduationCap className="w-4 h-4 text-white" />
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <h3 className="text-base font-bold text-[#0A192F]">
-                    {ar ? "طالب، ولي أمر أو مربّي" : "Apprenant, Parent ou Enseignant"}
-                  </h3>
-                  <span
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                      category === "LEARNER"
-                        ? "border-[#0A192F] bg-[#0A192F] text-white"
-                        : "border-slate-300"
+            <div className="space-y-3.5 mb-8" role="radiogroup" aria-label={ar ? "اختر صفتك" : "Choisissez votre profil"}>
+              {PROFILE_DEFINITIONS.map((p) => {
+                const IconCmp = p.icon;
+                const isSelected = profileType === p.id;
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => handleSelectProfileType(p.id)}
+                    className={`group cursor-pointer p-4 sm:p-5 rounded-2xl border-2 transition-all flex flex-col sm:flex-row items-start sm:items-center gap-4 ${
+                      isSelected
+                        ? "border-[#0A192F] bg-slate-50/80 shadow-xs ring-1 ring-[#0A192F]/10"
+                        : "border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50/30"
                     }`}
                   >
-                    {category === "LEARNER" && <CheckCircle2 className="w-3.5 h-3.5" />}
-                  </span>
-                </div>
-                <p className="text-xs sm:text-sm text-slate-500 leading-relaxed mb-2.5">
-                  {ar
-                    ? "متابعة الدورات التدريبية المعتمدة، نيل الشهادات وحجز الحصص مع الممارسين."
-                    : "Suivre les formations certifiantes, obtenir des diplômes ANEI et réserver des séances avec des AVS ou Spécialistes."}
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  <span className="px-2 py-0.5 rounded-md bg-slate-100 text-[11px] font-semibold text-slate-600">
-                    {ar ? "تكوين" : "Formations"}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-100 text-[11px] font-semibold text-slate-600">
-                    {ar ? "شهادات" : "Certificats"}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-100 text-[11px] font-semibold text-slate-600">
-                    {ar ? "أولياء وأطر تربوية" : "Parents & Familles"}
-                  </span>
-                </div>
-              </div>
+                    <div className="relative w-full sm:w-24 h-24 rounded-xl overflow-hidden shrink-0 bg-slate-100">
+                      <Image
+                        src={p.image}
+                        alt={ar ? p.titleAr : p.titleFr}
+                        fill
+                        className="object-cover"
+                      />
+                      <span className="absolute top-2 start-2 w-8 h-8 rounded-lg bg-[#0A192F]/85 text-white flex items-center justify-center backdrop-blur-xs">
+                        <IconCmp className="w-4 h-4 text-white" />
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <h3 className="text-base font-bold text-[#0A192F]">
+                          {ar ? p.titleAr : p.titleFr}
+                        </h3>
+                        <span
+                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors shrink-0 ${
+                            isSelected
+                              ? "border-[#0A192F] bg-[#0A192F] text-white"
+                              : "border-slate-300"
+                          }`}
+                        >
+                          {isSelected && <CheckCircle2 className="w-3.5 h-3.5" />}
+                        </span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-slate-500 leading-relaxed mb-2.5">
+                        {ar ? p.descriptionAr : p.descriptionFr}
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {(ar ? p.badgesAr : p.badgesFr).map((badge, idx) => (
+                          <span
+                            key={idx}
+                            className={`px-2 py-0.5 rounded-md text-[11px] font-semibold ${
+                              idx === 0 ? p.badgeColorClass : "bg-slate-100 text-slate-600"
+                            }`}
+                          >
+                            {badge}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-
-            {/* Card 2: AVS */}
-            <div
-              onClick={() => setCategory("AVS")}
-              className={`group cursor-pointer p-4 sm:p-5 rounded-2xl border-2 transition-all flex flex-col sm:flex-row items-start sm:items-center gap-4 ${
-                category === "AVS"
-                  ? "border-[#0A192F] bg-slate-50/60 shadow-sm"
-                  : "border-slate-200 hover:border-slate-300 bg-white"
-              }`}
-            >
-              <div className="relative w-full sm:w-24 h-24 rounded-xl overflow-hidden shrink-0 bg-slate-100">
-                <Image
-                  src="/media/domain-avs.webp"
-                  alt="Accompagnant de Vie Scolaire"
-                  fill
-                  className="object-cover"
-                />
-                <span className="absolute top-2 start-2 w-8 h-8 rounded-lg bg-[#0A192F]/80 text-white flex items-center justify-center backdrop-blur-xs">
-                  <ShieldCheck className="w-4 h-4 text-white" />
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <h3 className="text-base font-bold text-[#0A192F]">
-                    {ar ? "مرافق حياة مدرسية (AVS)" : "Accompagnant de Vie Scolaire (AVS)"}
-                  </h3>
-                  <span
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                      category === "AVS"
-                        ? "border-[#0A192F] bg-[#0A192F] text-white"
-                        : "border-slate-300"
-                    }`}
-                  >
-                    {category === "AVS" && <CheckCircle2 className="w-3.5 h-3.5" />}
-                  </span>
-                </div>
-                <p className="text-xs sm:text-sm text-slate-500 leading-relaxed mb-2.5">
-                  {ar
-                    ? "مرافقة التلاميذ في الوسط المدرسي أو المنزلي والظهور التلقائي في الدليل الرسمي."
-                    : "Accompagner les élèves en milieu scolaire ou à domicile et apparaître automatiquement dans l'annuaire officiel /avs."}
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  <span className="px-2 py-0.5 rounded-md bg-blue-50 text-[11px] font-semibold text-blue-700">
-                    {ar ? "دليل /avs الرسمي" : "Annuaire /avs"}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-[11px] font-semibold text-emerald-700">
-                    {ar ? "0% عمولة حضوري" : "0% commission présentiel"}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-100 text-[11px] font-semibold text-slate-600">
-                    {ar ? "مدارس وتدخلات" : "Établissements"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 3: Specialist */}
-            <div
-              onClick={() => setCategory("SPECIALIST")}
-              className={`group cursor-pointer p-4 sm:p-5 rounded-2xl border-2 transition-all flex flex-col sm:flex-row items-start sm:items-center gap-4 ${
-                category === "SPECIALIST"
-                  ? "border-[#0A192F] bg-slate-50/60 shadow-sm"
-                  : "border-slate-200 hover:border-slate-300 bg-white"
-              }`}
-            >
-              <div className="relative w-full sm:w-24 h-24 rounded-xl overflow-hidden shrink-0 bg-slate-100">
-                <Image
-                  src="/media/about-care-team-v1.webp"
-                  alt="Spécialiste & Clinicien"
-                  fill
-                  className="object-cover"
-                />
-                <span className="absolute top-2 start-2 w-8 h-8 rounded-lg bg-[#0A192F]/80 text-white flex items-center justify-center backdrop-blur-xs">
-                  <Stethoscope className="w-4 h-4 text-white" />
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <h3 className="text-base font-bold text-[#0A192F]">
-                    {ar ? "أخصائي عيادي وصاحب عيادة" : "Spécialiste & Clinicien"}
-                  </h3>
-                  <span
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                      category === "SPECIALIST"
-                        ? "border-[#0A192F] bg-[#0A192F] text-white"
-                        : "border-slate-300"
-                    }`}
-                  >
-                    {category === "SPECIALIST" && <CheckCircle2 className="w-3.5 h-3.5" />}
-                  </span>
-                </div>
-                <p className="text-xs sm:text-sm text-slate-500 leading-relaxed mb-2.5">
-                  {ar
-                    ? "أخصائي تخاطب، نفساني، حركي، وظيفي — نشر العيادة في دليل /specialistes وإدارة المواعيد."
-                    : "Orthophoniste, Psychologue, Psychomotricien, Pédopsychiatre, Ergothérapeute — publier votre cabinet dans /specialistes et gérer vos rendez-vous."}
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  <span className="px-2 py-0.5 rounded-md bg-purple-50 text-[11px] font-semibold text-purple-700">
-                    {ar ? "دليل /specialistes" : "Annuaire /specialistes"}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-100 text-[11px] font-semibold text-slate-600">
-                    {ar ? "عيادة وتطبيب عن بعد" : "Cabinet & Téléconsultation"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
         </>
       )}
 
@@ -615,35 +648,79 @@ export function RegisterWizard({
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
                 {ar ? "البريد الإلكتروني" : "Adresse e-mail"} <span className="text-red-500">*</span>
               </label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="nom@exemple.com"
-                className="w-full h-12 px-4 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors text-left dir-ltr"
-              />
+              <div className="relative">
+                <span className="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none text-slate-400">
+                  <Mail className="w-4 h-4" />
+                </span>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="nom@exemple.com"
+                  className="w-full h-12 auth-input-with-icon !ps-11 pe-4 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors text-left dir-ltr"
+                />
+              </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
-                {ar ? "رقم الهاتف الرسمي" : "Numéro de téléphone (+216)"} <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <span className="absolute inset-y-0 start-0 flex items-center ps-4 pointer-events-none text-slate-400">
-                  <Phone className="w-4 h-4" />
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600">
+                  {ar ? "رقم الهاتف الرسمي (تونس)" : "Numéro de téléphone (+216)"} <span className="text-red-500">*</span>
+                </label>
+                <span className="text-[11px] font-mono text-slate-400">
+                  {phoneDigits.length === 8 ? (
+                    <span className="text-emerald-600 font-semibold inline-flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      <span>{ar ? "8 أرقام (مكتمل)" : "8 chiffres (Valide)"}</span>
+                    </span>
+                  ) : (
+                    <span>{phoneDigits.length}/8 {ar ? "أرقام" : "chiffres"}</span>
+                  )}
                 </span>
-                <input
-                  type="tel"
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+216 98 123 456"
-                  className="w-full h-12 ps-11 pe-4 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors text-left dir-ltr"
-                />
+              </div>
+              <div className="flex rounded-xl border border-slate-300 bg-white overflow-hidden focus-within:border-[#0A192F] focus-within:ring-1 focus-within:ring-[#0A192F] transition-colors shadow-2xs">
+                <div
+                  className="inline-flex items-center gap-1.5 px-3.5 bg-slate-50 border-e border-slate-200 text-xs font-semibold text-slate-700 select-none shrink-0"
+                  dir="ltr"
+                >
+                  <span className="text-base leading-none" aria-hidden="true">🇹🇳</span>
+                  <span className="font-mono font-bold text-slate-800">+216</span>
+                </div>
+                <div className="relative flex-1 min-w-0">
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]{8}"
+                    maxLength={8}
+                    required
+                    value={phoneDigits}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, "").slice(0, 8);
+                      setPhoneDigits(digits);
+                    }}
+                    onKeyDown={(e) => {
+                      if (
+                        ["Backspace", "Tab", "ArrowLeft", "ArrowRight", "Delete", "Enter"].includes(e.key) ||
+                        e.ctrlKey ||
+                        e.metaKey
+                      ) {
+                        return;
+                      }
+                      if (!/^\d$/.test(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
+                    placeholder="98 123 456"
+                    className="w-full h-12 px-3.5 text-sm font-medium tracking-wide text-slate-800 placeholder:text-slate-400 bg-transparent outline-none dir-ltr text-left"
+                    dir="ltr"
+                  />
+                </div>
               </div>
               <p className="text-[11px] text-slate-400 mt-1">
-                {ar ? "مهم للتواصل المباشر مع الأولياء وإشعارات المواعيد الرسمية." : "Enregistré pour votre compte et affiché pour les prises de contact."}
+                {ar
+                  ? "أدخل 8 أرقام فقط (مثال: 98123456 أو 20123456). الرمز الدولي +216 محدد مسبقاً."
+                  : "Saisissez uniquement les 8 chiffres du numéro (ex. 98 123 456). L'indicatif +216 est pré-configuré."}
               </p>
             </div>
 
@@ -659,7 +736,7 @@ export function RegisterWizard({
                   <select
                     value={governorate}
                     onChange={(e) => handleGovernorateChange(e.target.value)}
-                    className="w-full h-12 ps-10 pe-8 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors appearance-none"
+                    className="w-full h-12 auth-input-with-icon !ps-11 pe-9 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors appearance-none cursor-pointer text-slate-800 font-medium"
                   >
                     {TUNISIA_GOVERNORATES_BILINGUAL.map((g) => (
                       <option key={g.fr} value={g.fr}>
@@ -667,6 +744,9 @@ export function RegisterWizard({
                       </option>
                     ))}
                   </select>
+                  <span className="absolute inset-y-0 end-0 flex items-center pe-3 pointer-events-none text-slate-400">
+                    <ChevronDown className="w-4 h-4" />
+                  </span>
                 </div>
               </div>
 
@@ -674,17 +754,25 @@ export function RegisterWizard({
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
                   {ar ? "المدينة / المعتمدية" : "Ville / Délégation"} <span className="text-red-500">*</span>
                 </label>
-                <select
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  className="w-full h-12 px-4 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors"
-                >
-                  {availableDelegations.map((d) => (
-                    <option key={d.code} value={d.nameFr}>
-                      {d.nameFr}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <span className="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none text-slate-400">
+                    <Building2 className="w-4 h-4" />
+                  </span>
+                  <select
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="w-full h-12 auth-input-with-icon !ps-11 pe-9 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors appearance-none cursor-pointer text-slate-800 font-medium"
+                  >
+                    {availableDelegations.map((d) => (
+                      <option key={d.code} value={d.nameFr}>
+                        {d.nameFr}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="absolute inset-y-0 end-0 flex items-center pe-3 pointer-events-none text-slate-400">
+                    <ChevronDown className="w-4 h-4" />
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -693,38 +781,48 @@ export function RegisterWizard({
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
                   {ar ? "كيف تعرفتم على ANEI؟" : "Canal d'acquisition"}
                 </label>
-                <select
-                  value={acquisitionSource}
-                  onChange={(e) => setAcquisitionSource(e.target.value)}
-                  className="w-full h-12 px-4 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors"
-                >
-                  <option value="FACEBOOK_INSTAGRAM">
-                    {ar ? "إعلانات فيسبوك / إنستغرام" : "Publicité Facebook / Instagram"}
-                  </option>
-                  <option value="WHATSAPP">{ar ? "واتساب" : "WhatsApp"}</option>
-                  <option value="RECOMMENDATION">
-                    {ar ? "توصية طبية أو مدرسية" : "Recommandation médicale ou scolaire"}
-                  </option>
-                  <option value="GOOGLE">{ar ? "بحث جوجل" : "Recherche Google"}</option>
-                  <option value="WEBINAR">{ar ? "ندوة أو فعالية ANEI" : "Événement / Webinaire"}</option>
-                  <option value="WORD_OF_MOUTH">{ar ? "صديق أو زميل" : "Bouche-à-oreille"}</option>
-                </select>
+                <div className="relative">
+                  <select
+                    value={acquisitionSource}
+                    onChange={(e) => setAcquisitionSource(e.target.value)}
+                    className="w-full h-12 px-4 pe-9 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors appearance-none cursor-pointer text-slate-800 font-medium"
+                  >
+                    <option value="FACEBOOK_INSTAGRAM">
+                      {ar ? "إعلانات فيسبوك / إنستغرام" : "Publicité Facebook / Instagram"}
+                    </option>
+                    <option value="WHATSAPP">{ar ? "واتساب" : "WhatsApp"}</option>
+                    <option value="RECOMMENDATION">
+                      {ar ? "توصية طبية أو مدرسية" : "Recommandation médicale ou scolaire"}
+                    </option>
+                    <option value="GOOGLE">{ar ? "بحث جوجل" : "Recherche Google"}</option>
+                    <option value="WEBINAR">{ar ? "ندوة أو فعالية ANEI" : "Événement / Webinaire"}</option>
+                    <option value="WORD_OF_MOUTH">{ar ? "صديق أو زميل" : "Bouche-à-oreille"}</option>
+                  </select>
+                  <span className="absolute inset-y-0 end-0 flex items-center pe-3 pointer-events-none text-slate-400">
+                    <ChevronDown className="w-4 h-4" />
+                  </span>
+                </div>
               </div>
 
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
                   {ar ? "الفئة العمرية" : "Tranche d'âge"}
                 </label>
-                <select
-                  value={ageGroup}
-                  onChange={(e) => setAgeGroup(e.target.value)}
-                  className="w-full h-12 px-4 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors"
-                >
-                  <option value="18-25">18 - 25 ans</option>
-                  <option value="26-35">26 - 35 ans</option>
-                  <option value="36-50">36 - 50 ans</option>
-                  <option value="+50">+50 ans</option>
-                </select>
+                <div className="relative">
+                  <select
+                    value={ageGroup}
+                    onChange={(e) => setAgeGroup(e.target.value)}
+                    className="w-full h-12 px-4 pe-9 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors appearance-none cursor-pointer text-slate-800 font-medium"
+                  >
+                    <option value="18-25">18 - 25 ans</option>
+                    <option value="26-35">26 - 35 ans</option>
+                    <option value="36-50">36 - 50 ans</option>
+                    <option value="+50">+50 ans</option>
+                  </select>
+                  <span className="absolute inset-y-0 end-0 flex items-center pe-3 pointer-events-none text-slate-400">
+                    <ChevronDown className="w-4 h-4" />
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -1101,10 +1199,14 @@ export function RegisterWizard({
             <div className="p-4 sm:p-5 rounded-2xl border border-slate-200 bg-slate-50/80">
               <div className="flex items-center gap-3.5 mb-3">
                 <span className="w-10 h-10 rounded-xl bg-[#0A192F] text-white flex items-center justify-center font-bold">
-                  {category === "SPECIALIST" ? (
+                  {profileType === "SPECIALIST" ? (
                     <Stethoscope className="w-5 h-5" />
-                  ) : category === "AVS" ? (
+                  ) : profileType === "AVS" ? (
                     <ShieldCheck className="w-5 h-5" />
+                  ) : profileType === "TEACHER" ? (
+                    <BookOpen className="w-5 h-5" />
+                  ) : profileType === "PARENT" ? (
+                    <HeartHandshake className="w-5 h-5" />
                   ) : (
                     <GraduationCap className="w-5 h-5" />
                   )}
@@ -1114,11 +1216,15 @@ export function RegisterWizard({
                     {firstName} {lastName}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    {category === "SPECIALIST"
+                    {profileType === "SPECIALIST"
                       ? `${specialty} • ${governorate}`
-                      : category === "AVS"
+                      : profileType === "AVS"
                       ? `AVS • ${governorate}`
-                      : `${subRole} • ${governorate}`}
+                      : profileType === "TEACHER"
+                      ? `${ar ? "أستاذ / مربي" : "Enseignant / Éducateur"} • ${governorate} (${city})`
+                      : profileType === "PARENT"
+                      ? `${ar ? "ولي أمر" : "Parent d'élève"} • ${governorate} (${city})`
+                      : `${ar ? "طالب / متعلم" : "Apprenant / Étudiant"} • ${governorate} (${city})`}
                   </p>
                 </div>
               </div>
@@ -1130,11 +1236,13 @@ export function RegisterWizard({
                 </div>
                 <div>
                   <span className="text-slate-400 block">{ar ? "الهاتف" : "Téléphone"} :</span>
-                  <span className="font-semibold text-slate-800 block dir-ltr text-start">{phone}</span>
+                  <span className="font-semibold text-slate-800 block dir-ltr text-start font-mono">
+                    +216 {phoneDigits.slice(0, 2)} {phoneDigits.slice(2, 5)} {phoneDigits.slice(5, 8)}
+                  </span>
                 </div>
               </div>
 
-              {(category === "AVS" || category === "SPECIALIST") && (
+              {(profileType === "AVS" || profileType === "SPECIALIST") && (
                 <div className="mt-3.5 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span className="font-medium">
@@ -1161,7 +1269,7 @@ export function RegisterWizard({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="•••••••••••••••"
-                  className="w-full h-12 ps-10 pe-11 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors dir-ltr text-left"
+                  className="w-full h-12 auth-input-with-icon auth-input-with-toggle !ps-11 !pe-11 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors dir-ltr text-left"
                 />
                 <button
                   type="button"
@@ -1215,14 +1323,19 @@ export function RegisterWizard({
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
                 {ar ? "تأكيد كلمة المرور" : "Confirmation du mot de passe"} <span className="text-red-500">*</span>
               </label>
-              <input
-                type={showPassword ? "text" : "password"}
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="•••••••••••••••"
-                className="w-full h-12 px-4 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors dir-ltr text-left"
-              />
+              <div className="relative">
+                <span className="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none text-slate-400">
+                  <Lock className="w-4 h-4" />
+                </span>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="•••••••••••••••"
+                  className="w-full h-12 auth-input-with-icon !ps-11 pe-4 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors dir-ltr text-left"
+                />
+              </div>
               {confirmPassword && password !== confirmPassword && (
                 <p className="text-xs text-red-600 mt-1">
                   {ar ? "كلمتا المرور غير متطابقتين." : "Les mots de passe ne correspondent pas."}

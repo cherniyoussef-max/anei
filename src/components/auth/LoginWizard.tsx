@@ -358,7 +358,7 @@ export function LoginWizard({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="nom@exemple.com"
-                  className="w-full h-12 ps-10 pe-4 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors dir-ltr text-left"
+                  className="w-full h-12 auth-input-with-icon !ps-11 pe-4 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors dir-ltr text-left"
                 />
               </div>
             </div>
@@ -385,7 +385,7 @@ export function LoginWizard({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="•••••••••••••••"
-                  className="w-full h-12 ps-10 pe-11 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors dir-ltr text-left"
+                  className="w-full h-12 auth-input-with-icon auth-input-with-toggle !ps-11 !pe-11 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors dir-ltr text-left"
                 />
                 <button
                   type="button"
