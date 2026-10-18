@@ -400,7 +400,7 @@ export default async function AdminOverview({
 
         {/* 3. Webinar-to-Course Conversion Funnel */}
         <AdminSectionCard
-          title={ar ? "تحويل الندوات إلى تكوينات" : "Funnel Webinaires ➔ Formations"}
+          title={ar ? "تحويل الندوات إلى تكوينات" : "Conversion Webinaires vers Formations"}
           infoTooltip={ar ? "تحويل المسجلين بالندوات لدورات مدفوعة" : "Taux de transformation des webinaires vers les cours"}
           headerActions={
             <Link

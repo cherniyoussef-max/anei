@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { X } from "lucide-react";
 import { Icon } from "@/components/ui/Icon";
 import {
   DEFAULT_WEBINAR_FORM_FIELDS,
@@ -168,7 +169,7 @@ export function WebinarRegistrationFormModal({
           }}
           aria-label="Fermer"
         >
-          ✕
+          <X className="w-5 h-5" />
         </button>
 
         {state === "unauthorized" ? (

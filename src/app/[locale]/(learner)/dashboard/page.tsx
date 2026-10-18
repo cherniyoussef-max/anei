@@ -140,7 +140,7 @@ export default async function DashboardPage({
           .filter((s) => s.status === "LIVE_NOW" || s.status === "SCHEDULED")
           .map((live) => ({
             id: live.id,
-            title: (live.status === "LIVE_NOW" ? "🔴 " : "") + (ar ? live.titleAr : live.titleFr),
+            title: ar ? live.titleAr : live.titleFr,
             date: formatDate(live.scheduledStartAt, locale),
             startAtRaw: live.scheduledStartAt.toISOString(),
             trainer: ar ? "فريق ANEI الأكاديمي" : "Équipe académique ANEI",
@@ -162,9 +162,9 @@ export default async function DashboardPage({
           const isOnline = b.meetingType === "ONLINE" || b.meetingType === "ONLINE_VISIO";
           const statusBadge = isPending
             ? ar
-              ? `⏳ في انتظار تأكيد ${b.practitionerName} : `
-              : `⏳ En attente de confirmation par ${b.practitionerName} : `
-            : "✓ ";
+              ? `في انتظار تأكيد ${b.practitionerName} : `
+              : `En attente de confirmation par ${b.practitionerName} : `
+            : "";
 
           const baseTitle = ar
             ? isOnline

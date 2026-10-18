@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   AlertCircle,
   UserCheck,
+  X,
 } from "lucide-react";
 import type { Locale } from "@/types";
 import type { getLearnerAvsBookings } from "@/server/queries/account";
@@ -304,10 +305,10 @@ export function LearnerAvsBookingsSection({
               <button
                 type="button"
                 onClick={() => setSelectedBookingForHelp(null)}
-                className="text-slate-400 hover:text-slate-700 p-1"
+                className="text-slate-400 hover:text-slate-700 p-1 rounded-md transition-colors flex items-center justify-center"
                 aria-label={ar ? "إغلاق" : "Fermer"}
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 

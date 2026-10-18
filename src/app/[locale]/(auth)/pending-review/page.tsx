@@ -5,7 +5,7 @@ import { PageHero } from "@/components/ui/PageHero";
 import { Icon } from "@/components/ui/Icon";
 import { requireUser } from "@/server/auth/session";
 import { getUserPersonas } from "@/server/queries/personas";
-import { GraduationCap, ShieldCheck, Stethoscope, UserCheck } from "lucide-react";
+import { GraduationCap, ShieldCheck, Stethoscope, UserCheck, Check, Clock } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -70,7 +70,9 @@ export default async function PendingReviewPage({ params }: { params: Promise<{ 
 
               <div className="pending-timeline">
                 <div className="timeline-step is-done">
-                  <span className="timeline-dot">✓</span>
+                  <span className="timeline-dot inline-flex items-center justify-center">
+                    <Check className="w-3.5 h-3.5" />
+                  </span>
                   <div className="timeline-content">
                     <strong>{ar ? "إنشاء الحساب والتحقق من الهوية" : "Création du compte & identité"}</strong>
                     <span>{ar ? "تم تأكيد بريدك الإلكتروني بنجاح" : "Adresse e-mail et accès confirmés"}</span>
@@ -78,7 +80,9 @@ export default async function PendingReviewPage({ params }: { params: Promise<{ 
                 </div>
 
                 <div className="timeline-step is-done">
-                  <span className="timeline-dot">✓</span>
+                  <span className="timeline-dot inline-flex items-center justify-center">
+                    <Check className="w-3.5 h-3.5" />
+                  </span>
                   <div className="timeline-content">
                     <strong>{ar ? "تقديم الملف والمؤهلات" : "Dossier professionnel soumis"}</strong>
                     <span>{ar ? "تم استلام معلومات التخصص والمؤسسة" : "Informations d’exercice et pièces enregistrées"}</span>
@@ -86,7 +90,9 @@ export default async function PendingReviewPage({ params }: { params: Promise<{ 
                 </div>
 
                 <div className="timeline-step is-active">
-                  <span className="timeline-dot">⏳</span>
+                  <span className="timeline-dot inline-flex items-center justify-center">
+                    <Clock className="w-3.5 h-3.5 text-amber-600" />
+                  </span>
                   <div className="timeline-content">
                     <strong>{ar ? "مراجعة الفريق الأكاديمي" : "Validation par le comité ANEI"}</strong>
                     <span>{ar ? "مدة المراجعة المعتادة: 24 إلى 48 ساعة عمل" : "Délai moyen d’instruction : 24 à 48 heures ouvrées"}</span>

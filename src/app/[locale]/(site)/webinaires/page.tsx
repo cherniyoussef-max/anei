@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { BookOpen } from "lucide-react";
 import { formatDate, isLocale } from "@/lib/i18n";
 import { webinars as translations } from "@/lib/data";
 import { PageHero } from "@/components/ui/PageHero";
@@ -112,15 +113,16 @@ export default async function WebinarsPage({
 
                 <div className="webinar-large-main">
                   <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap", marginBottom: "0.35rem" }}>
-                    <span className="bg-red-600 text-white font-bold text-xs px-2.5 py-0.5 rounded-full flex items-center gap-1.5 animate-pulse">
-                      🔴 {ar ? "جلسة مباشرة الآن" : "SESSION EN DIRECT"}
+                    <span className="bg-red-600 text-white font-bold text-xs px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                      <span>{ar ? "جلسة مباشرة الآن" : "SESSION EN DIRECT"}</span>
                     </span>
                     <span className="text-xs font-semibold text-slate-600 bg-white border border-slate-200 px-2.5 py-0.5 rounded-full">
-                      {live.provider === "GOOGLE_MEET" && "🔹 Google Meet"}
-                      {live.provider === "ZOOM" && "🔷 Zoom"}
-                      {live.provider === "MICROSOFT_TEAMS" && "🟦 Teams"}
-                      {live.provider === "JITSI" && "🔸 Jitsi Meet"}
-                      {live.provider === "CUSTOM_EMBED" && "⚙️ Custom"}
+                      {live.provider === "GOOGLE_MEET" && "Google Meet"}
+                      {live.provider === "ZOOM" && "Zoom"}
+                      {live.provider === "MICROSOFT_TEAMS" && "Teams"}
+                      {live.provider === "JITSI" && "Jitsi Meet"}
+                      {live.provider === "CUSTOM_EMBED" && "Direct ANEI"}
                     </span>
                   </div>
 
@@ -134,7 +136,8 @@ export default async function WebinarsPage({
                         href={`/${locale}/formations/${live.courseSlug}`}
                         className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-semibold transition-colors border border-blue-200/80 no-underline"
                       >
-                        <span>🎓 {ar ? `التكوين المرتبط: ${live.courseTitleAr || live.courseTitleFr}` : `Formation liée : ${live.courseTitleFr || live.courseTitleAr}`}</span>
+                        <BookOpen className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                        <span>{ar ? `التكوين المرتبط: ${live.courseTitleAr || live.courseTitleFr}` : `Formation liée : ${live.courseTitleFr || live.courseTitleAr}`}</span>
                         <span aria-hidden="true" className={ar ? "rotate-180 inline-block" : "inline-block"}>&rarr;</span>
                       </Link>
                     </div>
@@ -226,7 +229,8 @@ export default async function WebinarsPage({
                           href={`/${locale}/formations/${webinar.courseSlug}`}
                           className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-semibold transition-colors border border-blue-200/80 no-underline"
                         >
-                          <span>🎓 {ar ? `التكوين المرتبط: ${webinar.courseTitleAr || webinar.courseTitleFr}` : `Formation liée : ${webinar.courseTitleFr || webinar.courseTitleAr}`}</span>
+                          <BookOpen className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                          <span>{ar ? `التكوين المرتبط: ${webinar.courseTitleAr || webinar.courseTitleFr}` : `Formation liée : ${webinar.courseTitleFr || webinar.courseTitleAr}`}</span>
                           <span aria-hidden="true" className={ar ? "rotate-180 inline-block" : "inline-block"}>&rarr;</span>
                         </Link>
                       </div>

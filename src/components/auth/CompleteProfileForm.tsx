@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { Check } from "lucide-react";
 import type { Locale } from "@/types";
 import { ERROR_MESSAGES, FIELD_STEP, STEP_META, PERSONA_OPTIONS, type FormState, type Persona, type StepId } from "@/components/auth/onboarding/constants";
 import { normalizeTunisiaPhone } from "@/lib/tunisia/phone";
@@ -240,7 +241,7 @@ export function CompleteProfileForm({
       <ol className="wizard-progress-list" aria-hidden="true">
         {steps.map((step, index) => (
           <li key={step} data-state={index < stepIndex ? "done" : index === stepIndex ? "active" : "todo"}>
-            <span className="wizard-dot">{index < stepIndex ? "✓" : index + 1}</span>
+            <span className="wizard-dot flex items-center justify-center">{index < stepIndex ? <Check className="w-3 h-3" /> : index + 1}</span>
           </li>
         ))}
       </ol>

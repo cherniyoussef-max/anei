@@ -2,7 +2,7 @@
 
 import { type FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
-import { Mail, ArrowRight, ArrowLeft, AlertCircle, Loader2, RotateCcw } from "lucide-react";
+import { Mail, ArrowRight, ArrowLeft, AlertCircle, Loader2, RotateCcw, ShieldCheck } from "lucide-react";
 import type { Locale } from "@/types";
 import { AuthWizardProgress } from "@/components/auth/AuthWizardProgress";
 
@@ -109,8 +109,9 @@ export function ForgotPasswordWizard({ locale }: { locale: Locale }) {
         />
 
         <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-xs text-slate-600 mb-8 space-y-1">
-          <strong className="block font-semibold text-slate-800">
-            {ar ? "💡 نصيحة أمنية :" : "💡 Conseil de sécurité :"}
+          <strong className="inline-flex items-center gap-1.5 font-semibold text-slate-800">
+            <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+            <span>{ar ? "نصيحة أمنية :" : "Conseil de sécurité :"}</span>
           </strong>
           <p>
             {ar

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Star } from "lucide-react";
 import { isLocale } from "@/lib/i18n";
 import { getAvsByIdOrSlug } from "@/server/queries/catalog";
 import { avsProfiles as avsTranslations } from "@/lib/data";
@@ -154,7 +155,7 @@ export default async function AvsProfileDetailPage({
                   </span>
                   <span className="text-slate-300">•</span>
                   <span className="flex items-center gap-1 font-semibold text-slate-700">
-                    <span className="text-amber-500">★</span>
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500 shrink-0" />
                     <span>{((profile.rating || 49) / 10).toFixed(1)}</span>
                     <span className="text-slate-400 font-normal">
                       ({profile.reviewCount || 20} {ar ? "تقييم أولياء ومربين" : "avis vérifiés"})

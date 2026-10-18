@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { X } from "lucide-react";
 import type { Locale } from "@/types";
 import type { LearnerLiveSessionSummary } from "@/server/queries/live";
 
@@ -62,7 +63,7 @@ export function GlobalWebinarBanner({
         </span>
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="rounded bg-black/25 px-2 py-0.5 text-[11px] font-bold tracking-wider uppercase text-amber-200">
-            {ar ? "🔴 بث مباشر الآن" : "🔴 WEBINAIRE EN DIRECT"}
+            {ar ? "بث مباشر الآن" : "WEBINAIRE EN DIRECT"}
           </span>
           <strong className="font-semibold text-white truncate max-w-[280px] sm:max-w-md">
             {title}
@@ -87,11 +88,11 @@ export function GlobalWebinarBanner({
         <button
           type="button"
           onClick={() => setDismissedIds((prev) => new Set([...prev, current.id]))}
-          className="p-1 text-white/70 hover:text-white rounded transition-colors text-xs"
+          className="p-1 text-white/70 hover:text-white rounded transition-colors text-xs flex items-center justify-center"
           aria-label={ar ? "إخفاء التنبيه" : "Masquer l'alerte"}
           title={ar ? "إخفاء التنبيه" : "Masquer"}
         >
-          ✕
+          <X className="w-3.5 h-3.5" />
         </button>
       </div>
     </aside>

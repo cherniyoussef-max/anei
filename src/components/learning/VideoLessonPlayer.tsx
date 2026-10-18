@@ -613,8 +613,8 @@ export function VideoLessonPlayer({
                   : "Enregistrement du parcours..."
                 : completed
                 ? ar
-                  ? "تم إكمال الدرس بنجاح ✓"
-                  : "Leçon validée ✓"
+                  ? "تم إكمال الدرس بنجاح"
+                  : "Leçon validée"
                 : ar
                 ? "يُحفظ التقدم تلقائيًا عند المشاهدة"
                 : "La progression est enregistrée automatiquement"}

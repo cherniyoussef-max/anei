@@ -330,8 +330,8 @@ export function SpecialistRequestsManager({
                     </div>
                   )}
 
-                  <div className="flex items-center gap-1 text-[11px] text-[#94A3B8]">
-                    <span>✓</span>
+                  <div className="flex items-center gap-1.5 text-[11px] text-[#94A3B8]">
+                    <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                     <span>
                       {ar
                         ? "تم التحقق من موافقة الولي على مشاركة المعلومات التربوية."

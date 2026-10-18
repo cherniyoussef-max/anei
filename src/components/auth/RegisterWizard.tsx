@@ -980,12 +980,12 @@ export function RegisterWizard({
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {[
-                  { id: "Orthophoniste", label: "🗣️ Orthophoniste", desc: "Langage, communication, DYS" },
-                  { id: "Psychologue Clinicien", label: "🧠 Psychologue Clinicien", desc: "Bilans, TSA, TDAH, suivi" },
-                  { id: "Psychomotricien", label: "🤸 Psychomotricien", desc: "Sensori-moteur, schéma corporel" },
-                  { id: "Ergothérapeute", label: "🖐️ Ergothérapeute", desc: "Autonomie quotidienne & scolaire" },
-                  { id: "Pédopsychiatre", label: "🩺 Pédopsychiatre", desc: "Diagnostic & prise en charge" },
-                  { id: "Éducateur Spécialisé", label: "🧩 Éducateur Spécialisé", desc: "Programmes ABA / TEACCH" },
+                  { id: "Orthophoniste", label: "Orthophoniste", desc: "Langage, communication, DYS" },
+                  { id: "Psychologue Clinicien", label: "Psychologue Clinicien", desc: "Bilans, TSA, TDAH, suivi" },
+                  { id: "Psychomotricien", label: "Psychomotricien", desc: "Sensori-moteur, schéma corporel" },
+                  { id: "Ergothérapeute", label: "Ergothérapeute", desc: "Autonomie quotidienne & scolaire" },
+                  { id: "Pédopsychiatre", label: "Pédopsychiatre", desc: "Diagnostic & prise en charge" },
+                  { id: "Éducateur Spécialisé", label: "Éducateur Spécialisé", desc: "Programmes ABA / TEACCH" },
                 ].map((s) => {
                   const isSel = specialty === s.id;
                   return (
@@ -1139,8 +1139,8 @@ export function RegisterWizard({
                   <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span className="font-medium">
                     {ar
-                      ? "✓ سيتم نشر بطاقتكم المهنية في الدليل الرسمي فور إنشاء الحساب."
-                      : "✓ Votre fiche professionnelle sera publiée dans l'annuaire dès la création du compte."}
+                      ? "سيتم نشر بطاقتكم المهنية في الدليل الرسمي فور إنشاء الحساب."
+                      : "Votre fiche professionnelle sera publiée dans l'annuaire dès la création du compte."}
                   </span>
                 </div>
               )}
@@ -1199,7 +1199,7 @@ export function RegisterWizard({
                 <p className="text-[11px] text-slate-500">
                   {passwordCriteria.length ? (
                     <span className="text-emerald-700 font-medium">
-                      {ar ? "✓ الطول مطابق (15 حرفًا فأكثر)" : "✓ Longueur conforme (15 caractères ou plus)"}
+                      {ar ? "الطول مطابق (15 حرفًا فأكثر)" : "Longueur conforme (15 caractères ou plus)"}
                     </span>
                   ) : (
                     <span>

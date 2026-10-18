@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AlertTriangle } from "lucide-react";
 import type { Locale } from "@/types";
 import { AneiLogo } from "@/components/brand/AneiLogo";
 import { StudentNavigation } from "@/components/student/StudentNavigation";
@@ -41,7 +42,7 @@ export function StudentShell({
           aria-label={ar ? "تنبيه وضع المعاينة" : "Alerte mode prévisualisation"}
         >
           <div className="flex items-center gap-2 font-medium">
-            <span className="text-sm" aria-hidden="true">⚠️</span>
+            <AlertTriangle className="w-4 h-4 text-[#92400E] shrink-0" aria-hidden="true" />
             <span>
               {ar
                 ? `أنت في وضع معاينة الدعم (للقراءة فقط): تتصفح حساب ${user.name} (${user.email}). الإجراءات الحساسة معطلة.`

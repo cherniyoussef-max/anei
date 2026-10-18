@@ -78,7 +78,7 @@ export function MarkLessonCompleteButton({
         <div className="flex flex-wrap items-center gap-2.5">
           <span className="inline-flex items-center gap-1.5 rounded-lg border border-[#BCE6B5] bg-[#E0F4DC] px-3.5 py-1.5 text-xs font-bold text-[#197D12]">
             <CheckCircle2 size={14} className="text-[#197D12]" />
-            <span>{ar ? "تم إكمال الدرس بنجاح" : "Leçon validée ✓"}</span>
+            <span>{ar ? "تم إكمال الدرس بنجاح" : "Leçon validée"}</span>
           </span>
 
           {nextHref ? (

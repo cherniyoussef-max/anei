@@ -130,7 +130,7 @@ export function VerifyEmailPendingForm({
         {status === "sent" && cooldown > 0 && (
           <div className="mb-5 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center gap-2.5 text-emerald-800 text-xs font-medium" role="status">
             <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
-            <span>{ar ? "تم إرسال رابط جديد بنجاح ✓" : "Nouveau lien envoyé avec succès ✓"}</span>
+            <span>{ar ? "تم إرسال رابط جديد بنجاح" : "Nouveau lien envoyé avec succès"}</span>
           </div>
         )}
 
@@ -149,7 +149,7 @@ export function VerifyEmailPendingForm({
           ) : status === "sent" && cooldown > 0 ? (
             <>
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>{ar ? "تم إرسال الرابط ✓" : "Lien renvoyé avec succès ✓"}</span>
+              <span>{ar ? "تم إرسال الرابط" : "Lien renvoyé avec succès"}</span>
             </>
           ) : cooldown > 0 ? (
             <>

@@ -510,17 +510,17 @@ export function PractitionerDashboardClient({
                         )}
 
                         {isPending ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 animate-pulse">
-                            <span>⏳</span>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
                             <span>{ar ? "في انتظار تأكيدكم" : "En attente de confirmation"}</span>
                           </span>
                         ) : isConfirmed ? (
                           <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-900 border border-blue-200">
-                            {ar ? "✓ موعد مؤكد" : "✓ Confirmé"}
+                            {ar ? "موعد مؤكد" : "Confirmé"}
                           </span>
                         ) : isCompleted ? (
                           <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-200">
-                            {ar ? "✓ منتهية ومصروفة" : "✓ Séance effectuée"}
+                            {ar ? "منتهية ومصروفة" : "Séance effectuée"}
                           </span>
                         ) : isDeclined ? (
                           <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
@@ -588,7 +588,7 @@ export function PractitionerDashboardClient({
                               className="py-2 px-3.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition-all disabled:opacity-50"
                             >
                               <Icon name="check" size={13} />
-                              <span>{ar ? "✓ تأكيد الموعد" : "✓ Confirmer ce rendez-vous"}</span>
+                              <span>{ar ? "تأكيد الموعد" : "Confirmer ce rendez-vous"}</span>
                             </button>
                             <button
                               type="button"

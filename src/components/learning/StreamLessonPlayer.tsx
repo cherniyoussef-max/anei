@@ -314,8 +314,8 @@ export function StreamLessonPlayer({
           <p className="text-xs text-slate-500 mt-0.5">
             {completed
               ? ar
-                ? "تم إكمال هذا الدرس بنجاح ✓"
-                : "Leçon complétée ✓"
+                ? "تم إكمال هذا الدرس بنجاح"
+                : "Leçon complétée"
               : ar
               ? "يتم تتبع تقدمك وحفظ المشاهدة تلقائياً عبر السحابة"
               : "Progression enregistrée automatiquement en temps réel"}

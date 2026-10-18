@@ -5,19 +5,18 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
   X,
-  Send,
   BookOpen,
   ShieldCheck,
   ChevronDown,
   ChevronUp,
-  Bot,
   User,
   ThumbsUp,
   ThumbsDown,
   RotateCcw,
   ArrowRight,
   ArrowLeft,
-  GraduationCap,
+  Sparkles,
+  ArrowUp,
 } from "lucide-react";
 
 interface Citation {
@@ -42,33 +41,33 @@ interface PublicAssistantDrawerProps {
 
 const LEARNER_SUGGESTIONS = {
   fr: [
-    { label: "🎓 Réviser les points clés de ma formation", query: "Je prépare mon évaluation certifiante. Peux-tu me faire une synthèse des points clés indispensables de ma formation ?" },
-    { label: "🎯 Comment réussir mon test certifiant (QCM 80%) ?", query: "Quels sont les concepts et questions clés à maîtriser absolument pour réussir l'examen certifiant ?" },
-    { label: "🧩 M'entraîner avec des questions types", query: "Pose-moi une question d'entraînement pour tester ma compréhension de mes leçons et évalue ma réponse." },
-    { label: "💡 Aménagements concrets en classe (TEACCH & ABC)", query: "Quels sont les aménagements scolaires et pratiques fondées sur les preuves essentiels de mon cours ?" },
+    { label: "Synthétiser les points clés de ma formation", query: "Je prépare mon évaluation certifiante. Peux-tu me faire une synthèse des points clés indispensables de ma formation ?" },
+    { label: "Comment réussir mon test certifiant (QCM 80%) ?", query: "Quels sont les concepts et questions clés à maîtriser absolument pour réussir l'examen certifiant ?" },
+    { label: "S'entraîner avec des questions types", query: "Pose-moi une question d'entraînement pour tester ma compréhension de mes leçons et évalue ma réponse." },
+    { label: "Aménagements concrets en classe (TEACCH & ABC)", query: "Quels sont les aménagements scolaires et pratiques fondées sur les preuves essentiels de mon cours ?" },
   ],
   ar: [
-    { label: "🎓 مراجعة النقاط الأساسية لدورتي التكوينية", query: "أستعد للتقييم النهائي، هل يمكنك تلخيص المفاهيم الأساسية لدورتي التكوينية ومساعدتي على المراجعة؟" },
-    { label: "🎯 كيف أجتاز التقييم النهائي للشهادة بنجاح؟", query: "ما هي المفاهيم الجوهرية والأسئلة الأساسية لاجتياز اختبار الشهادة بنسبة تفوق 80%؟" },
-    { label: "🧩 تدريبي بأسئلة تفاعلية لاختبار فهمي", query: "اطرح عليّ سؤالاً تدريبياً لاختبار فهمي للمنهاج، وقيّم إجابتي بيداغوجياً." },
-    { label: "💡 الترتيبات الصفية والممارسات المبنية على البراهين", query: "ما هي أهم التدابير الصفية (TEACCH، شبكة ABC، والتواصل المعزز) الواجب استيعابها في دراستي؟" },
+    { label: "مراجعة النقاط الأساسية لدورتي التكوينية", query: "أستعد للتقييم النهائي، هل يمكنك تلخيص المفاهيم الأساسية لدورتي التكوينية ومساعدتي على المراجعة؟" },
+    { label: "كيف أجتاز التقييم النهائي للشهادة بنجاح؟", query: "ما هي المفاهيم الجوهرية والأسئلة الأساسية لاجتياز اختبار الشهادة بنسبة تفوق 80%؟" },
+    { label: "تدريب بأسئلة تفاعلية لاختبار فهمي", query: "اطرح عليّ سؤالاً تدريبياً لاختبار فهمي للمنهاج، وقيّم إجابتي بيداغوجياً." },
+    { label: "الترتيبات الصفية والممارسات المبنية على البراهين", query: "ما هي أهم التدابير الصفية (TEACCH، شبكة ABC، والتواصل المعزز) الواجب استيعابها في دراستي؟" },
   ],
 };
 
 const SUGGESTIONS = {
   fr: [
-    { label: "👤 Comment créer un compte et m'inscrire ?", query: "Comment créer un compte et s'inscrire sur la plateforme ?" },
-    { label: "🎓 Quelle formation choisir pour ma situation ?", query: "Quelle formation recommandez-vous selon ma situation ?" },
-    { label: "🧩 Mon enfant a un TSA (autisme), que faire ?", query: "Mon enfant a un trouble du spectre de l'autisme (TSA), que recommandez-vous ?" },
-    { label: "💼 Comment devenir accompagnant scolaire (AVS) ?", query: "Comment devenir accompagnant scolaire AVS certifié ?" },
-    { label: "💳 Quels sont les tarifs et moyens de paiement ?", query: "Quels sont les tarifs des formations et les moyens de paiement ?" },
+    { label: "Comment créer un compte et m'inscrire ?", query: "Comment créer un compte et s'inscrire sur la plateforme ?" },
+    { label: "Quelle formation choisir pour ma situation ?", query: "Quelle formation recommandez-vous selon ma situation ?" },
+    { label: "Mon enfant a un TSA (autisme), que faire ?", query: "Mon enfant a un trouble du spectre de l'autisme (TSA), que recommandez-vous ?" },
+    { label: "Comment devenir accompagnant scolaire (AVS) ?", query: "Comment devenir accompagnant scolaire AVS certifié ?" },
+    { label: "Quels sont les tarifs et moyens de paiement ?", query: "Quels sont les tarifs des formations et les moyens de paiement ?" },
   ],
   ar: [
-    { label: "👤 كيف أنشئ حساباً وأسجل في المنصة؟", query: "كيف أنشئ حساباً جديداً وأسجل في المنصة؟" },
-    { label: "🎓 ما هي الدورة المناسبة لوضعيتي؟", query: "ما هي الدورة التكوينية الأنسب لوضعيتي الحالية؟" },
-    { label: "🧩 طفلي يعاني من طيف التوحد (TSA)، بماذا تنصحني؟", query: "طفلي يعاني من طيف التوحد (TSA)، كيف أساعده وما هي الدورة المقترحة؟" },
-    { label: "💼 كيف أصبح مرافقاً مدرسياً (AVS) معتمداً؟", query: "كيف أصبح مرافقاً مدرسياً AVS معتمداً عبر المنصة؟" },
-    { label: "💳 ما هي أسعار الدورات وطرق الدفع؟", query: "ما هي أسعار التكوينات وطرق الدفع المتاحة؟" },
+    { label: "كيف أنشئ حساباً وأسجل في المنصة؟", query: "كيف أنشئ حساباً جديداً وأسجل في المنصة؟" },
+    { label: "ما هي الدورة المناسبة لوضعيتي؟", query: "ما هي الدورة التكوينية الأنسب لوضعيتي الحالية؟" },
+    { label: "طفلي يعاني من طيف التوحد (TSA)، بماذا تنصحني؟", query: "طفلي يعاني من طيف التوحد (TSA)، كيف أساعده وما هي الدورة المقترحة؟" },
+    { label: "كيف أصبح مرافقاً مدرسياً (AVS) معتمداً؟", query: "كيف أصبح مرافقاً مدرسياً AVS معتمداً عبر المنصة؟" },
+    { label: "ما هي أسعار الدورات وطرق الدفع؟", query: "ما هي أسعار التكوينات وطرق الدفع المتاحة؟" },
   ],
 };
 
@@ -226,7 +225,7 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
   };
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const counterRef = useRef(0);
 
   const isRtl = locale === "ar";
@@ -249,7 +248,7 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
 
   useEffect(() => {
     if (isOpen) {
-      inputRef.current?.focus();
+      textareaRef.current?.focus();
     }
   }, [isOpen]);
 
@@ -399,33 +398,18 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
 
   return (
     <>
-      {/* Floating Trigger Button */}
-      {!isOpen && (
+      {/* Floating Trigger Button - Hidden on learner routes to avoid duplication */}
+      {!isOpen && !isLearnerPath && (
         <button
           data-testid="public-assistant-trigger"
           onClick={() => setIsOpen(true)}
           className={`fixed bottom-6 ${
             isRtl ? "left-6" : "right-6"
-          } z-40 flex items-center gap-2.5 px-4 py-3 bg-[#002B49] text-white rounded-full shadow-xl hover:bg-[#001f35] border border-[#B58D3D]/50 transition-all duration-300 hover:scale-105 active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#B58D3D]`}
-          aria-label={
-            isLearnerPath
-              ? (isRtl ? "فتح المرشد البيداغوجي ANEI" : "Ouvrir le Tuteur Pédagogique ANEI")
-              : (isRtl ? "فتح مساعد ANEI" : "Ouvrir l'assistant ANEI")
-          }
+          } z-40 inline-flex items-center gap-2 px-3.5 py-2.5 bg-[#0A192F] hover:bg-[#0056D2] text-white text-[13px] font-medium rounded-full shadow-lg border border-slate-700/60 transition-all duration-200 hover:shadow-xl group cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0056D2]`}
+          aria-label={isRtl ? "فتح مساعد ANEI" : "Ouvrir l'assistant ANEI"}
         >
-          <div className="relative flex items-center justify-center">
-            {isLearnerPath ? (
-              <GraduationCap className="w-5 h-5 text-[#DDA74A]" />
-            ) : (
-              <Bot className="w-5 h-5 text-[#DDA74A]" />
-            )}
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full ring-2 ring-[#002B49] animate-pulse" />
-          </div>
-          <span className="text-sm font-semibold tracking-wide" style={{ color: "#ffffff" }}>
-            {isLearnerPath
-              ? (isRtl ? "المرشد البيداغوجي" : "Tuteur ANEI")
-              : (isRtl ? "مساعد ANEI" : "Assistant ANEI")}
-          </span>
+          <Sparkles className="w-4 h-4 text-[#B58D3D] group-hover:text-white transition-colors shrink-0" />
+          <span>{isRtl ? "مساعد ANEI" : "Assistant ANEI"}</span>
         </button>
       )}
 
@@ -437,32 +421,28 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
           dir={isRtl ? "rtl" : "ltr"}
           className={`fixed bottom-6 ${
             isRtl ? "left-6" : "right-6"
-          } z-50 w-[92vw] sm:w-[440px] h-[610px] max-h-[86vh] bg-white rounded-2xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-300`}
+          } z-50 w-[92vw] sm:w-[460px] h-[600px] max-h-[85vh] bg-white rounded-2xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-300`}
         >
-          {/* Header with High-Contrast Typography & Professional Icon */}
-          <div className="bg-[#002B49] text-white px-5 py-3.5 flex items-center justify-between border-b border-[#B58D3D]/30 shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center border border-[#B58D3D]/50 text-[#DDA74A]">
-                {isLearnerPath ? (
-                  <GraduationCap className="w-5 h-5 text-[#DDA74A]" />
-                ) : (
-                  <Bot className="w-5 h-5 text-[#DDA74A]" />
-                )}
+          {/* Header with Institutional Branding & Professional Micro-details */}
+          <div className="bg-[#0A192F] text-white px-4 py-3.5 flex items-center justify-between border-b border-slate-800 shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center border border-white/10 text-[#B58D3D] shrink-0">
+                <Sparkles className="w-4 h-4" />
               </div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold tracking-tight text-white" style={{ color: "#ffffff" }}>
+                  <span className="text-[13.5px] font-semibold text-white tracking-tight">
                     {isLearnerPath
                       ? (isRtl ? "المرشد البيداغوجي ANEI" : "Tuteur Pédagogique ANEI")
-                      : (isRtl ? "مساعد ANEI الذكي" : "Assistant ANEI")}
+                      : (isRtl ? "مساعد ANEI" : "Assistant ANEI")}
                   </span>
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#B58D3D] text-white shadow-xs">
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-white/10 text-slate-300">
                     {isLearnerPath
-                      ? (isRtl ? "تكوين وشهادة" : "Tuteur Certifiant")
-                      : (isRtl ? "دليل معتمد" : "Guide Officiel")}
+                      ? (isRtl ? "تكوين وشهادة" : "Certifiant")
+                      : (isRtl ? "دليل معتمد" : "Officiel")}
                   </span>
                 </div>
-                <p className="text-xs text-slate-200 font-normal mt-0.5" style={{ color: "#e2e8f0" }}>
+                <p className="text-[11.5px] text-slate-300 font-normal mt-0.5">
                   {isLearnerPath
                     ? (isRtl ? "مرافقة المتعلّم، مراجعة الدروس والاستعداد للاختبار" : "Accompagnement, révision & préparation au test certifiant")
                     : (isRtl ? "إنشاء حساب، استشارات وتوجيه للتكوين" : "Création de compte, conseil & formations")}
@@ -475,65 +455,61 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
                 <button
                   type="button"
                   onClick={resetChat}
-                  className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-1 focus:ring-[#B58D3D]"
+                  className="p-1.5 rounded-md text-slate-300 hover:text-white hover:bg-white/10 transition-colors focus:outline-none cursor-pointer"
                   title={isRtl ? "محادثة جديدة" : "Nouvelle conversation"}
                   aria-label={isRtl ? "محادثة جديدة" : "Nouvelle conversation"}
                 >
-                  <RotateCcw className="w-4 h-4" />
+                  <RotateCcw className="w-3.5 h-3.5" />
                 </button>
               )}
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-1 focus:ring-[#B58D3D]"
+                className="p-1.5 rounded-md text-slate-300 hover:text-white hover:bg-white/10 transition-colors focus:outline-none cursor-pointer"
                 aria-label={isRtl ? "إغلاق" : "Fermer"}
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/70">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3.5 bg-[#F8FAFC]">
             {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center px-4 space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-[#002B49]/10 flex items-center justify-center text-[#002B49] border border-[#002B49]/15">
-                  {isLearnerPath ? (
-                    <GraduationCap className="w-6 h-6 text-[#002B49]" />
-                  ) : (
-                    <Bot className="w-6 h-6 text-[#002B49]" />
-                  )}
+              <div className="h-full flex flex-col items-center justify-center text-center px-4 space-y-3.5">
+                <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-[#0A192F] border border-slate-200">
+                  <Sparkles className="w-5 h-5 text-[#0056D2]" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-slate-900">
+                  <h4 className="text-[14px] font-semibold text-slate-900">
                     {isLearnerPath
-                      ? (isRtl ? "مرحباً بك في فضاء المتعلّم ANEI" : "Votre Tuteur Pédagogique ANEI")
-                      : (isRtl ? "مرحباً بكم في الأكاديمية الوطنية" : "Bienvenue à l'Académie")}
+                      ? (isRtl ? "فضاء المتعلّم ANEI · المرشد الذكي" : "Tuteur Pédagogique ANEI")
+                      : (isRtl ? "مرحباً بكم في الأكاديمية الوطنية" : "Bienvenue à l'Académie ANEI")}
                   </h4>
-                  <p className="text-xs text-slate-600 mt-1 max-w-[310px] leading-relaxed">
+                  <p className="text-[12px] text-slate-500 mt-1 max-w-[320px] leading-relaxed">
                     {isLearnerPath
                       ? (isRtl
-                          ? "أنا مرشدك البيداغوجي المخصص: أعرف دوراتك المسجلة، دروسك، وأساعدك على المراجعة واجتياز التقييم النهائي بنجاح!"
-                          : "Je connais vos formations achetées et vos leçons. Je suis là pour vous aider à comprendre chaque concept, réviser et réussir votre test final certifiant !")
+                          ? "أنا مرشدك البيداغوجي: أتابع دوراتك، دروسك، وأساعدك على مراجعة النقاط الأساسية واجتياز التقييم النهائي بنجاح."
+                          : "Je connais vos formations et leçons. Posez vos questions, révisez les concepts clés et préparez votre test final certifiant.")
                       : (isRtl
-                          ? "أنا هنا لمساعدتكم في إنشاء حساب، الإجابة عن استفساراتكم، واقتراح الدورة الأنسب لوضعيتكم."
-                          : "Créer un compte, répondre à vos questions ou vous recommander la formation certifiante adaptée à votre situation.")}
+                          ? "أنا هنا لمساعدتكم في اختيار التكوين الأنسب، معرفة الإجراءات والتسجيل في المنصة."
+                          : "Je vous accompagne pour découvrir le catalogue, choisir la formation adaptée et vous inscrire sur la plateforme.")}
                   </p>
                 </div>
 
                 {/* Suggestions List */}
-                <div className="w-full space-y-2 pt-1">
-                  <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider text-left rtl:text-right">
-                    {isRtl ? "أسئلة شائعة واقتراحات :" : "Questions fréquentes & orientations :"}
+                <div className="w-full space-y-1.5 pt-1">
+                  <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider text-left rtl:text-right">
+                    {isRtl ? "اقتراحات سريعة :" : "Suggestions rapides :"}
                   </p>
                   {suggestions.map((item, idx) => (
                     <button
                       key={idx}
                       onClick={() => handleSend(item.query)}
-                      className="w-full text-left rtl:text-right text-xs px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-[#B58D3D] hover:bg-[#B58D3D]/5 text-slate-700 font-medium transition-all shadow-xs flex items-center justify-between group"
+                      className="w-full text-left rtl:text-right text-[12px] px-3 py-2 rounded-lg bg-white border border-slate-200 hover:border-[#0056D2] hover:bg-blue-50/40 text-slate-700 font-medium transition-colors shadow-2xs flex items-center justify-between group cursor-pointer"
                     >
                       <span className="truncate">{item.label}</span>
-                      <span className="text-slate-400 group-hover:text-[#B58D3D] transition-colors shrink-0 ms-2">
+                      <span className="text-slate-400 group-hover:text-[#0056D2] transition-colors shrink-0 ms-2">
                         {isRtl ? <ArrowLeft className="w-3.5 h-3.5" /> : <ArrowRight className="w-3.5 h-3.5" />}
                       </span>
                     </button>
@@ -554,48 +530,48 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
                     }`}
                   >
                     <div
-                      className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs ${
+                      className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 text-xs ${
                         msg.role === "user"
-                          ? "bg-[#002B49] text-white"
-                          : "bg-white text-[#002B49] border border-slate-200 shadow-xs"
+                          ? "bg-[#0056D2] text-white"
+                          : "bg-white text-[#0A192F] border border-slate-200 shadow-2xs"
                       }`}
                     >
-                      {msg.role === "user" ? <User className="w-3.5 h-3.5" /> : <Bot className="w-4 h-4 text-[#B58D3D]" />}
+                      {msg.role === "user" ? <User className="w-3 h-3" /> : <Sparkles className="w-3.5 h-3.5 text-[#0056D2]" />}
                     </div>
 
                     <div
-                      className={`px-4 py-3 rounded-2xl shadow-xs ${
+                      className={`px-3.5 py-2.5 rounded-2xl shadow-2xs ${
                         msg.role === "user"
-                          ? "bg-[#002B49] text-white rounded-br-none rtl:rounded-bl-none rtl:rounded-br-2xl"
+                          ? "bg-[#0056D2] text-white rounded-br-none rtl:rounded-bl-none rtl:rounded-br-2xl"
                           : "bg-white text-slate-800 border border-slate-200/90 rounded-bl-none rtl:rounded-br-none rtl:rounded-bl-2xl"
                       }`}
                     >
                       {msg.role === "user" ? (
-                        <p className="text-xs sm:text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                        <p className="text-[13px] whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                       ) : msg.content ? (
                         <FormattedMessage text={msg.content} locale={locale} />
                       ) : msg.isStreaming ? (
                         <span className="inline-flex items-center gap-1.5 text-slate-400 py-1">
-                          <span className="w-2 h-2 rounded-full bg-[#B58D3D] animate-bounce" />
-                          <span className="w-2 h-2 rounded-full bg-[#002B49] animate-bounce [animation-delay:0.2s]" />
-                          <span className="w-2 h-2 rounded-full bg-slate-400 animate-bounce [animation-delay:0.4s]" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#0056D2] animate-bounce" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#0A192F] animate-bounce [animation-delay:0.2s]" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce [animation-delay:0.4s]" />
                         </span>
                       ) : null}
                     </div>
                   </div>
 
-                  {/* Citations Accordion (Only displayed when actual references exist) */}
+                  {/* Citations Accordion */}
                   {msg.citations && msg.citations.length > 0 && (
-                    <div className="w-[88%] ms-9 rtl:ms-0 rtl:me-9 text-xs">
+                    <div className="w-[88%] ms-8 rtl:ms-0 rtl:me-8 text-xs">
                       <button
                         type="button"
                         onClick={() => toggleCitation(msg.id)}
-                        className="flex items-center gap-1.5 text-[11px] font-medium text-slate-600 hover:text-[#002B49] transition-colors py-1"
+                        className="flex items-center gap-1.5 text-[11px] font-medium text-slate-600 hover:text-[#0A192F] transition-colors py-0.5 cursor-pointer"
                       >
-                        <BookOpen className="w-3.5 h-3.5 text-[#B58D3D]" />
+                        <BookOpen className="w-3.5 h-3.5 text-[#0056D2]" />
                         <span>
                           {isRtl
-                            ? `${msg.citations.length} مراجع رسمية من الأرشيف`
+                            ? `${msg.citations.length} مراجع رسمية من المنصة`
                             : `${msg.citations.length} source(s) officielle(s) ANEI`}
                         </span>
                         {expandedCitations[msg.id] ? (
@@ -606,9 +582,9 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
                       </button>
 
                       {expandedCitations[msg.id] && (
-                        <div className="mt-1 space-y-1.5 bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs">
+                        <div className="mt-1 space-y-1.5 bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
                           {msg.citations.map((c) => (
-                            <div key={c.id} className="text-[11px] text-slate-600 border-s-2 border-[#B58D3D] ps-2 py-0.5">
+                            <div key={c.id} className="text-[11px] text-slate-600 border-s-2 border-[#0056D2] ps-2 py-0.5">
                               <span className="font-semibold text-slate-800 block">{c.title}</span>
                               <span className="text-[10px] text-slate-400">{c.source}</span>
                             </div>
@@ -622,7 +598,7 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
                           <button
                             type="button"
                             onClick={() => handleFeedback(msg.id, "HELPFUL", msg.content, msg.citations)}
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer ${
                               feedbackGiven[msg.id] === "HELPFUL"
                                 ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                                 : "text-slate-500 hover:text-emerald-600 hover:bg-slate-100"
@@ -635,7 +611,7 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
                           <button
                             type="button"
                             onClick={() => handleFeedback(msg.id, "UNHELPFUL", msg.content, msg.citations)}
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer ${
                               feedbackGiven[msg.id] === "UNHELPFUL"
                                 ? "bg-rose-50 text-rose-700 border border-rose-200"
                                 : "text-slate-500 hover:text-rose-600 hover:bg-slate-100"
@@ -671,31 +647,46 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
               e.preventDefault();
               handleSend();
             }}
-            className="p-3 bg-white border-t border-slate-200 flex items-center gap-2 shrink-0"
+            className="p-3 bg-white border-t border-slate-200 shrink-0"
           >
-            <input
-              data-testid="public-assistant-input"
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={
-                isRtl
-                  ? "اكتب سؤالك هنا (إنشاء حساب، توجيه، تكوين)..."
-                  : "Posez votre question (création de compte, formation)..."
-              }
-              disabled={isLoading}
-              className="flex-1 px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-[#002B49] focus:bg-white transition-all disabled:opacity-60 text-slate-900"
-            />
-            <button
-              data-testid="public-assistant-send"
-              type="submit"
-              disabled={isLoading || !input.trim()}
-              className="p-2.5 rounded-xl bg-[#002B49] text-white hover:bg-[#001f35] transition-colors disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#B58D3D] shrink-0"
-              aria-label={isRtl ? "إرسال" : "Envoyer"}
-            >
-              <Send className="w-4 h-4 rtl:rotate-180" />
-            </button>
+            <div className="relative rounded-xl border border-slate-200 bg-[#F8FAFC] focus-within:border-[#0056D2] focus-within:bg-white transition-all shadow-2xs p-2">
+              <textarea
+                data-testid="public-assistant-input"
+                ref={textareaRef}
+                rows={1}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+                placeholder={
+                  isLearnerPath
+                    ? (isRtl ? "اطرح سؤالك على المرشد البيداغوجي..." : "Posez une question sur vos cours ou l'évaluation...")
+                    : (isRtl ? "اكتب سؤالك هنا..." : "Posez votre question...")
+                }
+                disabled={isLoading}
+                className="public-chat-input w-full text-[13px] text-slate-900 placeholder:text-slate-400 focus:outline-none resize-none leading-relaxed pe-9"
+              />
+              <button
+                data-testid="public-assistant-send"
+                type="submit"
+                disabled={isLoading || !input.trim()}
+                className="absolute bottom-2 end-2 w-7 h-7 rounded-lg bg-[#0056D2] hover:bg-[#00419e] text-white disabled:opacity-40 disabled:hover:bg-[#0056D2] transition-colors flex items-center justify-center shadow-2xs cursor-pointer disabled:cursor-not-allowed"
+                aria-label={isRtl ? "إرسال" : "Envoyer"}
+              >
+                <ArrowUp className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="mt-1.5 flex items-center justify-between px-1 text-[10.5px] text-slate-400">
+              <span className="flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3 text-emerald-600 shrink-0" />
+                <span>{isRtl ? "استرشادي رسمي ANEI" : "Conseil indicatif officiel ANEI"}</span>
+              </span>
+              <span>{isRtl ? "Enter للإرسال" : "Entrée pour envoyer"}</span>
+            </div>
           </form>
         </aside>
       )}

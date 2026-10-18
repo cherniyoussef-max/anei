@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, MapPin, UserCheck, ShieldCheck, AlertCircle, Clock, CheckCircle2, XCircle, MessageSquare } from "lucide-react";
+import { Search, MapPin, UserCheck, ShieldCheck, AlertCircle, Clock, CheckCircle2, XCircle, MessageSquare, X } from "lucide-react";
 import type { Locale } from "@/types";
 import type { SpecialistDirectoryItem } from "@/server/queries/care-relationships";
 import { TUNISIA_LOCATIONS } from "@/lib/tunisia/locations";
@@ -508,10 +508,10 @@ export function ParentSpecialistDirectory({
               <button
                 type="button"
                 onClick={() => setSelectedSpecialist(null)}
-                className="text-[#64748B] hover:text-[#0F172A] text-lg font-bold p-1"
+                className="text-[#64748B] hover:text-[#0F172A] p-1 rounded-md transition-colors flex items-center justify-center"
                 aria-label={ar ? "إغلاق" : "Fermer"}
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 

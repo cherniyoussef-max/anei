@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Star } from "lucide-react";
 import type { Locale } from "@/types";
 import { Icon } from "@/components/ui/Icon";
 import { Pagination } from "@/components/ui/Pagination";
@@ -295,7 +296,8 @@ export function AvsFilter({
                       </span>
                       <span className="text-slate-300">•</span>
                       <span className="inline-flex items-center gap-1 text-[#B58D3D] font-bold whitespace-nowrap">
-                        <span>★ {((profile.rating || 48) / 10).toFixed(1)}</span>
+                        <Star className="w-3.5 h-3.5 fill-[#B58D3D] text-[#B58D3D] shrink-0" />
+                        <span>{((profile.rating || 48) / 10).toFixed(1)}</span>
                         <span className="text-slate-400 font-normal">
                           ({profile.reviewCount || 15} {ar ? "تقييم" : "avis"})
                         </span>

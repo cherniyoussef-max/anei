@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { ShieldCheck } from "lucide-react";
 import { Icon } from "@/components/ui/Icon";
 import type { Locale } from "@/types";
 import { useSession } from "@/lib/auth-client";
@@ -201,7 +202,7 @@ export function AvsBookingModal({
             </div>
             <div>
               <div className="text-xs uppercase tracking-wider text-blue-100 font-semibold flex items-center gap-1.5">
-                <span>🛡️</span>
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-200" />
                 <span>{ar ? "حجز موعد مع ضمان طرف ثالث ANEI" : "Rendez-vous AVS & Tiers de Confiance ANEI"}</span>
               </div>
               <h2 id="booking-modal-title" className="text-lg font-bold text-white">
@@ -248,7 +249,7 @@ export function AvsBookingModal({
 
             <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 text-xs text-slate-700 max-w-md mx-auto text-start space-y-2">
               <div className="flex items-center gap-2 text-[#1B3A5C] font-bold">
-                <span>🛡️</span>
+                <ShieldCheck className="w-4 h-4 text-[#1B3A5C]" />
                 <span>{ar ? "لماذا يشترط إنشاء الحساب؟" : "Pourquoi un compte est-il requis ?"}</span>
               </div>
               <p>• {ar ? "حماية بيانات الطفل وحالته البيداغوجية في سرية تامة." : "Protection des données de santé et d'inclusion de votre enfant."}</p>
@@ -478,7 +479,7 @@ export function AvsBookingModal({
                 <form onSubmit={handlePaymentAndSubmit} className="space-y-5">
                   {/* Escrow Guarantee Pill */}
                   <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-start gap-3 text-xs text-emerald-900">
-                    <span className="text-xl flex-none mt-0.5">🛡️</span>
+                    <ShieldCheck className="w-5 h-5 text-emerald-600 flex-none mt-0.5" />
                     <div>
                       <strong className="block font-bold text-emerald-950 mb-0.5">
                         {ar ? "ضمان الطرف الثالث الموثوق (ANEI Séquestre)" : "Garantie Tiers de Confiance ANEI"}
@@ -613,7 +614,7 @@ export function AvsBookingModal({
                         <span>{ar ? "جارٍ تسجيل الدفع والضمان..." : "Sécurisation des fonds sous séquestre..."}</span>
                       ) : (
                         <>
-                          <span>🛡️</span>
+                          <ShieldCheck className="w-4 h-4 text-white shrink-0" />
                           <span>
                             {ar
                               ? `تأكيد الدفع وحجز الموعد (${totalEscrowTnd}.000 TND)`

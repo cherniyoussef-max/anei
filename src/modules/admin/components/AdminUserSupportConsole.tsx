@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Check, AlertTriangle } from "lucide-react";
 
 interface CourseItem {
   id: string;
@@ -727,7 +728,7 @@ export function AdminUserSupportConsole({
                     gap: 6,
                   }}
                 >
-                  <span>{profileMsg.type === "success" ? "✓" : "⚠"}</span>
+                  <span>{profileMsg.type === "success" ? <Check size={14} /> : <AlertTriangle size={14} />}</span>
                   <span>{profileMsg.text}</span>
                 </div>
               )}
@@ -892,8 +893,8 @@ export function AdminUserSupportConsole({
                           {actionInProgress === enrollmentId + "complete"
                             ? "..."
                             : ar
-                            ? "✓ تمييز 100% مكتمل"
-                            : "✓ Marquer 100% (Terminé)"}
+                            ? "تمييز 100% مكتمل"
+                            : "Marquer 100% (Terminé)"}
                         </button>
 
                         <button
@@ -915,8 +916,8 @@ export function AdminUserSupportConsole({
                           {actionInProgress === enrollmentId + "reset"
                             ? "..."
                             : ar
-                            ? "↺ إعادة تعيين (0%)"
-                            : "↺ Réinitialiser (0%)"}
+                            ? "إعادة تعيين (0%)"
+                            : "Réinitialiser (0%)"}
                         </button>
 
                         <button
@@ -942,8 +943,8 @@ export function AdminUserSupportConsole({
                           {actionInProgress === enrollmentId + "revoke"
                             ? "..."
                             : ar
-                            ? "✕ سحب الوصول"
-                            : "✕ Révoquer l'accès"}
+                            ? "سحب الوصول"
+                            : "Révoquer l'accès"}
                         </button>
                       </div>
                     </div>
@@ -1012,7 +1013,7 @@ export function AdminUserSupportConsole({
                               color: passed ? "#15803d" : "#b91c1c",
                             }}
                           >
-                            {passed ? (ar ? "✓ ناجح" : "✓ Réussi") : (ar ? "✗ غير ناجح" : "✗ Non réussi")}
+                            {passed ? (ar ? "ناجح" : "Réussi") : (ar ? "غير ناجح" : "Non réussi")}
                           </span>
                           <strong style={{ fontSize: 14, color: "#0f172a" }}>{pct}%</strong>
                           <span style={{ fontSize: 12, color: "#64748b" }}>({rawPts}/{maxPts} pts)</span>

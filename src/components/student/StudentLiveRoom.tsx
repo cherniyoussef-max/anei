@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Video, Check, AlertTriangle, Lock, Flag, FileText, Clock } from "lucide-react";
 import type { Locale } from "@/types";
 import type { LiveSessionEmbedMode, LiveSessionProvider, LiveSessionStatus } from "@/server/db/schema";
 
@@ -178,7 +179,7 @@ export function StudentLiveRoom({
           {session.status === "LIVE_NOW" ? (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FEE2E2] px-3 py-1 text-xs font-bold text-[#DC2626]">
               <span className="h-2 w-2 rounded-full bg-[#DC2626] animate-pulse"></span>
-              {ar ? "🔴 بث مباشر الآن" : "🔴 EN DIRECT"}
+              {ar ? "بث مباشر الآن" : "EN DIRECT"}
             </span>
           ) : session.status === "SCHEDULED" ? (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E0F2FE] px-3 py-1 text-xs font-semibold text-[#0056D2]">
@@ -191,8 +192,9 @@ export function StudentLiveRoom({
           )}
 
           {hasAttended && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[#DCFCE7] px-2.5 py-1 text-xs font-semibold text-[#166534]">
-              ✓ {ar ? "تم تسجيل الحضور" : "Présence validée"}
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#DCFCE7] px-2.5 py-1 text-xs font-semibold text-[#166534]">
+              <Check className="w-3.5 h-3.5" />
+              <span>{ar ? "تم تسجيل الحضور" : "Présence validée"}</span>
             </span>
           )}
         </div>
@@ -216,8 +218,8 @@ export function StudentLiveRoom({
             ) : session.status === "LIVE_NOW" ? (
               /* Case 2: Session is LIVE_NOW and Google Meet / Zoom (PORTAL_LAUNCH) */
               <div className="p-8 md:p-12 text-center bg-linear-to-b from-[#F8FAFC] to-[#EFF6FF] flex flex-col items-center justify-center min-h-[380px]">
-                <div className="h-16 w-16 rounded-full bg-[#0056D2]/10 flex items-center justify-center text-3xl mb-4 text-[#0056D2]">
-                  {session.provider === "GOOGLE_MEET" ? "🔹" : "🔷"}
+                <div className="h-16 w-16 rounded-full bg-[#0056D2]/10 flex items-center justify-center mb-4 text-[#0056D2]">
+                  <Video className="w-8 h-8 text-[#0056D2]" />
                 </div>
 
                 <div className="inline-flex items-center gap-2 rounded-full bg-[#DC2626]/10 px-3 py-1 text-xs font-bold text-[#DC2626] mb-3">
@@ -238,8 +240,9 @@ export function StudentLiveRoom({
                 </p>
 
                 {joinError && (
-                  <div className="rounded-md bg-[#FEE2E2] px-4 py-2 text-xs text-[#DC2626] font-medium mb-4 max-w-md">
-                    ⚠️ {joinError}
+                  <div className="rounded-md bg-[#FEE2E2] px-4 py-2 text-xs text-[#DC2626] font-medium mb-4 max-w-md inline-flex items-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    <span>{joinError}</span>
                   </div>
                 )}
 
@@ -252,22 +255,23 @@ export function StudentLiveRoom({
                   <span>
                     {joining
                       ? (ar ? "جارٍ تسجيل الحضور..." : "Validation de présence...")
-                      : (ar ? "🚀 إطلاق غرفة Google Meet الآن" : "🚀 Lancer l'audio/vidéo Google Meet")}
+                      : (ar ? "إطلاق غرفة Google Meet الآن" : "Lancer l'audio/vidéo Google Meet")}
                   </span>
                   <span aria-hidden="true" className={ar ? "rotate-180" : ""}>&rarr;</span>
                 </button>
 
                 {hasAttended && (
-                  <p className="text-xs text-[#16A34A] mt-3 font-medium">
-                    ✓ {ar ? "تم تسجيل حضورك بنجاح في سجل الجلسة." : "Votre présence est enregistrée dans le journal officiel ANEI."}
+                  <p className="text-xs text-[#16A34A] mt-3 font-medium inline-flex items-center gap-1.5">
+                    <Check className="w-3.5 h-3.5 text-[#16A34A]" />
+                    <span>{ar ? "تم تسجيل حضورك بنجاح في سجل الجلسة." : "Votre présence est enregistrée dans le journal officiel ANEI."}</span>
                   </p>
                 )}
               </div>
             ) : session.status === "SCHEDULED" ? (
               /* Case 3: Session is SCHEDULED (Countdown Stage) */
               <div className="p-8 md:p-12 text-center bg-[#F8FAFC] flex flex-col items-center justify-center min-h-[380px]">
-                <div className="h-14 w-14 rounded-full bg-[#0056D2]/10 flex items-center justify-center text-2xl mb-4 text-[#0056D2]">
-                  ⏳
+                <div className="h-14 w-14 rounded-full bg-[#0056D2]/10 flex items-center justify-center mb-4 text-[#0056D2]">
+                  <Clock className="w-7 h-7 text-[#0056D2]" />
                 </div>
 
                 <span className="text-xs font-semibold uppercase tracking-wider text-[#0056D2] mb-1">
@@ -305,15 +309,16 @@ export function StudentLiveRoom({
                   </div>
                 </div>
 
-                <p className="text-xs text-[#64748B] max-w-sm">
-                  🔒 {ar ? "رابط الاجتماع سري ومحمي وسيتم تفعيله فور بدء المدرب للبث." : "Le lien de visioconférence est sécurisé et s'activera automatiquement dès le lancement du live."}
+                <p className="text-xs text-[#64748B] max-w-sm inline-flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span>{ar ? "رابط الاجتماع سري ومحمي وسيتم تفعيله فور بدء المدرب للبث." : "Le lien de visioconférence est sécurisé et s'activera automatiquement dès le lancement du live."}</span>
                 </p>
               </div>
             ) : (
               /* Case 4: Ended */
               <div className="p-8 md:p-12 text-center bg-[#F8FAFC] flex flex-col items-center justify-center min-h-[350px]">
-                <div className="h-14 w-14 rounded-full bg-[#E2E8F0] flex items-center justify-center text-2xl mb-4 text-[#64748B]">
-                  🏁
+                <div className="h-14 w-14 rounded-full bg-[#E2E8F0] flex items-center justify-center mb-4 text-[#64748B]">
+                  <Flag className="w-6 h-6 text-[#64748B]" />
                 </div>
                 <h2 className="text-lg font-bold text-[#082D55] mb-2">
                   {ar ? "هذا البث المباشر قد انتهى" : "Ce webinaire est terminé"}
@@ -336,7 +341,7 @@ export function StudentLiveRoom({
             {hasAttended && session.status === "LIVE_NOW" && (
               <div className="border-t border-[#E2E8F0] bg-[#F0FDF4] px-4 py-3 flex items-center justify-between text-xs text-[#166534]">
                 <div className="flex items-center gap-2">
-                  <span>🟢</span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
                   <span>
                     {ar
                       ? "أنت حاضر في هذا المباشر. نافذة الفيديو نشطة."
@@ -375,7 +380,7 @@ export function StudentLiveRoom({
           <div className="rounded-xl border border-[#E2E8F0] bg-white p-5 shadow-xs flex flex-col">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-bold text-[#082D55] flex items-center gap-1.5">
-                <span>📝</span>
+                <FileText className="w-4 h-4 text-[#0056D2]" />
                 <span>{ar ? "مذكراتي أثناء المباشر" : "Mes notes personnelles"}</span>
               </h3>
               {personalNotes.trim() && (

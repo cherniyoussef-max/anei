@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { XCircle, CheckCircle2 } from "lucide-react";
 import { Icon } from "@/components/ui/Icon";
 import { WebinarRegistrationFormModal } from "@/components/interactive/WebinarRegistrationFormModal";
 import type { WebinarFormField } from "@/lib/webinars";
@@ -141,7 +142,7 @@ export function WebinarRegisterButton({
         dir={ar ? "rtl" : "ltr"}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <span style={{ fontSize: "1.25rem" }}>✕</span>
+          <XCircle className="w-5 h-5 text-red-600 shrink-0" />
           <strong style={{ color: "#991b1b", fontSize: "0.95rem" }}>
             {ar ? "تم رفض طلب التسجيل" : "Inscription non retenue"}
           </strong>
@@ -176,22 +177,7 @@ export function WebinarRegisterButton({
         dir={ar ? "rtl" : "ltr"}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <span
-            style={{
-              width: "24px",
-              height: "24px",
-              borderRadius: "50%",
-              background: "#22c55e",
-              color: "#fff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "14px",
-              fontWeight: "bold",
-            }}
-          >
-            ✓
-          </span>
+          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
           <strong style={{ color: "#166534", fontSize: "0.95rem" }}>
             {ar ? "تم تأكيد تسجيلك بنجاح !" : "Inscription validée & confirmée !"}
           </strong>
