@@ -106,7 +106,7 @@ export function StudentShell({
 
         <StudentTopbar locale={locale} userName={user.name} pointsBalance={pointsBalance} notificationCount={notificationCount} assistantEnabled={assistantEnabled} />
 
-        <div className="flex-1 px-4 py-6 md:px-8 md:py-8">{children}</div>
+        <div className="flex-1 px-4 pt-6 pb-24 md:px-8 md:py-8">{children}</div>
         <div className="md:hidden">
           <StudentNavigation locale={locale} variant="mobile" />
         </div>

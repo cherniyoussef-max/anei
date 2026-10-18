@@ -39,7 +39,7 @@ export default async function LearnerLayout({
       impersonation={impersonation}
     >
       <main id="main-content" tabIndex={-1}>{children}</main>
-      {assistantEnabled && <PublicAssistantDrawer locale={locale as "fr" | "ar"} />}
+      <PublicAssistantDrawer locale={locale as "fr" | "ar"} />
     </StudentShell>
   );
 }

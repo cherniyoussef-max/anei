@@ -1047,10 +1047,10 @@ export function StudentDashboard({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2.5 shrink-0 pt-2 lg:pt-0">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0 pt-2 lg:pt-0">
           <Link
             href={`/${locale}/contact`}
-            className="h-9 px-3.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-[13px] font-medium text-slate-700 transition-colors inline-flex items-center justify-center"
+            className="h-9 px-3.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-[13px] font-medium text-slate-700 transition-colors inline-flex items-center justify-center whitespace-nowrap"
           >
             {ar ? "التواصل مع الدعم" : "Contacter le support"}
           </Link>
@@ -1061,7 +1061,7 @@ export function StudentDashboard({
                 window.dispatchEvent(new CustomEvent("anei:open-assistant"));
               }
             }}
-            className="h-9 px-4 rounded-lg bg-[#0056D2] hover:bg-[#00419e] text-white text-[13px] font-medium transition-colors shadow-2xs inline-flex items-center gap-1.5 cursor-pointer"
+            className="h-9 px-4 rounded-lg bg-[#0056D2] hover:bg-[#00419e] text-white text-[13px] font-medium transition-colors shadow-2xs inline-flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
           >
             <span>{ar ? "فتح المرشد البيداغوجي" : "Ouvrir l'assistant"}</span>
             <ArrowUpRight className="h-3.5 w-3.5 rtl:rotate-[-90deg] shrink-0" />
