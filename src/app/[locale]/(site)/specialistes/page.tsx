@@ -4,6 +4,7 @@ import { isLocale } from "@/lib/i18n";
 import { PageHero } from "@/components/ui/PageHero";
 import { SpecialistFilter, type SpecialistProfileItem } from "@/components/interactive/SpecialistFilter";
 import { searchVisibleSpecialists } from "@/server/queries/catalog";
+import { publicDataOr } from "@/server/queries/public-fallback";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 function one(value: string | string[] | undefined) {
@@ -54,15 +55,27 @@ export default async function SpecialistesPage({
   };
   const page = pageNumber(one(raw.page));
 
-  const data = await searchVisibleSpecialists({
-    q: filters.q,
-    category: filters.category,
-    governorate: filters.governorate,
-    city: filters.city,
-    certified: filters.certified,
-    page,
-    pageSize: 36,
-  });
+  const data = await publicDataOr(
+    "specialists",
+    () =>
+      searchVisibleSpecialists({
+        q: filters.q,
+        category: filters.category,
+        governorate: filters.governorate,
+        city: filters.city,
+        certified: filters.certified,
+        page,
+        pageSize: 36,
+      }),
+    {
+      items: [],
+      total: 0,
+      page,
+      pageSize: 36,
+      totalPages: 1,
+      governorates: [],
+    },
+  );
 
   const profiles: SpecialistProfileItem[] = data.items.map((item) => ({
     id: item.id,

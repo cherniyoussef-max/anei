@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { isLocale } from "@/lib/i18n";
+import { RouteProgressBar } from "@/components/ui/RouteProgressBar";
 
 export function generateStaticParams() {
   return [{ locale: "en" }, { locale: "ar" }, { locale: "fr" }];
@@ -22,6 +23,7 @@ export default async function LocaleLayout({ children, params }: Readonly<{ chil
 
   return (
     <div className="app-shell" dir={locale === "ar" ? "rtl" : "ltr"} lang={locale}>
+      <RouteProgressBar />
       {children}
     </div>
   );

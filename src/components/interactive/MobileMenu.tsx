@@ -19,7 +19,7 @@ export function MobileMenu({ locale }: { locale: Locale }) {
   const pathname = usePathname();
   const ar = locale === "ar";
   const en = locale === "en";
-  const links = [["", c.nav.home], ["about", c.nav.about], ["formations", c.nav.courses], ["webinaires", c.nav.webinars], ["bibliotheque", c.nav.library], ["avs", c.nav.avs], ["specialistes", c.nav.specialists], ["actualites", c.nav.news], ["contact", c.nav.contact]];
+  const links = [["", c.nav.home], ["formations", c.nav.courses], ["bibliotheque", c.nav.library], ["assistant", ar ? "المساعد الذكي" : en ? "AI Assistant" : "Assistant IA"], ["avs", c.nav.avs], ["specialistes", c.nav.specialists], ["webinaires", c.nav.webinars], ["actualites", c.nav.news], ["about", c.nav.about], ["contact", c.nav.contact]];
   const localeOrder: Locale[] = ["fr", "en", "ar"];
   const localeLabel: Record<Locale, string> = { fr: "Français", en: "English", ar: "العربية" };
   const nextLocale = localeOrder[(localeOrder.indexOf(locale) + 1) % localeOrder.length];
@@ -95,7 +95,7 @@ export function MobileMenu({ locale }: { locale: Locale }) {
         <nav aria-label={ar ? "التنقل الرئيسي" : en ? "Primary navigation" : "Navigation principale"}>{links.map(([href, label]) => {
           const target = href ? `/${locale}/${href}` : `/${locale}`;
           const current = href ? pathname === target || pathname.startsWith(`${target}/`) : pathname === target;
-          return <Link key={href} href={target} onClick={closeMenu} aria-current={current ? "page" : undefined}>{label}</Link>;
+          return <Link key={href} href={target} prefetch={true} onClick={closeMenu} aria-current={current ? "page" : undefined}>{label}</Link>;
         })}</nav>
         <Link className="mobile-menu-language" href={nextLocaleTarget} onClick={closeMenu}><Icon name="globe" size={18}/><span lang={nextLocale}>{nextLocaleLabel}</span></Link>
         <div className="mobile-menu-actions">{data?.user ? <><Link className="btn btn-primary" href={portalPath} onClick={closeMenu}>{portalLabel}</Link><button className="btn btn-ghost" type="button" onClick={logout}>{ar ? "تسجيل الخروج" : en ? "Sign out" : "Se déconnecter"}</button></> : <><Link className="btn btn-ghost" href={`/${locale}/login`} onClick={closeMenu}>{c.actions.login}</Link><Link className="btn btn-primary" href={`/${locale}/register`} onClick={closeMenu}>{c.actions.register}</Link></>}</div>

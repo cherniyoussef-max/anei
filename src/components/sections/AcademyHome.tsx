@@ -12,6 +12,7 @@ import {
   Users,
   Monitor,
   Calendar,
+  Sparkles,
 } from "lucide-react";
 import type { Locale } from "@/types";
 import type { listHomeAvs, listHomeCourses, listHomeWebinars } from "@/server/queries/catalog";
@@ -120,6 +121,7 @@ export function AcademyHome({
                 width={1384}
                 height={752}
                 priority
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 650px"
                 className="hero-photo-img"
               />
             </div>
@@ -131,32 +133,37 @@ export function AcademyHome({
       <section className="quick-access-root" aria-label={ar ? "الوصول السريع" : "Accès rapide"}>
         <div className="academy-container">
           <div className="quick-access-grid">
-            <Link href={`/${locale}/formations`} className="quick-access-card">
+            <Link href={`/${locale}/formations`} prefetch={true} className="quick-access-card">
               <GraduationCap size={32} strokeWidth={1.4} className="quick-access-icon" />
               <span className="quick-access-label">{ar ? "التكوين" : "Formations"}</span>
             </Link>
 
-            <Link href={`/${locale}/bibliotheque`} className="quick-access-card">
+            <Link href={`/${locale}/bibliotheque`} prefetch={true} className="quick-access-card">
               <BookOpen size={32} strokeWidth={1.4} className="quick-access-icon" />
               <span className="quick-access-label">{ar ? "المكتبة" : "Bibliothèque"}</span>
             </Link>
 
-            <Link href={`/${locale}/avs`} className="quick-access-card">
+            <Link href={`/${locale}/assistant`} prefetch={true} className="quick-access-card bg-amber-50/40 border-amber-200/60 hover:border-amber-300">
+              <Sparkles size={32} strokeWidth={1.4} className="quick-access-icon text-[#B58D3D]" />
+              <span className="quick-access-label text-slate-900 font-semibold">{ar ? "المساعد الذكي" : "Assistant IA"}</span>
+            </Link>
+
+            <Link href={`/${locale}/avs`} prefetch={true} className="quick-access-card">
               <User size={32} strokeWidth={1.4} className="quick-access-icon" />
               <span className="quick-access-label">{ar ? "البحث عن مرافق" : "Trouver un AVS"}</span>
             </Link>
 
-            <Link href={`/${locale}/webinaires`} className="quick-access-card">
+            <Link href={`/${locale}/webinaires`} prefetch={true} className="quick-access-card">
               <MonitorPlay size={32} strokeWidth={1.4} className="quick-access-icon" />
               <span className="quick-access-label">{ar ? "الندوات" : "Webinaires"}</span>
             </Link>
 
-            <Link href={`/${locale}/actualites`} className="quick-access-card">
+            <Link href={`/${locale}/actualites`} prefetch={true} className="quick-access-card">
               <Megaphone size={32} strokeWidth={1.4} className="quick-access-icon" />
               <span className="quick-access-label">{ar ? "الأخبار" : "Actualités"}</span>
             </Link>
 
-            <Link href={`/${locale}/contact`} className="quick-access-card">
+            <Link href={`/${locale}/contact`} prefetch={true} className="quick-access-card">
               <Mail size={32} strokeWidth={1.4} className="quick-access-icon" />
               <span className="quick-access-label">{ar ? "اتصل بنا" : "Contact"}</span>
             </Link>

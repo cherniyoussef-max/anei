@@ -22,7 +22,7 @@ export function GlobalWebinarBanner({
 
     async function fetchPushed() {
       try {
-        const res = await fetch("/api/learning/live/pushed", { cache: "no-store" });
+        const res = await fetch("/api/learning/live/pushed");
         if (res.ok) {
           const data = await res.json();
           if (mounted && Array.isArray(data.sessions)) {
@@ -34,8 +34,8 @@ export function GlobalWebinarBanner({
       }
     }
 
-    // Run poll every 20s
-    const interval = setInterval(fetchPushed, 20000);
+    // Run poll every 45s
+    const interval = setInterval(fetchPushed, 45000);
     return () => {
       mounted = false;
       clearInterval(interval);

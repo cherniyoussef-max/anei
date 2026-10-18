@@ -17,6 +17,8 @@ export const pool =
     maxLifetimeSeconds: 1800,
   });
 
-if (env.NODE_ENV !== "production") globalDb.__aneiPool = pool;
+// Cache pool on globalThis across all environments so warm serverless
+// containers reuse existing connections instead of renegotiating TLS on every request.
+globalDb.__aneiPool = pool;
 
 export const db = drizzle(pool, { schema });

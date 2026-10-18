@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search } from "lucide-react";
+import { Search, Sparkles } from "lucide-react";
 import type { Locale } from "@/types";
 import { AneiLogo } from "@/components/brand/AneiLogo";
 import { MobileMenu } from "@/components/interactive/MobileMenu";
@@ -17,6 +17,7 @@ export function SiteHeader({ locale, initialUser }: { locale: Locale; initialUse
     ["", ar ? "الرئيسية" : "Accueil"],
     ["formations", ar ? "التكوين" : "Formations"],
     ["bibliotheque", ar ? "المكتبة" : "Bibliothèque"],
+    ["assistant", ar ? "المساعد الذكي" : "Assistant IA"],
     ["avs", ar ? "دليل AVS" : "AVS"],
     ["specialistes", ar ? "الأخصائيون" : "Spécialistes"],
     ["webinaires", ar ? "الندوات" : "Webinaires"],
@@ -39,7 +40,7 @@ export function SiteHeader({ locale, initialUser }: { locale: Locale; initialUse
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 navbar-container">
         {/* Left: Always visible Logo + Navigation links */}
         <div className="flex items-center gap-4 lg:gap-6">
-          <Link href={`/${locale}`} className="site-brand-link flex items-center flex-none me-3 hover:opacity-90 transition-opacity" aria-label={ar ? "الرئيسية ANEI" : "Accueil ANEI"}>
+          <Link href={`/${locale}`} prefetch={true} className="site-brand-link flex items-center flex-none me-3 hover:opacity-90 transition-opacity" aria-label={ar ? "الرئيسية ANEI" : "Accueil ANEI"}>
             <AneiLogo locale={locale} variant="mark" withText={false} height={38} priority />
           </Link>
 
@@ -51,13 +52,19 @@ export function SiteHeader({ locale, initialUser }: { locale: Locale; initialUse
                 <Link
                   key={segment || "home"}
                   href={href}
-                  className={`relative flex items-center px-3.5 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 rounded-lg ${
+                  prefetch={true}
+                  className={`relative flex items-center px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 rounded-lg ${
                     isActive
                       ? "bg-slate-900/[0.06] text-slate-950 font-semibold after:absolute after:bottom-0 after:inset-x-3 after:h-[2px] after:rounded-full after:bg-slate-900"
+                      : segment === "assistant"
+                      ? "text-slate-800 hover:text-slate-950 hover:bg-amber-500/10 font-medium"
                       : "text-slate-600 hover:text-slate-950 hover:bg-slate-100/60"
                   }`}
                   aria-current={isActive ? "page" : undefined}
                 >
+                  {segment === "assistant" && (
+                    <Sparkles size={13} className="text-[#B58D3D] inline me-1.5 flex-none" />
+                  )}
                   {label}
                 </Link>
               );
@@ -69,6 +76,7 @@ export function SiteHeader({ locale, initialUser }: { locale: Locale; initialUse
         <div className="navbar-actions">
           <Link
             href={`/${locale}/formations`}
+            prefetch={true}
             className="navbar-search-btn"
             aria-label={ar ? "البحث عن دورة أو مورد" : "Rechercher une formation ou un sujet"}
           >
@@ -80,6 +88,7 @@ export function SiteHeader({ locale, initialUser }: { locale: Locale; initialUse
           <div className="navbar-lang-switch" aria-label={ar ? "تغيير اللغة" : "Changer de langue"}>
             <Link
               href={arTarget}
+              prefetch={true}
               className={locale === "ar" ? "is-active" : undefined}
               lang="ar"
             >
@@ -88,6 +97,7 @@ export function SiteHeader({ locale, initialUser }: { locale: Locale; initialUse
             <span className="text-[#CBD5E1]" aria-hidden="true">|</span>
             <Link
               href={frTarget}
+              prefetch={true}
               className={locale === "fr" ? "is-active" : undefined}
               lang="fr"
             >

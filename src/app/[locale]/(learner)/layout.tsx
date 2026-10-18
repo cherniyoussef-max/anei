@@ -32,7 +32,7 @@ export default async function LearnerLayout({
       user={{ name: session.user.name, email: session.user.email }}
       pointsBalance={pointsBalance}
       notificationCount={notificationCount}
-      assistantEnabled={Boolean(env.OPENAI_API_KEY)}
+      assistantEnabled={Boolean(env.OPENAI_API_KEY || env.AZURE_OPENAI_API_KEY)}
       impersonation={impersonation}
     >
       <main id="main-content" tabIndex={-1}>{children}</main>

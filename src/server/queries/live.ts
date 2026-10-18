@@ -207,11 +207,19 @@ export async function getLiveSessionsForLearner(userId: string): Promise<Learner
   }));
 }
 
+let cachedPushedWebinars: { data: LearnerLiveSessionSummary[]; expiresAt: number } | null = null;
+
 /**
  * Returns any live sessions currently active and pushed to all users.
  * externalMeetingUrl is explicitly omitted for security.
+ * Cached with a 30s TTL to prevent hitting Postgres on every request.
  */
 export async function getPushedLiveWebinars(): Promise<LearnerLiveSessionSummary[]> {
+  const now = Date.now();
+  if (cachedPushedWebinars && cachedPushedWebinars.expiresAt > now) {
+    return cachedPushedWebinars.data;
+  }
+
   const rows = await db
     .select({
       id: liveSessions.id,
@@ -240,7 +248,7 @@ export async function getPushedLiveWebinars(): Promise<LearnerLiveSessionSummary
     .orderBy(desc(liveSessions.scheduledStartAt))
     .limit(3);
 
-  return rows.map((r) => ({
+  const result = rows.map((r) => ({
     id: r.id,
     titleFr: r.titleFr,
     titleAr: r.titleAr,
@@ -261,6 +269,9 @@ export async function getPushedLiveWebinars(): Promise<LearnerLiveSessionSummary
     durationMinutes: r.durationMinutes,
     isBroadcastPushed: r.isBroadcastPushed,
   }));
+
+  cachedPushedWebinars = { data: result, expiresAt: now + 30_000 };
+  return result;
 }
 
 export async function hasUserAttendedSession(sessionId: string, userId: string): Promise<boolean> {
