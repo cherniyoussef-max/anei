@@ -9,7 +9,13 @@ export function proxy(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const isDev = process.env.NODE_ENV === "development";
   const connectSources = ["'self'"];
-  const frameSources = ["'none'"];
+  const frameSources = [
+    "'self'",
+    "https://accounts.google.com",
+    "https://iframe.videodelivery.net",
+    "https://*.cloudflarestream.com",
+    "https://meet.jit.si",
+  ];
   const styleSources = ["'self'", `'nonce-${nonce}'`];
   const scriptSources = ["'self'", `'nonce-${nonce}'`, "'strict-dynamic'"];
   const googleAuthConfigured = process.env.ENABLE_GOOGLE_AUTH === "true"
@@ -17,7 +23,6 @@ export function proxy(request: NextRequest) {
     && Boolean(process.env.GOOGLE_CLIENT_SECRET?.trim());
   if (googleAuthConfigured) {
     connectSources.push("https://accounts.google.com");
-    frameSources.splice(0, 1, "https://accounts.google.com");
     styleSources.push("https://accounts.google.com/gsi/style");
   }
   if (process.env.STORAGE_PROVIDER === "s3-compatible") {
@@ -68,7 +73,7 @@ export function proxy(request: NextRequest) {
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), browsing-topics=()");
+  response.headers.set("Permissions-Policy", 'camera=(self "https://meet.jit.si"), microphone=(self "https://meet.jit.si"), geolocation=(), browsing-topics=()');
   response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
   if (!isDev) {
     response.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");

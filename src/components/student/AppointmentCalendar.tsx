@@ -37,7 +37,7 @@ export function AppointmentCalendar({ locale, appointments }: { locale: Locale; 
             aria-label={ar ? "الشهر السابق" : "Mois précédent"}
             className="grid h-9 w-9 place-items-center rounded-lg border border-[#E7E0D3] text-[#7a7261] transition-all duration-200 ease-in-out hover:border-[#C9913F] hover:text-[#082D55] disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <ChevronLeft size={16} strokeWidth={1.75} />
+            <ChevronLeft size={16} strokeWidth={1.75} className="rtl:rotate-180" />
           </button>
           <div>
             <h2 id="calendar-title" className="font-[family-name:var(--font-fraunces)] text-base font-semibold capitalize text-[#082D55]">{monthLabel}</h2>
@@ -50,7 +50,7 @@ export function AppointmentCalendar({ locale, appointments }: { locale: Locale; 
             aria-label={ar ? "الشهر التالي" : "Mois suivant"}
             className="grid h-9 w-9 place-items-center rounded-lg border border-[#E7E0D3] text-[#7a7261] transition-all duration-200 ease-in-out hover:border-[#C9913F] hover:text-[#082D55] disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <ChevronRight size={16} strokeWidth={1.75} />
+            <ChevronRight size={16} strokeWidth={1.75} className="rtl:rotate-180" />
           </button>
         </div>
         <span className="inline-flex items-center gap-1.5 rounded-full border border-[#E7E0D3] px-3 py-1.5 text-xs font-medium text-[#7a7261]"><ShieldCheck className="text-[#C9913F]" size={14} strokeWidth={1.75} />{ar ? "عرض المواعيد" : "Vue des rendez-vous"}</span>

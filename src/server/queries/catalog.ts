@@ -468,6 +468,58 @@ export async function getVisibleAvsSpecialties(): Promise<Array<{ fr: string; ar
   return rows;
 }
 
+export const publicPractitionerColumns = {
+  id: avsProfiles.id,
+  userId: avsProfiles.userId,
+  slug: avsProfiles.slug,
+  displayName: avsProfiles.displayName,
+  cityFr: avsProfiles.cityFr,
+  cityAr: avsProfiles.cityAr,
+  governorateFr: avsProfiles.governorateFr,
+  governorateAr: avsProfiles.governorateAr,
+  specialtyFr: avsProfiles.specialtyFr,
+  specialtyAr: avsProfiles.specialtyAr,
+  interventionDomains: avsProfiles.interventionDomains,
+  pedagogicalMethods: avsProfiles.pedagogicalMethods,
+  schoolsCoveredFr: avsProfiles.schoolsCoveredFr,
+  schoolsCoveredAr: avsProfiles.schoolsCoveredAr,
+  hourlyRateMillimes: avsProfiles.hourlyRateMillimes,
+  experienceYears: avsProfiles.experienceYears,
+  availabilityFr: avsProfiles.availabilityFr,
+  availabilityAr: avsProfiles.availabilityAr,
+  addressFr: avsProfiles.addressFr,
+  addressAr: avsProfiles.addressAr,
+  phone: sql<string | null>`CASE WHEN ${avsProfiles.showPhonePublicly} = true THEN COALESCE(${avsProfiles.contactPhone}, ${avsProfiles.phone}) ELSE NULL END`,
+  email: sql<string | null>`NULL`,
+  rating: avsProfiles.rating,
+  reviewCount: avsProfiles.reviewCount,
+  bioFr: avsProfiles.bioFr,
+  bioAr: avsProfiles.bioAr,
+  certified: avsProfiles.certified,
+  visible: avsProfiles.visible,
+  image: avsProfiles.image,
+  directoryType: avsProfiles.directoryType,
+  category: avsProfiles.category,
+  showPhonePublicly: avsProfiles.showPhonePublicly,
+  contactPhone: sql<string | null>`CASE WHEN ${avsProfiles.showPhonePublicly} = true THEN ${avsProfiles.contactPhone} ELSE NULL END`,
+  whatsappPhone: sql<string | null>`CASE WHEN ${avsProfiles.showPhonePublicly} = true THEN ${avsProfiles.whatsappPhone} ELSE NULL END`,
+  workplaceName: avsProfiles.workplaceName,
+  workplaceAddress: avsProfiles.workplaceAddress,
+  licenseOrOrderNumber: avsProfiles.licenseOrOrderNumber,
+  universityDegree: avsProfiles.universityDegree,
+  consultationDurationMinutes: avsProfiles.consultationDurationMinutes,
+  inPersonPriceMillimes: avsProfiles.inPersonPriceMillimes,
+  onlineVisioPriceMillimes: avsProfiles.onlineVisioPriceMillimes,
+  availabilityRegime: avsProfiles.availabilityRegime,
+  availabilityStatusLabel: avsProfiles.availabilityStatusLabel,
+  acceptedModalities: avsProfiles.acceptedModalities,
+  availableLocationsText: avsProfiles.availableLocationsText,
+  weeklySchedule: avsProfiles.weeklySchedule,
+  categoryDetails: avsProfiles.categoryDetails,
+  createdAt: avsProfiles.createdAt,
+  updatedAt: avsProfiles.updatedAt,
+};
+
 export async function searchVisibleAvs(input: AvsSearchInput = {}) {
   const { page, pageSize, offset } = pageBounds(input.page, input.pageSize);
   const q = normalizedQuery(input.q);
@@ -522,7 +574,7 @@ export async function searchVisibleAvs(input: AvsSearchInput = {}) {
   const where = and(...filters)!;
   const [[{ value: total }], items, cities, governorates, specialties] = await Promise.all([
     db.select({ value: count() }).from(avsProfiles).where(where),
-    db.select().from(avsProfiles).where(where).orderBy(desc(avsProfiles.certified), desc(avsProfiles.rating), asc(avsProfiles.displayName)).limit(pageSize).offset(offset),
+    db.select(publicPractitionerColumns).from(avsProfiles).where(where).orderBy(desc(avsProfiles.certified), desc(avsProfiles.rating), asc(avsProfiles.displayName)).limit(pageSize).offset(offset),
     getVisibleAvsCities(),
     getVisibleAvsGovernorates(),
     getVisibleAvsSpecialties(),
@@ -595,7 +647,7 @@ export async function searchVisibleSpecialists(input: SpecialistSearchInput = {}
   const where = and(...filters)!;
   const [[{ value: total }], items, governorates] = await Promise.all([
     db.select({ value: count() }).from(avsProfiles).where(where),
-    db.select().from(avsProfiles).where(where).orderBy(desc(avsProfiles.certified), desc(avsProfiles.rating), asc(avsProfiles.displayName)).limit(pageSize).offset(offset),
+    db.select(publicPractitionerColumns).from(avsProfiles).where(where).orderBy(desc(avsProfiles.certified), desc(avsProfiles.rating), asc(avsProfiles.displayName)).limit(pageSize).offset(offset),
     getVisibleAvsGovernorates(),
   ]);
 
@@ -611,7 +663,7 @@ export async function searchVisibleSpecialists(input: SpecialistSearchInput = {}
 
 export async function getSpecialistByIdOrSlug(idOrSlug: string) {
   const [profile] = await db
-    .select()
+    .select(publicPractitionerColumns)
     .from(avsProfiles)
     .where(
       and(
@@ -626,7 +678,7 @@ export async function getSpecialistByIdOrSlug(idOrSlug: string) {
 
 export async function getAvsByIdOrSlug(idOrSlug: string) {
   const [profile] = await db
-    .select()
+    .select(publicPractitionerColumns)
     .from(avsProfiles)
     .where(
       and(
@@ -643,7 +695,7 @@ export async function getAvsByIdOrSlug(idOrSlug: string) {
 }
 
 export async function listVisibleAvs() {
-  return db.select().from(avsProfiles).where(eq(avsProfiles.visible, true)).orderBy(desc(avsProfiles.certified), asc(avsProfiles.displayName)).limit(24);
+  return db.select(publicPractitionerColumns).from(avsProfiles).where(eq(avsProfiles.visible, true)).orderBy(desc(avsProfiles.certified), asc(avsProfiles.displayName)).limit(24);
 }
 
 /** Homepage renders only 3 AVS cards, so this skips the bio/availability columns and the 24-row bound. */

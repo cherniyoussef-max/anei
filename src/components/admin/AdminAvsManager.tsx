@@ -539,9 +539,9 @@ export function AdminAvsManager({ locale, initialProfiles, initialBookings }: Ad
                 className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs text-slate-700 bg-white"
               >
                 <option value="ALL">{ar ? "كل الحالات المالية" : "Tous les statuts financiers"}</option>
-                <option value="HELD_IN_ESCROW">{ar ? "🛡️ أموال تحت الحراسة (Escrow)" : "🛡️ Fonds sous séquestre"}</option>
-                <option value="RELEASED_TO_AVS">{ar ? "✓ محوّلة للمرافق (Débloqués)" : "✓ Versés à l'AVS"}</option>
-                <option value="REFUNDED_TO_PARENT">{ar ? "↩ مسترجعة للولي (Remboursés)" : "↩ Remboursés au parent"}</option>
+                <option value="HELD_IN_ESCROW">{ar ? "أموال تحت الحراسة (Escrow)" : "Fonds sous séquestre"}</option>
+                <option value="RELEASED_TO_AVS">{ar ? "محوّلة للمرافق (Débloqués)" : "Versés à l'AVS"}</option>
+                <option value="REFUNDED_TO_PARENT">{ar ? "مسترجعة للولي (Remboursés)" : "Remboursés au parent"}</option>
               </select>
 
               {/* RDV Status Filter */}

@@ -506,7 +506,7 @@ export function AdminCloudflareVideoUploader({
             </div>
           )}
 
-          {/* STATE 4: PHASE 3 — READY & LINKED (✅ Vidéo prête) */}
+          {/* STATE 4: PHASE 3 — READY & LINKED (Vidéo prête) */}
           {state === "ready" && (
             <div className="p-5 rounded-xl border border-emerald-200 bg-emerald-50/50 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-4">

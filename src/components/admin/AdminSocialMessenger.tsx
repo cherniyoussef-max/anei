@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { Check, CheckCheck } from "lucide-react";
 import { Icon } from "@/components/ui/Icon";
 import type { Locale } from "@/types";
 import type { SocialChannel } from "@/server/social/normalize";
@@ -88,25 +89,25 @@ export function AdminSocialMessenger({
   // Quick canned replies
   const CANNED_REPLIES = [
     {
-      label: ar ? "👋 ترحيب" : "👋 Bienvenue",
+      label: ar ? "ترحيب" : "Bienvenue",
       text: ar
         ? "مرحبًا بك في أكاديمية ANEI! كيف يمكننا مساعدتك اليوم؟"
         : "Bonjour et bienvenue chez ANEI Académie ! Comment pouvons-nous vous accompagner aujourd’hui ?",
     },
     {
-      label: ar ? "📅 توجيه" : "📅 Orientation",
+      label: ar ? "توجيه" : "Orientation",
       text: ar
         ? "يسعدنا تحديد موعد جلسة توجيه مجانية معك لمناقشة مسارك التعليمي."
         : "Nous serions ravis de planifier une session d’orientation avec vous pour échanger sur vos objectifs.",
     },
     {
-      label: ar ? "💳 تسجيل" : "💳 Inscription",
+      label: ar ? "تسجيل" : "Inscription",
       text: ar
         ? "تم تأكيد طلبك وملفك قيد المعالجة من قبل فريقنا التربوي."
         : "Votre demande a bien été reçue. Notre équipe pédagogique valide actuellement votre accès.",
     },
     {
-      label: ar ? "⏳ قيد المتابعة" : "⏳ En cours",
+      label: ar ? "قيد المتابعة" : "En cours",
       text: ar
         ? "شكرًا لرسالتك! يقوم أحد مستشارينا بالرد عليك خلال لحظات."
         : "Merci pour votre message ! Un conseiller prend en charge votre demande dans un instant.",
@@ -448,7 +449,9 @@ export function AdminSocialMessenger({
 
                       <div className="admin-whatsapp-item-sub">
                         <span className="admin-whatsapp-preview">
-                          {c.lastMessage?.direction === "OUTBOUND" ? "✓ " : ""}
+                          {c.lastMessage?.direction === "OUTBOUND" ? (
+                            <Check className="w-3 h-3 inline me-0.5 text-slate-400" />
+                          ) : null}
                           {c.lastMessage?.text || (isIg ? "Discussion Instagram" : "Discussion Messenger")}
                         </span>
                         {c.unreadCount > 0 && (
@@ -495,7 +498,7 @@ export function AdminSocialMessenger({
                         {" • "}
                         {activeChannel === "INSTAGRAM" ? "Instagram Direct" : "Messenger"}
                         {" • "}
-                        {isLiveConfigured ? "🟢 Live" : "⚪ Simulation"}
+                        {isLiveConfigured ? "Live" : "Simulation"}
                       </p>
                     </div>
                   </div>
@@ -559,8 +562,12 @@ export function AdminSocialMessenger({
                                 })}
                               </span>
                               {isOutbound && (
-                                <span className="admin-whatsapp-bubble-status is-delivered">
-                                  {m.status === "READ" ? "✓✓" : m.status === "DELIVERED" ? "✓✓" : "✓"}
+                                <span className="admin-whatsapp-bubble-status is-delivered inline-flex items-center">
+                                  {m.status === "READ" || m.status === "DELIVERED" ? (
+                                    <CheckCheck className={`w-3 h-3 ${m.status === "READ" ? "text-blue-500" : "text-slate-400"}`} />
+                                  ) : (
+                                    <Check className="w-3 h-3 text-slate-400" />
+                                  )}
                                 </span>
                               )}
                             </div>

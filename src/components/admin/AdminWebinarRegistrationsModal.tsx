@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { X } from "lucide-react";
 import { Icon } from "@/components/ui/Icon";
 import type { Locale } from "@/types";
 
@@ -211,9 +212,10 @@ export function AdminWebinarRegistrationsModal({
           <button
             type="button"
             onClick={onClose}
-            style={{ background: "none", border: "none", fontSize: "1.25rem", color: "#64748b", cursor: "pointer" }}
+            style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", display: "flex", alignItems: "center" }}
+            aria-label={locale === "ar" ? "إغلاق" : "Fermer"}
           >
-            ✕
+            <X style={{ width: 18, height: 18 }} />
           </button>
         </div>
 
@@ -359,14 +361,14 @@ export function AdminWebinarRegistrationsModal({
                           }}
                         >
                           {isPending
-                            ? (ar ? "قيد المراجعة ⏳" : "En attente ⏳")
+                            ? (ar ? "قيد المراجعة" : "En attente")
                             : isAttended
-                            ? (ar ? "حضر الجلسة ✓" : "Présent au direct ✓")
+                            ? (ar ? "حضر الجلسة" : "Présent au direct")
                             : isRejected
-                            ? (ar ? "مرفوض ✕" : "Refusé ✕")
+                            ? (ar ? "مرفوض" : "Refusé")
                             : isCancelled
-                            ? (ar ? "ملغى ✕" : "Annulé ✕")
-                            : (ar ? "مقبول ✓" : "Validé ✓")}
+                            ? (ar ? "ملغى" : "Annulé")
+                            : (ar ? "مقبول" : "Validé")}
                         </span>
 
                         {r.accessCode ? (

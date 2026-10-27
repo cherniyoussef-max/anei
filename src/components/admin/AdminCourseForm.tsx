@@ -2,6 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
+import { Check, Copy, Award, Timer, Target, Search, X, Trash2 } from "lucide-react";
 import type { Locale } from "@/types";
 import { slugify } from "@/lib/slug";
 import { AdminObjectUpload } from "./AdminObjectUpload";
@@ -391,7 +392,7 @@ export function AdminCourseForm({ locale }: { locale: Locale }) {
               flexShrink: 0,
             }}
           >
-            ✓
+            <Check style={{ width: 22, height: 22 }} />
           </div>
           <div>
             <h3 style={{ margin: 0, fontSize: 18, color: "#065f46" }}>
@@ -549,9 +550,13 @@ export function AdminCourseForm({ locale }: { locale: Locale }) {
                 fontWeight: 600,
                 color: "#334155",
                 cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
               }}
             >
-              {ar ? "⎘ نسخ FR نحو AR" : "⎘ Dupliquer FR vers AR"}
+              <Copy style={{ width: 13, height: 13 }} />
+              {ar ? "نسخ FR نحو AR" : "Dupliquer FR vers AR"}
             </button>
           </div>
         </div>
@@ -603,7 +608,7 @@ export function AdminCourseForm({ locale }: { locale: Locale }) {
                 fontWeight: 600,
               }}
             >
-              {coverImageKey ? "Image de couverture chargée ✓" : (titleFr || "Visuel de la formation")}
+              {coverImageKey ? "Image de couverture chargée" : (titleFr || "Visuel de la formation")}
             </div>
             <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 8 }}>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
@@ -616,7 +621,8 @@ export function AdminCourseForm({ locale }: { locale: Locale }) {
               </div>
               {qualifiesForProfessionalPromotion && (
                 <div style={{ background: "#fef3c7", color: "#92400e", fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 6, display: "inline-flex", alignItems: "center", gap: 4 }}>
-                  🎖️ {ar ? "مسار تأهيلي للاعتماد ANEI" : `Qualifiant ANEI (${qualifyingTargetType})`}
+                  <Award style={{ width: 13, height: 13 }} />
+                  {ar ? "مسار تأهيلي للاعتماد ANEI" : `Qualifiant ANEI (${qualifyingTargetType})`}
                 </div>
               )}
               <strong style={{ fontSize: 14, color: "#0f172a", lineHeight: 1.3 }}>
@@ -794,7 +800,10 @@ export function AdminCourseForm({ locale }: { locale: Locale }) {
                 onChange={(e) => setQualifiesForProfessionalPromotion(e.target.checked)}
                 style={{ width: 18, height: 18, accentColor: "#0284c7" }}
               />
-              <span>🎖️ {ar ? "دورة مؤهلة للاعتماد المهني ANEI (ترقية مرافقي الحياة المدرسية والأخصائيين)" : "Formation qualifiante pour l'agrément professionnel ANEI"}</span>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <Award style={{ width: 15, height: 15 }} />
+                {ar ? "دورة مؤهلة للاعتماد المهني ANEI (ترقية مرافقي الحياة المدرسية والأخصائيين)" : "Formation qualifiante pour l'agrément professionnel ANEI"}
+              </span>
             </label>
             <p style={{ margin: "4px 0 0 28px", fontSize: 12, color: "#475569" }}>
               {ar
@@ -1021,7 +1030,7 @@ export function AdminCourseForm({ locale }: { locale: Locale }) {
                       }}
                       title={ar ? "حذف" : "Supprimer"}
                     >
-                      ✕
+                      <X style={{ width: 14, height: 14 }} />
                     </button>
                   </div>
                 ))}
@@ -1334,8 +1343,9 @@ export function AdminCourseForm({ locale }: { locale: Locale }) {
           {/* PARAMETERS GRID */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
             <div>
-              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
-                ⏱️ {ar ? "مدة الاختبار (بالدقائق)" : "Durée limite (minutes)"} *
+              <label style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
+                <Timer style={{ width: 14, height: 14 }} />
+                {ar ? "مدة الاختبار (بالدقائق)" : "Durée limite (minutes)"} *
               </label>
               <input
                 type="number"
@@ -1353,8 +1363,9 @@ export function AdminCourseForm({ locale }: { locale: Locale }) {
             </div>
 
             <div>
-              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
-                🎯 {ar ? "نسبة النجاح الدنيا (%)" : "Score de passage requis (%)"} *
+              <label style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
+                <Target style={{ width: 14, height: 14 }} />
+                {ar ? "نسبة النجاح الدنيا (%)" : "Score de passage requis (%)"} *
               </label>
               <input
                 type="number"
@@ -1372,8 +1383,9 @@ export function AdminCourseForm({ locale }: { locale: Locale }) {
             </div>
 
             <div>
-              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
-                🔍 {ar ? "كشف التصحيح المفصل" : "Affichage du corrigé"}
+              <label style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
+                <Search style={{ width: 14, height: 14 }} />
+                {ar ? "كشف التصحيح المفصل" : "Affichage du corrigé"}
               </label>
               <label className="checkbox-row" style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", marginTop: 8 }}>
                 <input
@@ -1473,9 +1485,13 @@ export function AdminCourseForm({ locale }: { locale: Locale }) {
                         fontSize: 12,
                         cursor: "pointer",
                         fontWeight: 600,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
                       }}
                     >
-                      ✕ {ar ? "حذف هذا السؤال" : "Supprimer cette question"}
+                      <Trash2 style={{ width: 13, height: 13 }} />
+                      {ar ? "حذف هذا السؤال" : "Supprimer cette question"}
                     </button>
                   )}
                 </div>
@@ -1600,8 +1616,9 @@ export function AdminCourseForm({ locale }: { locale: Locale }) {
                             required
                           />
                           {isCorrect && (
-                            <span style={{ fontSize: 11, fontWeight: 700, color: "#059669", background: "#d1fae5", padding: "2px 8px", borderRadius: 4, flexShrink: 0 }}>
-                              ✓ {ar ? "الإجابة الصحيحة" : "Exacte"}
+                            <span style={{ fontSize: 11, fontWeight: 700, color: "#059669", background: "#d1fae5", padding: "2px 8px", borderRadius: 4, flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 3 }}>
+                              <Check style={{ width: 12, height: 12 }} />
+                              {ar ? "الإجابة الصحيحة" : "Exacte"}
                             </span>
                           )}
                         </div>

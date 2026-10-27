@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Star } from "lucide-react";
 import type { Locale } from "@/types";
 
 interface AdminNewsFormProps {
@@ -283,8 +284,9 @@ export function AdminNewsForm({ locale, initialPost, onSuccess }: AdminNewsFormP
             className="h-4 w-4 rounded border-slate-300 text-[#0056D2] focus:ring-[#0056D2]"
           />
           <div className="flex flex-col">
-            <span className="text-xs font-bold text-slate-900">
-              {ar ? "⭐ تعيين في الصدارة (À LA UNE) على الصفحة الرئيسية وصفحة الأخبار" : "⭐ Mettre cet article à la une (À LA UNE)"}
+            <span className="text-xs font-bold text-slate-900 inline-flex items-center gap-1.5">
+              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+              {ar ? "تعيين في الصدارة (À LA UNE) على الصفحة الرئيسية وصفحة الأخبار" : "Mettre cet article à la une (À LA UNE)"}
             </span>
             <span className="text-[11px] text-slate-500">
               {ar

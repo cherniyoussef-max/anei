@@ -5,6 +5,7 @@ import { getHybridRAGEngine } from "@/server/ai/hybrid-rag-engine";
 import { checkAndConsumeAiQuota, recordAiUsageLog } from "@/server/ai/meter";
 import { consumeRateLimit, requestFingerprint } from "@/server/security/rate-limit";
 import { isTrustedMutation } from "@/server/security/origin";
+import { readLimitedJson } from "@/server/security/request-body";
 import { getLearnerCourseAiContext } from "@/server/ai/learner-context";
 
 const requestSchema = z.object({
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const rawBody = await req.json().catch(() => null);
+    const rawBody = await readLimitedJson(req).catch(() => null);
     const parsed = requestSchema.safeParse(rawBody);
 
     if (!parsed.success) {

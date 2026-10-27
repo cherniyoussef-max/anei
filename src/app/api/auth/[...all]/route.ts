@@ -5,6 +5,7 @@ import { db } from "@/server/db";
 import { auditLogs } from "@/server/db/schema";
 import { consumeRateLimit } from "@/server/security/rate-limit";
 import { normalizeCanonicalEmail } from "@/lib/auth/canonical-identity";
+import { readLimitedJson } from "@/server/security/request-body";
 
 const handler = toNextJsHandler(auth);
 
@@ -13,13 +14,24 @@ export const GET = handler.GET;
 export const POST = async (request: Request) => {
   const url = new URL(request.url);
 
+  // Block direct unverified Better Auth sign-up endpoint - all registrations must pass through /api/auth/register-wizard
+  if (url.pathname.endsWith("/sign-up/email")) {
+    return NextResponse.json(
+      {
+        error: "SIGN_UP_DISABLED",
+        message: "L'inscription directe par cet endpoint est désactivée. Veuillez utiliser le tunnel d'inscription sécurisé /inscription.",
+      },
+      { status: 403 }
+    );
+  }
+
   // Hardening specifically for /api/auth/sign-in/email
   if (url.pathname.endsWith("/sign-in/email")) {
     const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anonymous";
 
     let rawBody: Record<string, unknown> | null = null;
     try {
-      rawBody = await request.clone().json();
+      rawBody = (await readLimitedJson(request.clone(), 32 * 1024)) as Record<string, unknown> | null;
     } catch {
       rawBody = null;
     }

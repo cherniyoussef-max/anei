@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminSessionFor, adminMutationRateLimit } from "@/server/auth/admin";
 import { isTrustedMutation } from "@/server/security/origin";
+import { readLimitedJson } from "@/server/security/request-body";
 import { createDirectUploadSession } from "@/server/media/cloudflare-stream";
 import { logger } from "@/server/security/logger";
 
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
 
   let body = {};
   try {
-    body = await request.json();
+    body = (await readLimitedJson(request)) || {};
   } catch {
     // optional payload
   }

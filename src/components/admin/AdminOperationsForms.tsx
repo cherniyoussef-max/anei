@@ -21,7 +21,7 @@ function useAdminSubmit(endpoint: string) {
 }
 
 function Feedback({ state, locale }: { state: State; locale: Locale }) {
-  if (state === "done") return <small className="success-inline">{locale === "ar" ? "تم الحفظ ✓" : "Enregistré ✓"}</small>;
+  if (state === "done") return <small className="success-inline">{locale === "ar" ? "تم الحفظ" : "Enregistré"}</small>;
   if (state === "error") return <small className="form-error">{locale === "ar" ? "تعذر الحفظ." : "Enregistrement impossible."}</small>;
   return null;
 }

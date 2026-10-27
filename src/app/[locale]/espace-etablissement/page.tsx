@@ -40,7 +40,7 @@ export default async function EspaceEtablissementPage({
   const session = await auth.api.getSession({ headers: await headers() }).catch(() => null);
   const isAuthenticated = Boolean(session?.user);
 
-  const { establishment, requests } = isAuthenticated && session?.user?.id
+  const { establishment, requests, registeredEventIds, newsItems } = isAuthenticated && session?.user?.id
     ? await getOrCreatePartnerEstablishment(session.user.id)
     : await getShowcaseEstablishmentProfile();
 
@@ -111,6 +111,8 @@ export default async function EspaceEtablissementPage({
           locale={locale}
           initialEstablishment={formattedEstablishment}
           initialRequests={formattedRequests}
+          initialRegisteredEventIds={registeredEventIds}
+          initialNewsItems={newsItems}
         />
       </div>
     </div>

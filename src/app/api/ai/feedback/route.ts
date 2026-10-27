@@ -5,6 +5,7 @@ import { aiFeedbackLog } from "@/server/db/schema";
 import { getSession } from "@/server/auth/session";
 import { consumeRateLimit, requestFingerprint } from "@/server/security/rate-limit";
 import { isTrustedMutation } from "@/server/security/origin";
+import { readLimitedJson } from "@/server/security/request-body";
 
 const feedbackSchema = z.object({
   rating: z.enum(["HELPFUL", "UNHELPFUL"]),
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const rawBody = await req.json().catch(() => null);
+    const rawBody = await readLimitedJson(req).catch(() => null);
     const parsed = feedbackSchema.safeParse(rawBody);
 
     if (!parsed.success) {

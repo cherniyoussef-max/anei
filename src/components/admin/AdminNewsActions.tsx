@@ -87,8 +87,8 @@ export function AdminNewsActions({
         <span>
           {isFeatured
             ? ar
-              ? "في الصدارة ⭐"
-              : "À la une ⭐"
+              ? "في الصدارة"
+              : "À la une"
             : ar
             ? "تمييز"
             : "À la une"}

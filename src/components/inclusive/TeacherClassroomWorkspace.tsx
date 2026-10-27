@@ -52,6 +52,19 @@ interface SpecialistTipData {
   whatToAvoid: string;
 }
 
+export interface EvaluationQuestionData {
+  full: string;
+  simple: string;
+  icon: string;
+}
+
+export interface EvaluationData {
+  id?: string;
+  title: string;
+  durationMinutes: number;
+  questions: EvaluationQuestionData[];
+}
+
 interface TeacherClassroomWorkspaceProps {
   locale: Locale;
   initialClassroom: {
@@ -62,6 +75,7 @@ interface TeacherClassroomWorkspaceProps {
   };
   initialStudents: StudentData[];
   initialTips: SpecialistTipData[];
+  initialEvaluation?: EvaluationData | null;
 }
 
 const DEFAULT_SAMPLE_TEST = {
@@ -111,7 +125,7 @@ function escapeXml(unsafe: string): string {
     .replace(/'/g, "&apos;");
 }
 
-function generateDocxZip(student: StudentData, test: typeof DEFAULT_SAMPLE_TEST): JSZip {
+function generateDocxZip(student: StudentData, test: EvaluationData): JSZip {
   const a = student.adaptations;
   const isDysFont = a.includes("font");
   const isBigFont = a.includes("big");
@@ -207,6 +221,7 @@ export function TeacherClassroomWorkspace({
   initialClassroom,
   initialStudents,
   initialTips,
+  initialEvaluation,
 }: TeacherClassroomWorkspaceProps) {
   const ar = locale === "ar";
   const [activeTab, setActiveTab] = useState<"class" | "test" | "gen" | "faq" | "res" | "col">("class");
@@ -220,6 +235,13 @@ export function TeacherClassroomWorkspace({
     (initialClassroom.palettePreset as PalettePreset) || "Classique"
   );
   const [tips] = useState<SpecialistTipData[]>(initialTips);
+  const [evaluation, _setEvaluation] = useState<EvaluationData>(
+    initialEvaluation || {
+      title: DEFAULT_SAMPLE_TEST.title,
+      durationMinutes: DEFAULT_SAMPLE_TEST.durationMinutes,
+      questions: DEFAULT_SAMPLE_TEST.questions,
+    }
+  );
 
   // Test Adapter state
   const [testStep, setTestStep] = useState<number>(0);
@@ -424,7 +446,7 @@ export function TeacherClassroomWorkspace({
   const handleDownloadDocx = async (student: StudentData) => {
     setIsExporting(true);
     try {
-      const zip = generateDocxZip(student, DEFAULT_SAMPLE_TEST);
+      const zip = generateDocxZip(student, evaluation);
       const blob = await zip.generateAsync({
         type: "blob",
         mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -433,9 +455,15 @@ export function TeacherClassroomWorkspace({
       const cleanName = student.displayName.replace(/[^a-zA-Z0-9_\u0600-\u06FF]/g, "_");
       downloadBlob(blob, `Evaluation_adaptee_${cleanName}.docx`);
 
-      // Mark as downloaded
+      // Mark as downloaded in local state and persist to PostgreSQL
       const next = students.map((s) => (s.id === student.id ? { ...s, downloadStatus: "TELECHARGE" } : s));
       setStudents(next);
+      void fetch("/api/teacher/classroom/student/download-status", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ studentId: student.id, downloadStatus: "TELECHARGE" }),
+      }).catch((err) => console.error("Failed to persist download status:", err));
+
       setFeedbackMessage(ar ? `تم تنزيل مستند ${student.displayName}` : `Document généré pour ${student.displayName}.`);
     } catch (err) {
       console.error("Docx generation failed:", err);
@@ -452,7 +480,7 @@ export function TeacherClassroomWorkspace({
     try {
       const masterZip = new JSZip();
       for (const st of students) {
-        const studentZip = generateDocxZip(st, DEFAULT_SAMPLE_TEST);
+        const studentZip = generateDocxZip(st, evaluation);
         const stBlob = await studentZip.generateAsync({
           type: "uint8array",
           compression: "DEFLATE",
@@ -465,6 +493,12 @@ export function TeacherClassroomWorkspace({
 
       const next = students.map((s) => ({ ...s, downloadStatus: "TELECHARGE" }));
       setStudents(next);
+      void fetch("/api/teacher/classroom/student/download-status", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ all: true, downloadStatus: "TELECHARGE" }),
+      }).catch((err) => console.error("Failed to persist batch download status:", err));
+
       setFeedbackMessage(ar ? "تم تنزيل أرشيف القسم بالكامل (ZIP)" : `Les ${students.length} documents ont été téléchargés.`);
     } catch (err) {
       console.error("Zip export error:", err);
@@ -929,8 +963,8 @@ export function TeacherClassroomWorkspace({
             </div>
 
             <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500">
-              <span className="font-semibold text-slate-800">{DEFAULT_SAMPLE_TEST.title}</span>
-              <span>· {DEFAULT_SAMPLE_TEST.questions.length} questions · {DEFAULT_SAMPLE_TEST.durationMinutes} min</span>
+              <span className="font-semibold text-slate-800">{evaluation.title}</span>
+              <span>· {evaluation.questions.length} questions · {evaluation.durationMinutes} min</span>
             </div>
           </div>
 
@@ -946,15 +980,15 @@ export function TeacherClassroomWorkspace({
                 </h3>
                 <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
                   {ar
-                    ? "تم استيراد اختبار اللغة الفرنسية (4 أسئلة، 45 دقيقة). يمكنك معاينة التكييفات لكل تلميذ أو تصدير النسخ."
-                    : "Le test « Évaluation de français » est chargé pour l'ensemble des élèves de la classe."}
+                    ? "تم استيراد اختبار اللغة الفرنسية من قاعدة البيانات. يمكنك معاينة التكييفات لكل تلميذ أو تصدير النسخ."
+                    : "L'évaluation est chargée depuis PostgreSQL pour l'ensemble des élèves de la classe."}
                 </p>
               </div>
 
               <div className="p-4 bg-slate-50 border border-slate-200/90 rounded-xl max-w-lg mx-auto text-start space-y-2">
-                <div className="text-xs font-bold text-slate-700">{DEFAULT_SAMPLE_TEST.title}</div>
+                <div className="text-xs font-bold text-slate-700">{evaluation.title}</div>
                 <div className="text-xs text-slate-600 space-y-1">
-                  {DEFAULT_SAMPLE_TEST.questions.map((q, i) => (
+                  {evaluation.questions.map((q, i) => (
                     <div key={i} className="flex items-start gap-2 text-[11.5px]">
                       <span className="font-mono text-slate-400">{i + 1}.</span>
                       <span className="truncate">{q.full}</span>
@@ -1064,7 +1098,7 @@ export function TeacherClassroomWorkspace({
                       type="button"
                       onClick={() =>
                         handleSpeakText(
-                          DEFAULT_SAMPLE_TEST.questions.map((q, i) => `Question ${i + 1} : ${currentStudent.adaptations.includes("simple") ? q.simple : q.full}`).join(". ")
+                          evaluation.questions.map((q, i) => `Question ${i + 1} : ${currentStudent.adaptations.includes("simple") ? q.simple : q.full}`).join(". ")
                         )
                       }
                       className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg flex items-center gap-1.5 font-medium transition-colors"
@@ -1088,18 +1122,18 @@ export function TeacherClassroomWorkspace({
                     className="p-6 border border-slate-300 rounded-xl min-h-[380px] shadow-inner space-y-4 transition-all"
                   >
                     <div>
-                      <h4 className="font-bold text-lg">{DEFAULT_SAMPLE_TEST.title}</h4>
+                      <h4 className="font-bold text-lg">{evaluation.title}</h4>
                       <div className="text-xs opacity-75 mt-0.5">
                         {ar ? `التلميذ : ${currentStudent.displayName}` : `Élève : ${currentStudent.displayName}`} ·{" "}
                         {currentStudent.adaptations.includes("time")
-                          ? `${Math.round(DEFAULT_SAMPLE_TEST.durationMinutes * 1.33)} min (tiers-temps +33 %)`
-                          : `${DEFAULT_SAMPLE_TEST.durationMinutes} min`}
+                          ? `${Math.round(evaluation.durationMinutes * 1.33)} min (tiers-temps +33 %)`
+                          : `${evaluation.durationMinutes} min`}
                         {currentStudent.adaptations.includes("pauses") ? " · pauses courtes régulières" : ""}
                       </div>
                     </div>
 
                     <div className="border-t border-current/20 pt-3 space-y-4">
-                      {DEFAULT_SAMPLE_TEST.questions.map((q, i) => {
+                      {evaluation.questions.map((q, i) => {
                         const isSimple = currentStudent.adaptations.includes("simple");
                         const isSteps = currentStudent.adaptations.includes("steps");
                         const isPictos = currentStudent.adaptations.includes("pictos");
@@ -1113,7 +1147,7 @@ export function TeacherClassroomWorkspace({
                                 </span>
                               )}
                               <span>
-                                {isSteps ? `Étape ${i + 1} sur ${DEFAULT_SAMPLE_TEST.questions.length} : ` : `${i + 1}. `}
+                                {isSteps ? `Étape ${i + 1} sur ${evaluation.questions.length} : ` : `${i + 1}. `}
                                 {isSimple ? q.simple : q.full}
                               </span>
                             </div>

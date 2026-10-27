@@ -16,6 +16,18 @@ const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
   display: "swap",
 });
 
+function getMetadataBase(): URL {
+  const raw = process.env.APP_URL;
+  if (raw && !raw.includes("[SENSITIVE]")) {
+    try {
+      return new URL(raw);
+    } catch {
+      // fallback to canonical production URL
+    }
+  }
+  return new URL("https://anei-six.vercel.app");
+}
+
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: {
@@ -23,7 +35,7 @@ export const metadata: Metadata = {
     template: "%s | ANEI",
   },
   description: "Plateforme bilingue de formation continue dédiée à l’éducation inclusive.",
-  metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3000"),
+  metadataBase: getMetadataBase(),
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [

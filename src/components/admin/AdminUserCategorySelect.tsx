@@ -79,7 +79,7 @@ export function AdminUserCategorySelect({
 
       if (res.ok) {
         setCategory(newCat);
-        setFeedback(ar ? "تم التحديث ✓" : "Modifié ✓");
+        setFeedback(ar ? "تم التحديث" : "Modifié");
         router.refresh();
         setTimeout(() => setFeedback(null), 3000);
       } else {
@@ -115,9 +115,9 @@ export function AdminUserCategorySelect({
           outline: "none",
         }}
       >
-        <option value="LEARNER">{ar ? "🎓 متعلم (Learner)" : "🎓 Apprenant (Learner)"}</option>
-        <option value="AVS">{ar ? "🤝 AVS معتمد (Scolaire)" : "🤝 AVS Certifié (Scolaire)"}</option>
-        <option value="SPECIALIST">{ar ? "🩺 أخصائي معتمد (Clinique)" : "🩺 Spécialiste Inclusif (Clinique)"}</option>
+        <option value="LEARNER">{ar ? "متعلم (Learner)" : "Apprenant (Learner)"}</option>
+        <option value="AVS">{ar ? "AVS معتمد (Scolaire)" : "AVS Certifié (Scolaire)"}</option>
+        <option value="SPECIALIST">{ar ? "أخصائي معتمد (Clinique)" : "Spécialiste Inclusif (Clinique)"}</option>
       </select>
 
       {loading && (
@@ -131,7 +131,7 @@ export function AdminUserCategorySelect({
           style={{
             fontSize: 10,
             fontWeight: 700,
-            color: feedback.includes("✓") ? "#16a34a" : "#dc2626",
+            color: (feedback.includes("Modifié") || feedback.includes("تم")) ? "#16a34a" : "#dc2626",
           }}
         >
           {feedback}

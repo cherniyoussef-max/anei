@@ -63,10 +63,19 @@ interface EstablishmentData {
   selfEvalScorePercent?: number | null;
 }
 
+export interface EstablishmentNewsItem {
+  id: string;
+  type: string;
+  title: string;
+  date: string;
+}
+
 interface EstablishmentWorkspaceProps {
   locale: Locale;
   initialEstablishment: EstablishmentData;
   initialRequests: ServiceRequestItem[];
+  initialRegisteredEventIds?: string[];
+  initialNewsItems?: EstablishmentNewsItem[];
 }
 
 const RESOURCES_DEF = [
@@ -108,6 +117,8 @@ export function EstablishmentWorkspace({
   locale,
   initialEstablishment,
   initialRequests,
+  initialRegisteredEventIds,
+  initialNewsItems,
 }: EstablishmentWorkspaceProps) {
   const ar = locale === "ar";
   const [activeTab, setActiveTab] = useState<
@@ -135,8 +146,46 @@ export function EstablishmentWorkspace({
     establishment.selfEvalScorePercent !== undefined && establishment.selfEvalScorePercent !== null
   );
 
-  // News registrations toggle
-  const [registeredNews, setRegisteredNews] = useState<Record<number, boolean>>({});
+  const newsItems = useMemo(() => {
+    if (initialNewsItems && initialNewsItems.length > 0) return initialNewsItems;
+    return NEWS_ITEMS.map((n, idx) => ({ id: `default-event-${idx}`, ...n }));
+  }, [initialNewsItems]);
+
+  // News registrations toggle backed by PostgreSQL
+  const [registeredNews, setRegisteredNews] = useState<Record<string, boolean>>(() => {
+    const init: Record<string, boolean> = {};
+    if (initialRegisteredEventIds) {
+      for (const id of initialRegisteredEventIds) {
+        init[id] = true;
+      }
+    }
+    return init;
+  });
+
+  const handleToggleRegistration = async (eventId: string) => {
+    const isCurrentlyRegistered = Boolean(registeredNews[eventId]);
+    setRegisteredNews((prev) => ({ ...prev, [eventId]: !isCurrentlyRegistered }));
+    setFeedback(
+      !isCurrentlyRegistered
+        ? ar
+          ? "تم تسجيل المؤسسة في الدورة بنجاح!"
+          : "Inscription confirmée pour cette session."
+        : ar
+        ? "تم إلغاء التسجيل."
+        : "Inscription annulée."
+    );
+    setTimeout(() => setFeedback(""), 3000);
+
+    try {
+      await fetch("/api/establishment/events/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId }),
+      });
+    } catch (err) {
+      console.error("Failed to persist event registration:", err);
+    }
+  };
 
   // Active requests count (stage < 4)
   const pendingRequestsCount = useMemo(() => {
@@ -1224,11 +1273,11 @@ export function EstablishmentWorkspace({
           </div>
 
           <div className="space-y-3">
-            {NEWS_ITEMS.map((n, idx) => {
-              const isRegistered = Boolean(registeredNews[idx]);
+            {newsItems.map((n) => {
+              const isRegistered = Boolean(registeredNews[n.id]);
               return (
                 <div
-                  key={idx}
+                  key={n.id}
                   className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                 >
                   <div className="space-y-1">
@@ -1241,19 +1290,7 @@ export function EstablishmentWorkspace({
 
                   <button
                     type="button"
-                    onClick={() => {
-                      setRegisteredNews({ ...registeredNews, [idx]: !isRegistered });
-                      setFeedback(
-                        !isRegistered
-                          ? ar
-                            ? "تم تسجيل المؤسسة في الدورة بنجاح!"
-                            : "Inscription confirmée pour cette session."
-                          : ar
-                          ? "تم إلغاء التسجيل."
-                          : "Inscription annulée."
-                      );
-                      setTimeout(() => setFeedback(""), 3000);
-                    }}
+                    onClick={() => handleToggleRegistration(n.id)}
                     className={`text-xs font-semibold px-4 py-2 rounded-xl transition-colors ${
                       isRegistered
                         ? "bg-emerald-100 text-emerald-800 border border-emerald-300"

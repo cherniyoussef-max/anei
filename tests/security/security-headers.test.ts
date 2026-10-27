@@ -21,8 +21,8 @@ test("security-headers: next.config.ts defines required baseline headers", async
   assert.equal(headerMap.get("Referrer-Policy"), "strict-origin-when-cross-origin");
   assert.equal(headerMap.get("X-DNS-Prefetch-Control"), "off");
   assert.equal(headerMap.get("Cross-Origin-Opener-Policy"), "same-origin");
-  assert.match(headerMap.get("Permissions-Policy") ?? "", /camera=\(\)/);
-  assert.match(headerMap.get("Permissions-Policy") ?? "", /microphone=\(\)/);
+  assert.match(headerMap.get("Permissions-Policy") ?? "", /camera=\(self "https:\/\/meet\.jit\.si"\)/);
+  assert.match(headerMap.get("Permissions-Policy") ?? "", /microphone=\(self "https:\/\/meet\.jit\.si"\)/);
   assert.match(headerMap.get("Permissions-Policy") ?? "", /geolocation=\(\)/);
 });
 

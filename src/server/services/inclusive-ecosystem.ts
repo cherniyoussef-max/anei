@@ -3,10 +3,13 @@ import {
   user,
   teacherClassrooms,
   teacherClassroomStudents,
+  teacherEvaluations,
   partnerEstablishments,
+  establishmentEventRegistrations,
   establishmentServiceRequests,
   serviceRequestMessages,
   specialistClassroomTips,
+  newsPosts,
 } from "@/server/db/schema";
 import { eq, desc, asc } from "drizzle-orm";
 import {
@@ -77,10 +80,53 @@ export async function getOrCreateTeacherClassroom(teacherUserId: string) {
     .where(eq(specialistClassroomTips.isPublished, true))
     .orderBy(desc(specialistClassroomTips.createdAt));
 
+  let [evaluation] = await db
+    .select()
+    .from(teacherEvaluations)
+    .where(eq(teacherEvaluations.classroomId, classroom.id))
+    .orderBy(desc(teacherEvaluations.updatedAt))
+    .limit(1);
+
+  if (!evaluation) {
+    const [created] = await db
+      .insert(teacherEvaluations)
+      .values({
+        classroomId: classroom.id,
+        teacherUserId,
+        title: "Évaluation de français : lecture et compréhension",
+        durationMinutes: 45,
+        questionsJson: [
+          {
+            full: "Lis attentivement le texte, puis relève trois verbes conjugués au passé composé dans les deux premiers paragraphes.",
+            simple: "Lis le texte. Trouve 3 verbes au passé composé.",
+            icon: "1",
+          },
+          {
+            full: "Explique avec tes propres mots pourquoi le personnage principal décide de quitter son village à l'aube.",
+            simple: "Pourquoi le personnage quitte-t-il son village ? Écris 1 phrase simple.",
+            icon: "2",
+          },
+          {
+            full: "Recopie la phrase correcte parmi les propositions suivantes et justifie ton choix grammatical.",
+            simple: "Choisis la phrase correcte. Entoure ton choix.",
+            icon: "3",
+          },
+          {
+            full: "Rédige un court paragraphe de cinq lignes décrivant ton lieu préféré en utilisant au moins deux adjectifs qualificatifs.",
+            simple: "Décris ton lieu préféré. Écris 3 phrases courtes.",
+            icon: "4",
+          },
+        ],
+      })
+      .returning();
+    evaluation = created;
+  }
+
   return {
     classroom,
     students,
     tips,
+    evaluation,
   };
 }
 
@@ -202,12 +248,68 @@ export async function getOrCreatePartnerEstablishment(managerUserId: string) {
     return acc;
   }, {});
 
+  const registrations = await db
+    .select({ eventId: establishmentEventRegistrations.eventId })
+    .from(establishmentEventRegistrations)
+    .where(eq(establishmentEventRegistrations.establishmentId, est.id));
+
+  const realNews = await db
+    .select({
+      id: newsPosts.id,
+      title: newsPosts.titleFr,
+      category: newsPosts.category,
+      publishedAt: newsPosts.publishedAt,
+      createdAt: newsPosts.createdAt,
+    })
+    .from(newsPosts)
+    .where(eq(newsPosts.published, true))
+    .orderBy(desc(newsPosts.publishedAt))
+    .limit(6);
+
+  const fallbackEvents = [
+    {
+      id: "ev-autisme-2026",
+      type: "Formation",
+      title: "Accueillir un élève autiste en classe ordinaire",
+      date: "20/10/2026 · En ligne",
+    },
+    {
+      id: "ev-projets-2026",
+      type: "Appel à projets",
+      title: "Équipements pour salles de ressources et bibliothèques inclusives",
+      date: "Date limite : 15/11/2026",
+    },
+    {
+      id: "ev-journee-2026",
+      type: "Événement",
+      title: "Journée nationale de l'éducation inclusive",
+      date: "03/12/2026 · Tunis",
+    },
+    {
+      id: "ev-examens-2026",
+      type: "Formation",
+      title: "Aménager les évaluations et examens d'État",
+      date: "05/11/2026 · Sur site établissement",
+    },
+  ];
+
+  const newsItems = realNews.length > 0
+    ? realNews.map((n) => ({
+        id: n.id,
+        type: n.category || "Actualité",
+        title: n.title,
+        date: n.publishedAt ? new Date(n.publishedAt).toLocaleDateString("fr-FR") : "En ligne",
+      }))
+    : fallbackEvents;
+
   return {
     establishment: est,
     requests: requests.map((r) => ({
       ...r,
       messages: messagesByRequestId[r.id] || [],
     })),
+    registeredEventIds: registrations.map((r) => r.eventId),
+    newsItems,
   };
 }
 

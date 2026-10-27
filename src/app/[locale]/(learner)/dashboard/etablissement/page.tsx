@@ -36,7 +36,7 @@ export default async function EstablishmentPage({
     redirect(`/${locale}/connexion?callbackUrl=/${locale}/dashboard/etablissement`);
   }
 
-  const { establishment, requests } = await getOrCreatePartnerEstablishment(session.user.id);
+  const { establishment, requests, registeredEventIds, newsItems } = await getOrCreatePartnerEstablishment(session.user.id);
 
   const formattedEstablishment = {
     id: establishment.id,
@@ -78,6 +78,8 @@ export default async function EstablishmentPage({
         locale={locale}
         initialEstablishment={formattedEstablishment}
         initialRequests={formattedRequests}
+        initialRegisteredEventIds={registeredEventIds}
+        initialNewsItems={newsItems}
       />
     </div>
   );

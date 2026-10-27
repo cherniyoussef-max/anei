@@ -6,6 +6,7 @@ import {
   Inbox,
   Lightbulb,
 } from "lucide-react";
+import { AdminSectionCard } from "@/modules/admin/components/AdminSectionCard";
 import type { Locale } from "@/types";
 import {
   DIFFICULTIES,
@@ -143,7 +144,11 @@ export function AdminInstitutionsTable({
 
       {/* Tab 1: Établissements */}
       {activeTab === "est" && (
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+        <AdminSectionCard
+          title={ar ? "المؤسسات التربوية الشريكة" : "Établissements partenaires"}
+          subtitle={ar ? "قائمة المؤسسات التربوية الشريكة ومتابعة وضعية الاتفاقيات وتوزيع الصعوبات" : "Liste des structures scolaires partenaires et état d'avancement des conventions"}
+          bodyClassName="p-0"
+        >
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-start">
               <thead>
@@ -197,12 +202,16 @@ export function AdminInstitutionsTable({
               </tbody>
             </table>
           </div>
-        </div>
+        </AdminSectionCard>
       )}
 
       {/* Tab 2: Requests */}
       {activeTab === "req" && (
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+        <AdminSectionCard
+          title={ar ? "طلبات التدخل والدعم الميداني" : "Demandes de service & interventions"}
+          subtitle={ar ? "متابعة الطلبات الميدانية الواردة من المدارس والمواعيد المبرمجة مع الأخصائيين" : "Suivi des demandes tripartites et planification des rendez-vous avec les praticiens"}
+          bodyClassName="p-0"
+        >
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-start">
               <thead>
@@ -249,12 +258,16 @@ export function AdminInstitutionsTable({
               </tbody>
             </table>
           </div>
-        </div>
+        </AdminSectionCard>
       )}
 
       {/* Tab 3: Tips */}
       {activeTab === "tips" && (
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+        <AdminSectionCard
+          title={ar ? "التوجيهات البيداغوجية المنشورة" : "Fiches conseils spécialistes"}
+          subtitle={ar ? "النصائح والتوجيهات الميدانية المتاحة للمدرسين في قسم ما قبل التمدرس والتعليم الدامج" : "Recommandations concrètes rédigées par les spécialistes pour les enseignants"}
+          bodyClassName="p-0"
+        >
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-start">
               <thead>
@@ -287,7 +300,7 @@ export function AdminInstitutionsTable({
               </tbody>
             </table>
           </div>
-        </div>
+        </AdminSectionCard>
       )}
     </div>
   );

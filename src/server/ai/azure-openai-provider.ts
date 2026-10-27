@@ -1,5 +1,7 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { env } from "@/server/env";
+import { getRedis } from "@/server/cache/redis";
 
 export interface AzureChatMessage {
   role: "system" | "user" | "assistant";
@@ -21,13 +23,15 @@ export interface AzureChatResponse {
   cached?: boolean;
 }
 
-// In-memory semantic/query cache to maximize the $60 credit
+// Multi-tier semantic & embedding cache (L1 Memory + L2 Redis) to maximize the Azure credit
 interface CacheEntry {
   response: AzureChatResponse;
   expiresAt: number;
 }
 const queryCache = new Map<string, CacheEntry>();
-const CACHE_TTL_MS = 1000 * 60 * 60 * 6; // 6 hours
+const embeddingMemoryCache = new Map<string, number[]>();
+const CACHE_TTL_MS = 1000 * 60 * 60 * 12; // 12 hours L1
+const REDIS_CACHE_TTL_SEC = 60 * 60 * 12; // 12 hours L2 (43,200 seconds)
 
 export class AzureOpenAIProvider {
   private endpoint: string;
@@ -92,11 +96,46 @@ export class AzureOpenAIProvider {
       return texts.map((t) => this.generateFallbackEmbedding(t, 1536));
     }
 
-    const allEmbeddings: number[][] = [];
+    const redis = await getRedis().catch(() => null);
+    const results: Array<number[] | null> = new Array(texts.length).fill(null);
+    const uncachedIndices: number[] = [];
+    const hashes: string[] = texts.map((t) => createHash("sha256").update(t).digest("hex"));
+
+    // 1. Check L1 memory cache and L2 Redis cache
+    for (let i = 0; i < texts.length; i++) {
+      const hash = hashes[i];
+      const mem = embeddingMemoryCache.get(hash);
+      if (mem) {
+        results[i] = mem;
+        continue;
+      }
+      if (redis) {
+        try {
+          const raw = await redis.get(`cache:azure_openai:embedding:${hash}`);
+          if (raw) {
+            const vec = JSON.parse(raw) as number[];
+            embeddingMemoryCache.set(hash, vec);
+            results[i] = vec;
+            continue;
+          }
+        } catch {
+          // ignore cache read error
+        }
+      }
+      uncachedIndices.push(i);
+    }
+
+    if (uncachedIndices.length === 0) {
+      return results as number[][];
+    }
+
+    // 2. Fetch uncached in batches from Azure OpenAI
+    const uncachedTexts = uncachedIndices.map((i) => texts[i]);
     const url = `${this.endpoint}/openai/deployments/${this.embeddingDeployment}/embeddings?api-version=${this.apiVersion}`;
 
-    for (let i = 0; i < texts.length; i += batchSize) {
-      const batch = texts.slice(i, i + batchSize).map((t) => t.slice(0, 8000));
+    for (let i = 0; i < uncachedTexts.length; i += batchSize) {
+      const batchIndices = uncachedIndices.slice(i, i + batchSize);
+      const batch = uncachedTexts.slice(i, i + batchSize).map((t) => t.slice(0, 8000));
       let attempts = 0;
       let success = false;
       let lastError: Error | null = null;
@@ -125,7 +164,16 @@ export class AzureOpenAIProvider {
             .sort((a, b) => a.index - b.index)
             .map((item) => item.embedding);
 
-          allEmbeddings.push(...sorted);
+          for (let k = 0; k < batchIndices.length; k++) {
+            const globalIdx = batchIndices[k];
+            const vec = sorted[k];
+            const hash = hashes[globalIdx];
+            results[globalIdx] = vec;
+            embeddingMemoryCache.set(hash, vec);
+            if (redis) {
+              redis.set(`cache:azure_openai:embedding:${hash}`, JSON.stringify(vec), { EX: REDIS_CACHE_TTL_SEC }).catch(() => {});
+            }
+          }
           success = true;
         } catch (err) {
           lastError = err instanceof Error ? err : new Error(String(err));
@@ -138,12 +186,15 @@ export class AzureOpenAIProvider {
       if (!success) {
         // Fallback to deterministic embeddings for this batch to avoid pipeline blockage
         console.warn(`[AzureOpenAIProvider] Embedding batch fallback: ${lastError?.message}`);
-        const fallback = batch.map((t) => this.generateFallbackEmbedding(t, 1536));
-        allEmbeddings.push(...fallback);
+        for (let k = 0; k < batchIndices.length; k++) {
+          const globalIdx = batchIndices[k];
+          const fallback = this.generateFallbackEmbedding(texts[globalIdx], 1536);
+          results[globalIdx] = fallback;
+        }
       }
     }
 
-    return allEmbeddings;
+    return results as number[][];
   }
 
   /**
@@ -155,13 +206,35 @@ export class AzureOpenAIProvider {
   }
 
   /**
-   * Generates a chat completion with optional caching and automatic retry + fallback
+   * Generates a chat completion with multi-tier caching (L1 memory + L2 Redis) and automatic retry + fallback
    */
   async chatCompletion(options: AzureChatOptions): Promise<AzureChatResponse> {
-    const cacheKey = JSON.stringify(options.messages);
-    const cached = queryCache.get(cacheKey);
+    const cacheKeyRaw = JSON.stringify(options.messages);
+    const hash = createHash("sha256").update(cacheKeyRaw).digest("hex");
+    const redisKey = `cache:azure_openai:chat:${hash}`;
+
+    // L1 Memory check
+    const cached = queryCache.get(hash);
     if (cached && cached.expiresAt > Date.now()) {
       return { ...cached.response, cached: true };
+    }
+
+    // L2 Redis check
+    const redis = await getRedis().catch(() => null);
+    if (redis) {
+      try {
+        const raw = await redis.get(redisKey);
+        if (raw) {
+          const parsed = JSON.parse(raw) as AzureChatResponse;
+          queryCache.set(hash, {
+            response: parsed,
+            expiresAt: Date.now() + CACHE_TTL_MS,
+          });
+          return { ...parsed, cached: true };
+        }
+      } catch {
+        // ignore cache read failure
+      }
     }
 
     if (!this.isConfigured()) {
@@ -213,11 +286,15 @@ export class AzureOpenAIProvider {
           totalTokens: data.usage?.total_tokens ?? 0,
         };
 
-        // Store in cache
-        queryCache.set(cacheKey, {
+        // Store in L1 and L2 cache
+        queryCache.set(hash, {
           response: result,
           expiresAt: Date.now() + CACHE_TTL_MS,
         });
+
+        if (redis) {
+          redis.set(redisKey, JSON.stringify(result), { EX: REDIS_CACHE_TTL_SEC }).catch(() => {});
+        }
 
         return result;
       } catch (err) {

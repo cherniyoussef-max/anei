@@ -2,6 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
+import { Check, Copy } from "lucide-react";
 import type { Locale } from "@/types";
 import { slugify } from "@/lib/slug";
 import { AdminObjectUpload } from "@/components/admin/AdminObjectUpload";
@@ -220,7 +221,7 @@ export function AdminResourceForm({ locale }: { locale: Locale }) {
               flexShrink: 0,
             }}
           >
-            ✓
+            <Check style={{ width: 22, height: 22 }} />
           </div>
           <div>
             <h3 style={{ margin: 0, fontSize: 18, color: "#065f46" }}>
@@ -362,9 +363,13 @@ export function AdminResourceForm({ locale }: { locale: Locale }) {
                 fontWeight: 600,
                 color: "#334155",
                 cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
               }}
             >
-              {ar ? "⎘ نسخ FR نحو AR" : "⎘ Dupliquer FR vers AR"}
+              <Copy style={{ width: 13, height: 13 }} />
+              {ar ? "نسخ FR نحو AR" : "Dupliquer FR vers AR"}
             </button>
           </div>
         </div>
@@ -416,7 +421,7 @@ export function AdminResourceForm({ locale }: { locale: Locale }) {
                 fontWeight: 600,
               }}
             >
-              {coverImageKey ? "Aperçu de couverture chargé ✓" : (titleFr || "Visuel du document")}
+              {coverImageKey ? "Aperçu de couverture chargé" : (titleFr || "Visuel du document")}
             </div>
             <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 8 }}>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>

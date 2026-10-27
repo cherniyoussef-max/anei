@@ -1176,6 +1176,9 @@ export const avsBookingRequests = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
   },
   (table) => [
+    uniqueIndex("avs_booking_slot_unique")
+      .on(table.avsProfileId, table.requestedDate, table.requestedTimeSlot)
+      .where(sql`${table.status} in ('AWAITING_PRACTITIONER_CONFIRMATION', 'PENDING', 'CONFIRMED')`),
     index("avs_booking_profile_idx").on(table.avsProfileId),
     index("avs_booking_parent_idx").on(table.parentUserId),
     index("avs_booking_status_idx").on(table.status),
@@ -3166,6 +3169,32 @@ export const teacherClassroomStudents = pgTable(
   ],
 );
 
+export const teacherEvaluations = pgTable(
+  "teacher_evaluations",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    classroomId: text("classroom_id")
+      .notNull()
+      .references(() => teacherClassrooms.id, { onDelete: "cascade" }),
+    teacherUserId: text("teacher_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    durationMinutes: integer("duration_minutes").notNull().default(30),
+    questionsJson: jsonb("questions_json").notNull().$type<Array<{
+      full: string;
+      simple: string;
+      icon: string;
+    }>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("teacher_evaluations_classroom_idx").on(table.classroomId),
+    index("teacher_evaluations_teacher_idx").on(table.teacherUserId),
+  ],
+);
+
 export const partnerEstablishments = pgTable(
   "partner_establishments",
   {
@@ -3190,6 +3219,23 @@ export const partnerEstablishments = pgTable(
   (table) => [
     index("partner_establishments_manager_idx").on(table.managerUserId),
     index("partner_establishments_region_idx").on(table.region),
+  ],
+);
+
+export const establishmentEventRegistrations = pgTable(
+  "establishment_event_registrations",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    establishmentId: text("establishment_id")
+      .notNull()
+      .references(() => partnerEstablishments.id, { onDelete: "cascade" }),
+    eventId: text("event_id").notNull(),
+    eventType: text("event_type").notNull().default("EVENT"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("establishment_event_reg_unique").on(table.establishmentId, table.eventId),
+    index("establishment_event_reg_est_idx").on(table.establishmentId),
   ],
 );
 
@@ -3325,7 +3371,11 @@ export type VideoAssetInsert = typeof videoAssets.$inferInsert;
 
 export type TeacherClassroomRow = typeof teacherClassrooms.$inferSelect;
 export type TeacherClassroomStudentRow = typeof teacherClassroomStudents.$inferSelect;
+export type TeacherEvaluationRow = typeof teacherEvaluations.$inferSelect;
+export type NewTeacherEvaluation = typeof teacherEvaluations.$inferInsert;
 export type PartnerEstablishmentRow = typeof partnerEstablishments.$inferSelect;
+export type EstablishmentEventRegistrationRow = typeof establishmentEventRegistrations.$inferSelect;
+export type NewEstablishmentEventRegistration = typeof establishmentEventRegistrations.$inferInsert;
 export type EstablishmentServiceRequestRow = typeof establishmentServiceRequests.$inferSelect;
 export type ServiceRequestMessageRow = typeof serviceRequestMessages.$inferSelect;
 export type SpecialistClassroomTipRow = typeof specialistClassroomTips.$inferSelect;

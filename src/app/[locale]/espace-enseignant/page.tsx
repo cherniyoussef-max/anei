@@ -41,7 +41,7 @@ export default async function EspaceEnseignantPage({
   const session = await auth.api.getSession({ headers: await headers() }).catch(() => null);
   const isAuthenticated = Boolean(session?.user);
 
-  const { classroom, students, tips } = isAuthenticated && session?.user?.id
+  const { classroom, students, tips, evaluation } = isAuthenticated && session?.user?.id
     ? await getOrCreateTeacherClassroom(session.user.id)
     : await getShowcaseTeacherClassroom();
 
@@ -62,6 +62,15 @@ export default async function EspaceEnseignantPage({
     whatToDo: t.whatToDo,
     whatToAvoid: t.whatToAvoid || "",
   }));
+
+  const formattedEvaluation = evaluation
+    ? {
+        id: evaluation.id,
+        title: evaluation.title,
+        durationMinutes: evaluation.durationMinutes,
+        questions: (evaluation.questionsJson as Array<{ full: string; simple: string; icon: string }>) || [],
+      }
+    : null;
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
@@ -103,6 +112,7 @@ export default async function EspaceEnseignantPage({
           }}
           initialStudents={formattedStudents}
           initialTips={formattedTips}
+          initialEvaluation={formattedEvaluation}
         />
       </div>
     </div>

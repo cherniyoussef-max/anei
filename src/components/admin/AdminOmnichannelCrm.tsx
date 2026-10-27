@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { Target, MessageSquare, Inbox, X, Check, CheckCheck } from "lucide-react";
 import type { Locale } from "@/types";
 import type {
   OmnichannelChannel,
@@ -350,7 +351,7 @@ export function AdminOmnichannelCrm({
             onClick={() => setShowSimulateModal(true)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-xs transition-colors"
           >
-            <span className="text-amber-500 font-bold">🎯</span>
+            <Target className="w-3.5 h-3.5 text-amber-500" />
             {ar ? "محاكاة وصول عميل من إعلان Meta" : "Simuler Lead Meta Ads"}
           </button>
           <button
@@ -417,7 +418,7 @@ export function AdminOmnichannelCrm({
                 filter === "meta_ads" ? "bg-amber-100 text-amber-900 border border-amber-300 shadow-xs font-semibold" : "text-amber-800 hover:text-amber-900"
               }`}
             >
-              <span>🎯</span>
+              <Target className="w-3 h-3 text-amber-600" />
               {ar ? "إعلانات Meta" : "Meta Ads"}
             </button>
             <button
@@ -445,9 +446,9 @@ export function AdminOmnichannelCrm({
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="absolute end-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs"
+                  className="absolute end-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
                 >
-                  ✕
+                  <X className="w-3 h-3" />
                 </button>
               )}
             </div>
@@ -461,7 +462,7 @@ export function AdminOmnichannelCrm({
               </div>
             ) : threads.length === 0 ? (
               <div className="p-8 text-center text-xs text-slate-400">
-                <span className="block text-2xl mb-2">💬</span>
+                <MessageSquare className="w-8 h-8 text-slate-300 mx-auto mb-2" />
                 {ar ? "لا توجد محادثات مطابقة." : "Aucune conversation correspondante."}
               </div>
             ) : (
@@ -496,12 +497,14 @@ export function AdminOmnichannelCrm({
                       {channelIcon(t.channel)}
                       {isMetaLead && (
                         <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-800">
-                          🎯 {t.adHeadline ? t.adHeadline.slice(0, 24) + "…" : "Meta Ad"}
+                          <Target className="w-2.5 h-2.5 inline me-1 text-amber-600" />
+                          {t.adHeadline ? t.adHeadline.slice(0, 24) + "…" : "Meta Ad"}
                         </span>
                       )}
                       {t.linkedUserId && (
                         <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          ✓ Compte ANEI
+                          <Check className="w-2.5 h-2.5 inline me-1" />
+                          Compte ANEI
                         </span>
                       )}
                     </div>
@@ -523,7 +526,7 @@ export function AdminOmnichannelCrm({
         <div className="flex-1 flex flex-col bg-white border-e border-slate-200/80">
           {!detail ? (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-slate-400 text-xs">
-              <span className="text-4xl mb-3">📬</span>
+              <Inbox className="w-10 h-10 text-slate-300 mx-auto mb-3" />
               {ar ? "اختر محادثة لعرض تفاصيلها والرد عليها" : "Sélectionnez une discussion pour afficher et répondre"}
             </div>
           ) : (
@@ -551,7 +554,7 @@ export function AdminOmnichannelCrm({
               {/* Meta Ads Referral Context Banner */}
               {detail.thread.sourceType !== "ORGANIC" && (
                 <div className="bg-amber-50/90 border-b border-amber-200/80 px-4 py-2.5 flex items-start gap-3">
-                  <span className="text-base">🎯</span>
+                  <Target className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
                   <div className="flex-1 text-xs">
                     <div className="flex items-center gap-2 flex-wrap">
                       <strong className="text-amber-950 font-bold">
@@ -606,12 +609,12 @@ export function AdminOmnichannelCrm({
                           <span
                             className={
                               m.deliveryStatus === "READ"
-                                ? "text-blue-500 font-bold"
-                                : "text-slate-400"
+                                ? "text-blue-500 font-bold inline-flex items-center"
+                                : "text-slate-400 inline-flex items-center"
                             }
                             title={m.deliveryStatus}
                           >
-                            ✓✓
+                            <CheckCheck className="w-3.5 h-3.5 inline" />
                           </span>
                         )}
                       </div>
@@ -828,7 +831,7 @@ export function AdminOmnichannelCrm({
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200">
             <h3 className="text-sm font-bold text-slate-900 mb-1 flex items-center gap-2">
-              <span>🎯</span>
+              <Target className="w-4 h-4 text-amber-500" />
               {ar ? "محاكاة وصول عميل من إعلان Meta Ads" : "Simuler un Lead Meta Ads"}
             </h3>
             <p className="text-xs text-slate-500 mb-4">

@@ -4,6 +4,7 @@ import { db } from "@/server/db";
 import { appointment } from "@/server/db/schema";
 import { authenticateInternalAutomation, requireAutomationScope, json } from "@/server/automation/internal-auth";
 import { AUTOMATION_APPOINTMENTS_READ } from "@/server/mcp/scopes";
+import { readLimitedJson } from "@/server/security/request-body";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,7 +18,7 @@ export async function POST(request: Request): Promise<Response> {
   const forbidden = await requireAutomationScope(auth.actor, AUTOMATION_APPOINTMENTS_READ, request);
   if (forbidden) return forbidden;
 
-  const raw = await request.json().catch(() => null);
+  const raw = await readLimitedJson(request).catch(() => null);
   const parsed = bodySchema.safeParse(raw);
   if (!parsed.success) return json(400, { error: "Invalid request" });
 

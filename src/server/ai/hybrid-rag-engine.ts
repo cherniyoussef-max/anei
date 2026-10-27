@@ -1,6 +1,5 @@
 import "server-only";
-import fs from "node:fs";
-import path from "node:path";
+import prebuiltBundleRaw from "./prebuilt-knowledge-index.json";
 import { getAzureOpenAIProvider } from "./azure-openai-provider";
 import { buildTeacherAgentSystemPrompt, RetrievedChunkContext } from "./teacher-agent-prompt";
 
@@ -54,25 +53,8 @@ let loadedBundle: PrebuiltKnowledgeBundle | null = null;
 
 function loadKnowledgeBundle(): PrebuiltKnowledgeBundle | null {
   if (loadedBundle) return loadedBundle;
-
-  const candidatePaths = [
-    path.join(process.cwd(), "src/server/ai/prebuilt-knowledge-index.json"),
-    path.join(__dirname, "prebuilt-knowledge-index.json"),
-  ];
-
-  for (const p of candidatePaths) {
-    if (fs.existsSync(p)) {
-      try {
-        const raw = fs.readFileSync(/*turbopackIgnore: true*/ p, "utf-8");
-        loadedBundle = JSON.parse(raw) as PrebuiltKnowledgeBundle;
-        return loadedBundle;
-      } catch (e) {
-        console.error(`[HybridRAG] Failed to parse knowledge bundle at ${p}:`, e);
-      }
-    }
-  }
-
-  return null;
+  loadedBundle = prebuiltBundleRaw as unknown as PrebuiltKnowledgeBundle;
+  return loadedBundle;
 }
 
 /**

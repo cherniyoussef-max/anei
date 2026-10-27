@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Copy, Trash2 } from "lucide-react";
 import {
   WEBINAR_PROVIDERS,
   DEFAULT_WEBINAR_FORM_FIELDS,
@@ -205,9 +206,13 @@ export function AdminWebinarForm({ locale }: { locale: Locale }) {
             color: "#0f172a",
             border: "1px solid #cbd5e1",
             cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 4,
           }}
         >
-          {ar ? "⎘ نسخ FR نحو AR" : "⎘ Dupliquer FR vers AR"}
+          <Copy style={{ width: 12, height: 12 }} />
+          {ar ? "نسخ FR نحو AR" : "Dupliquer FR vers AR"}
         </button>
       </div>
 
@@ -450,9 +455,10 @@ export function AdminWebinarForm({ locale }: { locale: Locale }) {
                 <button
                   type="button"
                   onClick={() => removeCustomQuestion(q.id)}
-                  style={{ background: "none", border: "none", color: "#dc2626", cursor: "pointer", fontSize: "0.8rem" }}
+                  style={{ background: "none", border: "none", color: "#dc2626", cursor: "pointer", fontSize: "0.8rem", display: "inline-flex", alignItems: "center", gap: 3 }}
                 >
-                  ✕ Supprimer
+                  <Trash2 style={{ width: 12, height: 12 }} />
+                  {ar ? "حذف" : "Supprimer"}
                 </button>
               </div>
             ))}

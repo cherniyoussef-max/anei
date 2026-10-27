@@ -181,39 +181,52 @@ export async function POST(request: Request) {
   const parentName = parsed.data.parentName || session.user.name || "Parent";
   const parentEmail = parsed.data.parentEmail || session.user.email || "";
 
-  const [booking] = await db
-    .insert(avsBookingRequests)
-    .values({
-      avsProfileId: parsed.data.avsProfileId,
-      parentUserId: session.user.id,
-      parentName,
-      parentEmail,
-      parentPhone: parsed.data.parentPhone,
-      parentLocation: parsed.data.parentLocation || null,
-      childName: parsed.data.childName,
-      childAge: parsed.data.childAge ?? null,
-      schoolName: parsed.data.schoolName || null,
-      needDescription: parsed.data.needDescription,
-      interventionDomain: parsed.data.interventionDomain || null,
-      requestedDate: parsed.data.requestedDate,
-      requestedTimeSlot: parsed.data.requestedTimeSlot,
-      meetingType: parsed.data.meetingType,
-      status: "AWAITING_PRACTITIONER_CONFIRMATION",
-      notes: parsed.data.notes || null,
-      amountMillimes: totalAmountMillimes,
-      platformFeeMillimes,
-      avsPayoutMillimes,
-      paymentMode,
-      platformCommissionPercent,
-      netPractitionerPayoutMillimes: avsPayoutMillimes,
-      liveSessionId,
-      escrowStatus,
-      paymentStatus,
-      paymentMethod: parsed.data.paymentMethod,
-      paymentReference: escrowRef,
-      paidAt: new Date(),
-    })
-    .returning();
+  let booking: typeof avsBookingRequests.$inferSelect;
+  try {
+    const [inserted] = await db
+      .insert(avsBookingRequests)
+      .values({
+        avsProfileId: parsed.data.avsProfileId,
+        parentUserId: session.user.id,
+        parentName,
+        parentEmail,
+        parentPhone: parsed.data.parentPhone,
+        parentLocation: parsed.data.parentLocation || null,
+        childName: parsed.data.childName,
+        childAge: parsed.data.childAge ?? null,
+        schoolName: parsed.data.schoolName || null,
+        needDescription: parsed.data.needDescription,
+        interventionDomain: parsed.data.interventionDomain || null,
+        requestedDate: parsed.data.requestedDate,
+        requestedTimeSlot: parsed.data.requestedTimeSlot,
+        meetingType: parsed.data.meetingType,
+        status: "AWAITING_PRACTITIONER_CONFIRMATION",
+        notes: parsed.data.notes || null,
+        amountMillimes: totalAmountMillimes,
+        platformFeeMillimes,
+        avsPayoutMillimes,
+        paymentMode,
+        platformCommissionPercent,
+        netPractitionerPayoutMillimes: avsPayoutMillimes,
+        liveSessionId,
+        escrowStatus,
+        paymentStatus,
+        paymentMethod: parsed.data.paymentMethod,
+        paymentReference: escrowRef,
+        paidAt: new Date(),
+      })
+      .returning();
+    booking = inserted;
+  } catch (err: unknown) {
+    const dbErr = err as { code?: string; message?: string };
+    if (dbErr?.code === "23505" || dbErr?.message?.includes("avs_booking_slot_unique")) {
+      return NextResponse.json(
+        { ok: false, error: "SLOT_ALREADY_BOOKED", message: "Ce créneau horaire est déjà réservé pour cette date." },
+        { status: 409 }
+      );
+    }
+    throw err;
+  }
 
   // 1. Send automatic Notification Alert Email to the Practitioner
   let practitionerEmail = profile.email;

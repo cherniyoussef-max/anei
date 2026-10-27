@@ -37,7 +37,7 @@ export default async function TeacherClassroomPage({
     redirect(`/${locale}/connexion?callbackUrl=/${locale}/dashboard/classe-inclusive`);
   }
 
-  const { classroom, students, tips } = await getOrCreateTeacherClassroom(session.user.id);
+  const { classroom, students, tips, evaluation } = await getOrCreateTeacherClassroom(session.user.id);
 
   const formattedStudents = students.map((s) => ({
     id: s.id,
@@ -57,6 +57,15 @@ export default async function TeacherClassroomPage({
     whatToAvoid: t.whatToAvoid || "",
   }));
 
+  const formattedEvaluation = evaluation
+    ? {
+        id: evaluation.id,
+        title: evaluation.title,
+        durationMinutes: evaluation.durationMinutes,
+        questions: (evaluation.questionsJson as Array<{ full: string; simple: string; icon: string }>) || [],
+      }
+    : null;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
       <TeacherClassroomWorkspace
@@ -69,6 +78,7 @@ export default async function TeacherClassroomPage({
         }}
         initialStudents={formattedStudents}
         initialTips={formattedTips}
+        initialEvaluation={formattedEvaluation}
       />
     </div>
   );

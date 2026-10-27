@@ -2,6 +2,7 @@ import { z } from "zod";
 import { authenticateInternalAutomation, requireAutomationScope, json } from "@/server/automation/internal-auth";
 import { AUTOMATION_KNOWLEDGE_INGEST } from "@/server/mcp/scopes";
 import { ingestDocument } from "@/server/ai/ingestion";
+import { readLimitedJson } from "@/server/security/request-body";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,7 +24,7 @@ export async function POST(request: Request): Promise<Response> {
   const forbidden = await requireAutomationScope(auth.actor, AUTOMATION_KNOWLEDGE_INGEST, request);
   if (forbidden) return forbidden;
 
-  const raw = await request.json().catch(() => null);
+  const raw = await readLimitedJson(request, 512 * 1024).catch(() => null);
   const parsed = bodySchema.safeParse(raw);
   if (!parsed.success) return json(400, { error: "Invalid request" });
 

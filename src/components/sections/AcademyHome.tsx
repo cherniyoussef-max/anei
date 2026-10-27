@@ -108,7 +108,7 @@ export function AcademyHome({
                   aria-label={ar ? "ابحث عن دورة، أداة، أو موضوع..." : "Rechercher une formation, un outil, un sujet..."}
                 />
                 <button type="submit" className="hero-search-submit" aria-label={ar ? "بحث" : "Lancer la recherche"}>
-                  <ArrowRight size={18} strokeWidth={2.2} />
+                  <ArrowRight size={18} strokeWidth={2.2} className="rtl:rotate-180" />
                 </button>
               </form>
             </div>
@@ -206,7 +206,7 @@ export function AcademyHome({
 
               <Link href={`/${locale}/formations`} className="btn-pill-primary w-fit">
                 <span>{ar ? "اكتشف مجالاتنا" : "Découvrir nos domaines"}</span>
-                <ArrowRight size={17} strokeWidth={2} />
+                <ArrowRight size={17} strokeWidth={2} className="rtl:rotate-180" />
               </Link>
             </div>
 
@@ -246,7 +246,7 @@ export function AcademyHome({
                     )}
                   </h3>
                   <div className="domaine-arrow">
-                    <ArrowRight size={16} strokeWidth={2} />
+                    <ArrowRight size={16} strokeWidth={2} className="rtl:rotate-180" />
                   </div>
                 </div>
               </Link>
@@ -282,7 +282,7 @@ export function AcademyHome({
                     )}
                   </h3>
                   <div className="domaine-arrow">
-                    <ArrowRight size={16} strokeWidth={2} />
+                    <ArrowRight size={16} strokeWidth={2} className="rtl:rotate-180" />
                   </div>
                 </div>
               </Link>
@@ -318,7 +318,7 @@ export function AcademyHome({
                     )}
                   </h3>
                   <div className="domaine-arrow">
-                    <ArrowRight size={16} strokeWidth={2} />
+                    <ArrowRight size={16} strokeWidth={2} className="rtl:rotate-180" />
                   </div>
                 </div>
               </Link>
@@ -354,7 +354,7 @@ export function AcademyHome({
                     )}
                   </h3>
                   <div className="domaine-arrow">
-                    <ArrowRight size={16} strokeWidth={2} />
+                    <ArrowRight size={16} strokeWidth={2} className="rtl:rotate-180" />
                   </div>
                 </div>
               </Link>

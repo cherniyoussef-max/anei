@@ -1,12 +1,13 @@
-import { and, eq, ne } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { adminMutationRateLimit, getAdminSessionFor } from "@/server/auth/admin";
 import { invalidateAdminUserCaches } from "@/server/cache/admin-users";
 import { db } from "@/server/db";
-import { auditLogs, user, userProfile } from "@/server/db/schema";
+import { auditLogs, user, userProfile, avsProfiles } from "@/server/db/schema";
 import { isTrustedMutation } from "@/server/security/origin";
 import { readLimitedJson } from "@/server/security/request-body";
+import { checkIdentityAvailability } from "@/server/auth/identity-normalizer";
 
 const idSchema = z.string().uuid();
 const profileSchema = z
@@ -64,16 +65,27 @@ export async function PATCH(
 
     if (!target) return { kind: "not_found" as const };
 
-    // If changing email, ensure it's not taken by another user
-    if (updates.email && updates.email.toLowerCase() !== target.email.toLowerCase()) {
-      const [existingEmail] = await tx
-        .select({ id: user.id })
-        .from(user)
-        .where(and(eq(user.email, updates.email.toLowerCase()), ne(user.id, userId)))
-        .limit(1);
-      if (existingEmail) {
-        return { kind: "email_exists" as const };
+    let canonicalEmail: string | undefined = undefined;
+    let canonicalPhone: string | null | undefined = undefined;
+
+    if (updates.email || updates.phoneNumber) {
+      const avail = await checkIdentityAvailability(tx as unknown as typeof db, {
+        email: updates.email,
+        phone: updates.phoneNumber,
+        excludeUserId: userId,
+      });
+
+      if (updates.email && !avail.emailAvailable) {
+        return { kind: "email_exists" as const, code: avail.emailErrorCode };
       }
+      if (updates.phoneNumber && !avail.phoneAvailable) {
+        return { kind: "phone_exists" as const, code: avail.phoneErrorCode };
+      }
+
+      if (updates.email) canonicalEmail = avail.emailNormalized;
+      if (updates.phoneNumber) canonicalPhone = avail.phoneNormalized;
+    } else if (updates.phoneNumber === null) {
+      canonicalPhone = null;
     }
 
     // Update user record
@@ -81,7 +93,8 @@ export async function PATCH(
       updatedAt: new Date(),
     };
     if (updates.name !== undefined) userUpdatePayload.name = updates.name;
-    if (updates.email !== undefined) userUpdatePayload.email = updates.email.toLowerCase();
+    if (canonicalEmail !== undefined) userUpdatePayload.email = canonicalEmail;
+    if (canonicalPhone !== undefined) userUpdatePayload.phone = canonicalPhone;
     if (updates.emailVerified !== undefined) userUpdatePayload.emailVerified = updates.emailVerified;
     if (updates.locale !== undefined) userUpdatePayload.locale = updates.locale;
     if (updates.profileType !== undefined) userUpdatePayload.profileType = updates.profileType;
@@ -126,7 +139,7 @@ export async function PATCH(
         profileUpdates.firstName = firstName;
         profileUpdates.lastName = lastName;
       }
-      if (updates.phoneNumber !== undefined) profileUpdates.phoneNumber = updates.phoneNumber;
+      if (canonicalPhone !== undefined) profileUpdates.phoneNumber = canonicalPhone;
       if (phoneVerifiedAt !== undefined) profileUpdates.phoneVerifiedAt = phoneVerifiedAt;
       if (updates.governorate !== undefined) profileUpdates.governorate = updates.governorate;
       if (updates.city !== undefined) profileUpdates.city = updates.city;
@@ -141,12 +154,23 @@ export async function PATCH(
         userId,
         firstName,
         lastName,
-        phoneNumber: updates.phoneNumber ?? null,
+        phoneNumber: canonicalPhone ?? null,
         phoneVerifiedAt: phoneVerifiedAt ?? null,
         governorate: updates.governorate ?? null,
         city: updates.city ?? null,
         preferredLocale: updates.locale ?? "fr",
       });
+    }
+
+    // Sync phone with practitioner profile if exists
+    if (canonicalPhone !== undefined) {
+      await tx
+        .update(avsProfiles)
+        .set({
+          contactPhone: canonicalPhone,
+          updatedAt: new Date(),
+        })
+        .where(eq(avsProfiles.userId, userId));
     }
 
     // Insert audit log
@@ -168,7 +192,10 @@ export async function PATCH(
     return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
   }
   if (result.kind === "email_exists") {
-    return NextResponse.json({ error: "EMAIL_EXISTS" }, { status: 409 });
+    return NextResponse.json({ error: "EMAIL_EXISTS", code: result.code }, { status: 409 });
+  }
+  if (result.kind === "phone_exists") {
+    return NextResponse.json({ error: "PHONE_EXISTS", code: result.code }, { status: 409 });
   }
 
   await invalidateAdminUserCaches(userId);

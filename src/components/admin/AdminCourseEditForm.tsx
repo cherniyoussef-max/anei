@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Award } from "lucide-react";
 import type { Locale } from "@/types";
 import { AdminObjectUpload } from "./AdminObjectUpload";
 
@@ -67,7 +68,10 @@ export function AdminCourseEditForm({ locale, course }: { locale: Locale; course
           onChange={(e) => { setIsQualifying(e.target.checked); setDirty(true); }}
           style={{ width: 18, height: 18, accentColor: "#0284c7" }}
         />
-        <span>🎖️ {ar ? "دورة مؤهلة للاعتماد المهني ANEI (ترقية مرافقي الحياة المدرسية والأخصائيين)" : "Formation qualifiante pour l'agrément professionnel ANEI"}</span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <Award style={{ width: 15, height: 15 }} />
+          {ar ? "دورة مؤهلة للاعتماد المهني ANEI (ترقية مرافقي الحياة المدرسية والأخصائيين)" : "Formation qualifiante pour l'agrément professionnel ANEI"}
+        </span>
       </label>
       {isQualifying && (
         <div style={{ marginTop: 12, paddingLeft: 28, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>

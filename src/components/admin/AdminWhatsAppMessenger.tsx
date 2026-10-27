@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Copy, Mic, Camera, FileText, Video, LayoutTemplate, Check, CheckCheck, AlertCircle } from "lucide-react";
 import { Icon } from "@/components/ui/Icon";
 import type { Locale } from "@/types";
 import { AdminWhatsAppAccountForm } from "./AdminWhatsAppAccountForm";
@@ -125,16 +126,16 @@ export function AdminWhatsAppMessenger({
   const quickReplies = useMemo(() => {
     return ar
       ? [
-          { label: "👋 ترحيب", text: "مرحباً بك في أكاديمية ANEI! كيف يمكننا مساعدتك اليوم؟" },
-          { label: "📅 موعد", text: "تم تأكيد موعدك بنجاح. نحن في انتظارك في الوقت المحدد." },
-          { label: "💳 دفع", text: "تم تأكيد عملية الدفع بنجاح. دورتك التدريبية متاحة الآن." },
-          { label: "⏳ متابعة", text: "طلبك قيد المعالجة وسنوافيك بالرد خلال لحظات." },
+          { label: "ترحيب", text: "مرحباً بك في أكاديمية ANEI! كيف يمكننا مساعدتك اليوم؟" },
+          { label: "موعد", text: "تم تأكيد موعدك بنجاح. نحن في انتظارك في الوقت المحدد." },
+          { label: "دفع", text: "تم تأكيد عملية الدفع بنجاح. دورتك التدريبية متاحة الآن." },
+          { label: "متابعة", text: "طلبك قيد المعالجة وسنوافيك بالرد خلال لحظات." },
         ]
       : [
-          { label: "👋 Bienvenue", text: "Bonjour et bienvenue sur l’Académie ANEI ! Comment pouvons-nous vous aider aujourd’hui ?" },
-          { label: "📅 RDV confirmé", text: "Votre rendez-vous a bien été confirmé. Nous restons à votre entière disposition." },
-          { label: "💳 Paiement validé", text: "Votre paiement a été validé avec succès. Votre formation est disponible dès maintenant." },
-          { label: "⏳ En cours", text: "Votre demande est en cours de traitement par notre équipe. Merci de votre patience." },
+          { label: "Bienvenue", text: "Bonjour et bienvenue sur l’Académie ANEI ! Comment pouvons-nous vous aider aujourd’hui ?" },
+          { label: "RDV confirmé", text: "Votre rendez-vous a bien été confirmé. Nous restons à votre entière disposition." },
+          { label: "Paiement validé", text: "Votre paiement a été validé avec succès. Votre formation est disponible dès maintenant." },
+          { label: "En cours", text: "Votre demande est en cours de traitement par notre équipe. Merci de votre patience." },
         ];
   }, [ar]);
 
@@ -455,7 +456,7 @@ export function AdminWhatsAppMessenger({
                   className="btn btn-ghost btn-sm"
                   onClick={() => copyText(webhookUrl, false)}
                 >
-                  {copiedWebhook ? (ar ? "تم النسخ ✓" : "Copié ✓") : (ar ? "نسخ" : "Copier")}
+                  {copiedWebhook ? (ar ? "تم النسخ" : "Copié") : (ar ? "نسخ" : "Copier")}
                 </button>
               </div>
 
@@ -467,7 +468,7 @@ export function AdminWhatsAppMessenger({
                   className="btn btn-ghost btn-sm"
                   onClick={() => copyText(verifyToken, true)}
                 >
-                  {copiedToken ? (ar ? "تم النسخ ✓" : "Copié ✓") : (ar ? "نسخ" : "Copier")}
+                  {copiedToken ? (ar ? "تم النسخ" : "Copié") : (ar ? "نسخ" : "Copier")}
                 </button>
               </div>
             </div>
@@ -616,7 +617,9 @@ export function AdminWhatsAppMessenger({
                         <div className="admin-whatsapp-item-sub">
                           <span className="admin-whatsapp-preview">
                             {c.lastMessage?.direction === "OUTBOUND" ? (
-                              <span className="admin-outbound-check">✓ </span>
+                              <span className="admin-outbound-check inline-flex items-center">
+                                <Check className="w-3 h-3 inline me-0.5 text-slate-400" />
+                              </span>
                             ) : null}
                             {c.lastMessage?.text || c.displayPhone}
                           </span>
@@ -749,7 +752,7 @@ export function AdminWhatsAppMessenger({
                     onClick={() => setShowSimulateBar(!showSimulateBar)}
                     title={ar ? "محاكاة وصول رد من هذا العميل" : "Simuler la réception d'un message client"}
                   >
-                    🧪 {ar ? "محاكاة رد" : "Simuler réponse"}
+                    {ar ? "محاكاة رد" : "Simuler réponse"}
                   </button>
                 </div>
               </div>
@@ -757,7 +760,7 @@ export function AdminWhatsAppMessenger({
               {/* Inbound Message Simulation Bar */}
               {showSimulateBar && (
                 <div className="admin-whatsapp-simulate-bar">
-                  <span>📥 <strong>{ar ? "محاكاة رسالة واردة من الزبون" : "Simulateur message entrant (Client -> ANEI)"} :</strong></span>
+                  <span><strong>{ar ? "محاكاة رسالة واردة من الزبون" : "Simulateur message entrant (Client -> ANEI)"} :</strong></span>
                   <input
                     type="text"
                     value={simulateText}
@@ -796,28 +799,29 @@ export function AdminWhatsAppMessenger({
                           <div className={`admin-whatsapp-bubble ${isOutbound ? "is-outbound" : "is-inbound"}`}>
                             {m.templateName && (
                               <div className="admin-whatsapp-bubble-template-tag">
-                                📋 {ar ? "قالب:" : "Modèle :"} <strong>{m.templateName}</strong>
+                                <LayoutTemplate style={{ width: 12, height: 12, display: "inline-block", verticalAlign: "middle", marginInlineEnd: 4 }} />
+                                {ar ? "قالب:" : "Modèle :"} <strong>{m.templateName}</strong>
                               </div>
                             )}
                             <div className="admin-whatsapp-bubble-text">
                               {m.messageType === "audio" || m.messageType === "voice" ? (
                                 <div className="admin-bubble-media-item">
-                                  <span className="media-type-icon">🎙️</span>
+                                  <span className="media-type-icon"><Mic style={{ width: 14, height: 14 }} /></span>
                                   <span className="media-type-label">{m.textPreview || (ar ? "رسالة صوتية" : "Message vocal WhatsApp")}</span>
                                 </div>
                               ) : m.messageType === "image" ? (
                                 <div className="admin-bubble-media-item">
-                                  <span className="media-type-icon">📷</span>
+                                  <span className="media-type-icon"><Camera style={{ width: 14, height: 14 }} /></span>
                                   <span className="media-type-label">{m.textPreview || (ar ? "صورة" : "Photo WhatsApp")}</span>
                                 </div>
                               ) : m.messageType === "document" ? (
                                 <div className="admin-bubble-media-item">
-                                  <span className="media-type-icon">📄</span>
+                                  <span className="media-type-icon"><FileText style={{ width: 14, height: 14 }} /></span>
                                   <span className="media-type-label">{m.textPreview || (ar ? "مستند / وثيقة" : "Document PDF / Fichier")}</span>
                                 </div>
                               ) : m.messageType === "video" ? (
                                 <div className="admin-bubble-media-item">
-                                  <span className="media-type-icon">🎥</span>
+                                  <span className="media-type-icon"><Video style={{ width: 14, height: 14 }} /></span>
                                   <span className="media-type-label">{m.textPreview || (ar ? "مقطع فيديو" : "Vidéo")}</span>
                                 </div>
                               ) : (
@@ -833,10 +837,18 @@ export function AdminWhatsAppMessenger({
                               </span>
                               {isOutbound && (
                                 <span
-                                  className={`admin-whatsapp-bubble-status is-${m.status.toLowerCase()}`}
+                                  className={`admin-whatsapp-bubble-status is-${m.status.toLowerCase()} inline-flex items-center`}
                                   title={m.providerErrorMessage || m.status}
                                 >
-                                  {m.status === "DELIVERED" || m.status === "READ" ? "✓✓" : m.status === "SENT" ? "✓" : m.status === "FAILED" ? "⚠️" : "⏳"}
+                                  {m.status === "DELIVERED" || m.status === "READ" ? (
+                                    <CheckCheck className={`w-3 h-3 ${m.status === "READ" ? "text-blue-500" : "text-slate-400"}`} />
+                                  ) : m.status === "SENT" ? (
+                                    <Check className="w-3 h-3 text-slate-400" />
+                                  ) : m.status === "FAILED" ? (
+                                    <AlertCircle className="w-3 h-3 text-rose-500" />
+                                  ) : (
+                                    "..."
+                                  )}
                                 </span>
                               )}
                             </div>
@@ -884,8 +896,9 @@ export function AdminWhatsAppMessenger({
                               className="btn btn-ghost btn-xs"
                               onClick={() => copyText(activeDisplayPhone, false)}
                               title={ar ? "نسخ الرقم" : "Copier"}
+                              aria-label={ar ? "نسخ الرقم" : "Copier"}
                             >
-                              📋
+                              <Copy style={{ width: 12, height: 12 }} />
                             </button>
                           </div>
                         </div>
@@ -966,8 +979,10 @@ export function AdminWhatsAppMessenger({
                     className="btn btn-ghost btn-sm admin-whatsapp-template-btn"
                     onClick={() => setShowTemplateModal(true)}
                     title={ar ? "إرسال قالب رسمي" : "Envoyer un modèle WhatsApp"}
+                    style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
                   >
-                    📋 {ar ? "قالب" : "Modèle"}
+                    <LayoutTemplate style={{ width: 13, height: 13 }} />
+                    {ar ? "قالب" : "Modèle"}
                   </button>
                   <input
                     type="text"

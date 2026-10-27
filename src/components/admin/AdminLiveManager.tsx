@@ -2,6 +2,21 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  Globe,
+  BookOpen,
+  GraduationCap,
+  Tag,
+  Calendar,
+  Clock,
+  Users,
+  Radio,
+  ExternalLink,
+  Square,
+  X,
+  Zap,
+  Lock,
+} from "lucide-react";
 import { Icon } from "@/components/ui/Icon";
 import { AdminSudoModal } from "@/components/admin/AdminSudoModal";
 import { detectProviderAndEmbedMode } from "@/lib/live-validation";
@@ -488,24 +503,28 @@ export function AdminLiveManager({
                   )}
 
                   {item.scope === "GLOBAL_WEBINAR" ? (
-                    <span style={{ backgroundColor: "#FEF3C7", color: "#92400E", fontSize: "0.75rem", padding: "2px 8px", borderRadius: "4px", fontWeight: 600 }}>
-                      🌐 {ar ? "ندوة عامة للمنصة" : "Webinaire global plateforme"}
+                    <span style={{ backgroundColor: "#FEF3C7", color: "#92400E", fontSize: "0.75rem", padding: "2px 8px", borderRadius: "4px", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                      <Globe style={{ width: 12, height: 12 }} />
+                      {ar ? "ندوة عامة للمنصة" : "Webinaire global plateforme"}
                     </span>
                   ) : (
-                    <span style={{ backgroundColor: "#F3E8FF", color: "#6B21A8", fontSize: "0.75rem", padding: "2px 8px", borderRadius: "4px", fontWeight: 600 }}>
-                      📚 {ar ? "جلسة خاصة بالدورة" : "Réservé aux inscrits"}
+                    <span style={{ backgroundColor: "#F3E8FF", color: "#6B21A8", fontSize: "0.75rem", padding: "2px 8px", borderRadius: "4px", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                      <BookOpen style={{ width: 12, height: 12 }} />
+                      {ar ? "جلسة خاصة بالدورة" : "Réservé aux inscrits"}
                     </span>
                   )}
 
                   {(item.courseTitleFr || item.courseTitleAr) && (
-                    <span style={{ backgroundColor: "#EFF6FF", color: "#1D4ED8", fontSize: "0.75rem", padding: "2px 8px", borderRadius: "4px", fontWeight: 600 }}>
-                      🎓 {ar ? `دورة: ${item.courseTitleAr || item.courseTitleFr}` : `Formation : ${item.courseTitleFr || item.courseTitleAr}`}
+                    <span style={{ backgroundColor: "#EFF6FF", color: "#1D4ED8", fontSize: "0.75rem", padding: "2px 8px", borderRadius: "4px", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                      <GraduationCap style={{ width: 12, height: 12 }} />
+                      {ar ? `دورة: ${item.courseTitleAr || item.courseTitleFr}` : `Formation : ${item.courseTitleFr || item.courseTitleAr}`}
                     </span>
                   )}
 
                   {item.category && (
-                    <span style={{ backgroundColor: "#F0FDF4", color: "#166534", fontSize: "0.75rem", padding: "2px 8px", borderRadius: "4px", fontWeight: 600 }}>
-                      🏷️ {item.category === "EDUCATION_INCLUSIVE" ? (ar ? "التربية الدامجة" : "Éducation inclusive")
+                    <span style={{ backgroundColor: "#F0FDF4", color: "#166534", fontSize: "0.75rem", padding: "2px 8px", borderRadius: "4px", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                      <Tag style={{ width: 12, height: 12 }} />
+                      {item.category === "EDUCATION_INCLUSIVE" ? (ar ? "التربية الدامجة" : "Éducation inclusive")
                         : item.category === "TROUBLES_APPRENTISSAGE" ? (ar ? "صعوبات التعلم" : "Troubles DYS")
                         : item.category === "SANTE_MENTALE" ? (ar ? "الصحة النفسية" : "Santé mentale")
                         : item.category === "PARENTALITE" ? (ar ? "الوالدية" : "Parentalité")
@@ -514,11 +533,11 @@ export function AdminLiveManager({
                   )}
 
                   <span style={{ fontSize: "0.75rem", color: "#475569", fontWeight: 500 }}>
-                    {item.provider === "GOOGLE_MEET" && "🔹 Google Meet"}
-                    {item.provider === "ZOOM" && "🔷 Zoom"}
-                    {item.provider === "MICROSOFT_TEAMS" && "🟦 Teams"}
-                    {item.provider === "JITSI" && "🔸 Jitsi Meet"}
-                    {item.provider === "CUSTOM_EMBED" && "⚙️ Custom"}
+                    {item.provider === "GOOGLE_MEET" && "Google Meet"}
+                    {item.provider === "ZOOM" && "Zoom"}
+                    {item.provider === "MICROSOFT_TEAMS" && "Teams"}
+                    {item.provider === "JITSI" && "Jitsi Meet"}
+                    {item.provider === "CUSTOM_EMBED" && "Custom"}
                   </span>
                 </div>
 
@@ -527,8 +546,9 @@ export function AdminLiveManager({
                 </h3>
 
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", fontSize: "0.8125rem", color: "#64748B", marginTop: "0.375rem" }}>
-                  <div>
-                    📅 {new Date(item.scheduledStartAt).toLocaleDateString(ar ? "ar-TN" : "fr-FR", {
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                    <Calendar style={{ width: 14, height: 14 }} />
+                    {new Date(item.scheduledStartAt).toLocaleDateString(ar ? "ar-TN" : "fr-FR", {
                       day: "numeric",
                       month: "short",
                       year: "numeric",
@@ -536,7 +556,10 @@ export function AdminLiveManager({
                       minute: "2-digit",
                     })}
                   </div>
-                  <div>⏳ {item.durationMinutes} min</div>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                    <Clock style={{ width: 14, height: 14 }} />
+                    {item.durationMinutes} min
+                  </div>
                   <div>
                     <button
                       type="button"
@@ -549,9 +572,13 @@ export function AdminLiveManager({
                         cursor: "pointer",
                         fontWeight: 600,
                         textDecoration: "underline",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "4px",
                       }}
                     >
-                      👥 {item.attendeeCount} {ar ? "حاضر مسجل" : "présence(s) enregistrée(s)"}
+                      <Users style={{ width: 14, height: 14 }} />
+                      {item.attendeeCount} {ar ? "حاضر مسجل" : "présence(s) enregistrée(s)"}
                     </button>
                   </div>
                 </div>
@@ -563,11 +590,12 @@ export function AdminLiveManager({
                   <button
                     type="button"
                     className="btn btn-sm"
-                    style={{ backgroundColor: "#DC2626", color: "#FFF", borderColor: "#DC2626", fontWeight: 600 }}
+                    style={{ backgroundColor: "#DC2626", color: "#FFF", borderColor: "#DC2626", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "6px" }}
                     onClick={() => handlePushBroadcast(item)}
                     title={ar ? "بدء وبث التنبيه لجميع المتعلمين" : "Démarrer et envoyer la bannière push à tous"}
                   >
-                    🔴 {ar ? "دفع وبدء المباشر" : "Démarrer & Pousser le Live"}
+                    <Radio style={{ width: 14, height: 14 }} />
+                    {ar ? "دفع وبدء المباشر" : "Démarrer & Pousser le Live"}
                   </button>
                 )}
 
@@ -576,18 +604,20 @@ export function AdminLiveManager({
                     <button
                       type="button"
                       className="btn btn-sm"
-                      style={{ backgroundColor: "#0284C7", color: "#FFF", borderColor: "#0284C7" }}
+                      style={{ backgroundColor: "#0284C7", color: "#FFF", borderColor: "#0284C7", display: "inline-flex", alignItems: "center", gap: "6px" }}
                       onClick={() => window.open(`/${locale}/learning/live/${item.id}`, "_blank")}
                     >
-                      👁️ {ar ? "معاينة القاعة" : "Ouvrir la salle"}
+                      <ExternalLink style={{ width: 14, height: 14 }} />
+                      {ar ? "معاينة القاعة" : "Ouvrir la salle"}
                     </button>
                     <button
                       type="button"
                       className="btn btn-ghost btn-sm"
-                      style={{ color: "#DC2626" }}
+                      style={{ color: "#DC2626", display: "inline-flex", alignItems: "center", gap: "6px" }}
                       onClick={() => handleEndSession(item)}
                     >
-                      ⏹️ {ar ? "إنهاء المباشر" : "Terminer"}
+                      <Square style={{ width: 14, height: 14 }} />
+                      {ar ? "إنهاء المباشر" : "Terminer"}
                     </button>
                   </>
                 )}
@@ -641,9 +671,10 @@ export function AdminLiveManager({
               <button
                 type="button"
                 onClick={() => setIsCreateOpen(false)}
-                style={{ background: "none", border: "none", fontSize: "1.25rem", cursor: "pointer", color: "#64748B" }}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#64748B", display: "flex", alignItems: "center" }}
+                aria-label={ar ? "إغلاق" : "Fermer"}
               >
-                ✕
+                <X style={{ width: 18, height: 18 }} />
               </button>
             </div>
 
@@ -689,8 +720,9 @@ export function AdminLiveManager({
               <div style={{ backgroundColor: "#F0Fdf4", border: "1px dashed #86EFAC", padding: "0.75rem", borderRadius: "6px", marginBottom: "1rem" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
-                    <strong style={{ fontSize: "0.8125rem", color: "#166534" }}>
-                      ⚡ {ar ? "مساعد Google Meet السريع" : "Générateur Google Meet instantané"}
+                    <strong style={{ fontSize: "0.8125rem", color: "#166534", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                      <Zap style={{ width: 14, height: 14 }} />
+                      {ar ? "مساعد Google Meet السريع" : "Générateur Google Meet instantané"}
                     </strong>
                     <p style={{ fontSize: "0.75rem", color: "#15803D", margin: "2px 0 0" }}>
                       {ar ? "افتح رابط Meet جديد بنقرة واحدة، ثم الصقه في الحقل أدناه." : "Générez une réunion Meet en 1 clic puis collez l'URL ci-dessous."}
@@ -720,8 +752,9 @@ export function AdminLiveManager({
                   onChange={(e) => handleUrlChange(e.target.value)}
                   placeholder="https://meet.google.com/xxx-yyyy-zzz"
                 />
-                <small style={{ color: "#64748B", fontSize: "0.75rem", display: "block", marginTop: 2 }}>
-                  🔒 {ar ? "الرابط محمي ومخفي ولن يُكشف للمتعلمين قبل انطلاق البث المباشر." : "Ce lien est confidentiel côté serveur et ne sera accessible aux apprenants qu'au lancement du direct."}
+                <small style={{ color: "#64748B", fontSize: "0.75rem", display: "inline-flex", alignItems: "center", gap: "4px", marginTop: 2 }}>
+                  <Lock style={{ width: 12, height: 12 }} />
+                  {ar ? "الرابط محمي ومخفي ولن يُكشف للمتعلمين قبل انطلاق البث المباشر." : "Ce lien est confidentiel côté serveur et ne sera accessible aux apprenants qu'au lancement du direct."}
                 </small>
               </div>
 
@@ -800,7 +833,10 @@ export function AdminLiveManager({
                       checked={scope === "GLOBAL_WEBINAR"}
                       onChange={() => setScope("GLOBAL_WEBINAR")}
                     />
-                    <span>🌐 {ar ? "ندوة عامة لجميع المتعلمين (Webinaire Global)" : "Webinaire global (Tous les apprenants)"}</span>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                      <Globe style={{ width: 14, height: 14, color: "#D97706" }} />
+                      {ar ? "ندوة عامة لجميع المتعلمين (Webinaire Global)" : "Webinaire global (Tous les apprenants)"}
+                    </span>
                   </label>
                   <label style={{ display: "flex", alignItems: "center", gap: "0.375rem", fontSize: "0.8125rem", cursor: "pointer" }}>
                     <input
@@ -810,7 +846,10 @@ export function AdminLiveManager({
                       checked={scope === "COURSE_SPECIFIC"}
                       onChange={() => setScope("COURSE_SPECIFIC")}
                     />
-                    <span>📚 {ar ? "خاص بمسجلين في دورة" : "Réservé aux inscrits d'un cours"}</span>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                      <BookOpen style={{ width: 14, height: 14, color: "#7C3AED" }} />
+                      {ar ? "خاص بمسجلين في دورة" : "Réservé aux inscrits d'un cours"}
+                    </span>
                   </label>
                 </div>
               </div>
@@ -939,9 +978,10 @@ export function AdminLiveManager({
               <button
                 type="button"
                 onClick={() => setAttendeesModalSession(null)}
-                style={{ background: "none", border: "none", fontSize: "1.25rem", cursor: "pointer", color: "#64748B" }}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#64748B", display: "flex", alignItems: "center" }}
+                aria-label={ar ? "إغلاق" : "Fermer"}
               >
-                ✕
+                <X style={{ width: 18, height: 18 }} />
               </button>
             </div>
 

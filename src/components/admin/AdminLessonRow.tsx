@@ -98,7 +98,7 @@ export function AdminLessonRow({ locale, courseId, lesson, modules = [] }: { loc
 
   if (!editing) return <article>
     <b>{position}</b>
-    <div><strong>{ar ? currentTitleAr : currentTitleFr}</strong><small>{currentMediaProvider === "cloudflare_stream" ? "Cloudflare Stream ⚡" : currentMediaProvider} · {Math.round(currentDuration / 60)} min</small></div>
+    <div><strong>{ar ? currentTitleAr : currentTitleFr}</strong><small>{currentMediaProvider === "cloudflare_stream" ? "Cloudflare Stream" : currentMediaProvider} · {Math.round(currentDuration / 60)} min</small></div>
     <div className="admin-list-actions">
       <button type="button" className="btn btn-ghost btn-sm" disabled={state === "loading"} onClick={() => move(-1)} aria-label={ar ? "نقل لأعلى" : "Monter"}>↑</button>
       <button type="button" className="btn btn-ghost btn-sm" disabled={state === "loading"} onClick={() => move(1)} aria-label={ar ? "نقل لأسفل" : "Descendre"}>↓</button>
