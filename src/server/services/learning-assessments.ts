@@ -22,6 +22,8 @@ import {
   isLearningQuestionValid,
   type LearningQuestionInput,
 } from "@/modules/learning/domain/assessment";
+import { checkAndGrantAvsCertification } from "@/server/services/avs-certification-engine";
+import { logger } from "@/server/security/logger";
 
 type QuestionInput = LearningQuestionInput;
 
@@ -243,7 +245,7 @@ export async function submitLearningAttempt(
   answers: { questionId: string; optionIds: string[] }[],
   submitOpts?: { cheatingDetected?: boolean; reason?: string }
 ) {
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${attemptId}, 0))`);
     const [attempt] = await tx.select().from(learningAttempt).where(and(eq(learningAttempt.id, attemptId), eq(learningAttempt.userId, userId))).limit(1);
     if (!attempt) return { kind: "forbidden" as const };
@@ -429,8 +431,26 @@ export async function submitLearningAttempt(
       idempotent: false,
       courseCompleted,
       certificateCode,
+      courseId: assessment.courseId,
     };
   });
+
+  // Zero-Trust LMS-to-AVS certification: automatically grant accredited AVS status if score >= 80%
+  if (
+    result.kind === "ok" &&
+    !result.idempotent &&
+    result.attempt.passed &&
+    typeof result.attempt.percentage === "number" &&
+    result.attempt.percentage >= 80 &&
+    "courseId" in result &&
+    typeof result.courseId === "string"
+  ) {
+    await checkAndGrantAvsCertification(userId, result.courseId, result.attempt.percentage).catch((err) => {
+      logger.error("learning_assessments.avs_certification_error", { userId, error: err });
+    });
+  }
+
+  return result;
 }
 
 export async function getAdminAssessmentResults(limit = 50) {

@@ -6,6 +6,7 @@ import { isLocale } from "@/lib/i18n";
 import { auth } from "@/server/auth";
 import { db } from "@/server/db";
 import { avsBookingRequests, avsProfiles } from "@/server/db/schema";
+import { getAvsCertificationProof } from "@/server/services/avs-certification-engine";
 import {
   PractitionerDashboardClient,
   type PractitionerBookingItem,
@@ -102,6 +103,8 @@ export default async function PractitionerDashboardPage({
     .where(eq(avsBookingRequests.avsProfileId, profile.id))
     .orderBy(desc(avsBookingRequests.requestedDate));
 
+  const certProof = await getAvsCertificationProof(profile.id);
+
   const initialBookings: PractitionerBookingItem[] = rawBookings.map((b) => ({
     id: b.id,
     parentName: b.parentName,
@@ -152,6 +155,15 @@ export default async function PractitionerDashboardPage({
           acceptedModalities: profile.acceptedModalities,
           availableLocationsText: profile.availableLocationsText,
           weeklySchedule: profile.weeklySchedule as Record<string, { enabled: boolean; slots: string[] }>,
+          certified: profile.certified,
+          uniqueIdentifier: profile.uniqueIdentifier,
+          verificationStatus: profile.verificationStatus,
+          verifiedAt: profile.verifiedAt,
+          educationLevel: profile.educationLevel,
+          specialtiesJson: profile.specialtiesJson,
+          methodsJson: profile.methodsJson,
+          coveredSchoolsOrZones: profile.coveredSchoolsOrZones,
+          certifications: certProof?.certifications ?? [],
         }}
         initialBookings={initialBookings}
       />

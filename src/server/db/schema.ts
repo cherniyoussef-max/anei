@@ -1120,6 +1120,14 @@ export const avsProfiles = pgTable(
       "6": { enabled: true, slots: ["09:00", "10:30", "12:00"] },
     }),
     categoryDetails: jsonb("category_details").notNull().default({}),
+    uniqueIdentifier: text("unique_identifier"),
+    educationLevel: text("education_level"),
+    specialtiesJson: jsonb("specialties_json").$type<string[]>().default([]),
+    methodsJson: jsonb("methods_json").$type<string[]>().default([]),
+    coveredSchoolsOrZones: text("covered_schools_or_zones").default(""),
+    verificationStatus: text("verification_status").notNull().default("PENDING_TRAINING"),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    verifiedByAdminId: text("verified_by_admin_id").references(() => user.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
   },
@@ -1127,11 +1135,42 @@ export const avsProfiles = pgTable(
     index("avs_city_idx").on(table.cityFr),
     index("avs_governorate_idx").on(table.governorateFr),
     uniqueIndex("avs_slug_unique").on(table.slug),
+    uniqueIndex("avs_unique_identifier_unique").on(table.uniqueIdentifier),
     index("avs_certified_idx").on(table.certified),
     index("avs_visible_certified_idx").on(table.visible, table.certified),
     index("avs_directory_type_idx").on(table.directoryType),
     index("avs_category_idx").on(table.category),
+    index("avs_verification_status_idx").on(table.verificationStatus),
     check("avs_directory_type_check", sql`${table.directoryType} in ('AVS', 'SPECIALIST')`),
+    check(
+      "avs_verification_status_check",
+      sql`${table.verificationStatus} in ('PENDING_TRAINING', 'CERTIFIED_ACTIVE', 'SUSPENDED')`
+    ),
+  ],
+);
+
+export const avsCertificationsLog = pgTable(
+  "avs_certifications_log",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    avsProfileId: text("avs_profile_id")
+      .notNull()
+      .references(() => avsProfiles.id, { onDelete: "cascade" }),
+    courseId: text("course_id")
+      .notNull()
+      .references(() => courses.id, { onDelete: "cascade" }),
+    scorePercent: integer("score_percent").notNull(),
+    certificateHash: text("certificate_hash").notNull(),
+    issuedAt: timestamp("issued_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("avs_cert_hash_unique").on(table.certificateHash),
+    index("avs_cert_user_idx").on(table.userId),
+    index("avs_cert_profile_idx").on(table.avsProfileId),
+    index("avs_cert_course_idx").on(table.courseId),
   ],
 );
 
@@ -3379,3 +3418,4 @@ export type NewEstablishmentEventRegistration = typeof establishmentEventRegistr
 export type EstablishmentServiceRequestRow = typeof establishmentServiceRequests.$inferSelect;
 export type ServiceRequestMessageRow = typeof serviceRequestMessages.$inferSelect;
 export type SpecialistClassroomTipRow = typeof specialistClassroomTips.$inferSelect;
+export type AvsCertificationsLogRow = typeof avsCertificationsLog.$inferSelect;

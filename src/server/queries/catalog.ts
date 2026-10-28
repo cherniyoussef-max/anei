@@ -516,6 +516,13 @@ export const publicPractitionerColumns = {
   availableLocationsText: avsProfiles.availableLocationsText,
   weeklySchedule: avsProfiles.weeklySchedule,
   categoryDetails: avsProfiles.categoryDetails,
+  uniqueIdentifier: avsProfiles.uniqueIdentifier,
+  educationLevel: avsProfiles.educationLevel,
+  specialtiesJson: avsProfiles.specialtiesJson,
+  methodsJson: avsProfiles.methodsJson,
+  coveredSchoolsOrZones: avsProfiles.coveredSchoolsOrZones,
+  verificationStatus: avsProfiles.verificationStatus,
+  verifiedAt: avsProfiles.verifiedAt,
   createdAt: avsProfiles.createdAt,
   updatedAt: avsProfiles.updatedAt,
 };
@@ -687,7 +694,11 @@ export async function getAvsByIdOrSlug(idOrSlug: string) {
           eq(avsProfiles.directoryType, "AVS"),
           isNull(avsProfiles.directoryType)
         ),
-        or(eq(avsProfiles.id, idOrSlug), eq(avsProfiles.slug, idOrSlug))
+        or(
+          eq(avsProfiles.id, idOrSlug),
+          eq(avsProfiles.slug, idOrSlug),
+          eq(avsProfiles.uniqueIdentifier, idOrSlug)
+        )
       )
     )
     .limit(1);

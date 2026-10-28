@@ -10,6 +10,7 @@ import { readLimitedJson } from "@/server/security/request-body";
 import { db } from "@/server/db";
 import { auditLogs, avsProfiles, practitionerPromotions, user } from "@/server/db/schema";
 import { invalidateAdminUserCaches } from "@/server/cache/admin-users";
+import { generateAvsUniqueIdentifier } from "@/server/services/avs-certification-engine";
 
 const promoteSchema = z.object({
   targetDirectoryType: z.enum(["AVS", "SPECIALIST"]),
@@ -157,7 +158,7 @@ export async function POST(
     let updatedProfile = null;
     if (isApproved) {
       const [existing] = await tx
-        .select({ id: avsProfiles.id })
+        .select({ id: avsProfiles.id, uniqueIdentifier: avsProfiles.uniqueIdentifier })
         .from(avsProfiles)
         .where(eq(avsProfiles.userId, targetUserId))
         .limit(1);
@@ -170,6 +171,7 @@ export async function POST(
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, "");
       const finalSlug = existing ? undefined : `${slugBase}-${targetUserId.slice(0, 6)}`;
+      const now = new Date();
 
       if (existing) {
         [updatedProfile] = await tx
@@ -198,7 +200,11 @@ export async function POST(
             bioAr: data.bioAr,
             certified: true,
             visible: true,
-            updatedAt: new Date(),
+            uniqueIdentifier: existing.uniqueIdentifier || generateAvsUniqueIdentifier(now.getFullYear()),
+            verificationStatus: "CERTIFIED_ACTIVE",
+            verifiedAt: now,
+            verifiedByAdminId: session.user.id,
+            updatedAt: now,
           })
           .where(eq(avsProfiles.id, existing.id))
           .returning();
@@ -233,6 +239,10 @@ export async function POST(
             bioAr: data.bioAr,
             certified: true,
             visible: true,
+            uniqueIdentifier: generateAvsUniqueIdentifier(now.getFullYear()),
+            verificationStatus: "CERTIFIED_ACTIVE",
+            verifiedAt: now,
+            verifiedByAdminId: session.user.id,
           })
           .returning();
       }

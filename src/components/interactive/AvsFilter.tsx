@@ -28,6 +28,8 @@ export type AvsDirectoryProfile = {
   schoolsCovered?: string;
   phone?: string | null;
   email?: string | null;
+  uniqueIdentifier?: string | null;
+  verificationStatus?: string | null;
   bio?: string;
 };
 
@@ -283,6 +285,11 @@ export function AvsFilter({
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#F4F7FA] text-[#142B47] border border-[#E3E8EF] shadow-2xs whitespace-nowrap">
                           <Icon name="award" size={12} className="text-[#B58D3D] flex-none" />
                           <span>{ar ? "معتمد ANEI" : "Certifié ANEI"}</span>
+                        </span>
+                      )}
+                      {profile.uniqueIdentifier && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs whitespace-nowrap" dir="ltr">
+                          ID: {profile.uniqueIdentifier}
                         </span>
                       )}
                     </div>

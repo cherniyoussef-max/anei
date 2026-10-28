@@ -146,6 +146,8 @@ export default async function AvsPage({
       phone: profile.phone,
       email: profile.email,
       bio,
+      uniqueIdentifier: profile.uniqueIdentifier,
+      verificationStatus: profile.verificationStatus,
     };
   });
 

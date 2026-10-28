@@ -53,6 +53,22 @@ export type PractitionerDashboardClientProps = {
     acceptedModalities?: string;
     availableLocationsText?: string;
     weeklySchedule?: Record<string, { enabled: boolean; slots: string[] }>;
+    certified?: boolean;
+    uniqueIdentifier?: string | null;
+    verificationStatus?: string | null;
+    verifiedAt?: Date | string | null;
+    educationLevel?: string | null;
+    specialtiesJson?: string[] | null;
+    methodsJson?: string[] | null;
+    coveredSchoolsOrZones?: string | null;
+    certifications?: Array<{
+      id: string;
+      courseTitleFr: string;
+      courseTitleAr: string;
+      scorePercent: number;
+      certificateHash: string;
+      issuedAt: Date | string;
+    }>;
   };
   initialBookings: PractitionerBookingItem[];
 };
@@ -300,6 +316,87 @@ export function PractitionerDashboardClient({
 
   return (
     <div className="space-y-8" dir={ar ? "rtl" : "ltr"}>
+      {/* Zero-Trust Accreditation Banner */}
+      {profile.verificationStatus === "CERTIFIED_ACTIVE" || profile.certified ? (
+        <div className="bg-gradient-to-r from-emerald-950 via-[#0D3B2E] to-[#124233] text-white rounded-3xl p-6 sm:p-7 shadow-md border border-emerald-800/60 relative overflow-hidden">
+          <div className="absolute top-0 end-0 -mt-8 -me-8 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative">
+            <div className="flex items-start gap-4">
+              <span className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 flex items-center justify-center flex-none">
+                <Icon name="award" size={24} />
+              </span>
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    {ar ? "اعتماد رسمي نشط" : "Habilitation Active — Zéro-Trust"}
+                  </span>
+                  {profile.uniqueIdentifier && (
+                    <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-white/10 text-white border border-white/20" dir="ltr">
+                      ID : {profile.uniqueIdentifier}
+                    </span>
+                  )}
+                </div>
+                <h2 className="text-lg sm:text-xl font-bold font-editorial-serif text-white">
+                  {ar ? "ملف مهني معتمد رسمياً لدى الأكاديمية الوطنية" : "Profil Professionnel Agréé & Validé par l'Académie"}
+                </h2>
+                <p className="text-xs sm:text-sm text-emerald-100/80 max-w-2xl leading-relaxed">
+                  {ar
+                    ? "لقد اجتزت بنجاح التقييمات المعيارية للأكاديمية (علامة 80% فما فوق). ملفك يظهر مع شارة التحقق الرسمية في الدليل العام ويضمن كفاءتك أمام الأولياء والمدارس."
+                    : "Votre accréditation Zero-Trust est active suite à votre réussite aux évaluations certifiantes (score ≥ 80%). Vos compétences sont garanties auprès des familles et établissements scolaires."}
+                </p>
+                {profile.certifications && profile.certifications.length > 0 && (
+                  <div className="flex flex-wrap gap-2 pt-1 text-[11px] text-emerald-200">
+                    <span className="font-semibold text-white/90">
+                      {ar ? "المسارات المعتمدة :" : "Certifications :"}
+                    </span>
+                    {profile.certifications.map((c) => (
+                      <span key={c.id} className="px-2 py-0.5 rounded-md bg-emerald-900/60 border border-emerald-700/50">
+                        {ar ? c.courseTitleAr : c.courseTitleFr} ({c.scorePercent}%)
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5 flex-none">
+              <Link
+                href={`/${locale}/certificats/${profile.uniqueIdentifier || profile.id}`}
+                className="py-2.5 px-4 rounded-xl bg-white hover:bg-emerald-50 text-emerald-950 text-xs font-bold transition-all shadow-sm inline-flex items-center gap-2"
+              >
+                <Icon name="check" size={14} className="text-emerald-700" />
+                <span>{ar ? "معاينة وتحميل الشهادة الرسمية" : "Voir mon certificat officiel"}</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-amber-50 rounded-3xl p-6 border border-amber-200 text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3.5">
+            <span className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center flex-none font-bold text-lg">
+              !
+            </span>
+            <div className="space-y-1">
+              <h3 className="font-bold text-sm text-amber-950">
+                {ar ? "الاعتماد المهني في انتظار استكمال التقييم" : "Habilitation en attente de formation certifiante"}
+              </h3>
+              <p className="text-xs text-amber-900/80 max-w-2xl leading-relaxed">
+                {ar
+                  ? "للحصول على معرّفك الفريد (ID) وشارة الاعتماد الرسمي في الدليل، أكمل تكويناً معتمداً (طيف التوحد، صعوبات التعلم أو المرجعية البيداغوجية) مع نتيجة 80% على الأقل في الاختبار النهائي."
+                  : "Pour obtenir votre Identifiant Unique infalsifiable et arborer le badge 'Certifié ANEI' dans l'annuaire national, complétez une formation qualifiante (TSA, TDAH, Troubles DYS ou Référentiel AVS) avec au moins 80% au QCM final."}
+              </p>
+            </div>
+          </div>
+          <Link
+            href={`/${locale}/formations`}
+            className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-colors inline-flex items-center gap-1.5 flex-none"
+          >
+            <span>{ar ? "استكشاف التكوينات المؤهلة" : "Accéder aux formations qualifiantes"}</span>
+            <Icon name="arrow" size={13} className="directional-icon" />
+          </Link>
+        </div>
+      )}
+
       {/* Top Header */}
       <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 sm:p-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-6">

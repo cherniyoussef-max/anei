@@ -2,11 +2,12 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Star } from "lucide-react";
-import { isLocale } from "@/lib/i18n";
+import { formatDate, isLocale } from "@/lib/i18n";
 import { getAvsByIdOrSlug } from "@/server/queries/catalog";
 import { avsProfiles as avsTranslations } from "@/lib/data";
 import { Icon } from "@/components/ui/Icon";
 import { AvsProfileBookingSection } from "@/components/interactive/AvsProfileBookingSection";
+import { getAvsCertificationProof } from "@/server/services/avs-certification-engine";
 import {
   localizeAvsName,
   localizeAvsInitials,
@@ -86,15 +87,29 @@ export default async function AvsProfileDetailPage({
   const hourlyRateTnd =
     profile.hourlyRateMillimes > 0 ? Math.round(profile.hourlyRateMillimes / 1000) : 25;
 
-  const domains = profile.interventionDomains ?? translated?.interventionDomains ?? [
+  const certProof = (profile.uniqueIdentifier || profile.id)
+    ? await getAvsCertificationProof(profile.uniqueIdentifier || profile.id)
+    : null;
+
+  const rawSpecialties = Array.isArray(profile.specialtiesJson) && profile.specialtiesJson.length > 0
+    ? profile.specialtiesJson
+    : [];
+
+  const baseDomains = profile.interventionDomains ?? translated?.interventionDomains ?? [
     "Accompagnement scolaire général",
     "Adaptations pédagogiques",
   ];
+  const domains = Array.from(new Set([...baseDomains, ...rawSpecialties]));
 
-  const methods = profile.pedagogicalMethods ?? translated?.pedagogicalMethods ?? [
+  const rawMethods = Array.isArray(profile.methodsJson) && profile.methodsJson.length > 0
+    ? profile.methodsJson
+    : [];
+
+  const baseMethods = profile.pedagogicalMethods ?? translated?.pedagogicalMethods ?? [
     "Guidance visuelle",
     "Renforcement positif",
   ];
+  const methods = Array.from(new Set([...baseMethods, ...rawMethods]));
 
   const displayName = ar ? localizeAvsName(profile.displayName, locale) : profile.displayName;
   const initials = localizeAvsInitials(profile.displayName, locale);
@@ -139,9 +154,15 @@ export default async function AvsProfileDetailPage({
                     {displayName}
                   </h1>
                   {profile.certified && (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#F4F7FA] text-[#1B3A5C] border border-[#E3E8EF]">
-                      <Icon name="award" size={13} className="text-[#B8925A]" />
-                      <span>{ar ? "معتمد ANEI" : "Certifié ANEI"}</span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
+                      <Icon name="award" size={13} className="text-emerald-600" />
+                      <span>{ar ? "معتمد رسمياً من الأكاديمية" : "Certifié ANEI — Validé par l'Académie"}</span>
+                    </span>
+                  )}
+                  {profile.uniqueIdentifier && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-[#1B3A5C] text-white shadow-2xs" dir="ltr">
+                      <Icon name="shield" size={12} className="text-amber-300" />
+                      <span>ID : {profile.uniqueIdentifier}</span>
                     </span>
                   )}
                 </div>
@@ -174,6 +195,105 @@ export default async function AvsProfileDetailPage({
           {/* LEFT: Unified Professional Dossier */}
           <div className="lg:col-span-7 space-y-6">
             <div className="bg-white rounded-2xl border border-[#E3E8EF] shadow-xs divide-y divide-[#E3E8EF] overflow-hidden">
+              {/* 0. Official Academy Accreditation & Proof Card */}
+              {(profile.certified || profile.uniqueIdentifier) && (
+                <section className="p-6 sm:p-7 bg-gradient-to-br from-emerald-50/70 via-white to-blue-50/40 space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs flex-none">
+                        <Icon name="shield" size={18} />
+                      </span>
+                      <div>
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800 block">
+                          {ar ? "الاعتماد المهني الرسمي" : "Accréditation Professionnelle Vérifiée"}
+                        </span>
+                        <h2 className="text-base font-bold font-editorial-serif text-[#1B3A5C]">
+                          {ar ? "شهادة الكفاءة الصادرة عن الأكاديمية" : "Preuve de qualification & Examen certifiant"}
+                        </h2>
+                      </div>
+                    </div>
+                    {profile.uniqueIdentifier && (
+                      <span className="px-3 py-1.5 rounded-xl bg-white border border-emerald-200 text-xs font-mono font-bold text-[#1B3A5C] shadow-2xs" dir="ltr">
+                        {profile.uniqueIdentifier}
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    {ar
+                      ? "تم التحقق من مؤهلات هذا المرافق عبر نظام Zero-Trust للأكاديمية. اجتاز بنجاح التقييمات المعيارية (علامة 80% فما فوق) في مجالات التوحد وتشتت الانتباه وصعوبات التعلم."
+                      : "Les compétences de cet intervenant sont vérifiées par le protocole Zero-Trust de l'ANEI. Qualifications validées par examen certifiant (score ≥ 80%) sur les troubles du neurodéveloppement et l'adaptation scolaire."}
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div className="p-3 rounded-xl bg-white/90 border border-emerald-100 space-y-1">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                        {ar ? "المستوى والتأهيل" : "Niveau académique & Diplôme"}
+                      </span>
+                      <span className="text-xs font-bold text-slate-800">
+                        {profile.educationLevel || profile.universityDegree || (ar ? "تأهيل مهني معتمد ANEI" : "Formation Certifiante Académie ANEI")}
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-white/90 border border-emerald-100 space-y-1">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                        {ar ? "حالة السجل الوطني" : "Statut au Registre National"}
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700">
+                        <Icon name="check" size={13} />
+                        <span>{ar ? "ساري وموثق رسمياً" : "Actif & Contrôlé"}</span>
+                        {profile.verifiedAt && (
+                          <span className="text-[11px] text-slate-400 font-normal">
+                            ({formatDate(profile.verifiedAt, locale)})
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+
+                  {certProof?.certifications && certProof.certifications.length > 0 && (
+                    <div className="pt-2 space-y-2">
+                      <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+                        {ar ? "المسارات التكوينية المصادق عليها :" : "Formations certifiantes validées :"}
+                      </span>
+                      <div className="space-y-1.5">
+                        {certProof.certifications.map((cert) => (
+                          <div
+                            key={cert.id}
+                            className="p-2.5 rounded-xl bg-white border border-slate-200/80 flex items-center justify-between gap-3 text-xs"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Icon name="award" size={14} className="text-amber-500 flex-none" />
+                              <span className="font-semibold text-slate-800 truncate">
+                                {ar ? cert.courseTitleAr : cert.courseTitleFr}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 flex-none">
+                              <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-900 font-bold text-[11px]">
+                                {cert.scorePercent}%
+                              </span>
+                              <span className="font-mono text-[10px] text-slate-400 hidden sm:inline" title={cert.certificateHash}>
+                                #{cert.certificateHash.slice(0, 10)}…
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="pt-2 flex items-center justify-end">
+                    <Link
+                      href={`/${locale}/certificats/${profile.uniqueIdentifier || profile.id}`}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1B3A5C] hover:text-[#082D55] transition-colors underline underline-offset-4"
+                    >
+                      <Icon name="check" size={13} />
+                      <span>{ar ? "عرض الإثبات الرقمي للشهادة الرسمية" : "Vérifier le certificat officiel en ligne"}</span>
+                    </Link>
+                  </div>
+                </section>
+              )}
+
               {/* 1. Bio & Educational Approach */}
               <section className="p-6 sm:p-7 space-y-3">
                 <h2 className="text-lg font-bold font-editorial-serif text-[#1B3A5C] tracking-tight">
@@ -225,7 +345,7 @@ export default async function AvsProfileDetailPage({
                   {ar ? "المؤسسات التعليمية ونطاق التنقل" : "Établissements scolaires & Rayon d'action"}
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                  {schoolsCovered || (ar ? "المؤسسات التعليمية العمومية والخاصة بالمنطقة." : "Établissements primaires et collèges de la zone.")}
+                  {profile.coveredSchoolsOrZones || schoolsCovered || (ar ? "المؤسسات التعليمية العمومية والخاصة بالمنطقة." : "Établissements primaires et collèges de la zone.")}
                 </p>
                 {address && (
                   <div className="pt-1 text-xs text-slate-500 flex items-center gap-1.5">

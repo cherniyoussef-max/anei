@@ -1,6 +1,20 @@
 -- Migration: 0056_teacher_evaluations_and_booking_guard.sql
 -- Description: Teacher evaluations persistence, establishment event registrations, and AVS booking race condition protection
 
+-- Deduplicate any existing duplicate active bookings before creating the index
+WITH ranked AS (
+  SELECT id,
+         ROW_NUMBER() OVER (
+           PARTITION BY avs_profile_id, requested_date, requested_time_slot 
+           ORDER BY created_at ASC
+         ) AS rn
+  FROM avs_booking_requests
+  WHERE status IN ('AWAITING_PRACTITIONER_CONFIRMATION', 'PENDING', 'CONFIRMED')
+)
+UPDATE avs_booking_requests
+SET status = 'DECLINED'
+WHERE id IN (SELECT id FROM ranked WHERE rn > 1);
+
 CREATE UNIQUE INDEX IF NOT EXISTS "avs_booking_slot_unique"
 ON "avs_booking_requests" ("avs_profile_id", "requested_date", "requested_time_slot")
 WHERE "status" IN ('AWAITING_PRACTITIONER_CONFIRMATION', 'PENDING', 'CONFIRMED');
