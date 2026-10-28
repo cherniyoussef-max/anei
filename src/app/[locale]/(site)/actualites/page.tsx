@@ -84,8 +84,18 @@ export default async function NewsPage({
   );
 
   const localizedItems = items.map((item) => {
+    const fallbackImage =
+      item.category === "CERTIFICATION" || item.slug.includes("avs")
+        ? "/media/domain-avs.jpg"
+        : item.category === "FORMATION"
+        ? "/media/domain-pedagogie.jpg"
+        : item.category === "EVENEMENT"
+        ? "/media/domain-webinaires.jpg"
+        : "/media/alaune-classroom.jpg";
+
     return {
       ...item,
+      coverImageUrl: item.coverImageUrl || fallbackImage,
       tag: ar ? item.tagAr : item.tagFr,
       title: ar ? item.titleAr : item.titleFr,
       excerpt: ar ? item.excerptAr : item.excerptFr,
@@ -173,100 +183,99 @@ export default async function NewsPage({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* 1. CARTE "À LA UNE" EDITORIALE */}
           {latest ? (
-            <article className="news-v7-lead grid grid-cols-1 md:grid-cols-12 rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden bg-white">
-              {/* Panneau visuel : Photo nette OU médaillon épuré contrasté avec emblème ANEI */}
-              {latest.coverImageUrl ? (
-                <div className="md:col-span-5 relative min-h-[260px] sm:min-h-[340px] overflow-hidden bg-slate-100">
-                  <Image
-                    src={latest.coverImageUrl}
-                    alt={latest.title}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 42vw"
-                    priority
-                    className="object-cover object-center"
-                  />
-                  <div className="absolute top-4 start-4 z-10">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-[0.14em] bg-[#0A192F]/80 text-[#E5C158] border border-white/10 backdrop-blur-xs">
-                      {ar ? "في الصدارة ⭐" : "À la une ⭐"}
-                    </span>
-                  </div>
+            <article className="news-v7-lead group relative grid grid-cols-1 lg:grid-cols-12 rounded-3xl border border-[#dde9f8] shadow-[0_12px_40px_-10px_rgba(11,31,75,0.08)] hover:shadow-[0_24px_60px_-12px_rgba(11,31,75,0.15)] transition-all duration-500 overflow-hidden bg-white">
+              {/* Panneau visuel : Photo haute résolution avec vignette et micro-détails */}
+              <div className="lg:col-span-5 xl:col-span-6 relative min-h-[300px] sm:min-h-[380px] lg:min-h-[440px] overflow-hidden bg-slate-900">
+                <Image
+                  src={latest.coverImageUrl}
+                  alt={latest.title}
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  priority
+                  className="object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
+                />
+                {/* Dégradé doux cinématographique */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0b1f4b]/85 via-transparent to-black/20 pointer-events-none" />
+
+                {/* Badge supérieur "À la une ⭐" */}
+                <div className="absolute top-5 start-5 z-10">
+                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11.5px] font-bold uppercase tracking-[0.14em] bg-[#0b1f4b]/90 text-[#e3c776] border border-white/20 backdrop-blur-md shadow-sm">
+                    <span className="text-[12px]">⭐</span>
+                    <span>{ar ? "في الصدارة" : "À la une"}</span>
+                  </span>
                 </div>
-              ) : (
-                <div className="md:col-span-5 relative bg-gradient-to-br from-[#0A192F] to-[#142B47] text-white p-8 flex flex-col justify-between overflow-hidden min-h-[260px] sm:min-h-[340px]">
-                  <div className="flex items-center justify-between z-10">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-[0.14em] bg-[#B58D3D]/25 text-[#E5C158] border border-[#B58D3D]/40 backdrop-blur-xs">
-                      {ar ? "في الصدارة ⭐" : "À la une ⭐"}
+
+                {/* Badge institutionnel inférieur intégré à la photo */}
+                <div className="absolute bottom-5 start-5 end-5 z-10 flex items-center justify-between text-white/95">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-black/45 backdrop-blur-md border border-white/15 text-xs shadow-xs">
+                    <AneiLogo locale={locale} variant="mark" withText={false} height={18} className="brightness-125" />
+                    <span className="font-semibold text-[12px] tracking-wide text-white">
+                      {ar ? "الأكاديمية الوطنية" : "Académie ANEI"}
                     </span>
                   </div>
-
-                  <div className="z-10 my-6 flex items-center gap-3.5">
-                    <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white p-2 shadow-md">
-                      <AneiLogo locale={locale} variant="mark" withText={false} height={32} />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="font-bold text-white text-sm sm:text-[15px] leading-snug font-sans">
-                        {ar ? "الأكاديمية الوطنية للتربية الدامجة" : "Académie Nationale de l’Éducation Inclusive"}
-                      </span>
-                      <span className="text-[11px] font-semibold text-[#C5A059] uppercase tracking-wider mt-0.5">
-                        {latest.tag}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="z-10 flex items-center gap-2 text-slate-300 text-xs font-medium">
-                    <Calendar size={15} className="text-[#E5C158] shrink-0" />
-                    <time dateTime={latest.date.toISOString()} className="font-sans">
+                  <div className="flex items-center gap-1.5 text-xs text-white/90 font-medium bg-black/45 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/15 shadow-xs">
+                    <Calendar size={13} className="text-[#e3c776] shrink-0" />
+                    <time dateTime={latest.date.toISOString()} className="font-sans font-semibold">
                       {formatDate(latest.date, locale)}
                     </time>
                   </div>
                 </div>
-              )}
+              </div>
 
-              {/* Colonne de texte éditoriale */}
-              <div className="md:col-span-7 p-8 sm:p-10 lg:p-12 flex flex-col justify-center">
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#B58D3D]">
+              {/* Colonne de texte éditoriale fluide & prestigieuse */}
+              <div className="lg:col-span-7 xl:col-span-6 p-7 sm:p-10 xl:p-12 flex flex-col justify-center">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#b8923a]/12 text-[#b8923a] border border-[#b8923a]/30">
                     {latest.tag}
                   </span>
                   <span className="text-slate-300 text-xs">•</span>
-                  <time dateTime={latest.date.toISOString()} className="text-xs text-slate-500 font-medium font-sans">
-                    {formatDate(latest.date, locale)}
-                  </time>
+                  <span className="text-xs text-slate-500 font-medium">
+                    {ar ? "إصدار رسمي معتمد" : "Publication officielle"}
+                  </span>
                 </div>
 
                 <h2
                   id="latest-news-title"
-                  className="text-2xl sm:text-3xl font-sans font-bold text-[#0A192F] leading-tight mb-4"
+                  className="text-2xl sm:text-3xl xl:text-[32px] font-sans font-bold text-[#0b1f4b] leading-[1.22] mb-4 group-hover:text-[#1b3a7a] transition-colors duration-200"
                 >
                   <Link
                     href={`/${locale}/actualites/${latest.slug}`}
-                    className="hover:text-[#0056D2] transition-colors"
+                    className="hover:underline decoration-[#b8923a]/40 underline-offset-4"
                   >
                     {latest.title}
                   </Link>
                 </h2>
 
-                <p className="text-sm sm:text-base text-slate-600 leading-relaxed mb-8 max-w-2xl font-normal">
+                <p className="text-sm sm:text-base text-slate-600 leading-relaxed mb-8 font-normal line-clamp-3 sm:line-clamp-4">
                   {latest.excerpt}
                 </p>
 
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3.5 pt-1">
                   <Link
                     href={`/${locale}/actualites/${latest.slug}`}
-                    className="inline-flex items-center gap-2.5 px-6 py-3 rounded-full bg-[#0A192F] hover:bg-[#0056D2] text-white text-sm font-semibold transition-all shadow-xs group"
+                    className="inline-flex items-center gap-2.5 px-6 sm:px-7 py-3 sm:py-3.5 rounded-full bg-[#0b1f4b] hover:bg-[#1b3a7a] text-white text-sm font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 group/btn"
                   >
                     <span>{text.readLatest}</span>
                     <ArrowRight
                       size={16}
                       strokeWidth={2}
-                      className="transition-transform group-hover:translate-x-1 rtl:group-hover:-translate-x-1 rtl:rotate-180"
+                      className="transition-transform duration-200 group-hover/btn:translate-x-1 rtl:group-hover/btn:-translate-x-1 rtl:rotate-180"
                     />
                   </Link>
+
+                  {latest.category === "CERTIFICATION" && (
+                    <Link
+                      href={`/${locale}/avs`}
+                      className="inline-flex items-center gap-2 px-5 py-3 sm:py-3.5 rounded-full bg-[#f8faff] hover:bg-[#eef4fc] text-[#0b1f4b] border border-[#dde9f8] hover:border-[#b8923a]/40 text-sm font-semibold transition-all duration-200"
+                    >
+                      <span>{ar ? "دليل كفاءات AVS ←" : "Consulter le Référentiel AVS →"}</span>
+                    </Link>
+                  )}
 
                   {latest.category === "FORMATION" && (
                     <Link
                       href={`/${locale}/formations/${latest.slug.replace(/^formation-/, "")}`}
-                      className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-[#0A192F] border border-amber-600/30 text-sm font-semibold transition-all group"
+                      className="inline-flex items-center gap-2 px-5 py-3 sm:py-3.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-[#0b1f4b] border border-amber-600/30 text-sm font-semibold transition-all duration-200"
                     >
                       <span>{ar ? "اكتشف الدورة مباشرة ←" : "Découvrir la formation →"}</span>
                     </Link>
@@ -275,7 +284,7 @@ export default async function NewsPage({
                   {latest.category === "EVENEMENT" && (
                     <Link
                       href={`/${locale}/webinaires`}
-                      className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-sky-500/10 hover:bg-sky-500/20 text-[#0A192F] border border-sky-600/30 text-sm font-semibold transition-all group"
+                      className="inline-flex items-center gap-2 px-5 py-3 sm:py-3.5 rounded-full bg-sky-500/10 hover:bg-sky-500/20 text-[#0b1f4b] border border-sky-600/30 text-sm font-semibold transition-all duration-200"
                     >
                       <span>{ar ? "الانضمام للندوة مباشرة ←" : "Accéder aux webinaires →"}</span>
                     </Link>
@@ -322,10 +331,10 @@ export default async function NewsPage({
                   <Link
                     key={cat.id}
                     href={filterHref}
-                    className={`px-4 py-2 rounded-full text-xs font-semibold transition-all ${
+                    className={`px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200 ${
                       isActive
-                        ? "bg-[#0A192F] text-white shadow-xs"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                        ? "bg-[#0b1f4b] text-white shadow-xs font-bold"
+                        : "bg-white text-slate-600 hover:text-[#0b1f4b] hover:bg-slate-50 border border-slate-200/80 hover:border-slate-300"
                     }`}
                   >
                     {ar ? cat.ar : cat.fr}
@@ -336,29 +345,27 @@ export default async function NewsPage({
 
             {/* Liste éditoriale des articles */}
             {updates.length ? (
-              <div className="divide-y divide-slate-100">
+              <div className="space-y-4">
                 {updates.map((item) => (
-                  <article key={item.id} className="py-5 first:pt-2 border-b border-slate-100 last:border-b-0">
+                  <article key={item.id} className="rounded-2xl border border-slate-200/80 bg-white hover:border-[#b8923a]/30 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 overflow-hidden">
                     <Link
                       href={`/${locale}/actualites/${item.slug}`}
-                      className="group flex flex-col md:flex-row md:items-center justify-between gap-5 rounded-2xl p-4 sm:p-5 -mx-4 sm:-mx-5 hover:bg-slate-50/90 transition-all text-inherit no-underline"
+                      className="group flex flex-col md:flex-row md:items-center justify-between gap-5 p-5 sm:p-6 text-inherit no-underline"
                       aria-label={ar ? `اقرأ: ${item.title}` : `Lire : ${item.title}`}
                     >
-                      <div className="flex flex-col sm:flex-row sm:items-start gap-5 flex-1 min-w-0">
-                        {item.coverImageUrl && (
-                          <div className="relative w-full sm:w-44 h-32 sm:h-28 rounded-xl overflow-hidden shrink-0 bg-slate-100">
-                            <Image
-                              src={item.coverImageUrl}
-                              alt=""
-                              fill
-                              sizes="176px"
-                              className="object-cover group-hover:scale-105 transition-transform duration-300"
-                            />
-                          </div>
-                        )}
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-5 flex-1 min-w-0">
+                        <div className="relative w-full sm:w-52 h-36 sm:h-32 rounded-xl overflow-hidden shrink-0 bg-slate-100 shadow-2xs">
+                          <Image
+                            src={item.coverImageUrl}
+                            alt=""
+                            fill
+                            sizes="(max-width: 640px) 100vw, 208px"
+                            className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                          />
+                        </div>
                         <div className="flex-1 min-w-0 flex flex-col justify-center">
-                          <div className="flex items-center gap-3 mb-1.5">
-                            <span className="text-xs font-bold text-[#B58D3D] uppercase tracking-wide">
+                          <div className="flex items-center gap-3 mb-2">
+                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold text-[#b8923a] uppercase tracking-wide bg-[#b8923a]/10 border border-[#b8923a]/25">
                               {item.tag}
                             </span>
                             <span className="text-slate-300 text-xs">•</span>
@@ -366,21 +373,21 @@ export default async function NewsPage({
                               {formatDate(item.date, locale)}
                             </time>
                           </div>
-                          <h3 className="text-lg sm:text-xl font-sans font-semibold text-[#0A192F] leading-snug group-hover:text-[#0056D2] transition-colors">
+                          <h3 className="text-lg sm:text-xl font-sans font-bold text-[#0b1f4b] leading-snug group-hover:text-[#1b3a7a] transition-colors">
                             {item.title}
                           </h3>
-                          <p className="text-sm text-slate-600 leading-relaxed mt-1.5 line-clamp-2 font-normal">
+                          <p className="text-sm text-slate-600 leading-relaxed mt-2 line-clamp-2 font-normal">
                             {item.excerpt}
                           </p>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 text-xs font-semibold text-[#0056D2] group-hover:text-[#00419e] shrink-0 self-start md:self-center mt-2 md:mt-0">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-[#0b1f4b] group-hover:text-[#1b3a7a] shrink-0 self-start md:self-center mt-2 md:mt-0 px-4 py-2 rounded-full bg-slate-50 group-hover:bg-[#eef4fc] transition-colors">
                         <span>{ar ? "اقرأ المقال" : "Lire l'article"}</span>
                         <ArrowRight
                           size={15}
                           strokeWidth={2}
-                          className="transition-transform group-hover:translate-x-1 rtl:group-hover:-translate-x-1 rtl:rotate-180"
+                          className="transition-transform duration-200 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 rtl:rotate-180"
                         />
                       </div>
                     </Link>

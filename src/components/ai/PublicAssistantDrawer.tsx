@@ -466,8 +466,8 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
 
   return (
     <>
-      {/* Sober & Institutional Floating Trigger Button (Zero AI clichés) */}
-      {!isOpen && !isLearnerPath && (
+      {/* Sober & Institutional Floating Trigger Button for Learner & Educator workspaces */}
+      {!isOpen && isLearnerPath && (
         <button
           data-testid="public-assistant-trigger"
           onClick={() => setIsOpen(true)}
