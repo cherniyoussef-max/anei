@@ -459,6 +459,11 @@ export function PublicAssistantDrawer({ locale = "fr" }: PublicAssistantDrawerPr
     };
   }, []);
 
+  const isHomePage = !pathname || pathname === `/${locale}` || pathname === `/${locale}/` || pathname === "/" || pathname === "";
+  if (isHomePage) {
+    return null;
+  }
+
   return (
     <>
       {/* Sober & Institutional Floating Trigger Button (Zero AI clichés) */}

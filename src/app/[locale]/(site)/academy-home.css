@@ -214,12 +214,14 @@
 }
 
 [dir="rtl"] .top-photo {
-  inset-inline-end: auto;
-  inset-inline-start: 0;
-  background-position: 72% bottom;
-  -webkit-mask-image: linear-gradient(to left, transparent 0, #000 13%),
+  inset-inline-start: auto;
+  inset-inline-end: 0;
+  left: 0;
+  right: auto;
+  background-position: 28% bottom;
+  -webkit-mask-image: linear-gradient(to right, #000 65%, transparent 100%),
                       linear-gradient(to bottom, transparent 0, #000 24%, #000 86%, transparent 100%);
-  mask-image: linear-gradient(to left, transparent 0, #000 13%),
+  mask-image: linear-gradient(to right, #000 65%, transparent 100%),
               linear-gradient(to bottom, transparent 0, #000 24%, #000 86%, transparent 100%);
 }
 

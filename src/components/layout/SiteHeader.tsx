@@ -36,13 +36,13 @@ export function SiteHeader({ locale, initialUser }: { locale: Locale; initialUse
 
   return (
     <header className="navbar-root sticky top-0 z-50 h-[76px] bg-white/95 backdrop-blur-md border-b border-[#dde9f8] transition-all">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between gap-4">
         {/* Left: Always visible Logo + Navigation links */}
-        <div className="flex items-center gap-4 lg:gap-8">
+        <div className="flex items-center gap-4 xl:gap-6 min-w-0">
           <Link
             href={`/${locale}`}
             prefetch={true}
-            className="site-brand-link flex items-center gap-3 flex-none hover:opacity-90 transition-opacity"
+            className="site-brand-link flex items-center gap-3 shrink-0 hover:opacity-90 transition-opacity"
             aria-label={ar ? "الرئيسية ANEI" : "Accueil ANEI"}
           >
             <Image
@@ -52,9 +52,9 @@ export function SiteHeader({ locale, initialUser }: { locale: Locale; initialUse
               height={46}
               priority
               unoptimized
-              className="h-[46px] w-auto object-contain shrink-0"
+              className="h-[42px] sm:h-[46px] w-auto object-contain shrink-0"
             />
-            <div className="hidden sm:flex flex-col text-start leading-tight">
+            <div className="hidden 2xl:flex flex-col text-start leading-tight shrink-0">
               <b className="font-semibold text-[13.5px] text-[#0b1f4b] tracking-tight">
                 L’Académie Nationale de l’Éducation Inclusive
               </b>
@@ -64,7 +64,10 @@ export function SiteHeader({ locale, initialUser }: { locale: Locale; initialUse
             </div>
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-6" aria-label={ar ? "التنقل الرئيسي" : "Navigation principale"}>
+          <nav
+            className="hidden xl:flex items-center gap-3.5 2xl:gap-5 min-w-0"
+            aria-label={ar ? "التنقل الرئيسي" : "Navigation principale"}
+          >
             {links.map(([segment, label]) => {
               const href = segment ? `/${locale}/${segment}` : `/${locale}`;
               const isActive = segment ? pathname === href || pathname.startsWith(`${href}/`) : isHome;
@@ -73,7 +76,7 @@ export function SiteHeader({ locale, initialUser }: { locale: Locale; initialUse
                   key={segment || "home"}
                   href={href}
                   prefetch={true}
-                  className={`relative py-1 text-[14px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0b1f4b] focus-visible:ring-offset-2 rounded ${
+                  className={`relative py-1 text-[13.5px] 2xl:text-[14px] font-medium whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0b1f4b] focus-visible:ring-offset-2 rounded ${
                     isActive
                       ? "text-[#0b1f4b] font-semibold after:absolute after:bottom-0 after:inset-x-0 after:h-[2px] after:bg-[#b8923a]"
                       : "text-[#46557a] hover:text-[#0b1f4b] hover:after:absolute hover:after:bottom-0 hover:after:inset-x-0 hover:after:h-[2px] hover:after:bg-[#b8923a]"
@@ -88,33 +91,48 @@ export function SiteHeader({ locale, initialUser }: { locale: Locale; initialUse
         </div>
 
         {/* Right: Search, Divider, AR | FR, User account icon */}
-        <div className="navbar-actions flex items-center gap-3 sm:gap-4">
+        <div className="navbar-actions flex items-center gap-2.5 sm:gap-3.5 shrink-0 z-10">
           <Link
             href={`/${locale}/formations`}
             prefetch={true}
-            className="navbar-search-btn p-2 rounded-full text-[#0b1f4b] hover:bg-[#eef4fc] transition-colors"
+            className="navbar-search-btn p-2 rounded-full text-[#0b1f4b] hover:bg-[#eef4fc] transition-colors shrink-0"
             aria-label={ar ? "البحث عن دورة أو مورد" : "Rechercher une formation ou un sujet"}
           >
             <Search size={18} strokeWidth={1.8} />
           </Link>
 
-          <span className="navbar-divider w-[1px] h-5 bg-[#dde9f8]" aria-hidden="true" />
+          <span className="navbar-divider w-[1px] h-5 bg-[#dde9f8] shrink-0 hidden sm:block" aria-hidden="true" />
 
-          <div className="navbar-lang-switch flex items-center gap-1.5 text-[13px] font-medium text-[#5b6b90]" aria-label={ar ? "تغيير اللغة" : "Changer de langue"}>
+          {/* AR | FR Language Switcher Pill */}
+          <div
+            className="navbar-lang-switch flex items-center p-0.5 rounded-full bg-[#f1f5f9] border border-[#dde9f8] text-[12.5px] font-semibold text-[#5b6b90] shrink-0"
+            aria-label={ar ? "تغيير اللغة" : "Changer de langue"}
+            dir="ltr"
+          >
             <Link
               href={arTarget}
               prefetch={true}
-              className={`px-1.5 py-0.5 rounded transition-colors ${locale === "ar" ? "text-[#0b1f4b] font-bold" : "hover:text-[#0b1f4b]"}`}
+              className={`px-2 py-0.5 rounded-full transition-all ${
+                locale === "ar"
+                  ? "bg-[#0b1f4b] text-white shadow-xs font-bold"
+                  : "text-[#5b6b90] hover:text-[#0b1f4b]"
+              }`}
               lang="ar"
+              aria-current={locale === "ar" ? "true" : undefined}
             >
               AR
             </Link>
-            <span className="text-[#CBD5E1]" aria-hidden="true">|</span>
+            <span className="text-[#cbd5e1] text-[11px]" aria-hidden="true">|</span>
             <Link
               href={frTarget}
               prefetch={true}
-              className={`px-1.5 py-0.5 rounded transition-colors ${locale === "fr" ? "text-[#0b1f4b] font-bold" : "hover:text-[#0b1f4b]"}`}
+              className={`px-2 py-0.5 rounded-full transition-all ${
+                locale === "fr"
+                  ? "bg-[#0b1f4b] text-white shadow-xs font-bold"
+                  : "text-[#5b6b90] hover:text-[#0b1f4b]"
+              }`}
               lang="fr"
+              aria-current={locale === "fr" ? "true" : undefined}
             >
               FR
             </Link>
@@ -122,7 +140,7 @@ export function SiteHeader({ locale, initialUser }: { locale: Locale; initialUse
 
           <AccountActions locale={locale} initialUser={initialUser} />
 
-          <div className="lg:hidden">
+          <div className="xl:hidden shrink-0">
             <MobileMenu locale={locale} />
           </div>
         </div>

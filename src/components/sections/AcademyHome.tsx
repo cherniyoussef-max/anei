@@ -104,14 +104,6 @@ export function AcademyHome({
         {/* Masked Hero Photograph */}
         <div className="top-photo" aria-hidden="true" />
 
-        {/* Floating Badges */}
-        <div className="glass g1">
-          <i>✓</i>
-          <div>
-            <b>{ar ? "مسارات معتمدة 100%" : "100% Certifiant"}</b>
-            <span>{ar ? "تكوين مهني مصادق عليه" : "Formations & Titres reconnus"}</span>
-          </div>
-        </div>
 
         <div className="glass g2">
           <i>
