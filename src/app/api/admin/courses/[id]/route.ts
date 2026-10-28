@@ -14,6 +14,10 @@ import {
 } from "@/server/db/schema";
 import { isTrustedMutation } from "@/server/security/origin";
 import { readLimitedJson } from "@/server/security/request-body";
+import {
+  syncCourseToActualites,
+  deleteSyndicatedCourseNews,
+} from "@/server/services/auto-news-syndication";
 import { finalAssessmentInputSchema } from "../route";
 
 const idSchema = z.string().uuid();
@@ -244,6 +248,12 @@ export async function PATCH(
   });
 
   if (!course) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
+
+  // Auto-sync syndicated actualités news post
+  await syncCourseToActualites(course.id, {
+    isFeatured: course.featured,
+  });
+
   return NextResponse.json({ course });
 }
 
@@ -292,6 +302,7 @@ export async function DELETE(
       .where(eq(courses.id, id.data))
       .returning({ id: courses.id });
     if (!course) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
+    await syncCourseToActualites(id.data, { isFeatured: false });
     await db.insert(auditLogs).values({
       actorUserId: session.user.id,
       action: "course.archive",
@@ -305,8 +316,9 @@ export async function DELETE(
   const [course] = await db
     .delete(courses)
     .where(eq(courses.id, id.data))
-    .returning({ id: courses.id });
+    .returning({ id: courses.id, slug: courses.slug });
   if (!course) return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
+  await deleteSyndicatedCourseNews(course.slug);
   await db.insert(auditLogs).values({
     actorUserId: session.user.id,
     action: "course.delete",

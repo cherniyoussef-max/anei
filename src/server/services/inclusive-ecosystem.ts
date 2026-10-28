@@ -256,15 +256,18 @@ export async function getOrCreatePartnerEstablishment(managerUserId: string) {
   const realNews = await db
     .select({
       id: newsPosts.id,
+      slug: newsPosts.slug,
       title: newsPosts.titleFr,
+      titleAr: newsPosts.titleAr,
       category: newsPosts.category,
+      isFeatured: newsPosts.isFeatured,
       publishedAt: newsPosts.publishedAt,
       createdAt: newsPosts.createdAt,
     })
     .from(newsPosts)
     .where(eq(newsPosts.published, true))
-    .orderBy(desc(newsPosts.publishedAt))
-    .limit(6);
+    .orderBy(desc(newsPosts.isFeatured), desc(newsPosts.publishedAt), desc(newsPosts.createdAt))
+    .limit(8);
 
   const fallbackEvents = [
     {
@@ -296,7 +299,7 @@ export async function getOrCreatePartnerEstablishment(managerUserId: string) {
   const newsItems = realNews.length > 0
     ? realNews.map((n) => ({
         id: n.id,
-        type: n.category || "Actualité",
+        type: n.category === "FORMATION" ? "Formation certifiante" : n.category || "Actualité",
         title: n.title,
         date: n.publishedAt ? new Date(n.publishedAt).toLocaleDateString("fr-FR") : "En ligne",
       }))

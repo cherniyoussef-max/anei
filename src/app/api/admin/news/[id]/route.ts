@@ -7,6 +7,7 @@ import { db } from "@/server/db";
 import { auditLogs, newsPosts } from "@/server/db/schema";
 import { isTrustedMutation } from "@/server/security/origin";
 import { readLimitedJson } from "@/server/security/request-body";
+import { revalidateAllPublicFeeds } from "@/server/services/auto-news-syndication";
 
 const idSchema = z.string().uuid();
 
@@ -105,11 +106,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     entityId: id.data,
   });
 
-  revalidatePath("/[locale]/actualites", "page");
-  revalidatePath("/[locale]", "page");
-  revalidatePath("/fr/actualites");
-  revalidatePath("/ar/actualites");
-  revalidatePath("/en/actualites");
+  revalidateAllPublicFeeds();
   if (updated.slug) {
     revalidatePath(`/fr/actualites/${updated.slug}`);
     revalidatePath(`/ar/actualites/${updated.slug}`);
@@ -139,11 +136,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     entityId: id.data,
   });
 
-  revalidatePath("/[locale]/actualites", "page");
-  revalidatePath("/[locale]", "page");
-  revalidatePath("/fr/actualites");
-  revalidatePath("/ar/actualites");
-  revalidatePath("/en/actualites");
+  revalidateAllPublicFeeds();
 
   return NextResponse.json({ ok: true });
 }

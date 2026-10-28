@@ -56,6 +56,34 @@ export function listHomeNews() {
     .limit(3);
 }
 
+/** Returns the single top featured (or latest) published article. */
+export async function getTopFeaturedNewsPost() {
+  const [featured] = await db
+    .select({
+      id: newsPosts.id,
+      slug: newsPosts.slug,
+      category: newsPosts.category,
+      coverImageUrl: newsPosts.coverImageUrl,
+      isFeatured: newsPosts.isFeatured,
+      tagFr: newsPosts.tagFr,
+      tagAr: newsPosts.tagAr,
+      titleFr: newsPosts.titleFr,
+      titleAr: newsPosts.titleAr,
+      excerptFr: newsPosts.excerptFr,
+      excerptAr: newsPosts.excerptAr,
+      contentFr: newsPosts.contentFr,
+      contentAr: newsPosts.contentAr,
+      publishedAt: newsPosts.publishedAt,
+      createdAt: newsPosts.createdAt,
+    })
+    .from(newsPosts)
+    .where(eq(newsPosts.published, true))
+    .orderBy(desc(newsPosts.isFeatured), desc(newsPosts.publishedAt), desc(newsPosts.createdAt))
+    .limit(1);
+
+  return featured || null;
+}
+
 export function getPublishedNewsBySlug(slug: string) {
   return db.query.newsPosts.findFirst({
     where: and(eq(newsPosts.slug, slug), eq(newsPosts.published, true)),

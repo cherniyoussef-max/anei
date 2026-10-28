@@ -11,6 +11,7 @@ import {
 } from "@/server/db/schema";
 import { isTrustedMutation } from "@/server/security/origin";
 import { readLimitedJson } from "@/server/security/request-body";
+import { syncCourseToActualites } from "@/server/services/auto-news-syndication";
 
 export const finalAssessmentQuestionSchema = z
   .object({
@@ -202,6 +203,11 @@ export async function POST(request: Request) {
 
       return newCourse;
     });
+
+    // Auto-syndicate course to Actualités news feed (Top #1 featured if published)
+    if (course.published) {
+      await syncCourseToActualites(course.id, { isFeatured: course.featured ?? true });
+    }
 
     return NextResponse.json({ course }, { status: 201 });
   } catch {

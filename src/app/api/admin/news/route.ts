@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/server/db";
@@ -7,6 +6,7 @@ import { auditLogs, newsPosts } from "@/server/db/schema";
 import { adminMutationRateLimit, getAdminSessionFor } from "@/server/auth/admin";
 import { isTrustedMutation } from "@/server/security/origin";
 import { readLimitedJson } from "@/server/security/request-body";
+import { revalidateAllPublicFeeds } from "@/server/services/auto-news-syndication";
 
 const CATEGORY_TAGS: Record<string, { fr: string; ar: string }> = {
   FORMATION: { fr: "Formation", ar: "تكوين" },
@@ -83,12 +83,8 @@ export async function POST(request: Request) {
       entityId: post.id,
     });
 
-    // Revalidate public news and home pages immediately
-    revalidatePath("/[locale]/actualites", "page");
-    revalidatePath("/[locale]", "page");
-    revalidatePath("/fr/actualites");
-    revalidatePath("/ar/actualites");
-    revalidatePath("/en/actualites");
+    // Revalidate all public feeds immediately (Actualités, Home, Formations, Établissement)
+    revalidateAllPublicFeeds();
 
     return NextResponse.json({ post }, { status: 201 });
   } catch {

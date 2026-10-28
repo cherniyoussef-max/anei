@@ -250,7 +250,7 @@ export default async function NewsPage({
                   {latest.excerpt}
                 </p>
 
-                <div>
+                <div className="flex flex-wrap items-center gap-3">
                   <Link
                     href={`/${locale}/actualites/${latest.slug}`}
                     className="inline-flex items-center gap-2.5 px-6 py-3 rounded-full bg-[#0A192F] hover:bg-[#0056D2] text-white text-sm font-semibold transition-all shadow-xs group"
@@ -262,6 +262,24 @@ export default async function NewsPage({
                       className="transition-transform group-hover:translate-x-1 rtl:group-hover:-translate-x-1 rtl:rotate-180"
                     />
                   </Link>
+
+                  {latest.category === "FORMATION" && (
+                    <Link
+                      href={`/${locale}/formations/${latest.slug.replace(/^formation-/, "")}`}
+                      className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-[#0A192F] border border-amber-600/30 text-sm font-semibold transition-all group"
+                    >
+                      <span>{ar ? "اكتشف الدورة مباشرة ←" : "Découvrir la formation →"}</span>
+                    </Link>
+                  )}
+
+                  {latest.category === "EVENEMENT" && (
+                    <Link
+                      href={`/${locale}/webinaires`}
+                      className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-sky-500/10 hover:bg-sky-500/20 text-[#0A192F] border border-sky-600/30 text-sm font-semibold transition-all group"
+                    >
+                      <span>{ar ? "الانضمام للندوة مباشرة ←" : "Accéder aux webinaires →"}</span>
+                    </Link>
+                  )}
                 </div>
               </div>
             </article>

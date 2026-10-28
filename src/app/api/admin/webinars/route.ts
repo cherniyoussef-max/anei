@@ -6,6 +6,7 @@ import { isTrustedMutation } from "@/server/security/origin";
 import { readLimitedJson } from "@/server/security/request-body";
 
 import { adminWebinarCreateSchema } from "@/lib/webinar-validation";
+import { syncWebinarToActualites } from "@/server/services/auto-news-syndication";
 
 export async function POST(request: Request) {
   if (!isTrustedMutation(request)) return NextResponse.json({ error: "UNTRUSTED_ORIGIN" }, { status: 403 });
@@ -18,6 +19,9 @@ export async function POST(request: Request) {
   try {
     const [webinar] = await db.insert(webinars).values(parsed.data).returning();
     await db.insert(auditLogs).values({ actorUserId: session.user.id, action: "webinar.create", entityType: "webinar", entityId: webinar.id });
+    if (webinar.published) {
+      await syncWebinarToActualites(webinar.id, { isFeatured: true });
+    }
     return NextResponse.json({ webinar }, { status: 201 });
   } catch {
     return NextResponse.json({ error: "CREATE_FAILED" }, { status: 409 });

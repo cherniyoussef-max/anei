@@ -11,6 +11,19 @@ type CourseRow = Awaited<ReturnType<typeof listHomeCourses>>[number];
 type WebinarRow = Awaited<ReturnType<typeof listHomeWebinars>>[number];
 type AvsRow = Awaited<ReturnType<typeof listHomeAvs>>[number];
 
+export interface TopFeaturedNewsItem {
+  id: string;
+  slug: string;
+  category: string;
+  coverImageUrl?: string | null;
+  tagFr: string;
+  tagAr: string;
+  titleFr: string;
+  titleAr: string;
+  excerptFr: string;
+  excerptAr: string;
+}
+
 export function AcademyHome({
   locale,
   courses: _courses = [],
@@ -18,6 +31,7 @@ export function AcademyHome({
   avsProfiles: _avsProfiles = [],
   hasPlayedIntro: _hasPlayedIntro = false,
   initialUser = null,
+  topFeaturedNews = null,
 }: {
   locale: Locale;
   courses?: CourseRow[];
@@ -25,6 +39,7 @@ export function AcademyHome({
   avsProfiles?: AvsRow[];
   hasPlayedIntro?: boolean;
   initialUser?: { id: string; role?: string } | null;
+  topFeaturedNews?: TopFeaturedNewsItem | null;
 }) {
   const ar = locale === "ar";
 
@@ -350,27 +365,72 @@ export function AcademyHome({
       </section>
 
       {/* =====================================================================
-          4. A LA UNE SECTION (.une) - Asymmetric Ellipse Mask
+          4. A LA UNE SECTION (.une) - Dynamic Featured Content or PPS Fallback
           ===================================================================== */}
       <section className="wrap">
         <div className="une rv">
-          <div className="ph" aria-hidden="true" />
+          <div
+            className="ph"
+            aria-hidden="true"
+            style={
+              topFeaturedNews?.coverImageUrl
+                ? { backgroundImage: `url(${topFeaturedNews.coverImageUrl})` }
+                : undefined
+            }
+          />
           <div className="tx">
             <div className="tag">
-              {ar ? "برنامج مميز" : "PROGRAMME PHARE"}
+              {topFeaturedNews
+                ? ar
+                  ? topFeaturedNews.tagAr || "في الصدارة ⭐"
+                  : topFeaturedNews.tagFr || "À LA UNE ⭐"
+                : ar
+                ? "برنامج مميز"
+                : "PROGRAMME PHARE"}
             </div>
             <h2>
-              {ar
+              {topFeaturedNews
+                ? ar
+                  ? topFeaturedNews.titleAr
+                  : topFeaturedNews.titleFr
+                : ar
                 ? "صياغة المشروع الفردي للتعلم (PEI/PPS)"
                 : "Construire le Projet Personnalisé de Scolarisation (PPS)"}
             </h2>
             <p>
-              {ar
+              {topFeaturedNews
+                ? ar
+                  ? topFeaturedNews.excerptAr
+                  : topFeaturedNews.excerptFr
+                : ar
                 ? "دليل منهجي متكامل ونماذج قابلة للتحميل لتصميم ومتابعة وتقييم التكييفات البيداغوجية لكل تلميذ ذي احتياجات خاصة."
                 : "Un guide méthodologique complet et des modèles téléchargeables pour concevoir, suivre et évaluer les aménagements pédagogiques de l'élève à besoins spécifiques."}
             </p>
-            <Link href={`/${locale}/formations`} className="btn btn-navy">
-              <span>{ar ? "الاطلاع على الملف ←" : "Consulter le dossier →"}</span>
+            <Link
+              href={
+                topFeaturedNews
+                  ? topFeaturedNews.category === "FORMATION" ||
+                    topFeaturedNews.slug.startsWith("formation-")
+                    ? `/${locale}/formations/${topFeaturedNews.slug.replace(/^formation-/, "")}`
+                    : `/${locale}/actualites/${topFeaturedNews.slug}`
+                  : `/${locale}/formations`
+              }
+              className="btn btn-navy"
+            >
+              <span>
+                {topFeaturedNews
+                  ? topFeaturedNews.category === "FORMATION" ||
+                    topFeaturedNews.slug.startsWith("formation-")
+                    ? ar
+                      ? "اكتشف البرنامج والتسجيل ←"
+                      : "Découvrir la formation →"
+                    : ar
+                    ? "الاطلاع على التفاصيل ←"
+                    : "Consulter le dossier →"
+                  : ar
+                  ? "الاطلاع على الملف ←"
+                  : "Consulter le dossier →"}
+              </span>
             </Link>
           </div>
         </div>

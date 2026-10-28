@@ -5,6 +5,7 @@ import { auditLogs, resources } from "@/server/db/schema";
 import { adminMutationRateLimit, getAdminSessionFor } from "@/server/auth/admin";
 import { isTrustedMutation } from "@/server/security/origin";
 import { readLimitedJson } from "@/server/security/request-body";
+import { syncResourceToActualites } from "@/server/services/auto-news-syndication";
 
 const schema = z.object({
   slug: z.string().regex(/^[a-z0-9-]+$/).min(3).max(120),
@@ -34,6 +35,9 @@ export async function POST(request: Request) {
     const { downloadObjectKey, coverImageObjectKey, ...input } = parsed.data;
     const [resource] = await db.insert(resources).values({ ...input, downloadUrl: downloadObjectKey || null, coverImage: coverImageObjectKey || null }).returning();
     await db.insert(auditLogs).values({ actorUserId: session.user.id, action: "resource.create", entityType: "resource", entityId: resource.id });
+    if (resource.published) {
+      await syncResourceToActualites(resource.id, { isFeatured: false });
+    }
     return NextResponse.json({ resource }, { status: 201 });
   } catch {
     return NextResponse.json({ error: "CREATE_FAILED" }, { status: 409 });
