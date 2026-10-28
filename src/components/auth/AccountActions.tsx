@@ -53,11 +53,14 @@ export function AccountActions({ locale, initialUser = null }: { locale: Locale;
 
     return (
       <Link
-        className="navbar-account-btn"
+        className="inline-flex items-center justify-center gap-2 px-5 py-2 rounded-full font-semibold text-[13.5px] bg-[#0b1f4b] text-white hover:bg-[#1b3a7a] transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5"
         href={`/${locale}/login`}
         aria-label={ar ? "تسجيل الدخول / حسابي" : en ? "Sign in / My account" : "Se connecter / Mon compte"}
       >
-        <Icon name="user" size={19} />
+        <Icon name="user" size={17} />
+        <span className="hidden sm:inline">
+          {ar ? "تسجيل الدخول" : en ? "Sign In" : "Connexion"}
+        </span>
       </Link>
     );
   }

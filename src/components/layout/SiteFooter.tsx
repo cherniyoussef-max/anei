@@ -43,7 +43,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
       {/* =====================================================================
           ÉTAGE 2 : CORPS DU FOOTER SOMBRE (NAVY BLEU #173B5D)
           ===================================================================== */}
-      <div className="bg-[#173b5d] text-slate-200 py-14 lg:py-16">
+      <div className="bg-[#0b1f4b] text-slate-200 py-14 lg:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8">
             {/* Colonne 1 : Identité & Mission */}
@@ -54,18 +54,18 @@ export function SiteFooter({ locale }: { locale: Locale }) {
                 aria-label={ar ? "الرئيسية ANEI" : "Accueil ANEI"}
               >
                 <Image
-                  src="/brand/anei-mark-white-wing.webp?v=white"
+                  src="/media/home-v5/logo-footer.png"
                   alt={ar ? "الأكاديمية الوطنية للتربية الدامجة" : "Académie Nationale de l’Éducation Inclusive"}
-                  width={56}
-                  height={32}
-                  className="h-8 sm:h-9 w-auto object-contain shrink-0"
+                  width={140}
+                  height={44}
                   unoptimized
+                  className="h-10 sm:h-11 w-auto object-contain shrink-0 rounded-lg p-1 bg-white/10"
                 />
-                <div className="flex flex-col">
-                  <span className="font-bold text-white text-[15px] sm:text-[16px] leading-snug font-sans tracking-tight">
+                <div className="flex flex-col text-start">
+                  <span className="font-bold text-white text-[15px] sm:text-[16px] leading-snug tracking-tight">
                     الأكاديمية الوطنية للتربية الدامجة
                   </span>
-                  <span className="text-[11px] sm:text-[12px] font-normal text-white/90 leading-tight mt-0.5">
+                  <span className="text-[11px] sm:text-[12px] font-semibold text-[#e3c776] leading-tight mt-0.5">
                     L&apos;Académie Nationale de l&apos;Éducation Inclusive
                   </span>
                 </div>
@@ -183,7 +183,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
       {/* =====================================================================
           ÉTAGE 3 : BARRE LÉGALE INFÉRIEURE (COPYRIGHT & LIENS LÉGAUX)
           ===================================================================== */}
-      <div className="bg-[#0f2842] border-t border-white/[0.08] py-5">
+      <div className="bg-[#071533] border-t border-white/[0.08] py-5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
           <span>
             {ar

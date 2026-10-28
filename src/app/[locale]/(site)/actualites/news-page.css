@@ -37,10 +37,10 @@
 }
 
 .news-v7-intro h1 {
-  font-family: var(--font-sans);
+  font-family: var(--font-serif, var(--font-playfair));
   max-width: 14ch;
   margin-block: 16px 20px;
-  color: var(--navy-900, #1B3A5C);
+  color: var(--navy-900, #0b1f4b);
   font-size: clamp(2.5rem, 3.8vw, 3.5rem);
   font-weight: 500;
   line-height: 1.12;

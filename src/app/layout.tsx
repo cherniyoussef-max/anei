@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { Plus_Jakarta_Sans, IBM_Plex_Sans_Arabic } from "next/font/google";
+import { Plus_Jakarta_Sans, IBM_Plex_Sans_Arabic, Playfair_Display, Poppins, Cairo } from "next/font/google";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -13,6 +13,24 @@ const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
   subsets: ["arabic"],
   variable: "--font-arabic",
   weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+const playfairDisplay = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
+  weight: ["600", "700"],
+  display: "swap",
+});
+const poppins = Poppins({
+  subsets: ["latin"],
+  variable: "--font-poppins",
+  weight: ["400", "500", "600"],
+  display: "swap",
+});
+const cairo = Cairo({
+  subsets: ["arabic"],
+  variable: "--font-cairo",
+  weight: ["600", "700"],
   display: "swap",
 });
 
@@ -78,7 +96,12 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
   const installDirectionContract = `document.currentScript?.parentNode?.insertBefore(document.createComment(${JSON.stringify(directionContract)}),document.currentScript);`;
 
   return (
-    <html lang={locale} dir={locale === "ar" ? "rtl" : "ltr"} className={`${plusJakartaSans.variable} ${ibmPlexSansArabic.variable}`} data-scroll-behavior="smooth">
+    <html
+      lang={locale}
+      dir={locale === "ar" ? "rtl" : "ltr"}
+      className={`${plusJakartaSans.variable} ${ibmPlexSansArabic.variable} ${playfairDisplay.variable} ${poppins.variable} ${cairo.variable}`}
+      data-scroll-behavior="smooth"
+    >
       <body>
         {/* Browsers intentionally hide nonce values from DOM attribute reads; suppress
             the resulting React hydration comparison while keeping CSP enforcement. */}

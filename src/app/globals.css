@@ -1,13 +1,19 @@
 @import "tailwindcss";
 
 :root{
-  --bg:#faf8f5;--surface:#fff;--surface-2:#f3efe7;--ink:#16241f;--muted:#5c6b64;
-  --line:#e5e0d6;--blue:#0f6b5c;--blue-2:#0a4f45;--cyan:#2fa792;--green:#19a875;
-  --violet:#7657d8;--orange:#e8734a;--rose:#d15f39;--shadow:0 18px 60px rgba(15,36,31,.10);
-  --radius:24px;--radius-sm:16px;--max:1180px;
-  --font-serif: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-fraunces: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-cairo: var(--font-arabic), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --bg:#faf8f5;--surface:#fff;--surface-2:#f3efe7;--ink:#0b1f4b;--muted:#5c6b64;
+  --line:#e5e0d6;--blue:#0b1f4b;--blue-2:#1b3a7a;--cyan:#2fa792;--green:#19a875;
+  --violet:#7657d8;--orange:#b8923a;--rose:#d15f39;--shadow:0 18px 60px rgba(11,31,75,.10);
+  --radius:24px;--radius-sm:16px;--max:1280px;
+
+  /* Signature ANEI Home Palette */
+  --navy:#0b1f4b;--navy2:#1b3a7a;--gold:#b8923a;--gold2:#e3c776;--sky:#eef4fc;--sky2:#dde9f8;
+  --bg-page:#f7faff;
+
+  --font-serif: var(--font-playfair), 'Playfair Display', Georgia, serif;
+  --font-fraunces: var(--font-playfair), 'Playfair Display', Georgia, serif;
+  --font-poppins-val: var(--font-poppins), Poppins, system-ui, sans-serif;
+  --font-cairo: var(--font-cairo), Cairo, var(--font-arabic), system-ui, sans-serif;
 }
 
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-sans),Inter,"Segoe UI",Tahoma,Arial,sans-serif;line-height:1.6}
@@ -61,6 +67,78 @@ html[lang="ar"] {
 [dir="rtl"] .directional-icon {
   transform: scaleX(-1);
   display: inline-block;
+}
+
+/* ==========================================================================
+   ANEI SIGNATURE DESIGN SYSTEM (anei-home.html)
+   ========================================================================== */
+.btn-navy {
+  background: var(--navy, #0b1f4b) !important;
+  color: #fff !important;
+  border-radius: 50px !important;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 0 !important;
+}
+.btn-navy:hover {
+  background: var(--navy2, #1b3a7a) !important;
+  transform: translateY(-3px);
+  box-shadow: 0 12px 26px rgba(11, 31, 75, 0.25);
+  color: #fff !important;
+}
+.btn-gold {
+  background: linear-gradient(135deg, var(--gold, #b8923a), var(--gold2, #e3c776)) !important;
+  color: var(--navy, #0b1f4b) !important;
+  border-radius: 50px !important;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 0 !important;
+}
+.btn-gold:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 26px rgba(184, 146, 58, 0.45);
+  color: var(--navy, #0b1f4b) !important;
+}
+.btn-out {
+  border: 1.5px solid var(--navy, #0b1f4b) !important;
+  color: var(--navy, #0b1f4b) !important;
+  background: #fff !important;
+  border-radius: 50px !important;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-out:hover {
+  background: var(--navy, #0b1f4b) !important;
+  color: #fff !important;
+}
+
+/* Animations */
+@keyframes fl { 50% { transform: translateY(-10px); } }
+@keyframes pl { 50% { opacity: 0.25; } }
+@keyframes up { from { opacity: 0; transform: translateY(40px); } }
+@keyframes shine { to { background-position: -230% 0; } }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes drift { 50% { transform: translate(18px, -14px) rotate(1.5deg); } }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(184, 146, 58, 0.55); } 70%, 100% { box-shadow: 0 0 0 16px rgba(184, 146, 58, 0); } }
+@keyframes aur { 50% { transform: translate(70px, 40px) scale(1.18); } }
+@keyframes dot { 50% { transform: translateY(12px); opacity: 0.2; } }
+
+/* Reveal on scroll */
+.rv {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.rv.in {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rv {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
 }
 
 /* Header */

@@ -1,23 +1,11 @@
+"use client";
+
+import { useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  Search,
-  ArrowRight,
-  GraduationCap,
-  BookOpen,
-  User,
-  MonitorPlay,
-  Megaphone,
-  Mail,
-  Users,
-  Monitor,
-  Calendar,
-  Sparkles,
-} from "lucide-react";
+import { GraduationCap, User } from "lucide-react";
 import type { Locale } from "@/types";
 import type { listHomeAvs, listHomeCourses, listHomeWebinars } from "@/server/queries/catalog";
-import { AneiLogoAnimated } from "@/components/brand/AneiLogoAnimated";
-import { HomePillarsBar } from "@/components/sections/HomePillarsBar";
 
 type CourseRow = Awaited<ReturnType<typeof listHomeCourses>>[number];
 type WebinarRow = Awaited<ReturnType<typeof listHomeWebinars>>[number];
@@ -25,7 +13,11 @@ type AvsRow = Awaited<ReturnType<typeof listHomeAvs>>[number];
 
 export function AcademyHome({
   locale,
-  hasPlayedIntro = false,
+  courses: _courses = [],
+  webinars: _webinars = [],
+  avsProfiles: _avsProfiles = [],
+  hasPlayedIntro: _hasPlayedIntro = false,
+  initialUser = null,
 }: {
   locale: Locale;
   courses?: CourseRow[];
@@ -36,426 +28,485 @@ export function AcademyHome({
 }) {
   const ar = locale === "ar";
 
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("in");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.12 }
+    );
+
+    document.querySelectorAll(".rv").forEach((el) => observer.observe(el));
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  const portalHref = initialUser
+    ? initialUser.role === "ADMIN" || initialUser.role === "SUPER_ADMIN"
+      ? `/${locale}/admin`
+      : `/${locale}/dashboard`
+    : `/${locale}/login`;
+
   return (
     <div className="academy-home">
-      {/* 2. HERO SECTION */}
-      <section className="hero-root">
-        {/* Subtle Brand Logo Emblem Watermark */}
-        <div className="hero-arabesque" aria-hidden="true">
-          <Image
-            src="/brand/anei-watermark-feathered-navy.webp"
-            alt=""
-            width={2256}
-            height={1403}
-            priority
-          />
-        </div>
+      {/* =====================================================================
+          1. HERO SECTION (.top)
+          ===================================================================== */}
+      <header className="top">
+        {/* Animated Golden Lines Curve */}
+        <svg className="sw" viewBox="0 0 1440 700" preserveAspectRatio="none" aria-hidden="true">
+          <path pathLength="1" d="M-20 600C300 520 620 700 960 600S1300 470 1470 540" />
+          <path pathLength="1" className="s2" d="M-20 640C320 570 640 730 980 640S1320 520 1470 580" />
+        </svg>
 
-        <div className="academy-container">
-          {/* Centered Academy Emblem Logo with Arabic + French Names & Animated 5-layer intro */}
-          <div className="hero-logo-center ah-hero-logo-intro w-[240px] sm:w-[280px] md:w-[320px] mx-auto mb-4">
-            <AneiLogoAnimated locale={locale} priority hasPlayedIntro={hasPlayedIntro} />
-          </div>
+        {/* Watermark Emblems */}
+        <Image
+          className="wm wm1"
+          src="/media/home-v5/logo-watermark.png"
+          alt=""
+          width={860}
+          height={430}
+          unoptimized
+          aria-hidden="true"
+        />
+        <Image
+          className="wm wm2"
+          src="/media/home-v5/logo-watermark-2.png"
+          alt=""
+          width={420}
+          height={210}
+          unoptimized
+          aria-hidden="true"
+        />
 
-          {/* Hero Grid: Copy (Left) + Classroom Photo with Swooping Curve (Right) */}
-          <div className="hero-grid">
-            {/* Left Column: Eyebrow, H1, Paragraph, Search Pill */}
-            <div className="hero-copy-col">
-              <div className="eyebrow-container mb-3.5">
-                <span className="gold-line" aria-hidden="true" />
-                <span className="text-[13.5px] text-[#3D4A5C] leading-snug">
-                  {ar ? (
-                    "منصة للتعلم وتبادل الخبرات"
-                  ) : (
-                    <>
-                      Une plateforme d’apprentissage
-                      <br />
-                      et de partage d’expertise
-                    </>
-                  )}
-                </span>
-              </div>
+        {/* Masked Hero Photograph */}
+        <div className="top-photo" aria-hidden="true" />
 
-              <h1 className="hero-h1 font-sans font-bold tracking-tight">
-                {ar ? (
-                  <>
-                    من أجل تربية
-                    <br />
-                    <span className="text-teal">دامجة</span> ومستدامة
-                  </>
-                ) : (
-                  <>
-                    Pour une éducation
-                    <br />
-                    <span className="text-teal">inclusive</span> et durable
-                  </>
-                )}
-              </h1>
-
-              <p className="hero-desc">
-                {ar
-                  ? "موارد ودورات تكوينية وأدوات لنبني معًا مجتمعًا أكثر عدلاً وشمولاً وتضامنًا."
-                  : "Des ressources, des formations et des outils pour construire ensemble une société plus juste, plus inclusive et plus solidaire."}
-              </p>
-
-              <form action={`/${locale}/formations`} method="GET" className="hero-search-bar">
-                <Search size={18} className="text-[#6B7685] flex-none" />
-                <input
-                  type="search"
-                  name="search"
-                  className="hero-search-input"
-                  placeholder={ar ? "ابحث عن دورة، أداة، أو موضوع..." : "Rechercher une formation, un outil, un sujet..."}
-                  aria-label={ar ? "ابحث عن دورة، أداة، أو موضوع..." : "Rechercher une formation, un outil, un sujet..."}
-                />
-                <button type="submit" className="hero-search-submit" aria-label={ar ? "بحث" : "Lancer la recherche"}>
-                  <ArrowRight size={18} strokeWidth={2.2} className="rtl:rotate-180" />
-                </button>
-              </form>
-            </div>
-
-            {/* Right Column: Hero Photo with Smooth Fade & Double Teal Sweeping Curve */}
-            <div className="hero-photo-wrap">
-              <Image
-                src={ar ? "/media/hero-teacher-children-smooth-rtl.webp" : "/media/hero-teacher-children-smooth.webp"}
-                alt={ar ? "معلمة وأطفال يقرؤون معًا في فصل دراسي دامج" : "Enseignante et enfants lisant ensemble dans une classe inclusive"}
-                width={1384}
-                height={752}
-                priority
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 650px"
-                className="hero-photo-img"
-              />
-            </div>
+        {/* Floating Badges */}
+        <div className="glass g1">
+          <i>✓</i>
+          <div>
+            <b>{ar ? "مسارات معتمدة 100%" : "100% Certifiant"}</b>
+            <span>{ar ? "تكوين مهني مصادق عليه" : "Formations & Titres reconnus"}</span>
           </div>
         </div>
-      </section>
 
-      {/* 3. QUICK-ACCESS BAND (6 Cards in a Row) */}
-      <section className="quick-access-root" aria-label={ar ? "الوصول السريع" : "Accès rapide"}>
-        <div className="academy-container">
-          <div className="quick-access-grid">
-            <Link href={`/${locale}/formations`} prefetch={true} className="quick-access-card">
-              <GraduationCap size={32} strokeWidth={1.4} className="quick-access-icon" />
-              <span className="quick-access-label">{ar ? "التكوين" : "Formations"}</span>
-            </Link>
-
-            <Link href={`/${locale}/bibliotheque`} prefetch={true} className="quick-access-card">
-              <BookOpen size={32} strokeWidth={1.4} className="quick-access-icon" />
-              <span className="quick-access-label">{ar ? "المكتبة" : "Bibliothèque"}</span>
-            </Link>
-
-            <Link href={`/${locale}/assistant`} prefetch={true} className="quick-access-card bg-amber-50/40 border-amber-200/60 hover:border-amber-300">
-              <Sparkles size={32} strokeWidth={1.4} className="quick-access-icon text-[#B58D3D]" />
-              <span className="quick-access-label text-slate-900 font-semibold">{ar ? "المساعد الذكي" : "Assistant IA"}</span>
-            </Link>
-
-            <Link href={`/${locale}/avs`} prefetch={true} className="quick-access-card">
-              <User size={32} strokeWidth={1.4} className="quick-access-icon" />
-              <span className="quick-access-label">{ar ? "البحث عن مرافق" : "Trouver un AVS"}</span>
-            </Link>
-
-            <Link href={`/${locale}/webinaires`} prefetch={true} className="quick-access-card">
-              <MonitorPlay size={32} strokeWidth={1.4} className="quick-access-icon" />
-              <span className="quick-access-label">{ar ? "الندوات" : "Webinaires"}</span>
-            </Link>
-
-            <Link href={`/${locale}/actualites`} prefetch={true} className="quick-access-card">
-              <Megaphone size={32} strokeWidth={1.4} className="quick-access-icon" />
-              <span className="quick-access-label">{ar ? "الأخبار" : "Actualités"}</span>
-            </Link>
-
-            <Link href={`/${locale}/contact`} prefetch={true} className="quick-access-card">
-              <Mail size={32} strokeWidth={1.4} className="quick-access-icon" />
-              <span className="quick-access-label">{ar ? "اتصل بنا" : "Contact"}</span>
-            </Link>
+        <div className="glass g2">
+          <i>
+            <span className="live" aria-hidden="true" />
+          </i>
+          <div>
+            <b>{ar ? "مباشر وتفاعلي" : "Directs & Masterclasses"}</b>
+            <span>{ar ? "لقاءات أسبوعية مع الخبراء" : "Échanges et replays ouverts"}</span>
           </div>
         </div>
-      </section>
 
-      {/* 4. "NOS DOMAINES" SECTION */}
-      <section className="domaines-root" aria-labelledby="domaines-heading">
-        <div className="academy-container">
-          <div className="domaines-layout">
-            {/* Left Column: Eyebrow, H2, Paragraph, Primary Button */}
-            <div className="domaines-copy">
-              <div className="eyebrow-container mb-3">
-                <span className="gold-line" aria-hidden="true" />
-                <span className="eyebrow-label">{ar ? "مجالاتنا" : "NOS DOMAINES"}</span>
-              </div>
-
-              <h2 id="domaines-heading" className="domaines-h2 font-sans font-semibold tracking-tight">
-                {ar ? (
-                  <>
-                    محتويات مكيّفة
-                    <br />
-                    مع <span className="text-teal">احتياجاتكم</span>
-                  </>
-                ) : (
-                  <>
-                    Des contenus adaptés
-                    <br />
-                    à <span className="text-teal">vos besoins</span>
-                  </>
-                )}
-              </h2>
-
-              <p className="domaines-desc">
-                {ar
-                  ? "عرض متنوع لتعزيز مهاراتكم وإثراء ممارساتكم ومرافقة الدمج في كافة السياقات."
-                  : "Une offre variée pour renforcer vos compétences, enrichir vos pratiques et accompagner l'inclusion dans tous les contextes."}
-              </p>
-
-              <Link href={`/${locale}/formations`} className="btn-pill-primary w-fit">
-                <span>{ar ? "اكتشف مجالاتنا" : "Découvrir nos domaines"}</span>
-                <ArrowRight size={17} strokeWidth={2} className="rtl:rotate-180" />
-              </Link>
+        {/* Main Content */}
+        <div className="wrap top-in">
+          <div className="top-txt">
+            <div className="tag">
+              {ar ? "تعلم · تمكين · إدماج" : "APPRENDRE · OUTILLER · INCLURE"}
             </div>
 
-            {/* Vertical Divider Line */}
-            <div className="domaines-divider" aria-hidden="true" />
-
-            {/* Right Column: 4 Cards in a Row */}
-            <div className="domaines-cards-grid">
-              {/* Card 1 */}
-              <Link href={`/${locale}/formations?category=pedagogie`} className="domaine-card">
-                <div className="domaine-photo-wrap">
-                  <Image
-                    src="/media/domain-pedagogie.jpg"
-                    alt={ar ? "البيداغوجيا الدامجة والبرنامج الفردي" : "Pédagogie inclusive et PEI"}
-                    width={800}
-                    height={488}
-                    className="domaine-photo"
-                  />
-                  <div className="domaine-badge" aria-hidden="true">
-                    <BookOpen size={18} strokeWidth={1.8} />
-                  </div>
-                </div>
-                <div className="domaine-content">
-                  <h3 className="domaine-title">
-                    {ar ? (
-                      <>
-                        البيداغوجيا الدامجة
-                        <br />
-                        والبرنامج الفردي
-                      </>
-                    ) : (
-                      <>
-                        Pédagogie inclusive
-                        <br />
-                        et PEI
-                      </>
-                    )}
-                  </h3>
-                  <div className="domaine-arrow">
-                    <ArrowRight size={16} strokeWidth={2} className="rtl:rotate-180" />
-                  </div>
-                </div>
-              </Link>
-
-              {/* Card 2 */}
-              <Link href={`/${locale}/avs`} className="domaine-card">
-                <div className="domaine-photo-wrap">
-                  <Image
-                    src="/media/domain-avs.jpg"
-                    alt={ar ? "مرافقة ودعم المرافقين المدرسيين" : "Accompagnement des AVS"}
-                    width={800}
-                    height={488}
-                    className="domaine-photo"
-                  />
-                  <div className="domaine-badge" aria-hidden="true">
-                    <Users size={18} strokeWidth={1.8} />
-                  </div>
-                </div>
-                <div className="domaine-content">
-                  <h3 className="domaine-title">
-                    {ar ? (
-                      <>
-                        مرافقة ودعم
-                        <br />
-                        المرافقين المدرسيين
-                      </>
-                    ) : (
-                      <>
-                        Accompagnement
-                        <br />
-                        des AVS
-                      </>
-                    )}
-                  </h3>
-                  <div className="domaine-arrow">
-                    <ArrowRight size={16} strokeWidth={2} className="rtl:rotate-180" />
-                  </div>
-                </div>
-              </Link>
-
-              {/* Card 3 */}
-              <Link href={`/${locale}/bibliotheque`} className="domaine-card">
-                <div className="domaine-photo-wrap">
-                  <Image
-                    src="/media/domain-outils.jpg"
-                    alt={ar ? "أدوات وموارد بيداغوجية" : "Outils et ressources pédagogiques"}
-                    width={800}
-                    height={488}
-                    className="domaine-photo"
-                  />
-                  <div className="domaine-badge" aria-hidden="true">
-                    <Monitor size={18} strokeWidth={1.8} />
-                  </div>
-                </div>
-                <div className="domaine-content">
-                  <h3 className="domaine-title">
-                    {ar ? (
-                      <>
-                        أدوات وموارد
-                        <br />
-                        بيداغوجية
-                      </>
-                    ) : (
-                      <>
-                        Outils et ressources
-                        <br />
-                        pédagogiques
-                      </>
-                    )}
-                  </h3>
-                  <div className="domaine-arrow">
-                    <ArrowRight size={16} strokeWidth={2} className="rtl:rotate-180" />
-                  </div>
-                </div>
-              </Link>
-
-              {/* Card 4 */}
-              <Link href={`/${locale}/webinaires`} className="domaine-card">
-                <div className="domaine-photo-wrap">
-                  <Image
-                    src="/media/domain-webinaires.jpg"
-                    alt={ar ? "ندوات وفعاليات" : "Webinaires et événements"}
-                    width={800}
-                    height={488}
-                    className="domaine-photo"
-                  />
-                  <div className="domaine-badge" aria-hidden="true">
-                    <Calendar size={18} strokeWidth={1.8} />
-                  </div>
-                </div>
-                <div className="domaine-content">
-                  <h3 className="domaine-title">
-                    {ar ? (
-                      <>
-                        ندوات
-                        <br />
-                        وفعاليات
-                      </>
-                    ) : (
-                      <>
-                        Webinaires
-                        <br />
-                        et événements
-                      </>
-                    )}
-                  </h3>
-                  <div className="domaine-arrow">
-                    <ArrowRight size={16} strokeWidth={2} className="rtl:rotate-180" />
-                  </div>
-                </div>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 5. "À LA UNE" FEATURE BANNER (Depth-of-Field Blur & 12-col Editorial Card) */}
-      <section className="alaune-root max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20" aria-labelledby="alaune-heading">
-        <div className="rounded-3xl bg-[#F4F7FB] border border-slate-200/80 overflow-hidden shadow-xs grid lg:grid-cols-12 items-center gap-0">
-          {/* Image Column with True Optical Depth (Crisp Subject + High Background Depth) */}
-          <div className="lg:col-span-6 relative h-[360px] sm:h-[420px] lg:h-[480px] overflow-hidden bg-slate-100 rounded-2xl lg:rounded-none shadow-sm lg:shadow-none">
-            {/* Main crisp image: wheelchair subject in classroom 100% sharp */}
-            <Image
-              src="/media/alaune-classroom.jpg"
-              alt={ar ? "فصل دراسي مجهز بكرسي متحرك في المقدمة" : "Salle de classe inclusive avec fauteuil roulant au premier plan"}
-              fill
-              sizes="(max-width: 1024px) 100vw, 50vw"
-              priority={false}
-              className="object-cover object-[30%_center] blur-none"
-            />
-
-            {/* Subtle background depth-of-field blur: strictly on the upper 25-35% classroom background */}
-            <div
-              className="absolute inset-0 pointer-events-none backdrop-blur-[2px]"
-              style={{
-                maskImage: "linear-gradient(to bottom, black 0%, transparent 35%)",
-                WebkitMaskImage: "linear-gradient(to bottom, black 0%, transparent 35%)",
-              }}
-              aria-hidden="true"
-            />
-
-            {/* Lateral edge blending gradient towards text column */}
-            <div
-              className="hidden lg:block absolute inset-y-0 end-0 w-28 lg:w-36 pointer-events-none z-10 bg-gradient-to-r rtl:bg-gradient-to-l from-transparent via-transparent to-[#F4F7FB]"
-              aria-hidden="true"
-            />
-            {/* Mobile edge blending (bottom) */}
-            <div
-              className="lg:hidden absolute inset-x-0 bottom-0 h-16 pointer-events-none z-10 bg-gradient-to-b from-transparent to-[#F4F7FB]"
-              aria-hidden="true"
-            />
-
-            {/* Contrast border ring */}
-            <div className="absolute inset-0 ring-1 ring-inset ring-slate-900/5 pointer-events-none z-10" aria-hidden="true" />
-          </div>
-
-          {/* Text Column */}
-          <div className="lg:col-span-6 p-8 sm:p-12 lg:ps-10 lg:pe-14 flex flex-col justify-center">
-            {/* Eyebrow */}
-            <div className="flex items-center gap-2.5 mb-4">
-              <span className="w-6 h-[1.5px] bg-[#B58D3D] rounded-full flex-none" aria-hidden="true" />
-              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#B58D3D]">
-                {ar ? "في الصدارة" : "À LA UNE"}
-              </span>
-            </div>
-
-            {/* H2 Title 100% Sans-Serif */}
-            <h2
-              id="alaune-heading"
-              className="text-3xl sm:text-4xl font-bold text-[#0A192F] tracking-[-0.02em] rtl:tracking-normal leading-[1.2] rtl:leading-[1.38] text-balance font-sans"
-            >
+            <h1>
               {ar ? (
                 <>
-                  الدمج، كفاءة
-                  <br />
-                  تُبنى خطوة بخطوة
+                  الدمج المدرسي، <em>قوة تكتسب</em>.
                 </>
               ) : (
                 <>
-                  L&apos;inclusion, une compétence
-                  <br />
-                  qui se construit
+                  L’inclusion, <em>une force</em> qui s’apprend.
                 </>
               )}
-            </h2>
+            </h1>
 
-            {/* Description */}
-            <p className="text-base sm:text-lg text-slate-600 leading-[1.7] rtl:leading-[1.9] mt-4 max-w-xl font-normal">
+            <p>
               {ar
-                ? "موارد وشهادات حية ومستجدات للبقاء على اطلاع والاستلهام من أفضل الممارسات في التربية الدامجة."
-                : "Des ressources, des témoignages et des actualités pour rester informé et s'inspirer des meilleures pratiques de terrain."}
+                ? "تكوينات وموارد وخبراء من أجل مدرسة يجد فيها كل طفل مكانه ويحقق إمكاناته."
+                : "Formations, ressources et experts pour une école où chaque enfant a sa place."}
             </p>
 
-            {/* CTA Button */}
-            <div className="mt-8">
-              <Link
-                href={`/${locale}/actualites`}
-                className="inline-flex items-center gap-2.5 rounded-full bg-[#0A192F] text-white hover:bg-[#0056D2] px-6 py-3 text-sm font-semibold shadow-xs transition-all duration-200 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0056D2] focus-visible:ring-offset-2"
-              >
-                <span>{ar ? "عرض جميع الأخبار" : "Voir toutes les actualités"}</span>
-                <ArrowRight size={17} strokeWidth={2} className="transition-transform duration-200 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 rtl:rotate-180" />
+            {/* Dual Choices (.opts) */}
+            <div className="opts">
+              <Link href={`/${locale}/formations`} className="opt o1">
+                <i>
+                  <GraduationCap size={26} strokeWidth={1.8} />
+                </i>
+                <div>
+                  <small>{ar ? "استكشاف" : "EXPLORER"}</small>
+                  <b>{ar ? "التكوين المستمر والمسارات" : "Training & Formation continue"}</b>
+                  <span>{ar ? "اكتشف البرامج المعتمدة" : "À quoi sert la plateforme ?"}</span>
+                </div>
+                <em className="rtl:rotate-180">→</em>
+              </Link>
+
+              <Link href={portalHref} className="opt o2">
+                <i>
+                  <User size={26} strokeWidth={1.8} />
+                </i>
+                <div>
+                  <small>{ar ? "فضاء المستخدم" : "CONNEXION"}</small>
+                  <b>{ar ? "بوابتكم الخاصة" : "Votre espace"}</b>
+                  <span>{ar ? "الولوج إلى دوراتك وشهاداتك" : "Accédez à vos formations"}</span>
+                </div>
+                <em className="rtl:rotate-180">→</em>
               </Link>
             </div>
           </div>
         </div>
+
+        {/* Bottom Curved Wave Separator */}
+        <svg className="wave" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 40C360 100 1080-20 1440 50V80H0Z" fill="#f7faff" />
+        </svg>
+      </header>
+
+      {/* =====================================================================
+          2. DOMAINS SECTION (.domains) - 6 Vertical Cards
+          ===================================================================== */}
+      <section className="domains" id="domaines">
+        <Image
+          className="wm4"
+          src="/media/home-v5/logo-watermark-domains.png"
+          alt=""
+          width={700}
+          height={350}
+          unoptimized
+          aria-hidden="true"
+        />
+
+        <div className="wrap">
+          <div className="head rv">
+            <small>{ar ? "الفئات المستفيدة" : "POUR QUI ?"}</small>
+            <h2>{ar ? "من يستفيد من الأكاديمية؟" : "Qui peut bénéficier de l’Académie ?"}</h2>
+            <p className="sub">
+              {ar
+                ? "الأولياء، المعلمون، مرافقو AVS، الأخصائيون والمؤسسات: مساحة مخصصة لكل فئة."
+                : "Parents, élèves, enseignants, AVS, spécialistes et établissements : un espace pour chacun."}
+            </p>
+          </div>
+
+          <div className="row rv">
+            {/* Card 1: Formations */}
+            <Link href={`/${locale}/formations`} className="card">
+              <div
+                className="bg"
+                style={{
+                  backgroundImage: "url(/media/home-v5/domain-formations.jpg)",
+                  backgroundPosition: "55% center",
+                }}
+              />
+              <span className="pill">
+                {ar ? "فضاء التكوين" : "Espace Formations"} <i className="rtl:rotate-180">→</i>
+              </span>
+              <h3>{ar ? "التكوين" : "Formations"}</h3>
+              <p>
+                {ar
+                  ? "مسارات تدريبية مصادق عليها لكل الاختصاصات بالسرعة التي تناسبكم."
+                  : "Des parcours certifiants adaptés à chaque profil, à suivre à votre rythme."}
+              </p>
+            </Link>
+
+            {/* Card 2: Librairie */}
+            <Link href={`/${locale}/bibliotheque`} className="card">
+              <div
+                className="bg"
+                style={{
+                  backgroundImage: "url(/media/home-v5/domain-bibliotheque.jpg)",
+                  backgroundPosition: "35% center",
+                }}
+              />
+              <span className="pill">
+                {ar ? "المكتبة الرقمية" : "Espace Librairie"} <i className="rtl:rotate-180">→</i>
+              </span>
+              <h3>{ar ? "المكتبة" : "Librairie"}</h3>
+              <p>
+                {ar
+                  ? "أدلة وبطاقات وأدوات عملية جاهزة للاستخدام الصفي المباشر."
+                  : "Guides, fiches et outils concrets à utiliser dès demain en classe."}
+              </p>
+            </Link>
+
+            {/* Card 3: Trouver un AVS */}
+            <Link href={`/${locale}/avs`} className="card">
+              <div
+                className="bg"
+                style={{
+                  backgroundImage: "url(/media/home-v5/domain-avs.jpg)",
+                  backgroundPosition: "60% center",
+                }}
+              />
+              <span className="pill">
+                {ar ? "دليل AVS" : "Espace AVS"} <i className="rtl:rotate-180">→</i>
+              </span>
+              <h3>{ar ? "دليل مرافقي AVS" : "Trouver un AVS"}</h3>
+              <p>
+                {ar
+                  ? "العثور على المرافق المناسب والمؤهل لاحتياجات طفلكم المدرسية."
+                  : "Trouvez l’accompagnant le mieux adapté au besoin de votre enfant."}
+              </p>
+            </Link>
+
+            {/* Card 4: Spécialistes */}
+            <Link href={`/${locale}/specialistes`} className="card">
+              <div
+                className="bg"
+                style={{
+                  backgroundImage: "url(/media/home-v5/domain-specialistes.jpg)",
+                  backgroundPosition: "center",
+                }}
+              />
+              <span className="pill">
+                {ar ? "فضاء الخبراء" : "Espace Experts"} <i className="rtl:rotate-180">→</i>
+              </span>
+              <h3>{ar ? "الأخصائيون" : "Spécialistes"}</h3>
+              <p>
+                {ar
+                  ? "أخصائيو نطق، نفسانيون، ومربون: نخبة معتمدة وموثوقة بالقرب منكم."
+                  : "Orthophonistes, psychologues, éducateurs : des experts vérifiés près de vous."}
+              </p>
+            </Link>
+
+            {/* Card 5: Établissements */}
+            <Link href={`/${locale}/contact?type=school`} className="card">
+              <div
+                className="bg"
+                style={{
+                  backgroundImage: "url(/media/home-v5/domain-etablissements.jpg)",
+                  backgroundPosition: "48% center",
+                }}
+              />
+              <span className="pill">
+                {ar ? "المؤسسات التعليمية" : "Espace Établissements"} <i className="rtl:rotate-180">→</i>
+              </span>
+              <h3>{ar ? "المؤسسات" : "Établissements"}</h3>
+              <p>
+                {ar
+                  ? "شراكات ومرافقة المدارس في استراتيجية الإدماج الشامل والتدريب."
+                  : "Partenariats et accompagnement des écoles dans leur démarche inclusive."}
+              </p>
+            </Link>
+
+            {/* Card 6: Webinaires */}
+            <Link href={`/${locale}/webinaires`} className="card">
+              <div
+                className="bg"
+                style={{
+                  backgroundImage: "url(/media/home-v5/domain-webinaires.jpg)",
+                  backgroundPosition: "center",
+                }}
+              />
+              <span className="pill">
+                {ar ? "الندوات التفاعلية" : "Espace Webinaires"} <i className="rtl:rotate-180">→</i>
+              </span>
+              <h3>{ar ? "الندوات" : "Webinaires"}</h3>
+              <p>
+                {ar
+                  ? "حوار مباشر مع نخبة الخبراء ومشاهدة الإعادات في أي وقت."
+                  : "Échangez en direct avec nos experts, puis revoyez les replays."}
+              </p>
+            </Link>
+          </div>
+        </div>
       </section>
 
-      {/* 8. ACADEMY CORE PILLARS (TRUST & VALUES) */}
-      <HomePillarsBar locale={locale} />
+      {/* =====================================================================
+          3. PLATFORM SHOWCASE SECTION (.plat)
+          ===================================================================== */}
+      <section className="plat">
+        <div className="wrap">
+          <div className="head rv">
+            <small>{ar ? "المنصة التعليمية" : "PLATEFORME D’APPRENTISSAGE"}</small>
+            <h2>
+              {ar
+                ? "بيئة تدريب وتواصل متكاملة لخدمة المدرسة الدامجة"
+                : "Un environnement complet au service de l’école inclusive"}
+            </h2>
+          </div>
+
+          <div className="shot rv">
+            <Image
+              src="/media/home-v5/platform-showcase.jpg"
+              alt={ar ? "واجهة منصة ANEI" : "Aperçu de la plateforme ANEI"}
+              width={1280}
+              height={720}
+              unoptimized
+            />
+          </div>
+
+          <div className="cta rv">
+            <Link href={`/${locale}/formations`} className="btn btn-navy big">
+              <span>{ar ? "اكتشف جميع برامج التكوين ←" : "Découvrir tous nos parcours de formation →"}</span>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* =====================================================================
+          4. A LA UNE SECTION (.une) - Asymmetric Ellipse Mask
+          ===================================================================== */}
+      <section className="wrap">
+        <div className="une rv">
+          <div className="ph" aria-hidden="true" />
+          <div className="tx">
+            <div className="tag">
+              {ar ? "برنامج مميز" : "PROGRAMME PHARE"}
+            </div>
+            <h2>
+              {ar
+                ? "صياغة المشروع الفردي للتعلم (PEI/PPS)"
+                : "Construire le Projet Personnalisé de Scolarisation (PPS)"}
+            </h2>
+            <p>
+              {ar
+                ? "دليل منهجي متكامل ونماذج قابلة للتحميل لتصميم ومتابعة وتقييم التكييفات البيداغوجية لكل تلميذ ذي احتياجات خاصة."
+                : "Un guide méthodologique complet et des modèles téléchargeables pour concevoir, suivre et évaluer les aménagements pédagogiques de l'élève à besoins spécifiques."}
+            </p>
+            <Link href={`/${locale}/formations`} className="btn btn-navy">
+              <span>{ar ? "الاطلاع على الملف ←" : "Consulter le dossier →"}</span>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* =====================================================================
+          5. ACADEMIC VALUES (.vals)
+          ===================================================================== */}
+      <section className="vals">
+        <div className="wrap">
+          <div>
+            <i>🎓</i>
+            <span>
+              {ar
+                ? "تميز أكاديمي واعتماد علمي دقيق"
+                : "Excellence académique & validation scientifique"}
+            </span>
+          </div>
+          <div>
+            <i>🤝</i>
+            <span>
+              {ar
+                ? "شمولية عادلة ومدرسة متاحة للجميع"
+                : "Inclusion universelle & équité pour tous"}
+            </span>
+          </div>
+          <div>
+            <i>⚡</i>
+            <span>
+              {ar
+                ? "أدوات تطبيقية عملية قابلة للتنفيذ فوراً"
+                : "Outils opérationnels immédiatement applicables"}
+            </span>
+          </div>
+          <div>
+            <i>🛡️</i>
+            <span>
+              {ar
+                ? "شبكة معتمدة من الخبراء والممارسين الميدانيين"
+                : "Réseau certifié d'experts et praticiens de terrain"}
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* =====================================================================
+          6. NEWS & PUBLICATIONS (.news)
+          ===================================================================== */}
+      <section className="news" id="actualites">
+        <div className="wrap">
+          <div className="nhead rv">
+            <div>
+              <small>{ar ? "الأخبار والمقالات" : "ACTUALITÉS"}</small>
+              <h2>{ar ? "آخر المستجدات" : "Dernières publications"}</h2>
+              <span className="ar">{ar ? "منشورات ومقالات ميدانية" : "آخر المستجدات"}</span>
+            </div>
+            <Link href={`/${locale}/actualites`} className="btn btn-out">
+              <span>{ar ? "عرض الكل ←" : "Tout voir →"}</span>
+            </Link>
+          </div>
+
+          <div className="ngrid rv">
+            {/* News 1 */}
+            <Link href={`/${locale}/actualites`} className="nc">
+              <div
+                className="ni"
+                style={{ backgroundImage: "url(/media/home-v5/news-1.jpg)" }}
+              >
+                <span className="bd w">{ar ? "ندوة" : "Webinaire"}</span>
+              </div>
+              <div className="nt">
+                <small>{ar ? "24 أكتوبر 2026 · مباشر" : "24 oct. 2026 · En direct"}</small>
+                <h3>
+                  {ar ? "صياغة البرنامج الفردي: المراحل الأساسية" : "Rédiger un PEI : les étapes clés"}
+                </h3>
+                <span className="more">{ar ? "المزيد ←" : "En savoir plus →"}</span>
+              </div>
+            </Link>
+
+            {/* News 2 */}
+            <Link href={`/${locale}/actualites`} className="nc">
+              <div
+                className="ni"
+                style={{ backgroundImage: "url(/media/home-v5/news-2.jpg)" }}
+              >
+                <span className="bd f">{ar ? "تكوين" : "Formation"}</span>
+              </div>
+              <div className="nt">
+                <small>{ar ? "15 أكتوبر 2026" : "Publié le 15 oct. 2026"}</small>
+                <h3>
+                  {ar
+                    ? "مرافقة تلميذ ذي طيف التوحد داخل الفصل"
+                    : "Accompagner un élève avec autisme en classe"}
+                </h3>
+                <span className="more">{ar ? "المزيد ←" : "En savoir plus →"}</span>
+              </div>
+            </Link>
+
+            {/* News 3 */}
+            <Link href={`/${locale}/actualites`} className="nc">
+              <div
+                className="ni"
+                style={{ backgroundImage: "url(/media/home-v5/news-3.jpg)" }}
+              >
+                <span className="bd f">{ar ? "تكوين" : "Formation"}</span>
+              </div>
+              <div className="nt">
+                <small>{ar ? "12 أكتوبر 2026" : "Publié le 12 oct. 2026"}</small>
+                <h3>
+                  {ar
+                    ? "تكييف الحصص الدراسية في الفصل الدامج"
+                    : "Adapter ses séances en classe inclusive"}
+                </h3>
+                <span className="more">{ar ? "المزيد ←" : "En savoir plus →"}</span>
+              </div>
+            </Link>
+
+            {/* News 4 */}
+            <Link href={`/${locale}/actualites`} className="nc">
+              <div
+                className="ni"
+                style={{ backgroundImage: "url(/media/home-v5/news-4.jpg)" }}
+              >
+                <span className="bd w">{ar ? "إعادة" : "Webinaire"}</span>
+              </div>
+              <div className="nt">
+                <small>{ar ? "تسجيل · 8 أكتوبر 2026" : "Replay · 8 oct. 2026"}</small>
+                <h3>
+                  {ar ? "اضطرابات التعلم: التشخيص والتدخل" : "Troubles « dys » : repérer et agir"}
+                </h3>
+                <span className="more">{ar ? "المزيد ←" : "En savoir plus →"}</span>
+              </div>
+            </Link>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
