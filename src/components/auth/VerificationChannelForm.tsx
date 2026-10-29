@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   Mail,
   MessageSquare,
-  Clock,
+  ShieldCheck,
+  RotateCw,
   ArrowRight,
   ArrowLeft,
   AlertCircle,
@@ -14,10 +15,12 @@ import {
 } from "lucide-react";
 import type { Locale } from "@/types";
 import { AuthWizardProgress } from "@/components/auth/AuthWizardProgress";
+import { OtpPinInput } from "@/components/auth/OtpPinInput";
 
 type Channel = { channel: "EMAIL" | "WHATSAPP"; destinationMasked: string };
 
 const OTP_COOLDOWN_SECONDS = 60;
+const OTP_VALIDITY_SECONDS = 300; // 5 minutes
 
 export function VerificationChannelForm({ locale }: { locale: Locale }) {
   const [channels, setChannels] = useState<Channel[]>([]);
@@ -29,6 +32,7 @@ export function VerificationChannelForm({ locale }: { locale: Locale }) {
   const [sending, setSending] = useState(false);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
+  const [remainingSeconds, setRemainingSeconds] = useState(OTP_VALIDITY_SECONDS);
   const router = useRouter();
   const search = useSearchParams();
   const ar = locale === "ar";
@@ -57,10 +61,24 @@ export function VerificationChannelForm({ locale }: { locale: Locale }) {
     return () => clearInterval(interval);
   }, [cooldown]);
 
+  useEffect(() => {
+    if (!challengeId) return;
+    const interval = setInterval(() => {
+      setRemainingSeconds((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [challengeId]);
+
   const selectedChannel = useMemo(
     () => channels.find((entry) => entry.channel === selected) ?? null,
     [channels, selected],
   );
+
+  function formatCountdown(totalSec: number) {
+    const mins = Math.floor(totalSec / 60);
+    const secs = totalSec % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  }
 
   async function sendOtp() {
     if (!selected) return;
@@ -81,6 +99,7 @@ export function VerificationChannelForm({ locale }: { locale: Locale }) {
       setChallengeId(payload.challengeId);
       setExpiresAt(payload.expiresAt ?? null);
       setCooldown(OTP_COOLDOWN_SECONDS);
+      setRemainingSeconds(OTP_VALIDITY_SECONDS);
       setCode("");
       setSending(false);
     } catch {
@@ -89,8 +108,9 @@ export function VerificationChannelForm({ locale }: { locale: Locale }) {
     }
   }
 
-  async function verifyOtp() {
-    if (!challengeId || code.length !== 6) return;
+  async function verifyOtp(overrideCode?: string) {
+    const codeToVerify = overrideCode || code;
+    if (!challengeId || codeToVerify.length !== 6) return;
     setSending(true);
     setError(null);
     try {
@@ -99,7 +119,7 @@ export function VerificationChannelForm({ locale }: { locale: Locale }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           challengeId,
-          code,
+          code: codeToVerify,
           locale,
           next: search.get("next") || undefined,
         }),
@@ -158,15 +178,15 @@ export function VerificationChannelForm({ locale }: { locale: Locale }) {
       <AuthWizardProgress
         currentStep={2}
         totalSteps={2}
-        stepTitle={ar ? "تأكيد جلسة العمل الآمنة (OTP)" : "Code de vérification"}
+        stepTitle={ar ? "تأكيد جلسة العمل الآمنة (OTP)" : "Vérification de sécurité"}
         stepSubtitle={
           challengeId
             ? ar
               ? `أدخل رمز الأمان المكون من 6 أرقام المرسل إلى ${selectedChannel?.destinationMasked || ""}.`
-              : `Entrez le code de sécurité à 6 chiffres envoyé à ${selectedChannel?.destinationMasked || ""}.`
+              : `Saisissez le code de sécurité à 6 chiffres transmis à ${selectedChannel?.destinationMasked || ""}.`
             : ar
-            ? "اختر طريقة استلام رمز أمان لمرة واحدة (صالح لمدة 5 دقائق) لتأكيد جلستك وحماية حسابك."
-            : "Choisissez un canal pour recevoir votre code à usage unique (valable 5 minutes) et sécuriser votre accès."
+            ? "اختر وسيلة استلام الرمز المكون من 6 أرقام لتأكيد هويتك وتأمين حسابك."
+            : "Choisissez un canal pour recevoir votre code à usage unique et sécuriser votre accès."
         }
         locale={locale}
       />
@@ -174,7 +194,7 @@ export function VerificationChannelForm({ locale }: { locale: Locale }) {
       {error ? (
         <div
           role="alert"
-          className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm flex items-start gap-3 shadow-xs"
+          className="mb-6 p-4 rounded-xl bg-red-50/80 border border-red-200 text-red-800 text-sm flex items-start gap-3 shadow-2xs"
         >
           <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
           <div className="flex-1 font-medium">{error}</div>
@@ -184,7 +204,7 @@ export function VerificationChannelForm({ locale }: { locale: Locale }) {
       {!challengeId ? (
         <div className="space-y-6">
           <div className="space-y-3">
-            <span className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-2">
+            <span className="block text-xs font-bold uppercase tracking-wider text-[#082d55] mb-2">
               {ar ? "طريقة استلام رمز الأمان :" : "Mode d’envoi du code de sécurité :"}
             </span>
 
@@ -199,27 +219,31 @@ export function VerificationChannelForm({ locale }: { locale: Locale }) {
                     role="radio"
                     aria-checked={isSelected}
                     onClick={() => setSelected(entry.channel)}
-                    className={`p-4 rounded-xl border-2 transition-all flex items-center gap-3 text-start ${
+                    className={`auth-channel-card p-4 rounded-2xl border-2 transition-all flex items-center gap-3.5 text-start cursor-pointer ${
                       isSelected
-                        ? "border-[#0A192F] bg-white shadow-2xs text-[#0A192F]"
-                        : "border-slate-200 bg-white hover:border-slate-300 text-slate-600"
+                        ? "is-selected border-[#082d55] bg-white shadow-xs text-[#082d55] ring-2 ring-[#082d55]/10"
+                        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50 text-slate-700"
                     }`}
                   >
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                      isEmail ? "bg-blue-50 text-[#0056D2]" : "bg-emerald-50 text-emerald-600"
+                    <div className={`channel-icon-wrap w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                      isSelected
+                        ? "bg-[#082d55] text-white"
+                        : isEmail
+                        ? "bg-blue-50 text-[#0056D2]"
+                        : "bg-emerald-50 text-emerald-600"
                     }`}>
-                      {isEmail ? <Mail className="w-4 h-4" /> : <MessageSquare className="w-4 h-4" />}
+                      {isEmail ? <Mail className="w-5 h-5" /> : <MessageSquare className="w-5 h-5" />}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-bold leading-tight">
+                    <div className="channel-info flex-1 min-w-0">
+                      <div className="text-sm font-bold leading-tight">
                         {isEmail ? (ar ? "البريد الإلكتروني" : "Email sécurisé") : "WhatsApp"}
                       </div>
-                      <div className="text-[11px] text-slate-400 font-mono truncate mt-0.5">
+                      <div className="text-xs text-slate-400 font-mono truncate mt-1">
                         {entry.destinationMasked}
                       </div>
                     </div>
                     {isSelected && (
-                      <CheckCircle2 className="w-4 h-4 text-[#0056D2] shrink-0" />
+                      <CheckCircle2 className="w-5 h-5 text-[#0056D2] shrink-0" />
                     )}
                   </button>
                 );
@@ -231,7 +255,7 @@ export function VerificationChannelForm({ locale }: { locale: Locale }) {
             type="button"
             onClick={sendOtp}
             disabled={!selected || sending}
-            className="w-full h-12 rounded-xl bg-[#0A192F] hover:bg-[#0056D2] text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-xs transition-all disabled:opacity-40"
+            className="w-full h-12 rounded-xl bg-[#082d55] hover:bg-[#0056D2] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xs transition-all active:scale-[0.99] disabled:opacity-40"
           >
             {sending ? (
               <>
@@ -248,43 +272,54 @@ export function VerificationChannelForm({ locale }: { locale: Locale }) {
         </div>
       ) : (
         <div className="space-y-6">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label htmlFor="auth-otp-input" className="block text-xs font-semibold uppercase tracking-wider text-slate-600">
-                {ar ? "رمز التحقق السري (6 أرقام)" : "Code de vérification (6 chiffres)"} <span className="text-red-500">*</span>
+          <div className="rounded-2xl p-6 bg-slate-50/70 border border-slate-200/80 shadow-2xs">
+            {/* Professional Institutional Security Header */}
+            <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
+              <label htmlFor="auth-otp-input" className="block text-xs font-bold uppercase tracking-wider text-[#082d55]">
+                {ar ? "رمز التحقق (6 أرقام)" : "Code de vérification"}
               </label>
-              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
-                <Clock className="w-3 h-3 text-amber-600" />
-                <span>{ar ? "صالح لمدة 5 دقائق" : "Valable 5 minutes"}</span>
+
+              {/* Elevated Institutional Security Pill with Live Countdown */}
+              <span className="auth-otp-badge inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-white text-slate-700 border border-slate-200/90 shadow-2xs">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#0056D2] shrink-0" />
+                <span className="font-semibold text-[#082d55]">
+                  {ar ? "صالح لمدة 5 دقائق" : "Valable 5 minutes"}
+                </span>
+                <span className="text-slate-300 font-light" aria-hidden="true">•</span>
+                <span className="font-mono text-[11px] text-slate-500 font-semibold tabular-nums">
+                  {remainingSeconds > 0 ? formatCountdown(remainingSeconds) : (ar ? "انتهى" : "Expiré")}
+                </span>
               </span>
             </div>
 
-            <input
-              id="auth-otp-input"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              pattern="[0-9]{6}"
-              maxLength={6}
-              value={code}
-              onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && code.length === 6 && !sending) {
-                  e.preventDefault();
-                  verifyOtp();
-                }
-              }}
-              placeholder="••••••"
-              className="w-full h-14 text-center tracking-[0.5em] text-2xl font-mono font-bold rounded-xl border border-slate-300 bg-white text-slate-900 focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-all shadow-2xs"
-              autoFocus
-            />
+            {/* Segmented PIN Input (Stripe / Linear / Clerk Style) */}
+            <div className="my-2">
+              <OtpPinInput
+                value={code}
+                onChange={setCode}
+                onComplete={(completedCode) => verifyOtp(completedCode)}
+                disabled={sending}
+                hasError={Boolean(error)}
+                autoFocus
+                id="auth-otp-input"
+                ariaLabel={ar ? "رمز التحقق السري" : "Code de vérification à 6 chiffres"}
+              />
+            </div>
 
-            <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
-              <span className="inline-flex items-center gap-1.5 font-medium">
-                {selectedChannel?.channel === "EMAIL" ? <Mail className="w-3.5 h-3.5" /> : <MessageSquare className="w-3.5 h-3.5" />}
-                <span className="font-mono">{selectedChannel?.destinationMasked}</span>
+            {/* Contextual Masked Destination Info */}
+            <div className="mt-5 pt-4 border-t border-slate-200/60 flex items-center justify-between text-xs text-slate-500">
+              <span className="inline-flex items-center gap-2 font-medium">
+                {selectedChannel?.channel === "EMAIL" ? (
+                  <Mail className="w-3.5 h-3.5 text-[#0056D2]" />
+                ) : (
+                  <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                )}
+                <span>{ar ? "المرسل إلى :" : "Transmis à :"}</span>
+                <strong className="font-mono text-slate-700 font-semibold">{selectedChannel?.destinationMasked}</strong>
               </span>
+
               {expiresAt && (
-                <span className="text-[11px] text-slate-400">
+                <span className="text-[11px] text-slate-400 font-mono">
                   {ar ? "ينتهي عند:" : "Expire à :"} {new Date(expiresAt).toLocaleTimeString(locale === "ar" ? "ar-TN" : "fr-TN", { hour: "2-digit", minute: "2-digit" })}
                 </span>
               )}
@@ -293,9 +328,9 @@ export function VerificationChannelForm({ locale }: { locale: Locale }) {
 
           <button
             type="button"
-            onClick={verifyOtp}
+            onClick={() => verifyOtp()}
             disabled={sending || code.length !== 6}
-            className="w-full h-12 rounded-xl bg-[#0A192F] hover:bg-[#0056D2] text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-xs transition-all disabled:opacity-40"
+            className="w-full h-12 rounded-xl bg-[#082d55] hover:bg-[#0056D2] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xs transition-all active:scale-[0.99] disabled:opacity-40"
           >
             {sending ? (
               <>
@@ -310,23 +345,26 @@ export function VerificationChannelForm({ locale }: { locale: Locale }) {
             )}
           </button>
 
-          <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
             <button
               type="button"
               onClick={sendOtp}
               disabled={sending || cooldown > 0}
-              className="font-semibold text-[#0056D2] hover:underline disabled:opacity-50"
+              className="font-semibold text-[#0056D2] hover:underline disabled:opacity-50 inline-flex items-center gap-1.5 cursor-pointer"
             >
-              {cooldown > 0
-                ? (ar ? `إعادة الإرسال بعد (${cooldown} ثانية)` : `Renvoyer le code (${cooldown}s)`)
-                : (ar ? "إعادة إرسال رمز جديد" : "Renvoyer un nouveau code")}
+              <RotateCw className={`w-3.5 h-3.5 ${cooldown > 0 ? "" : "hover:rotate-180 transition-transform"}`} />
+              <span>
+                {cooldown > 0
+                  ? (ar ? `إعادة الإرسال بعد (${cooldown} ثانية)` : `Renvoyer le code (${cooldown}s)`)
+                  : (ar ? "إعادة إرسال رمز جديد" : "Renvoyer un nouveau code")}
+              </span>
             </button>
 
             <button
               type="button"
               onClick={handleBackToChannels}
               disabled={sending}
-              className="text-slate-500 hover:text-[#0A192F] inline-flex items-center gap-1 font-semibold transition-colors"
+              className="auth-link-btn text-slate-500 hover:text-[#082d55] inline-flex items-center gap-1.5 font-semibold transition-colors cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5 rtl:rotate-180" />
               <span>{ar ? "تغيير وسيلة الاستلام" : "Changer de canal"}</span>

@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/Icon";
+import { OtpPinInput } from "@/components/auth/OtpPinInput";
 import type { Locale } from "@/types";
 
 function maskDestination(val: string, isWhatsapp: boolean): string {
@@ -293,22 +294,27 @@ export function PasswordRecoveryForm({ locale }: { locale: Locale }) {
           </div>
 
           <div className="auth-otp-box">
-            <label htmlFor="recovery-otp-input">
-              <span>{ar ? "رمز التحقق (6 أرقام)" : en ? "Verification code (6 digits)" : "Code de vérification (6 chiffres)"}</span>
-            </label>
-            <input
-              id="recovery-otp-input"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              pattern="[0-9]{6}"
-              maxLength={6}
-              value={code}
-              onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
-              placeholder="••••••"
-              className="auth-otp-input"
-              autoFocus
-              required
-            />
+            <div className="auth-otp-header flex items-center justify-between mb-3">
+              <label htmlFor="recovery-otp-input" className="auth-otp-label">
+                <span>{ar ? "رمز التحقق (6 أرقام)" : en ? "Verification code (6 digits)" : "Code de vérification (6 chiffres)"}</span>
+              </label>
+              <span className="auth-otp-badge">
+                <Icon name="shield" size={13} />
+                <span>{ar ? "صالح لمدة 5 دقائق" : en ? "Valid for 5 minutes" : "Valable 5 minutes"}</span>
+              </span>
+            </div>
+
+            <div className="my-2">
+              <OtpPinInput
+                value={code}
+                onChange={setCode}
+                disabled={loading}
+                hasError={Boolean(error)}
+                autoFocus
+                id="recovery-otp-input"
+                ariaLabel={ar ? "رمز التحقق" : "Code de vérification"}
+              />
+            </div>
             <div className="auth-otp-meta">
               <span className="otp-destination">
                 <Icon name="shield" size={13} />

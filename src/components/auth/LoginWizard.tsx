@@ -7,6 +7,7 @@ import type { Locale } from "@/types";
 import { authClient } from "@/lib/auth-client";
 import { AuthWizardProgress } from "@/components/auth/AuthWizardProgress";
 import { GoogleMark } from "@/components/auth/GoogleMark";
+import { OtpPinInput } from "@/components/auth/OtpPinInput";
 import { normalizeCanonicalEmail } from "@/lib/auth/canonical-identity";
 import {
   Lock,
@@ -508,19 +509,36 @@ export function LoginWizard({
           </div>
 
           <form onSubmit={handleVerifyOtp} className="space-y-5" noValidate>
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5 text-center">
-                {ar ? "أدخل الرمز المكون من 6 أرقام" : "Saisissez le code à 6 chiffres"} <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                maxLength={6}
-                value={otpCode}
-                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
-                placeholder="123456"
-                className="w-full h-14 rounded-xl border border-slate-300 bg-white text-center text-2xl font-mono tracking-[0.3em] focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors"
-              />
+            <div className="rounded-2xl p-6 bg-slate-50/70 border border-slate-200/80 shadow-2xs">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <label htmlFor="login-otp-input" className="block text-xs font-bold uppercase tracking-wider text-[#082d55]">
+                  {ar ? "رمز التحقق (6 أرقام)" : "Code de vérification"}
+                </label>
+                <span className="auth-otp-badge inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-white text-slate-700 border border-slate-200/90 shadow-2xs">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#0056D2] shrink-0" />
+                  <span className="font-semibold text-[#082d55]">
+                    {ar ? "صالح لمدة 5 دقائق" : "Valable 5 minutes"}
+                  </span>
+                </span>
+              </div>
+
+              <div className="my-2">
+                <OtpPinInput
+                  value={otpCode}
+                  onChange={setOtpCode}
+                  onComplete={() => {
+                    if (challengeId && !loading) {
+                      const fakeEvent = { preventDefault: () => {} } as FormEvent;
+                      handleVerifyOtp(fakeEvent);
+                    }
+                  }}
+                  disabled={loading}
+                  hasError={Boolean(error)}
+                  autoFocus
+                  id="login-otp-input"
+                  ariaLabel={ar ? "رمز التحقق السري" : "Code de vérification à 6 chiffres"}
+                />
+              </div>
             </div>
 
             <div className="flex items-center justify-between pt-2">
