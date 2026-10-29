@@ -282,13 +282,20 @@ export function LoginWizard({
 
   return (
     <div className="w-full">
-      <AuthWizardProgress
-        currentStep={step}
-        totalSteps={2}
-        stepTitle={stepMeta.title}
-        stepSubtitle={stepMeta.subtitle}
-        locale={locale}
-      />
+      {step === 2 ? (
+        <AuthWizardProgress
+          currentStep={step}
+          totalSteps={2}
+          stepTitle={stepMeta.title}
+          stepSubtitle={stepMeta.subtitle}
+          locale={locale}
+        />
+      ) : (
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold font-serif text-[#0b1f4b] mb-1.5">{stepMeta.title}</h1>
+          <p className="text-sm text-slate-600">{stepMeta.subtitle}</p>
+        </div>
+      )}
 
       {search.get("reset") === "success" && !error && (
         <div
@@ -347,7 +354,7 @@ export function LoginWizard({
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-slate-200" />
                 </div>
-                <span className="relative bg-white px-3 text-xs text-slate-400 uppercase tracking-wider">
+                <span className="relative bg-white px-3 text-xs text-slate-600 font-semibold uppercase tracking-wider">
                   {ar ? "أو باستخدام البريد الإلكتروني" : "ou avec votre adresse e-mail"}
                 </span>
               </div>
@@ -384,7 +391,7 @@ export function LoginWizard({
                 </label>
                 <Link
                   href={`/${locale}/mot-de-passe-oublie`}
-                  className="text-xs font-semibold text-[#0056D2] hover:underline"
+                  className="text-xs font-semibold text-[#1b3a7a] hover:text-[#0b1f4b] hover:underline"
                 >
                   {ar ? "نسيت كلمة المرور؟" : "Mot de passe oublié ?"}
                 </Link>
@@ -401,13 +408,22 @@ export function LoginWizard({
                   aria-label={ar ? "كلمة المرور" : "Mot de passe"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="•••••••••••••••"
+                  placeholder={ar ? "أدخل كلمة المرور" : "Votre mot de passe"}
                   className="w-full h-12 auth-input-with-icon auth-input-with-toggle !ps-11 !pe-11 rounded-xl border border-slate-300 bg-white text-sm focus:border-[#0A192F] focus:ring-1 focus:ring-[#0A192F] outline-hidden transition-colors dir-ltr text-left"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 end-0 flex items-center pe-3.5 text-slate-400 hover:text-slate-600"
+                  aria-label={
+                    showPassword
+                      ? ar
+                        ? "إخفاء كلمة المرور"
+                        : "Masquer le mot de passe"
+                      : ar
+                      ? "إظهار كلمة المرور"
+                      : "Afficher le mot de passe"
+                  }
+                  className="absolute inset-y-0 end-0 flex items-center pe-3.5 text-slate-400 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A192F] rounded"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -419,7 +435,7 @@ export function LoginWizard({
                 type="submit"
                 aria-label={ar ? "تسجيل الدخول - الوصول إلى المساحة" : "Accéder à mon espace"}
                 disabled={loading || !email.trim() || !password}
-                className="w-full h-12 rounded-xl bg-[#0A192F] hover:bg-[#0056D2] text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-xs transition-all disabled:opacity-40"
+                className="w-full h-12 rounded-xl bg-[#0b1f4b] hover:bg-[#1b3a7a] text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-xs transition-all disabled:opacity-40"
               >
                 {loading ? (
                   <>

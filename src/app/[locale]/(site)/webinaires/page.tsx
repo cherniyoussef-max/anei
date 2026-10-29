@@ -12,7 +12,26 @@ import { getPushedLiveWebinars } from "@/server/queries/live";
 import { publicDataOr } from "@/server/queries/public-fallback";
 import { localizeTrainerName } from "@/lib/arabic-locale";
 
+import type { Metadata } from "next";
+
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const ar = locale === "ar";
+  return {
+    title: ar
+      ? "الندوات واللقاءات التفاعلية المباشرة | ANEI"
+      : "Webinaires et rencontres en direct | ANEI",
+    description: ar
+      ? "جلسات مباشرة مع كبار الأخصائيين بروابط سريعة وموثوقة عبر Google Meet، وتسجيل سهل ومجاني."
+      : "Participez aux webinaires interactifs animés par des experts de l'éducation inclusive : échangez en direct et accédez aux replays.",
+    alternates: {
+      canonical: `/${locale}/webinaires`,
+      languages: { fr: "/fr/webinaires", ar: "/ar/webinaires" },
+    },
+  };
+}
 
 const WEBINAR_CATEGORIES = [
   { id: "ALL", labelFr: "Tous les webinaires", labelAr: "جميع الندوات" },

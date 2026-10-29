@@ -8,11 +8,30 @@ import { getSession } from "@/server/auth/session";
 import { courses as courseTranslations } from "@/lib/data";
 import { publicDataOr } from "@/server/queries/public-fallback";
 
+import type { Metadata } from "next";
+
 export const dynamic = "force-dynamic";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 function one(value: string | string[] | undefined) { return Array.isArray(value) ? value[0] : value; }
 function pageNumber(value: string | undefined) { const parsed = Number(value); return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : 1; }
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const ar = locale === "ar";
+  return {
+    title: ar
+      ? "كتالوج برامج التكوين المعتمدة | ANEI"
+      : "Formations certifiantes en éducation inclusive | ANEI",
+    description: ar
+      ? "مسارات تدريبية مصادق عليها في التربية الدامجة، طيف التوحد (TSA)، وصعوبات التعلم (DYS)، للمدرسين والمرافقين المدرسيين والأسر."
+      : "Découvrez nos parcours de formation continue certifiants : autisme (TSA), troubles DYS, TDAH, adaptation pédagogique et accompagnement scolaire en Tunisie.",
+    alternates: {
+      canonical: `/${locale}/formations`,
+      languages: { fr: "/fr/formations", ar: "/ar/formations" },
+    },
+  };
+}
 
 export default async function CoursesPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<SearchParams> }) {
   const { locale } = await params;

@@ -21,7 +21,38 @@ import {
   localizeTrainerName,
 } from "@/lib/arabic-locale";
 
+import type { Metadata } from "next";
+
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string; slug: string }>;
+}): Promise<Metadata> {
+  const { locale, slug } = await params;
+  const result = await publicDataOr("course-meta", () => getPublishedCourse(slug), null);
+  if (!result) return { title: "Formation | ANEI" };
+  const ar = locale === "ar";
+  const title = ar ? `${result.course.titleAr} | ANEI` : `${result.course.titleFr} | ANEI`;
+  const description = ar ? result.course.descriptionAr : result.course.descriptionFr;
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: `/${locale}/formations/${slug}`,
+      languages: {
+        fr: `/fr/formations/${slug}`,
+        ar: `/ar/formations/${slug}`,
+      },
+    },
+    openGraph: {
+      title,
+      description,
+      type: "article",
+    },
+  };
+}
 
 export default async function CourseDetailPage({ params }: { params: Promise<{ locale: string; slug: string }> }) {
   const { locale, slug } = await params;
