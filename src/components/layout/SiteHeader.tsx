@@ -38,7 +38,7 @@ export function SiteHeader({ locale, initialUser }: { locale: Locale; initialUse
     <header className="navbar-root sticky top-0 z-50 h-[76px] bg-white/95 backdrop-blur-md border-b border-[#dde9f8] transition-all">
       <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between gap-3 sm:gap-4">
         {/* Left: Always visible Logo + Navigation links */}
-        <div className="flex items-center gap-3.5 xl:gap-5 min-w-0">
+        <div className="flex items-center gap-4 xl:gap-7 shrink-0">
           <Link
             href={`/${locale}`}
             prefetch={true}
@@ -54,18 +54,10 @@ export function SiteHeader({ locale, initialUser }: { locale: Locale; initialUse
               unoptimized
               className="h-[40px] sm:h-[44px] w-auto object-contain shrink-0"
             />
-            <div className="hidden min-[1680px]:flex flex-col text-start leading-tight shrink-0">
-              <b className="font-semibold text-[13px] text-[#0b1f4b] tracking-tight">
-                L’Académie Nationale de l’Éducation Inclusive
-              </b>
-              <span dir="rtl" lang="ar" className="text-[12px] font-bold text-[#b8923a]">
-                الأكاديمية الوطنية للتربية الدامجة
-              </span>
-            </div>
           </Link>
 
           <nav
-            className="hidden xl:flex items-center gap-2 lg:gap-2.5 2xl:gap-3.5 min-w-0"
+            className="hidden xl:flex items-center gap-2.5 2xl:gap-4 shrink-0"
             aria-label={ar ? "التنقل الرئيسي" : "Navigation principale"}
           >
             {links.map(([segment, label]) => {
