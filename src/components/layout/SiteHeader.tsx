@@ -87,7 +87,7 @@ export function SiteHeader({ locale, initialUser }: { locale: Locale; initialUse
           <Link
             href={`/${locale}/formations`}
             prefetch={true}
-            className="navbar-search-btn p-2 rounded-full text-[#0b1f4b] hover:bg-[#eef4fc] transition-colors shrink-0"
+            className="navbar-search-btn hidden sm:inline-flex p-2 rounded-full text-[#0b1f4b] hover:bg-[#eef4fc] transition-colors shrink-0"
             aria-label={ar ? "البحث عن دورة أو مورد" : "Rechercher une formation ou un sujet"}
           >
             <Search size={18} strokeWidth={1.8} />
