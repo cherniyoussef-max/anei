@@ -356,16 +356,19 @@ export function LoginWizard({
 
           <form onSubmit={handleCredentialsSubmit} className="auth-form space-y-5" noValidate>
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
-                {ar ? "البريد الإلكتروني" : "Adresse e-mail"} <span className="text-red-500">*</span>
+              <label htmlFor="login-email-input" className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+                {ar ? "البريد الإلكتروني" : "Email"} <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <span className="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none text-slate-400">
                   <Mail className="w-4 h-4" />
                 </span>
                 <input
+                  id="login-email-input"
+                  name="email"
                   type="email"
                   required
+                  aria-label={ar ? "البريد الإلكتروني" : "Email"}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="nom@exemple.com"
@@ -376,7 +379,7 @@ export function LoginWizard({
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600">
+                <label htmlFor="login-password-input" className="block text-xs font-semibold uppercase tracking-wider text-slate-600">
                   {ar ? "كلمة المرور" : "Mot de passe"} <span className="text-red-500">*</span>
                 </label>
                 <Link
@@ -391,8 +394,11 @@ export function LoginWizard({
                   <Lock className="w-4 h-4" />
                 </span>
                 <input
+                  id="login-password-input"
+                  name="password"
                   type={showPassword ? "text" : "password"}
                   required
+                  aria-label={ar ? "كلمة المرور" : "Mot de passe"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="•••••••••••••••"
@@ -411,6 +417,7 @@ export function LoginWizard({
             <div className="pt-2">
               <button
                 type="submit"
+                aria-label={ar ? "تسجيل الدخول - الوصول إلى المساحة" : "Accéder à mon espace"}
                 disabled={loading || !email.trim() || !password}
                 className="w-full h-12 rounded-xl bg-[#0A192F] hover:bg-[#0056D2] text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-xs transition-all disabled:opacity-40"
               >
@@ -421,7 +428,7 @@ export function LoginWizard({
                   </>
                 ) : (
                   <>
-                    <span>{ar ? "تسجيل الدخول" : "Se connecter"}</span>
+                    <span>{ar ? "تسجيل الدخول" : "Accéder à mon espace"}</span>
                     <ArrowRight className="w-4 h-4 rtl:rotate-180" />
                   </>
                 )}
