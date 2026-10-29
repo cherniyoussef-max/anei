@@ -118,13 +118,13 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
               {/* Primary Headquarter Highlight */}
               <div className="bg-[#1B3A5C] text-white p-7 rounded-2xl shadow-md border border-white/10 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-36 h-36 bg-[#B8925A]/10 rounded-full blur-2xl pointer-events-none" />
-                <span className="inline-block text-[11px] font-bold uppercase tracking-wider text-[#B8925A] bg-white/10 px-3 py-1 rounded-full mb-3">
+                <span className="inline-block text-[11px] font-bold uppercase tracking-wider text-amber-300 bg-white/10 px-3 py-1 rounded-full mb-3">
                   {ar ? "المقر الوطني الرئيسي" : "Siège & Campus National"}
                 </span>
-                <h3 className="text-xl font-bold text-white mb-2 font-sans tracking-tight">
+                <h3 className="text-xl font-bold !text-white mb-2 font-sans tracking-tight">
                   {ar ? "الأكاديمية الوطنية للتربية الدامجة" : "Académie Nationale de l'Éducation Inclusive"}
                 </h3>
-                <p className="text-xs text-slate-300 mb-6 leading-relaxed">
+                <p className="text-xs text-slate-200 mb-6 leading-relaxed">
                   {ar
                     ? "مركز الخبرة والتكوين وإدارة شبكة المرافقة المدرسية على المستوى الوطني."
                     : "Centre d'expertise, d'homologation pédagogique et de supervision du réseau AVS national."}
@@ -132,7 +132,7 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
 
                 <div className="space-y-4 text-xs text-slate-200">
                   <div className="flex items-start gap-3">
-                    <span className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-[#B8925A] flex-none mt-0.5">
+                    <span className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-amber-300 flex-none mt-0.5">
                       <Icon name="map" size={16} />
                     </span>
                     <div>
@@ -142,7 +142,7 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
                   </div>
 
                   <div className="flex items-start gap-3">
-                    <span className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-[#B8925A] flex-none mt-0.5">
+                    <span className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-amber-300 flex-none mt-0.5">
                       <Icon name="mail" size={16} />
                     </span>
                     <div>
@@ -154,7 +154,7 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
                   </div>
 
                   <div className="flex items-start gap-3">
-                    <span className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-[#B8925A] flex-none mt-0.5">
+                    <span className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-amber-300 flex-none mt-0.5">
                       <Icon name="phone" size={16} />
                     </span>
                     <div>
@@ -166,13 +166,13 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
                   </div>
 
                   <div className="flex items-start gap-3">
-                    <span className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-[#B8925A] flex-none mt-0.5">
+                    <span className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-amber-300 flex-none mt-0.5">
                       <Icon name="clock" size={16} />
                     </span>
                     <div>
                       <strong className="block text-white text-xs">{ar ? "أوقات العمل واستقبال الزوار" : "Horaires d'accueil"}</strong>
                       <span>{ar ? "الإثنين - الجمعة: 08:30 - 17:30" : "Du Lundi au Vendredi : 08h30 - 17h30"}</span>
-                      <span className="block text-[11px] text-slate-400">{ar ? "السبت: 09:00 - 13:00 (حسب المواعيد)" : "Samedi : 09h00 - 13h00 (sur rendez-vous)"}</span>
+                      <span className="block text-[11px] text-slate-300">{ar ? "السبت: 09:00 - 13:00 (حسب المواعيد)" : "Samedi : 09h00 - 13h00 (sur rendez-vous)"}</span>
                     </div>
                   </div>
                 </div>
@@ -182,7 +182,7 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
                     href="https://maps.google.com/?q=Centre+Urbain+Nord+Tunis"
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-2 bg-[#B8925A] hover:bg-[#9E7A45] text-white px-5 py-2.5 rounded-full text-xs font-bold transition-all shadow-sm"
+                    className="inline-flex items-center gap-2 bg-white hover:bg-slate-100 text-[#0b1f4b] px-5 py-2.5 rounded-full text-xs font-bold transition-all shadow-sm"
                   >
                     <Icon name="map" size={14} />
                     <span>{ar ? "تحديد المسار على خرائط Google" : "Itinéraire Google Maps"}</span>
@@ -227,7 +227,7 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
                       {hub.city}
                     </span>
                     {hub.isPrimary && (
-                      <span className="text-[10px] font-bold text-[#B8925A] bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-bold text-[#7A5514] bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
                         {ar ? "المركز الرئيسي" : "Siège Principal"}
                       </span>
                     )}
@@ -250,7 +250,7 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
                     </p>
                     <p className="flex items-start gap-2">
                       <span className="text-slate-400 flex-none mt-0.5"><Icon name="mail" size={14} /></span>
-                      <a href={`mailto:${hub.email}`} className="text-[#B8925A] hover:underline">
+                      <a href={`mailto:${hub.email}`} className="text-[#8C651E] font-medium hover:underline">
                         {hub.email}
                       </a>
                     </p>

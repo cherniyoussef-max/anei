@@ -5,7 +5,7 @@
   --public-brand-navy-strong: #1b3a7a;
   --public-brand-navy-soft: #24476e;
   --public-brand-gold: #b8923a;
-  --public-brand-gold-strong: #9e7a45;
+  --public-brand-gold-strong: #87621c;
   --public-brand-gold-muted: #e3c776;
   --public-surface-page: #f7faff;
   --public-surface-card: #FFFFFF;
@@ -981,4 +981,10 @@
   .public-experience .course-catalog-premium .catalog-course-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.public-experience .resource-cover-master,
+.resource-cover.resource-cover-master {
+  background: linear-gradient(135deg, #142B47, #0D1E33) !important;
+  color: #ffffff !important;
 }

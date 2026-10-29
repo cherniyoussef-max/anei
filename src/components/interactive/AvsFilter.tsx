@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Star } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import type { Locale } from "@/types";
 import { Icon } from "@/components/ui/Icon";
 import { Pagination } from "@/components/ui/Pagination";
@@ -302,20 +302,10 @@ export function AvsFilter({
                         <span>{profile.city}</span>
                       </span>
                       <span className="text-slate-300">•</span>
-                      {profile.reviewCount && profile.reviewCount > 0 ? (
-                        <span className="inline-flex items-center gap-1 text-[#7A5514] font-bold whitespace-nowrap">
-                          <Star className="w-3.5 h-3.5 fill-[#7A5514] text-[#7A5514] shrink-0" />
-                          <span>{((profile.rating || 50) / 10).toFixed(1)}</span>
-                          <span className="text-slate-500 font-normal">
-                            ({profile.reviewCount} {ar ? "تقييم" : "avis"})
-                          </span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-slate-600 font-medium whitespace-nowrap text-xs">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" aria-hidden="true" />
-                          <span>{ar ? "ملف موثّق" : "Profil vérifié"}</span>
-                        </span>
-                      )}
+                      <span className="inline-flex items-center gap-1.5 text-slate-700 font-medium whitespace-nowrap text-xs">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" aria-hidden="true" />
+                        <span>{ar ? "ملف موثّق" : "Profil vérifié"}</span>
+                      </span>
                       <span className="text-slate-300">•</span>
                       <span className="font-medium text-slate-600 whitespace-nowrap">
                         {profile.experienceYears || 4} {ar ? "سنوات خبرة" : "ans d'expérience"}

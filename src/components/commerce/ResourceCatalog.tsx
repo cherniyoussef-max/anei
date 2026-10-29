@@ -92,11 +92,13 @@ export function ResourceCatalog({
         <div className="mt-5 pt-5 border-t border-slate-100">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4" aria-label={ar ? "تصفية النتائج" : en ? "Filter results" : "Filtrer les résultats"}>
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+              <label htmlFor="resource-filter-type" className="block text-xs font-semibold text-slate-700 mb-1.5">
                 {ar ? "النوع" : en ? "Type" : "Type"}
               </label>
               <select
+                id="resource-filter-type"
                 name="type"
+                aria-label={ar ? "نوع المورد" : en ? "Resource type" : "Type de ressource"}
                 defaultValue={filters.type ?? ""}
                 onChange={(e) => e.target.form?.requestSubmit()}
                 className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#142B47] focus:border-transparent transition-all cursor-pointer"
@@ -106,11 +108,13 @@ export function ResourceCatalog({
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+              <label htmlFor="resource-filter-price" className="block text-xs font-semibold text-slate-700 mb-1.5">
                 {ar ? "السعر" : en ? "Price" : "Prix"}
               </label>
               <select
+                id="resource-filter-price"
                 name="price"
+                aria-label={ar ? "السعر" : en ? "Price" : "Prix"}
                 defaultValue={filters.price ?? ""}
                 onChange={(e) => e.target.form?.requestSubmit()}
                 className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#142B47] focus:border-transparent transition-all cursor-pointer"
@@ -121,11 +125,13 @@ export function ResourceCatalog({
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+              <label htmlFor="resource-filter-sort" className="block text-xs font-semibold text-slate-700 mb-1.5">
                 {ar ? "الترتيب" : en ? "Sort" : "Trier"}
               </label>
               <select
+                id="resource-filter-sort"
                 name="sort"
+                aria-label={ar ? "الترتيب" : en ? "Sort" : "Trier"}
                 defaultValue={filters.sort ?? "relevance"}
                 onChange={(e) => e.target.form?.requestSubmit()}
                 className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#142B47] focus:border-transparent transition-all cursor-pointer"
@@ -167,22 +173,25 @@ export function ResourceCatalog({
                     <Image src={resource.coverImageUrl} alt="" fill sizes="(max-width: 767px) 100vw, 34vw" unoptimized />
                   </div>
                 ) : (
-                  <div className="resource-cover resource-cover-master w-44 sm:w-48 shrink-0 flex flex-col justify-between p-5 bg-gradient-to-br from-[#142B47] to-[#0D1E33]">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-white/10 text-[#E5C158] border border-white/15 !w-fit !h-auto">
+                  <div
+                    className="resource-cover resource-cover-master w-44 sm:w-48 shrink-0 flex flex-col justify-between p-5 bg-gradient-to-br from-[#142B47] to-[#0D1E33]"
+                    style={{ backgroundColor: "#142B47", color: "#ffffff" }}
+                  >
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-white/20 text-white border border-white/30 !w-fit !h-auto">
                       {ar ? "إصدار معتمد" : "Édition certifiée"}
                     </span>
                     <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center my-auto mx-auto shadow-inner">
                       <Icon name="book" size={24} className="text-[#E5C158]" />
                     </div>
-                    <small className="tracking-[0.2em] text-[10px] text-white/60 font-medium uppercase text-center block">
+                    <small className="tracking-[0.2em] text-[10px] text-white/90 font-semibold uppercase text-center block">
                       ANEI · ÉDITIONS
                     </small>
                   </div>
                 )}
                 <div className="resource-card-body">
                   <div className="resource-meta-row">
-                    <span>{typeLabel}</span>
-                    <span>{LEVEL_LABEL[resource.level]?.[locale] ?? resource.level}</span>
+                    <span className="text-slate-800 font-semibold">{typeLabel}</span>
+                    <span className="text-slate-600 font-medium">{LEVEL_LABEL[resource.level]?.[locale] ?? resource.level}</span>
                   </div>
                   <h3 className="font-sans font-semibold text-lg md:text-xl tracking-[-0.015em] leading-snug text-slate-900 hover:text-slate-700 transition-colors">{resource.title}</h3>
                   <p>{resource.description}</p>
