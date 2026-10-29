@@ -53,7 +53,7 @@ export function listHomeNews() {
     .from(newsPosts)
     .where(eq(newsPosts.published, true))
     .orderBy(desc(newsPosts.isFeatured), desc(newsPosts.publishedAt), desc(newsPosts.createdAt))
-    .limit(3);
+    .limit(4);
 }
 
 /** Returns the single top featured (or latest) published article. */

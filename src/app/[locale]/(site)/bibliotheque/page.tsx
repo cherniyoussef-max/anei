@@ -11,7 +11,27 @@ type SearchParams = Record<string, string | string[] | undefined>;
 function one(value: string | string[] | undefined) { return Array.isArray(value) ? value[0] : value; }
 function pageNumber(value?: string) { const parsed = Number(value); return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : 1; }
 
+import type { Metadata } from "next";
+
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const ar = locale === "ar";
+  return {
+    title: ar
+      ? "المكتبة الرقمية والموارد البيداغوجية | ANEI"
+      : "Bibliothèque de ressources & Guides pratiques | ANEI",
+    description: ar
+      ? "أدلة وشبكات تقييم وأدوات عمل ميدانية قابلة للتحميل مباشرة لدعم الممارسة الدامجة وتكييف الفصول المدرسية."
+      : "Consultez et téléchargez gratuitement nos guides pratiques, grilles d'évaluation et fiches méthodologiques pour l'inclusion scolaire.",
+    alternates: {
+      canonical: `/${locale}/bibliotheque`,
+      languages: { fr: "/fr/bibliotheque", ar: "/ar/bibliotheque" },
+    },
+  };
+}
+
 export default async function LibraryPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<SearchParams> }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
@@ -66,7 +86,13 @@ export default async function LibraryPage({ params, searchParams }: { params: Pr
         breadcrumbs={breadcrumbs}
         eyebrow={ar ? "المكتبة الرقمية" : en ? "Resource library" : "Bibliothèque pédagogique"}
         title={ar ? "موارد مهنية موثوقة وقابلة للتحميل" : en ? "Reliable resources for inclusive practice" : "Des ressources professionnelles, utiles et accessibles"}
-        description={ar ? "أدلة وشبكات وأدوات عملية، مع وصول محمي بعد الشراء." : en ? "Guides, frameworks and practical tools with protected access after purchase." : "Guides, grilles et outils pratiques avec téléchargement protégé après achat."}
+        description={
+          ar
+            ? "أدلة وشبكات تقييم وأدوات عمل ميدانية قابلة للتحميل مباشرة لدعم الممارسة الدامجة."
+            : en
+            ? "Practical guides, assessment rubrics, and field toolkits available for instant download to support inclusive practice."
+            : "Guides méthodologiques, grilles d'évaluation et fiches pratiques téléchargeables pour accompagner la scolarisation inclusive."
+        }
       />
       <section className="section">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

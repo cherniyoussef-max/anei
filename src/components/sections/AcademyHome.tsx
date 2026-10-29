@@ -6,10 +6,12 @@ import Link from "next/link";
 import { GraduationCap, User } from "lucide-react";
 import type { Locale } from "@/types";
 import type { listHomeAvs, listHomeCourses, listHomeWebinars } from "@/server/queries/catalog";
+import type { listHomeNews } from "@/server/queries/news";
 
 type CourseRow = Awaited<ReturnType<typeof listHomeCourses>>[number];
 type WebinarRow = Awaited<ReturnType<typeof listHomeWebinars>>[number];
 type AvsRow = Awaited<ReturnType<typeof listHomeAvs>>[number];
+type NewsRow = Awaited<ReturnType<typeof listHomeNews>>[number];
 
 export interface TopFeaturedNewsItem {
   id: string;
@@ -32,6 +34,7 @@ export function AcademyHome({
   hasPlayedIntro: _hasPlayedIntro = false,
   initialUser = null,
   topFeaturedNews = null,
+  recentNews = [],
 }: {
   locale: Locale;
   courses?: CourseRow[];
@@ -40,6 +43,7 @@ export function AcademyHome({
   hasPlayedIntro?: boolean;
   initialUser?: { id: string; role?: string } | null;
   topFeaturedNews?: TopFeaturedNewsItem | null;
+  recentNews?: NewsRow[];
 }) {
   const ar = locale === "ar";
 
@@ -148,8 +152,8 @@ export function AcademyHome({
                 </i>
                 <div>
                   <small>{ar ? "استكشاف" : "EXPLORER"}</small>
-                  <b>{ar ? "التكوين المستمر والمسارات" : "Training & Formation continue"}</b>
-                  <span>{ar ? "اكتشف البرامج المعتمدة" : "À quoi sert la plateforme ?"}</span>
+                  <b>{ar ? "التكوين المستمر والمسارات" : "Formation continue & Certifications"}</b>
+                  <span>{ar ? "اكتشف البرامج المعتمدة" : "Découvrir les programmes certifiants"}</span>
                 </div>
                 <em className="rtl:rotate-180">→</em>
               </Link>
@@ -435,7 +439,7 @@ export function AcademyHome({
             <div>
               <small>{ar ? "الأخبار والمقالات" : "ACTUALITÉS"}</small>
               <h2>{ar ? "آخر المستجدات" : "Dernières publications"}</h2>
-              <span className="ar">{ar ? "منشورات ومقالات ميدانية" : "آخر المستجدات"}</span>
+              <span className="ar">{ar ? "منشورات ومقالات ميدانية" : "Analyses, guides pratiques et retours de terrain"}</span>
             </div>
             <Link href={`/${locale}/actualites`} className="btn btn-out">
               <span>{ar ? "عرض الكل ←" : "Tout voir →"}</span>
@@ -443,77 +447,105 @@ export function AcademyHome({
           </div>
 
           <div className="ngrid rv">
-            {/* News 1 */}
-            <Link href={`/${locale}/actualites`} className="nc">
-              <div
-                className="ni"
-                style={{ backgroundImage: "url(/media/home-v5/news-1.jpg)" }}
-              >
-                <span className="bd w">{ar ? "ندوة" : "Webinaire"}</span>
-              </div>
-              <div className="nt">
-                <small>{ar ? "24 أكتوبر 2026 · مباشر" : "24 oct. 2026 · En direct"}</small>
-                <h3>
-                  {ar ? "صياغة البرنامج الفردي: المراحل الأساسية" : "Rédiger un PEI : les étapes clés"}
-                </h3>
-                <span className="more">{ar ? "المزيد ←" : "En savoir plus →"}</span>
-              </div>
-            </Link>
+            {recentNews && recentNews.length > 0 ? (
+              recentNews.map((item, index) => {
+                const cover = item.coverImageUrl || `/media/home-v5/news-${(index % 4) + 1}.jpg`;
+                const tag = ar ? item.tagAr || "مقال" : item.tagFr || "Actualité";
+                const title = ar ? item.titleAr : item.titleFr;
+                const dateFormatted = item.publishedAt
+                  ? new Date(item.publishedAt).toLocaleDateString(ar ? "ar-TN" : "fr-FR", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })
+                  : "";
+                return (
+                  <Link key={item.id || item.slug} href={`/${locale}/actualites/${item.slug}`} className="nc">
+                    <div
+                      className="ni"
+                      style={{ backgroundImage: `url(${cover})` }}
+                    >
+                      <span className="bd f">{tag}</span>
+                    </div>
+                    <div className="nt">
+                      {dateFormatted ? <small>{dateFormatted}</small> : null}
+                      <h3>{title}</h3>
+                      <span className="more">{ar ? "المزيد ←" : "En savoir plus →"}</span>
+                    </div>
+                  </Link>
+                );
+              })
+            ) : (
+              <>
+                <Link href={`/${locale}/actualites/actualite-1`} className="nc">
+                  <div
+                    className="ni"
+                    style={{ backgroundImage: "url(/media/home-v5/news-1.jpg)" }}
+                  >
+                    <span className="bd f">{ar ? "تكوين" : "Formation"}</span>
+                  </div>
+                  <div className="nt">
+                    <small>{ar ? "دورة 2026" : "Rentrée 2026"}</small>
+                    <h3>
+                      {ar ? "فتح التسجيل في المسارات المهنية الدامجة" : "Ouverture des inscriptions aux parcours certifiants"}
+                    </h3>
+                    <span className="more">{ar ? "المزيد ←" : "En savoir plus →"}</span>
+                  </div>
+                </Link>
 
-            {/* News 2 */}
-            <Link href={`/${locale}/actualites`} className="nc">
-              <div
-                className="ni"
-                style={{ backgroundImage: "url(/media/home-v5/news-2.jpg)" }}
-              >
-                <span className="bd f">{ar ? "تكوين" : "Formation"}</span>
-              </div>
-              <div className="nt">
-                <small>{ar ? "15 أكتوبر 2026" : "Publié le 15 oct. 2026"}</small>
-                <h3>
-                  {ar
-                    ? "مرافقة تلميذ ذي طيف التوحد داخل الفصل"
-                    : "Accompagner un élève avec autisme en classe"}
-                </h3>
-                <span className="more">{ar ? "المزيد ←" : "En savoir plus →"}</span>
-              </div>
-            </Link>
+                <Link href={`/${locale}/actualites/actualite-2`} className="nc">
+                  <div
+                    className="ni"
+                    style={{ backgroundImage: "url(/media/home-v5/news-2.jpg)" }}
+                  >
+                    <span className="bd f">{ar ? "اعتماد" : "Certification"}</span>
+                  </div>
+                  <div className="nt">
+                    <small>{ar ? "مرجع وطني" : "Référentiel officiel"}</small>
+                    <h3>
+                      {ar
+                        ? "مرجع جديد لاعتماد مرافقي الحياة المدرسية AVS"
+                        : "Nouveau référentiel de certification AVS"}
+                    </h3>
+                    <span className="more">{ar ? "المزيد ←" : "En savoir plus →"}</span>
+                  </div>
+                </Link>
 
-            {/* News 3 */}
-            <Link href={`/${locale}/actualites`} className="nc">
-              <div
-                className="ni"
-                style={{ backgroundImage: "url(/media/home-v5/news-3.jpg)" }}
-              >
-                <span className="bd f">{ar ? "تكوين" : "Formation"}</span>
-              </div>
-              <div className="nt">
-                <small>{ar ? "12 أكتوبر 2026" : "Publié le 12 oct. 2026"}</small>
-                <h3>
-                  {ar
-                    ? "تكييف الحصص الدراسية في الفصل الدامج"
-                    : "Adapter ses séances en classe inclusive"}
-                </h3>
-                <span className="more">{ar ? "المزيد ←" : "En savoir plus →"}</span>
-              </div>
-            </Link>
+                <Link href={`/${locale}/actualites/actualite-3`} className="nc">
+                  <div
+                    className="ni"
+                    style={{ backgroundImage: "url(/media/home-v5/news-3.jpg)" }}
+                  >
+                    <span className="bd f">{ar ? "شراكة" : "Partenariat"}</span>
+                  </div>
+                  <div className="nt">
+                    <small>{ar ? "تعاون تربوي" : "Coopération"}</small>
+                    <h3>
+                      {ar
+                        ? "شراكة استراتيجية لإنتاج موارد تعليمية ميسرة"
+                        : "Partenariat pour l’accessibilité pédagogique"}
+                    </h3>
+                    <span className="more">{ar ? "المزيد ←" : "En savoir plus →"}</span>
+                  </div>
+                </Link>
 
-            {/* News 4 */}
-            <Link href={`/${locale}/actualites`} className="nc">
-              <div
-                className="ni"
-                style={{ backgroundImage: "url(/media/home-v5/news-4.jpg)" }}
-              >
-                <span className="bd w">{ar ? "إعادة" : "Webinaire"}</span>
-              </div>
-              <div className="nt">
-                <small>{ar ? "تسجيل · 8 أكتوبر 2026" : "Replay · 8 oct. 2026"}</small>
-                <h3>
-                  {ar ? "اضطرابات التعلم: التشخيص والتدخل" : "Troubles « dys » : repérer et agir"}
-                </h3>
-                <span className="more">{ar ? "المزيد ←" : "En savoir plus →"}</span>
-              </div>
-            </Link>
+                <Link href={`/${locale}/actualites`} className="nc">
+                  <div
+                    className="ni"
+                    style={{ backgroundImage: "url(/media/home-v5/news-4.jpg)" }}
+                  >
+                    <span className="bd f">{ar ? "ميداني" : "Pratique"}</span>
+                  </div>
+                  <div className="nt">
+                    <small>{ar ? "أدلة صفية" : "Fiche pratique"}</small>
+                    <h3>
+                      {ar ? "تكييف الحصص والأنشطة في الفصل الدامج" : "Adapter ses séances en classe inclusive"}
+                    </h3>
+                    <span className="more">{ar ? "المزيد ←" : "En savoir plus →"}</span>
+                  </div>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </section>

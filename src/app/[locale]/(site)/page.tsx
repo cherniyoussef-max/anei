@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { AcademyHome } from "@/components/sections/AcademyHome";
 import { isLocale } from "@/lib/i18n";
 import { listHomeAvs, listHomeCourses, listHomeWebinars } from "@/server/queries/catalog";
-import { getTopFeaturedNewsPost } from "@/server/queries/news";
+import { getTopFeaturedNewsPost, listHomeNews } from "@/server/queries/news";
 import { logger } from "@/server/security/logger";
 import { getSession } from "@/server/auth/session";
 import { publicDataOr } from "@/server/queries/public-fallback";
@@ -39,20 +39,22 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   if (!isLocale(locale)) notFound();
   const cookieStore = await cookies();
   const hasPlayedIntro = cookieStore.has("anei_logo_played");
-  const sources = ["courses", "webinars", "avs", "featuredNews"] as const;
+  const sources = ["courses", "webinars", "avs", "featuredNews", "recentNews"] as const;
   const results = await Promise.allSettled([
     listHomeCourses(),
     listHomeWebinars(),
     listHomeAvs(),
     getTopFeaturedNewsPost(),
+    listHomeNews(),
   ]);
   const unavailable = results.flatMap((result, index) => (result.status === "rejected" ? [sources[index]] : []));
   if (unavailable.length) logger.warn("homepage.content_degraded", { sources: unavailable });
-  const [courseResult, webinarResult, avsResult, featuredNewsResult] = results;
+  const [courseResult, webinarResult, avsResult, featuredNewsResult, recentNewsResult] = results;
   const courses = courseResult.status === "fulfilled" ? courseResult.value : [];
   const webinars = webinarResult.status === "fulfilled" ? webinarResult.value : [];
   const avsProfiles = avsResult.status === "fulfilled" ? avsResult.value : [];
   const topFeaturedNews = featuredNewsResult.status === "fulfilled" ? featuredNewsResult.value : null;
+  const recentNews = recentNewsResult.status === "fulfilled" ? recentNewsResult.value : [];
   const session = await publicDataOr("home-session", getSession, null);
   const initialUser = session?.user ? { id: session.user.id, role: session.user.role as string | undefined } : null;
 
@@ -65,6 +67,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       hasPlayedIntro={hasPlayedIntro}
       initialUser={initialUser}
       topFeaturedNews={topFeaturedNews}
+      recentNews={recentNews}
     />
   );
 }

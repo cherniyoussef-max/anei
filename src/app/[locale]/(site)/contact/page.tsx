@@ -4,7 +4,25 @@ import { PageHero } from "@/components/ui/PageHero";
 import { ContactForm } from "@/components/interactive/ContactForm";
 import { Icon } from "@/components/ui/Icon";
 
+import type { Metadata } from "next";
 import { INSTITUTION } from "@/lib/config/institution";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const ar = locale === "ar";
+  return {
+    title: ar
+      ? "الاتصال والمقر الوطني والفروع | ANEI"
+      : "Contact institutionnel & Implantations | ANEI",
+    description: ar
+      ? "تواصل مع الأكاديمية الوطنية للتربية الدامجة بتونس: استفسارات التكوين، حجز المرافقين المدرسيين (AVS)، والشراكات المدرسية."
+      : "Contactez l'Académie Nationale de l'Éducation Inclusive : formations, réservations d'AVS, partenariats d'établissements scolaires à Tunis, Sousse et Sfax.",
+    alternates: {
+      canonical: `/${locale}/contact`,
+      languages: { fr: "/fr/contact", ar: "/ar/contact" },
+    },
+  };
+}
 
 export default async function ContactPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -28,25 +46,25 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
       isPrimary: true,
     },
     {
-      title: ar ? "القطب الإقليمي للوسط والساحل" : "Pôle Régional Sahel & Centre",
-      city: ar ? "سوسة - المنستير" : "Sousse",
-      address: ar ? "نهج ابن خلدون، سهلول، سوسة" : "Rue Ibn Khaldoun, Sahloul, Sousse",
-      hours: ar ? "الإثنين - الجمعة: 09:00 - 16:30" : "Lun - Ven : 09h00 - 16h30",
-      phone: "+216 73 360 220",
-      email: "sahel@anei.tn",
-      transit: ar ? "محطة مترو الساحل سهلول" : "Métro du Sahel (Station Sahloul)",
-      access: ar ? "ولوج مهيأ بالكامل" : "Accessible PMR",
+      title: ar ? INSTITUTION.locations.sousse.nameAr : INSTITUTION.locations.sousse.nameFr,
+      city: ar ? INSTITUTION.locations.sousse.cityAr : INSTITUTION.locations.sousse.cityFr,
+      address: ar ? INSTITUTION.locations.sousse.addressAr : INSTITUTION.locations.sousse.addressFr,
+      hours: ar ? INSTITUTION.locations.sousse.hoursAr : INSTITUTION.locations.sousse.hoursFr,
+      phone: INSTITUTION.locations.sousse.phone,
+      email: INSTITUTION.locations.sousse.email,
+      transit: ar ? INSTITUTION.locations.sousse.transitAr : INSTITUTION.locations.sousse.transitFr,
+      access: ar ? INSTITUTION.locations.sousse.accessAr : INSTITUTION.locations.sousse.accessFr,
       isPrimary: false,
     },
     {
-      title: ar ? "القطب الإقليمي للجنوب" : "Pôle Régional Sud",
-      city: ar ? "صفاقس" : "Sfax",
-      address: ar ? "طريق العين كم 1.5، صفاقس الجديدة" : "Route El Ain Km 1.5, Nouvelle Médina, Sfax",
-      hours: ar ? "الإثنين - الجمعة: 09:00 - 16:30" : "Lun - Ven : 09h00 - 16h30",
-      phone: "+216 74 420 330",
-      email: "sud@anei.tn",
-      transit: ar ? "وسط مدينة صفاقس • حافلات النقل الحضري" : "Centre-ville Sfax • Lignes urbaines SORETRAS",
-      access: ar ? "ولوج مهيأ بالكامل" : "Accessible PMR",
+      title: ar ? INSTITUTION.locations.sfax.nameAr : INSTITUTION.locations.sfax.nameFr,
+      city: ar ? INSTITUTION.locations.sfax.cityAr : INSTITUTION.locations.sfax.cityFr,
+      address: ar ? INSTITUTION.locations.sfax.addressAr : INSTITUTION.locations.sfax.addressFr,
+      hours: ar ? INSTITUTION.locations.sfax.hoursAr : INSTITUTION.locations.sfax.hoursFr,
+      phone: INSTITUTION.locations.sfax.phone,
+      email: INSTITUTION.locations.sfax.email,
+      transit: ar ? INSTITUTION.locations.sfax.transitAr : INSTITUTION.locations.sfax.transitFr,
+      access: ar ? INSTITUTION.locations.sfax.accessAr : INSTITUTION.locations.sfax.accessFr,
       isPrimary: false,
     },
   ];

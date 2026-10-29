@@ -91,6 +91,13 @@ export const courseCategoryLabels: Record<string, { ar: string; en: string; fr: 
   "adaptation-pedagogique": { ar: "التكييف البيداغوجي", en: "Pedagogical Adaptation", fr: "Adaptation pédagogique" },
   "gestion-comportement": { ar: "إدارة السلوك والتواصل", en: "Behavior Management", fr: "Gestion des comportements" },
   "outils-numeriques": { ar: "الأدوات الرقمية الدامجة", en: "Digital Inclusive Tools", fr: "Outils numériques inclusifs" },
+  "special-needs": { ar: "الاحتياجات التعليمية الخاصة", en: "Special Educational Needs", fr: "Besoins éducatifs particuliers" },
+  "inclusion": { ar: "الدمج المدرسي الشامل", en: "School Inclusion", fr: "Inclusion scolaire" },
+  "autisme": { ar: "طيف التوحد (TSA)", en: "Autism (ASD)", fr: "Troubles du spectre de l'autisme" },
+  "tsa": { ar: "طيف التوحد (TSA)", en: "Autism (ASD)", fr: "Troubles du spectre de l'autisme" },
+  "tdah": { ar: "تشتت الانتباه وفرط الحركة (TDAH)", en: "ADHD", fr: "TDAH" },
+  "dys": { ar: "اضطرابات التعلم النوعية (DYS)", en: "Specific Learning Disorders (DYS)", fr: "Troubles DYS" },
+  "formation-continue": { ar: "التكوين المستمر والشهادات", en: "Continuing Education", fr: "Formation continue" },
 };
 
 function defaultInitials(name: string) {
