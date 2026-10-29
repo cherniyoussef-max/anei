@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
@@ -8,13 +9,17 @@ import type { Locale } from "@/types";
 import { t } from "@/lib/i18n";
 import { Icon } from "@/components/ui/Icon";
 import { authClient, useSession } from "@/lib/auth-client";
-
 import Image from "next/image";
 
 export function MobileMenu({ locale }: { locale: Locale }) {
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const c = t(locale);
   const { data } = useSession();
   const router = useRouter();
@@ -111,21 +116,22 @@ export function MobileMenu({ locale }: { locale: Locale }) {
         <Icon name={open ? "close" : "menu"} size={22} />
       </button>
 
-      {open ? (
-        <>
-          <div
-            className="fixed inset-0 bg-[#0b1f4b]/50 backdrop-blur-xs z-50 transition-opacity"
-            onClick={closeMenu}
-            aria-hidden="true"
-          />
-          <div
-            ref={panelRef}
-            id="public-mobile-menu"
-            className="fixed inset-y-0 end-0 z-50 w-full max-w-[340px] bg-white shadow-2xl flex flex-col p-6 overflow-y-auto transition-transform"
-            role="dialog"
-            aria-modal="true"
-            aria-label={ar ? "قائمة التنقل" : "Menu de navigation"}
-          >
+      {open && mounted
+        ? createPortal(
+            <>
+              <div
+                className="fixed inset-0 bg-[#0b1f4b]/50 backdrop-blur-xs z-[9998] transition-opacity"
+                onClick={closeMenu}
+                aria-hidden="true"
+              />
+              <div
+                ref={panelRef}
+                id="public-mobile-menu"
+                className="fixed inset-y-0 end-0 z-[9999] w-full max-w-[340px] h-[100dvh] bg-white shadow-2xl flex flex-col p-6 overflow-y-auto"
+                role="dialog"
+                aria-modal="true"
+                aria-label={ar ? "قائمة التنقل" : "Menu de navigation"}
+              >
             <div className="flex items-center justify-between pb-4 border-b border-slate-200 mb-4 shrink-0">
               <div className="flex items-center gap-2">
                 <Image
@@ -224,7 +230,8 @@ export function MobileMenu({ locale }: { locale: Locale }) {
               )}
             </div>
           </div>
-        </>
+        </>,
+        document.body
       ) : null}
     </div>
   );
