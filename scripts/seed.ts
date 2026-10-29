@@ -120,8 +120,8 @@ async function main(){
       schoolsCoveredAr: item.schoolsCovered?.ar ?? "المدارس الابتدائية والإعدادية الشريكة",
       hourlyRateMillimes: (item.hourlyRateTnd ?? 25) * 1000,
       experienceYears: item.experienceYears ?? 4,
-      rating: item.rating ?? 48,
-      reviewCount: item.reviewCount ?? 15,
+      rating: 50,
+      reviewCount: 0,
       phone: item.phone ?? "+216 71 000 000",
       email: item.email ?? "contact@anei.tn",
       addressFr: `${item.city.fr}, Tunisie`,
@@ -142,6 +142,108 @@ async function main(){
       profId = updated.id;
     }
     if (item.name === "Salma Karray") salmaProfileId = profId;
+  }
+
+  // Seed verified specialists in avsProfiles with directoryType = "SPECIALIST"
+  const specialistSeed = [
+    {
+      displayName: "Dr. Amina Trabelsi",
+      slug: "dr-amina-trabelsi",
+      category: "orthophoniste",
+      cityFr: "Tunis (El Menzah)",
+      cityAr: "تونس (المنزه)",
+      governorateFr: "Tunis",
+      governorateAr: "تونس",
+      specialtyFr: "Troubles du langage oral et écrit, bégaiement et dyslexie",
+      specialtyAr: "اضطرابات اللغة الشفوية والكتابية، التأتأة وصعوبات القراءة (ديسلكسيا)",
+      workplaceName: "Cabinet d'Orthophonie El Menzah",
+      workplaceAddress: "Avenue Louis Braille, El Menzah 6, Tunis",
+      universityDegree: "Master professionnel en Orthophonie — ISTMT Tunis",
+      licenseOrOrderNumber: "ORD-TN-2022-014",
+      inPersonPriceMillimes: 50000,
+      onlineVisioPriceMillimes: 45000,
+      consultationDurationMinutes: 45,
+      phone: "+216 71 840 200",
+      email: "contact@anei.tn",
+      availabilityFr: "Lundi au Vendredi · Sur rendez-vous",
+      availabilityAr: "الإثنين إلى الجمعة · بموعد مسبق",
+      bioFr: "Orthophoniste clinicienne agréée spécialisée dans l'évaluation et la rééducation des troubles du neurodéveloppement chez l'enfant scolarisé.",
+      bioAr: "أخصائية تقويم نطق معتمدة ومختصة في التشخيص وإعادة التأهيل لاضطرابات النمو العصبي لدى الأطفال المتمدرسين.",
+      certified: true,
+      visible: true,
+      directoryType: "SPECIALIST",
+    },
+    {
+      displayName: "Dr. Karim Mansour",
+      slug: "dr-karim-mansour",
+      category: "psychologue",
+      cityFr: "Sousse (Sahloul)",
+      cityAr: "سوسة (سهلول)",
+      governorateFr: "Sousse",
+      governorateAr: "سوسة",
+      specialtyFr: "Neuropsychologie & Bilan des fonctions exécutives (TDAH)",
+      specialtyAr: "علم النفس العصبي وتقييم الوظائف التنفيذية (تشتت الانتباه وفرط الحركة)",
+      workplaceName: "Centre de Consultation Neuropsychologique du Sahel",
+      workplaceAddress: "Boulevard 14 Janvier, Sahloul, Sousse",
+      universityDegree: "Doctorat en Psychologie Cognitive et Neurodéveloppement",
+      licenseOrOrderNumber: "ORD-TN-2021-088",
+      inPersonPriceMillimes: 60000,
+      onlineVisioPriceMillimes: 50000,
+      consultationDurationMinutes: 50,
+      phone: "+216 73 360 250",
+      email: "sahel@anei.tn",
+      availabilityFr: "Mardi, Jeudi, Samedi matin",
+      availabilityAr: "الثلاثاء، الخميس، السبت صباحاً",
+      bioFr: "Neuropsychologue clinicien agréé, expert en bilans psychométriques et guidance parentale pour enfants avec TDAH et TSA.",
+      bioAr: "أخصائي نفسي عصبي معتمد، خبير في التقييمات المعرفية والإرشاد الوالدي لأطفال التوحد وفرط الحركة.",
+      certified: true,
+      visible: true,
+      directoryType: "SPECIALIST",
+    },
+    {
+      displayName: "Sonia Gharbi",
+      slug: "sonia-gharbi",
+      category: "psychomotricien",
+      cityFr: "Sfax (Nouvelle Médina)",
+      cityAr: "صفاقس (المدينة الجديدة)",
+      governorateFr: "Sfax",
+      governorateAr: "صفاقس",
+      specialtyFr: "Rééducation psychomotrice & Troubles praxiques (Dyspraxie)",
+      specialtyAr: "إعادة التأهيل الحركي النفسي واضطرابات التناسق الحركي (ديسبراكسيا)",
+      workplaceName: "Cabinet de Psychomotricité Sfax Sud",
+      workplaceAddress: "Route El Ain Km 1.5, Sfax",
+      universityDegree: "Licence Appliquée en Psychomotricité — ESSTST",
+      licenseOrOrderNumber: "ORD-TN-2023-042",
+      inPersonPriceMillimes: 45000,
+      onlineVisioPriceMillimes: 40000,
+      consultationDurationMinutes: 45,
+      phone: "+216 74 420 350",
+      email: "sud@anei.tn",
+      availabilityFr: "Lundi au Vendredi",
+      availabilityAr: "الإثنين إلى الجمعة",
+      bioFr: "Psychomotricienne diplômée d'État accompagnant les élèves dans la maîtrise du schéma corporel, de l'écriture et de l'organisation spatio-temporelle.",
+      bioAr: "أخصائية علاج حركي نفسي حاصلة على شهادة وطنية ترافق التلاميذ في التحكم الحركي، مهارات الكتابة والتنظيم المكاني.",
+      certified: true,
+      visible: true,
+      directoryType: "SPECIALIST",
+    },
+  ];
+
+  for (const item of specialistSeed) {
+    const [found] = await db.select().from(avsProfiles).where(eq(avsProfiles.displayName, item.displayName)).limit(1);
+    const specValues = {
+      ...item,
+      rating: 50,
+      reviewCount: 0,
+      addressFr: `${item.cityFr}, Tunisie`,
+      addressAr: `${item.cityAr}، تونس`,
+      updatedAt: new Date(),
+    };
+    if (!found) {
+      await db.insert(avsProfiles).values(specValues);
+    } else {
+      await db.update(avsProfiles).set(specValues).where(eq(avsProfiles.id, found.id));
+    }
   }
 
   if (salmaProfileId) {

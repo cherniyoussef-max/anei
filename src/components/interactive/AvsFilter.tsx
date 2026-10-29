@@ -302,13 +302,20 @@ export function AvsFilter({
                         <span>{profile.city}</span>
                       </span>
                       <span className="text-slate-300">•</span>
-                      <span className="inline-flex items-center gap-1 text-[#B58D3D] font-bold whitespace-nowrap">
-                        <Star className="w-3.5 h-3.5 fill-[#B58D3D] text-[#B58D3D] shrink-0" />
-                        <span>{((profile.rating || 48) / 10).toFixed(1)}</span>
-                        <span className="text-slate-400 font-normal">
-                          ({profile.reviewCount || 15} {ar ? "تقييم" : "avis"})
+                      {profile.reviewCount && profile.reviewCount > 0 ? (
+                        <span className="inline-flex items-center gap-1 text-[#7A5514] font-bold whitespace-nowrap">
+                          <Star className="w-3.5 h-3.5 fill-[#7A5514] text-[#7A5514] shrink-0" />
+                          <span>{((profile.rating || 50) / 10).toFixed(1)}</span>
+                          <span className="text-slate-500 font-normal">
+                            ({profile.reviewCount} {ar ? "تقييم" : "avis"})
+                          </span>
                         </span>
-                      </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-slate-600 font-medium whitespace-nowrap text-xs">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" aria-hidden="true" />
+                          <span>{ar ? "ملف موثّق" : "Profil vérifié"}</span>
+                        </span>
+                      )}
                       <span className="text-slate-300">•</span>
                       <span className="font-medium text-slate-600 whitespace-nowrap">
                         {profile.experienceYears || 4} {ar ? "سنوات خبرة" : "ans d'expérience"}

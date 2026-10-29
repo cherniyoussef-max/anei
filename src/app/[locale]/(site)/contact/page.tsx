@@ -3,7 +3,8 @@ import { isLocale } from "@/lib/i18n";
 import { PageHero } from "@/components/ui/PageHero";
 import { ContactForm } from "@/components/interactive/ContactForm";
 import { Icon } from "@/components/ui/Icon";
-import { env } from "@/server/env";
+
+import { INSTITUTION } from "@/lib/config/institution";
 
 export default async function ContactPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -11,21 +12,19 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
   const ar = locale === "ar";
   const en = locale === "en";
 
-  const officialEmail = env.CONTACT_EMAIL && !env.CONTACT_EMAIL.endsWith(".local") ? env.CONTACT_EMAIL : "contact@anei.tn";
-  const officialPhone = env.CONTACT_PHONE || "+216 71 840 100";
+  const officialEmail = INSTITUTION.contactEmail;
+  const officialPhone = INSTITUTION.phones.national;
 
   const regionalHubs = [
     {
-      title: ar ? "المقر الوطني والحرم الجامعي الرئيسي" : "Siège National & Campus Principal",
-      city: ar ? "تونس العاصمة" : "Grand Tunis",
-      address: ar
-        ? "شارع الحبيب بورقيبة، المركز العمراني الشمالي، 1082 تونس"
-        : "Avenue Habib Bourguiba, Centre Urbain Nord, 1082 Tunis, Tunisie",
-      hours: ar ? "الإثنين - الجمعة: 08:30 - 17:30 | السبت: 09:00 - 13:00" : "Lun - Ven : 08h30 - 17h30 | Sam : 09h00 - 13h00",
+      title: ar ? INSTITUTION.locations.tunis.nameAr : INSTITUTION.locations.tunis.nameFr,
+      city: ar ? INSTITUTION.locations.tunis.cityAr : INSTITUTION.locations.tunis.cityFr,
+      address: ar ? INSTITUTION.locations.tunis.addressAr : INSTITUTION.locations.tunis.addressFr,
+      hours: ar ? INSTITUTION.locations.tunis.hoursAr : INSTITUTION.locations.tunis.hoursFr,
       phone: officialPhone,
       email: officialEmail,
-      transit: ar ? "مترو خفيف خط 2 (محطة مدينة العلوم) • حافلات خط 35 و 44" : "Métro 2 (Station Cité des Sciences) • Bus 35 & 44 • Accès autoroute RN8",
-      access: ar ? "مهيأ بالكامل لذوي الإعاقة (PMR) • مواقف سيارات مخصصة" : "Accès PMR universel • Rampes d'accès • Parking réservé",
+      transit: ar ? INSTITUTION.locations.tunis.transitAr : INSTITUTION.locations.tunis.transitFr,
+      access: ar ? INSTITUTION.locations.tunis.accessAr : INSTITUTION.locations.tunis.accessFr,
       isPrimary: true,
     },
     {

@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
+import { EmptyState } from "@/components/ui/EmptyState";
 import type { Locale } from "@/types";
 import {
   SPECIALIST_CATEGORY_LIST,
@@ -98,7 +99,7 @@ export function SpecialistFilter({
   return (
     <div className="space-y-8" dir={ar ? "rtl" : "ltr"}>
       {/* Category Pills Navigation */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin">
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         <button
           type="button"
           onClick={() => setSelectedCategory("ALL")}
@@ -216,19 +217,32 @@ export function SpecialistFilter({
 
       {/* Specialists Grid */}
       {filteredProfiles.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-dashed border-slate-200 p-12 text-center">
-          <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 mx-auto flex items-center justify-center mb-3">
-            <Icon name="search" size={22} />
-          </div>
-          <h3 className="text-base font-bold text-slate-800">
-            {ar ? "لم يتم العثور على أخصائيين" : "Aucun spécialiste correspondant"}
-          </h3>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-md mx-auto">
-            {ar
-              ? "جرّب تغيير معايير البحث أو اختيار ولاية وتخصص آخر."
-              : "Essayez d'élargir votre recherche ou de réinitialiser les filtres."}
-          </p>
-        </div>
+        <EmptyState
+          locale={locale}
+          icon="user"
+          title={
+            searchQuery || selectedCategory !== "ALL" || selectedGovernorate
+              ? ar ? "لم يتم العثور على أخصائيين يطابقون بحثك" : "Aucun spécialiste ne correspond à ces critères"
+              : ar ? "دليل الأخصائيين قيد التوثيق والاعتماد" : "Annuaire des spécialistes en cours de labellisation"
+          }
+          description={
+            searchQuery || selectedCategory !== "ALL" || selectedGovernorate
+              ? ar ? "جرّب تغيير التخصص أو البحث في ولاية أخرى، أو إعادة ضبط الفلاتر." : "Essayez d'élargir votre recherche ou de réinitialiser les filtres pour afficher l'ensemble des praticiens."
+              : ar ? "تقوم الأكاديمية بمراجعة ملفات الأخصائيين المعتمدين في تقويم النطق، العلاج الحركي والنفسي. هل أنت ممارس؟ انضم إلى شبكتنا." : "Le comité scientifique de l'Académie valide rigoureusement les praticiens partenaires en Tunisie. Vous êtes professionnel de santé ou éducateur spécialisé ? Rejoignez le réseau."
+          }
+          action={{
+            label: ar ? "تقديم طلب اعتماد ممارس" : "Déposer une demande d'agrément",
+            href: `/${locale}/contact?type=practitioner`,
+          }}
+          secondaryAction={
+            searchQuery || selectedCategory !== "ALL" || selectedGovernorate
+              ? {
+                  label: ar ? "إعادة ضبط الفلاتر" : "Réinitialiser les filtres",
+                  href: `/${locale}/specialistes`,
+                }
+              : undefined
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProfiles.map((specialist) => {

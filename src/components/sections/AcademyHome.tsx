@@ -401,8 +401,7 @@ export function AcademyHome({
             <Link
               href={
                 topFeaturedNews
-                  ? topFeaturedNews.category === "FORMATION" ||
-                    topFeaturedNews.slug.startsWith("formation-")
+                  ? topFeaturedNews.slug.startsWith("formation-")
                     ? `/${locale}/formations/${topFeaturedNews.slug.replace(/^formation-/, "")}`
                     : `/${locale}/actualites/${topFeaturedNews.slug}`
                   : `/${locale}/formations`
@@ -411,8 +410,7 @@ export function AcademyHome({
             >
               <span>
                 {topFeaturedNews
-                  ? topFeaturedNews.category === "FORMATION" ||
-                    topFeaturedNews.slug.startsWith("formation-")
+                  ? topFeaturedNews.slug.startsWith("formation-")
                     ? ar
                       ? "اكتشف البرنامج والتسجيل ←"
                       : "Découvrir la formation →"
@@ -420,8 +418,8 @@ export function AcademyHome({
                     ? "الاطلاع على التفاصيل ←"
                     : "Consulter le dossier →"
                   : ar
-                  ? "الاطلاع على الملف ←"
-                  : "Consulter le dossier →"}
+                  ? "اكتشف برامج التكوين ←"
+                  : "Découvrir les formations →"}
               </span>
             </Link>
           </div>

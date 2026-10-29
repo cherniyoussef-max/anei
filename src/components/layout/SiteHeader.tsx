@@ -17,7 +17,7 @@ export function SiteHeader({ locale, initialUser }: { locale: Locale; initialUse
     ["", ar ? "الرئيسية" : "Accueil"],
     ["formations", ar ? "التكوين" : "Formations"],
     ["bibliotheque", ar ? "المكتبة" : "Bibliothèque"],
-    ["avs", ar ? "دليل AVS" : "AVS"],
+    ["avs", ar ? "المرافق المدرسي (AVS)" : "Accompagnement (AVS)"],
     ["specialistes", ar ? "الأخصائيون" : "Spécialistes"],
     ["webinaires", ar ? "الندوات" : "Webinaires"],
     ["actualites", ar ? "الأخبار" : "Actualités"],
@@ -36,13 +36,13 @@ export function SiteHeader({ locale, initialUser }: { locale: Locale; initialUse
 
   return (
     <header className="navbar-root sticky top-0 z-50 h-[76px] bg-white/95 backdrop-blur-md border-b border-[#dde9f8] transition-all">
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between gap-4">
+      <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between gap-3 sm:gap-4">
         {/* Left: Always visible Logo + Navigation links */}
-        <div className="flex items-center gap-4 xl:gap-6 min-w-0">
+        <div className="flex items-center gap-3.5 xl:gap-5 min-w-0">
           <Link
             href={`/${locale}`}
             prefetch={true}
-            className="site-brand-link flex items-center gap-3 shrink-0 hover:opacity-90 transition-opacity"
+            className="site-brand-link flex items-center gap-2.5 shrink-0 hover:opacity-90 transition-opacity"
             aria-label={ar ? "الرئيسية ANEI" : "Accueil ANEI"}
           >
             <Image
@@ -52,20 +52,20 @@ export function SiteHeader({ locale, initialUser }: { locale: Locale; initialUse
               height={46}
               priority
               unoptimized
-              className="h-[42px] sm:h-[46px] w-auto object-contain shrink-0"
+              className="h-[40px] sm:h-[44px] w-auto object-contain shrink-0"
             />
-            <div className="hidden 2xl:flex flex-col text-start leading-tight shrink-0">
-              <b className="font-semibold text-[13.5px] text-[#0b1f4b] tracking-tight">
+            <div className="hidden min-[1680px]:flex flex-col text-start leading-tight shrink-0">
+              <b className="font-semibold text-[13px] text-[#0b1f4b] tracking-tight">
                 L’Académie Nationale de l’Éducation Inclusive
               </b>
-              <span dir="rtl" lang="ar" className="text-[12.5px] font-bold text-[#b8923a]">
+              <span dir="rtl" lang="ar" className="text-[12px] font-bold text-[#b8923a]">
                 الأكاديمية الوطنية للتربية الدامجة
               </span>
             </div>
           </Link>
 
           <nav
-            className="hidden xl:flex items-center gap-3.5 2xl:gap-5 min-w-0"
+            className="hidden xl:flex items-center gap-2 lg:gap-2.5 2xl:gap-3.5 min-w-0"
             aria-label={ar ? "التنقل الرئيسي" : "Navigation principale"}
           >
             {links.map(([segment, label]) => {
@@ -76,9 +76,9 @@ export function SiteHeader({ locale, initialUser }: { locale: Locale; initialUse
                   key={segment || "home"}
                   href={href}
                   prefetch={true}
-                  className={`relative py-1 text-[13.5px] 2xl:text-[14px] font-medium whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0b1f4b] focus-visible:ring-offset-2 rounded ${
+                  className={`relative py-1 text-[13px] 2xl:text-[13.5px] font-medium whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0b1f4b] focus-visible:ring-offset-2 rounded ${
                     isActive
-                      ? "text-[#0b1f4b] font-semibold after:absolute after:bottom-0 after:inset-x-0 after:h-[2px] after:bg-[#b8923a]"
+                      ? "text-[#0b1f4b] font-bold after:absolute after:bottom-0 after:inset-x-0 after:h-[2px] after:bg-[#b8923a]"
                       : "text-[#46557a] hover:text-[#0b1f4b] hover:after:absolute hover:after:bottom-0 hover:after:inset-x-0 hover:after:h-[2px] hover:after:bg-[#b8923a]"
                   }`}
                   aria-current={isActive ? "page" : undefined}

@@ -53,11 +53,11 @@ export function AccountActions({ locale, initialUser = null }: { locale: Locale;
 
     return (
       <Link
-        className="inline-flex items-center justify-center gap-2 px-5 py-2 rounded-full font-semibold text-[13.5px] bg-[#0b1f4b] text-white hover:bg-[#1b3a7a] transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5"
-        href={`/${locale}/login`}
+        className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 sm:px-4.5 sm:py-2 rounded-full font-semibold text-[13px] bg-[#0b1f4b] text-white hover:bg-[#1b3a7a] transition-all shadow-xs hover:shadow-sm"
+        href={`/${locale}/connexion`}
         aria-label={ar ? "تسجيل الدخول / حسابي" : en ? "Sign in / My account" : "Se connecter / Mon compte"}
       >
-        <Icon name="user" size={17} />
+        <Icon name="user" size={16} />
         <span className="hidden sm:inline">
           {ar ? "تسجيل الدخول" : en ? "Sign In" : "Connexion"}
         </span>
