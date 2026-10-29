@@ -21,18 +21,18 @@ export function PageHero({
   children?: ReactNode;
 }) {
   return (
-    <section className="subpage-hero-root">
-      <div className="subpage-hero-watermark" aria-hidden="true">
+    <section className="subpage-hero-root relative overflow-hidden bg-gradient-to-b from-[#f8fbff] to-white border-b border-[#dde9f8] pt-10 pb-12 sm:pt-14 sm:pb-16">
+      <div className="absolute -top-12 -start-12 w-64 h-64 opacity-[0.035] pointer-events-none select-none" aria-hidden="true">
         <Image
           src="/brand/watermark-master-duo.webp"
           alt=""
-          width={360}
-          height={360}
-          className="subpage-watermark-img"
+          width={256}
+          height={256}
+          className="w-full h-full object-contain"
           priority={false}
         />
       </div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 subpage-hero-container">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 subpage-hero-container relative z-10">
         {breadcrumbs && breadcrumbs.length > 0 && (
           <nav aria-label="Fil d'Ariane" className="subpage-hero-breadcrumbs">
             <ol className="flex items-center gap-2 text-xs text-slate-500 mb-3.5">
@@ -54,8 +54,8 @@ export function PageHero({
         <div className="subpage-hero-copy">
           {eyebrow ? (
             <div className="inline-flex items-center gap-2.5 mb-3.5">
-              <span className="w-6 h-[1.5px] bg-[#B58D3D] shrink-0" aria-hidden="true" />
-              <span className="font-sans text-xs font-semibold uppercase tracking-[0.08em] text-[#B58D3D]">{eyebrow}</span>
+              <span className="w-6 h-[1.5px] bg-[#8C651E] shrink-0" aria-hidden="true" />
+              <span className="font-sans text-xs font-semibold uppercase tracking-[0.08em] text-[#8C651E]">{eyebrow}</span>
             </div>
           ) : null}
           <h1 className="text-4xl sm:text-5xl font-sans font-bold tracking-[-0.025em] text-slate-900 leading-[1.15] max-w-2xl">

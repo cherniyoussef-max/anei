@@ -6,14 +6,15 @@ import {
   Youtube,
   Mail,
   Clock,
+  MapPin,
+  Phone,
 } from "lucide-react";
 import type { Locale } from "@/types";
-import { env } from "@/server/env";
+import { INSTITUTION } from "@/lib/config/institution";
 
 export function SiteFooter({ locale }: { locale: Locale }) {
   const ar = locale === "ar";
   const en = locale === "en";
-
 
   const platformLinks = [
     { href: `/${locale}`, label: ar ? "الرئيسية" : en ? "Home" : "Accueil" },
@@ -33,8 +34,8 @@ export function SiteFooter({ locale }: { locale: Locale }) {
   const legalLinks = [
     { href: `/${locale}/conditions`, label: ar ? "إشعار قانوني والشروط" : en ? "Legal Terms" : "Mentions légales" },
     { href: `/${locale}/confidentialite`, label: ar ? "سياسة الخصوصية" : en ? "Privacy Policy" : "Confidentialité" },
-    { href: `/${locale}`, label: ar ? "سهولة الوصول WCAG" : en ? "Accessibility" : "Accessibilité" },
-    { href: `/${locale}`, label: ar ? "خريطة الموقع" : en ? "Site map" : "Plan du site" },
+    { href: `/${locale}/accessibilite`, label: ar ? "سهولة الوصول WCAG" : en ? "Accessibility" : "Accessibilité" },
+    { href: `/${locale}/plan-du-site`, label: ar ? "خريطة الموقع" : en ? "Site map" : "Plan du site" },
   ];
 
   return (
@@ -59,7 +60,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
                   width={140}
                   height={44}
                   unoptimized
-                  className="h-10 sm:h-11 w-auto object-contain shrink-0 rounded-lg p-1 bg-white/10"
+                  className="h-10 sm:h-11 w-auto object-contain shrink-0"
                 />
                 <div className="flex flex-col text-start">
                   <span className="font-bold text-white text-[15px] sm:text-[16px] leading-snug tracking-tight">
@@ -123,19 +124,31 @@ export function SiteFooter({ locale }: { locale: Locale }) {
               </span>
 
               <div className="space-y-3 text-sm text-slate-300">
+                <div className="flex items-start gap-2.5">
+                  <MapPin size={16} className="text-[#C5A059] shrink-0 mt-0.5" />
+                  <span className="leading-snug">
+                    {ar ? INSTITUTION.locations.tunis.addressAr : "Centre Urbain Nord, 1082 Tunis, Tunisie"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <Phone size={16} className="text-[#C5A059] shrink-0" />
+                  <a href={`tel:${INSTITUTION.phones.national}`} className="hover:text-white transition-colors">
+                    {INSTITUTION.phones.national}
+                  </a>
+                </div>
                 <div className="flex items-center gap-2.5">
                   <Mail size={16} className="text-[#C5A059] shrink-0" />
                   <a
-                    href="mailto:contact@anei.tn"
+                    href={`mailto:${INSTITUTION.contactEmail}`}
                     className="hover:text-white transition-colors underline-offset-4 hover:underline"
                   >
-                    contact@anei.tn
+                    {INSTITUTION.contactEmail}
                   </a>
                 </div>
                 <div className="flex items-center gap-2.5">
                   <Clock size={16} className="text-[#C5A059] shrink-0" />
                   <span>
-                    {ar ? "الإثنين - الجمعة · 08:30 - 17:30" : "Lun - Ven · 08:30 - 17:30"}
+                    {ar ? INSTITUTION.generalHours.ar : INSTITUTION.generalHours.fr}
                   </span>
                 </div>
               </div>
@@ -147,28 +160,28 @@ export function SiteFooter({ locale }: { locale: Locale }) {
                 </span>
                 <div className="flex items-center gap-2.5">
                   <a
-                    href={env.SOCIAL_LINKEDIN_URL || "https://linkedin.com"}
+                    href={INSTITUTION.social.linkedin || "https://linkedin.com"}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="h-9 w-9 rounded-full bg-white/[0.08] hover:bg-[#0056D2] text-slate-200 hover:text-white flex items-center justify-center transition-all duration-200 border border-white/10"
+                    className="h-9 w-9 rounded-full bg-white/[0.08] hover:bg-[#1b3a7a] hover:border-[#C5A059] text-slate-200 hover:text-white flex items-center justify-center transition-all duration-200 border border-white/10"
                     aria-label="LinkedIn"
                   >
                     <Linkedin size={16} />
                   </a>
                   <a
-                    href={env.SOCIAL_FACEBOOK_URL || "https://facebook.com"}
+                    href={INSTITUTION.social.facebook || "https://facebook.com"}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="h-9 w-9 rounded-full bg-white/[0.08] hover:bg-[#0056D2] text-slate-200 hover:text-white flex items-center justify-center transition-all duration-200 border border-white/10"
+                    className="h-9 w-9 rounded-full bg-white/[0.08] hover:bg-[#1b3a7a] hover:border-[#C5A059] text-slate-200 hover:text-white flex items-center justify-center transition-all duration-200 border border-white/10"
                     aria-label="Facebook"
                   >
                     <Facebook size={16} />
                   </a>
                   <a
-                    href="https://youtube.com"
+                    href={INSTITUTION.social.youtube || "https://youtube.com"}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="h-9 w-9 rounded-full bg-white/[0.08] hover:bg-[#0056D2] text-slate-200 hover:text-white flex items-center justify-center transition-all duration-200 border border-white/10"
+                    className="h-9 w-9 rounded-full bg-white/[0.08] hover:bg-[#1b3a7a] hover:border-[#C5A059] text-slate-200 hover:text-white flex items-center justify-center transition-all duration-200 border border-white/10"
                     aria-label="YouTube"
                   >
                     <Youtube size={16} />

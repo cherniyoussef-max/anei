@@ -8,6 +8,7 @@ import { formatMillimes } from "@/lib/i18n";
 import { Icon } from "@/components/ui/Icon";
 import { CheckoutButton } from "@/components/commerce/CheckoutButton";
 import { Pagination } from "@/components/ui/Pagination";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 export type CatalogResource = {
   id: string;
@@ -155,77 +156,93 @@ export function ResourceCatalog({
         {filters.q ? <p>{ar ? `نتائج البحث عن «${filters.q}»` : en ? `Search results for “${filters.q}”` : `Résultats pour « ${filters.q} »`}</p> : <p>{ar ? "موارد مختارة للممارسة المهنية." : en ? "A concise selection for professional practice." : "Une sélection concise pour la pratique professionnelle."}</p>}
       </div>
 
-      <div className="resource-grid resource-grid-editorial">
-        {resources.map((resource) => {
-          const typeLabel = TYPE_LABEL[resource.type]?.[locale] ?? resource.type;
-          return (
-            <article className="resource-card resource-card-editorial" key={resource.id}>
-              {resource.coverImageUrl ? (
-                <div className="resource-cover resource-cover-image w-44 sm:w-48 shrink-0 relative">
-                  <Image src={resource.coverImageUrl} alt="" fill sizes="(max-width: 767px) 100vw, 34vw" unoptimized />
-                </div>
-              ) : (
-                <div className="resource-cover resource-cover-master w-44 sm:w-48 shrink-0 flex flex-col justify-between p-5 bg-gradient-to-br from-[#142B47] to-[#0D1E33]">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-semibold tracking-wide bg-white/10 text-[#E5C158] border border-white/15 backdrop-blur-xs !w-fit !h-auto">
-                    {typeLabel}
-                  </span>
-                  <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center my-auto mx-auto shadow-inner">
-                    <Icon name="book" size={24} className="text-[#E5C158]" />
+      {resources.length > 0 ? (
+        <div className={`resource-grid resource-grid-editorial ${resources.length === 1 ? "!grid-cols-1 max-w-2xl mx-auto" : ""}`}>
+          {resources.map((resource) => {
+            const typeLabel = TYPE_LABEL[resource.type]?.[locale] ?? resource.type;
+            return (
+              <article className="resource-card resource-card-editorial" key={resource.id}>
+                {resource.coverImageUrl ? (
+                  <div className="resource-cover resource-cover-image w-44 sm:w-48 shrink-0 relative">
+                    <Image src={resource.coverImageUrl} alt="" fill sizes="(max-width: 767px) 100vw, 34vw" unoptimized />
                   </div>
-                  <small className="tracking-[0.2em] text-[10px] text-white/60 font-medium uppercase text-center block">
-                    ANEI · ÉDITIONS
-                  </small>
-                </div>
-              )}
-              <div className="resource-card-body">
-                <div className="resource-meta-row">
-                  <span>{typeLabel}</span>
-                  <span>{LEVEL_LABEL[resource.level]?.[locale] ?? resource.level}</span>
-                </div>
-                <h3 className="font-sans font-semibold text-lg md:text-xl tracking-[-0.015em] leading-snug text-slate-900 hover:text-slate-700 transition-colors">{resource.title}</h3>
-                <p>{resource.description}</p>
-                <dl className="resource-facts">
-                  <div><dt>{ar ? "موجّه إلى" : en ? "For" : "Pour"}</dt><dd>{resource.audience}</dd></div>
-                  <div><dt>{ar ? "السعر" : en ? "Price" : "Prix"}</dt><dd>{formatMillimes(resource.priceMillimes, locale)}</dd></div>
-                </dl>
-                <div className="resource-checkout-wrap mt-auto">
-                  {resource.priceMillimes === 0 ? (
-                    <div className="flex flex-col sm:flex-row items-center gap-2 w-full pt-1">
-                      <a
-                        href={resource.downloadUrl || "/documents/guide-complet-autisme-accompagnement-scolaire-anei.pdf"}
-                        download
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0056D2] hover:bg-[#00419e] text-white text-xs font-semibold shadow-xs transition-colors"
-                      >
-                        <Icon name="download" size={15} />
-                        <span>{ar ? "تحميل الدليل (PDF مجاني)" : "Télécharger le guide (PDF gratuit)"}</span>
-                      </a>
-                      <a
-                        href="/documents/guide-complet-autisme-accompagnement-scolaire-anei.html"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition-colors"
-                        title={ar ? "قراءة أونلاين" : "Consulter en ligne"}
-                      >
-                        <Icon name="eye" size={15} />
-                        <span className="whitespace-nowrap">{ar ? "قراءة" : "Consulter"}</span>
-                      </a>
+                ) : (
+                  <div className="resource-cover resource-cover-master w-44 sm:w-48 shrink-0 flex flex-col justify-between p-5 bg-gradient-to-br from-[#142B47] to-[#0D1E33]">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-white/10 text-[#E5C158] border border-white/15 !w-fit !h-auto">
+                      {ar ? "إصدار معتمد" : "Édition certifiée"}
+                    </span>
+                    <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center my-auto mx-auto shadow-inner">
+                      <Icon name="book" size={24} className="text-[#E5C158]" />
                     </div>
-                  ) : (
-                    <CheckoutButton itemType="resource" itemId={resource.id} locale={locale} capabilities={capabilities} label={ar ? "شراء المورد" : en ? "Purchase resource" : "Acheter la ressource"} />
-                  )}
+                    <small className="tracking-[0.2em] text-[10px] text-white/60 font-medium uppercase text-center block">
+                      ANEI · ÉDITIONS
+                    </small>
+                  </div>
+                )}
+                <div className="resource-card-body">
+                  <div className="resource-meta-row">
+                    <span>{typeLabel}</span>
+                    <span>{LEVEL_LABEL[resource.level]?.[locale] ?? resource.level}</span>
+                  </div>
+                  <h3 className="font-sans font-semibold text-lg md:text-xl tracking-[-0.015em] leading-snug text-slate-900 hover:text-slate-700 transition-colors">{resource.title}</h3>
+                  <p>{resource.description}</p>
+                  <dl className="resource-facts">
+                    <div><dt>{ar ? "موجّه إلى" : en ? "For" : "Pour"}</dt><dd>{resource.audience}</dd></div>
+                    <div><dt>{ar ? "السعر" : en ? "Price" : "Prix"}</dt><dd>{formatMillimes(resource.priceMillimes, locale)}</dd></div>
+                  </dl>
+                  <div className="resource-checkout-wrap mt-auto">
+                    {resource.priceMillimes === 0 ? (
+                      <div className="flex flex-col sm:flex-row items-center gap-2 w-full pt-1">
+                        <a
+                          href={resource.downloadUrl || "/documents/guide-complet-autisme-accompagnement-scolaire-anei.pdf"}
+                          download
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0b1f4b] hover:bg-[#1b3a7a] text-white text-xs font-semibold shadow-xs transition-colors"
+                        >
+                          <Icon name="download" size={15} />
+                          <span>{ar ? "تحميل الدليل (PDF مجاني)" : "Télécharger le guide (PDF gratuit)"}</span>
+                        </a>
+                        <a
+                          href="/documents/guide-complet-autisme-accompagnement-scolaire-anei.html"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition-colors"
+                          title={ar ? "قراءة أونلاين" : "Consulter en ligne"}
+                        >
+                          <Icon name="eye" size={15} />
+                          <span className="whitespace-nowrap">{ar ? "قراءة" : "Consulter"}</span>
+                        </a>
+                      </div>
+                    ) : (
+                      <CheckoutButton itemType="resource" itemId={resource.id} locale={locale} capabilities={capabilities} label={ar ? "شراء المورد" : en ? "Purchase resource" : "Acheter la ressource"} />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[11px] text-slate-500 pt-2">
+                    <Icon name="shield" size={12} className="text-emerald-700 flex-none" />
+                    <span>{ar ? "تحميل فوري وآمن بصيغة PDF عالية الدقة" : "Téléchargement immédiat et sécurisé au format PDF"}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5 text-[11px] text-slate-500 pt-2">
-                  <Icon name="shield" size={12} className="text-emerald-700 flex-none" />
-                  <span>{ar ? "تحميل فوري وآمن بصيغة PDF عالية الدقة" : "Téléchargement immédiat et sécurisé au format PDF"}</span>
-                </div>
-              </div>
-            </article>
-          );
-        })}
-      </div>
-      {!resources.length ? <div className="empty-state">{ar ? "لا توجد موارد مطابقة. جرّب كلمات أقل أو امسح الفلاتر." : en ? "No resources match. Try fewer words or clear the filters." : "Aucune ressource ne correspond. Essayez moins de mots ou effacez les filtres."}</div> : null}
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <EmptyState
+          locale={locale}
+          icon="book"
+          title={ar ? "لا توجد موارد مطابقة" : "Aucune ressource trouvée"}
+          description={
+            ar
+              ? "لم يتم العثور على وثائق أو أدلة تطابق الفلاتر المحددة. جرّب البحث بكلمات أخرى أو إعادة ضبط الفلاتر."
+              : "Aucun document ou guide pratique ne correspond à vos filtres actuels. Modifiez vos critères de recherche pour afficher les ressources disponibles."
+          }
+          action={{
+            label: ar ? "عرض كل الموارد" : "Afficher toutes les ressources",
+            href: `/${locale}/bibliotheque`,
+          }}
+        />
+      )}
       <Pagination locale={locale} basePath={`/${locale}/bibliotheque`} page={page} totalPages={totalPages} params={filters} />
     </>
   );

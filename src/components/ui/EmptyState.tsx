@@ -3,10 +3,10 @@ import { type LucideIcon, Search, AlertCircle, BookOpen, UserX, Calendar } from 
 import type { Locale } from "@/types";
 
 export type EmptyStateProps = {
-  locale: Locale;
+  locale?: Locale;
   title: string;
   description: string;
-  icon?: "search" | "calendar" | "course" | "user" | "alert";
+  icon?: "search" | "calendar" | "course" | "book" | "user" | "alert";
   action?: {
     label: string;
     href: string;
@@ -22,12 +22,13 @@ const ICON_MAP: Record<string, LucideIcon> = {
   search: Search,
   calendar: Calendar,
   course: BookOpen,
+  book: BookOpen,
   user: UserX,
   alert: AlertCircle,
 };
 
 export function EmptyState({
-  locale,
+  locale = "fr",
   title,
   description,
   icon = "search",
