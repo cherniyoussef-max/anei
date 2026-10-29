@@ -118,6 +118,11 @@ export function formatPrice(value: number, locale: Locale) {
 }
 
 export function formatMillimes(value: number, locale: Locale) {
+  if (!value || value === 0) {
+    if (locale === "ar") return "مجاني";
+    if (locale === "en") return "Free";
+    return "Gratuit";
+  }
   return new Intl.NumberFormat(locale === "ar" ? "ar-TN" : locale === "fr" ? "fr-FR" : "en-TN", {
     style: "currency",
     currency: "TND",
