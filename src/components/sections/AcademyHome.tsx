@@ -429,46 +429,6 @@ export function AcademyHome({
       </section>
 
       {/* =====================================================================
-          5. ACADEMIC VALUES (.vals)
-          ===================================================================== */}
-      <section className="vals">
-        <div className="wrap">
-          <div>
-            <i>🎓</i>
-            <span>
-              {ar
-                ? "تميز أكاديمي واعتماد علمي دقيق"
-                : "Excellence académique & validation scientifique"}
-            </span>
-          </div>
-          <div>
-            <i>🤝</i>
-            <span>
-              {ar
-                ? "شمولية عادلة ومدرسة متاحة للجميع"
-                : "Inclusion universelle & équité pour tous"}
-            </span>
-          </div>
-          <div>
-            <i>⚡</i>
-            <span>
-              {ar
-                ? "أدوات تطبيقية عملية قابلة للتنفيذ فوراً"
-                : "Outils opérationnels immédiatement applicables"}
-            </span>
-          </div>
-          <div>
-            <i>🛡️</i>
-            <span>
-              {ar
-                ? "شبكة معتمدة من الخبراء والممارسين الميدانيين"
-                : "Réseau certifié d'experts et praticiens de terrain"}
-            </span>
-          </div>
-        </div>
-      </section>
-
-      {/* =====================================================================
           6. NEWS & PUBLICATIONS (.news)
           ===================================================================== */}
       <section className="news" id="actualites">

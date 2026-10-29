@@ -633,36 +633,6 @@
   font-size: 15px;
 }
 
-/* --------------------------------------------------------------------------
-   ACADEMIC VALUES (.vals)
-   -------------------------------------------------------------------------- */
-.vals {
-  padding: 60px 0 80px;
-  background: #fbfdff;
-}
-.vals .wrap {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-  text-align: center;
-}
-.vals div {
-  padding: 16px 20px;
-  border-inline-end: 1px solid var(--sky2);
-  font-weight: 500;
-  font-size: 15px;
-  color: var(--navy);
-}
-.vals div:last-child {
-  border-inline-end: 0;
-}
-.vals i {
-  display: block;
-  font-style: normal;
-  font-size: 32px;
-  color: var(--gold);
-  margin-bottom: 10px;
-}
 
 /* --------------------------------------------------------------------------
    NEWS / PUBLICATIONS (.news)
@@ -817,12 +787,6 @@
     min-height: 300px;
     clip-path: none;
   }
-  .vals .wrap {
-    grid-template-columns: 1fr 1fr;
-  }
-  .vals div {
-    border-inline-end: 0;
-  }
 }
 
 @media (max-width: 700px) {
@@ -833,9 +797,6 @@
 
 @media (max-width: 600px) {
   .ngrid {
-    grid-template-columns: 1fr;
-  }
-  .vals .wrap {
     grid-template-columns: 1fr;
   }
 }
