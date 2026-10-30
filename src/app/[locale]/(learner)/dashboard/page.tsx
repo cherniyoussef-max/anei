@@ -9,6 +9,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/server/db";
 import { avsBookingRequests, avsProfiles } from "@/server/db/schema";
 import { StudentDashboard } from "@/components/student/StudentDashboard";
+import { getLearnerDailyReviewSummary } from "@/server/queries/learning-experience";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +43,7 @@ export default async function DashboardPage({
   }
 
   const ar = locale === "ar";
-  const [data, appointments, learnerLiveSessions, parentBookings] = await Promise.all([
+  const [data, appointments, learnerLiveSessions, parentBookings, dailyReviewSummary] = await Promise.all([
     getDashboardData(session.user.id),
     getLearnerAppointments(session.user.id, false, 4),
     getLiveSessionsForLearner(session.user.id),
@@ -70,6 +71,7 @@ export default async function DashboardPage({
         )
       )
       .limit(6),
+    getLearnerDailyReviewSummary(session.user.id),
   ]);
 
   const continueRow = data.enrollmentRows.find(({ enrollment }) => enrollment.progressPercent < 100) ?? data.enrollmentRows[0];
@@ -115,6 +117,7 @@ export default async function DashboardPage({
       locale={locale}
       userName={session.user.name}
       completedLessonsTotal={data.completedLessonsTotal}
+      dailyReview={dailyReviewSummary}
       continueItem={continueRow ? {
         id: continueRow.enrollment.id,
         slug: continueRow.course.slug,

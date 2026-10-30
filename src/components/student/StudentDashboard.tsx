@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import type { Locale } from "@/types";
 import { getCourseVisual } from "@/lib/visuals";
-import { DailyReviewModal } from "@/components/learning/DailyReviewModal";
+import { DailyReviewModal, type DailyReviewCard } from "@/components/learning/DailyReviewModal";
 
 export type StudentCourseItem = {
   id: string;
@@ -69,6 +69,12 @@ export type StudentCertificateItem = {
   title: string;
   code: string;
   date?: string;
+};
+
+export type DailyReviewSummaryProp = {
+  dueCount: number;
+  estimatedMinutes: number;
+  cards: DailyReviewCard[];
 };
 
 function ProgressRing({ value, size = 50, strokeWidth = 4 }: { value: number; size?: number; strokeWidth?: number }) {
@@ -171,6 +177,7 @@ export function StudentDashboard({
   resources,
   certificates,
   completedLessonsTotal = 0,
+  dailyReview,
 }: {
   locale: Locale;
   userName: string;
@@ -182,6 +189,7 @@ export function StudentDashboard({
   resources: StudentResourceItem[];
   certificates: StudentCertificateItem[];
   pointsBalance?: number;
+  dailyReview?: DailyReviewSummaryProp;
 }) {
   const ar = locale === "ar";
   const en = locale === "en";
@@ -235,13 +243,17 @@ export function StudentDashboard({
                 {ar ? "التثبيت الذهني اليومي (SM-2)" : "Ancrage mémoriel quotidien"}
               </span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
-                {ar ? "3 دقائق" : "~3 min"}
+                {dailyReview && dailyReview.dueCount > 0 ? `~${dailyReview.estimatedMinutes} min` : ar ? "مكتمل" : "À jour"}
               </span>
             </div>
             <strong className="text-sm sm:text-base text-[#0A192F] font-bold block mt-0.5">
-              {ar
-                ? "مراجعة المفاهيم السريرية والميدانية المستحقة اليوم"
-                : "Consolidez vos acquis : session de révision active programmée"}
+              {dailyReview && dailyReview.dueCount > 0
+                ? ar
+                  ? `${dailyReview.dueCount} بطاقة مفهوم مستحقة للمراجعة وتثبيت الذاكرة اليوم`
+                  : `${dailyReview.dueCount} notion(s) prêtes pour ancrage mémoriel aujourd'hui`
+                : ar
+                ? "جميع مراجعاتك لليوم مكتملة ومثبتة بنجاح"
+                : "Toutes vos révisions du jour sont à jour !"}
             </strong>
           </div>
         </div>
@@ -252,7 +264,11 @@ export function StudentDashboard({
           className="h-9 px-4 rounded-xl bg-[#0056D2] hover:bg-[#00419e] text-white text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-colors cursor-pointer shadow-2xs self-end sm:self-center"
         >
           <Sparkles size={14} />
-          <span>{ar ? "بدء المراجعة السريعة" : "Démarrer la session"}</span>
+          <span>
+            {dailyReview && dailyReview.dueCount > 0
+              ? ar ? "بدء المراجعة السريعة" : "Démarrer la session"
+              : ar ? "مراجعة إضافية" : "Lancer une révision"}
+          </span>
         </button>
       </div>
 
@@ -1041,6 +1057,7 @@ export function StudentDashboard({
         isOpen={reviewModalOpen}
         onClose={() => setReviewModalOpen(false)}
         locale={locale}
+        initialCards={dailyReview?.cards}
       />
     </div>
   );
