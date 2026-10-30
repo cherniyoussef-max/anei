@@ -1,13 +1,12 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useMemo, useState } from "react";
 import type { Locale } from "@/types";
 import { authClient } from "@/lib/auth-client";
-import { GoogleMark } from "@/components/auth/GoogleMark";
 import { AuthWizardProgress } from "@/components/auth/AuthWizardProgress";
+import { RegisterRoleSelectionStep } from "@/components/auth/RegisterRoleSelectionStep";
 import { getDelegationsForGovernorate } from "@/lib/tunisia/locations";
 import {
   validateAndNormalizeCanonicalEmail,
@@ -89,13 +88,13 @@ export const PROFILE_DEFINITIONS: ProfileTypeItem[] = [
     category: "STUDENT",
     subRole: "Étudiant / En reconversion",
     icon: GraduationCap,
-    image: "/media/persona-student.webp",
+    image: "/images/onboarding/roles/role-learner.svg",
     titleFr: "Apprenant / Étudiant",
     titleAr: "طالب / متعلم",
     descriptionFr: "Suivre des formations certifiantes, développer ses compétences en éducation inclusive et obtenir des diplômes et attestations officielles ANEI.",
     descriptionAr: "متابعة الدورات التدريبية المعتمدة، اكتساب مهارات التربية الدامجة ونيل الشهادات التخصصية الرسمية.",
-    badgesFr: ["Espace Apprenant", "Formations certifiantes", "Diplômes ANEI"],
-    badgesAr: ["فضاء المتعلم", "دورات معتمدة", "شهادات رسمية"],
+    badgesFr: ["Espace Apprenant", "Formations certifiantes", "Certifications officielles ANEI"],
+    badgesAr: ["فضاء المتعلم", "دورات معتمدة", "شهادات كفاءة معتمدة"],
     badgeColorClass: "bg-slate-100 text-slate-700",
   },
   {
@@ -103,13 +102,13 @@ export const PROFILE_DEFINITIONS: ProfileTypeItem[] = [
     category: "PARENT",
     subRole: "Parent d'un enfant à besoin spécifique",
     icon: HeartHandshake,
-    image: "/media/persona-parent.webp",
+    image: "/images/onboarding/roles/role-parent.svg",
     titleFr: "Parent d'élève",
     titleAr: "ولي أمر",
     descriptionFr: "Accompagner son enfant, réserver des séances avec des AVS ou Spécialistes certifiés et accéder à votre Espace Famille dédié.",
     descriptionAr: "مرافقة الطفل، حجز حصص مباشرة مع مرافقين مدرسيين وأخصائيين والوصول إلى فضاء العائلة المخصص.",
     badgesFr: ["Espace Famille", "Réservation AVS", "Suivi spécialistes"],
-    badgesAr: ["فضاء العائلة", "حجز AVS", "أخصائيون معتمدون"],
+    badgesAr: ["فضاء العائلة", "حجز مرافقي AVS", "أخصائيون معتمدون"],
     badgeColorClass: "bg-emerald-50 text-emerald-700 border border-emerald-100",
   },
   {
@@ -117,13 +116,13 @@ export const PROFILE_DEFINITIONS: ProfileTypeItem[] = [
     category: "TEACHER",
     subRole: "Enseignant / Cadre éducatif",
     icon: BookOpen,
-    image: "/media/persona-teacher.webp",
+    image: "/images/onboarding/roles/role-teacher.svg",
     titleFr: "Enseignant / Éducateur",
     titleAr: "مربي / إطار تربوي",
     descriptionFr: "Mettre en place des adaptations pédagogiques (PEI/GEVA-Sco), gérer une classe inclusive et collaborer avec les familles et spécialistes.",
     descriptionAr: "تطبيق التكييفات البيداغوجية، إدارة الأقسام الدامجة والتنسيق المتكامل مع الأسر والأخصائيين والمرافقين.",
-    badgesFr: ["Espace Formateur", "Pédagogie inclusive", "Outils & PEI"],
-    badgesAr: ["فضاء المربي", "تربية دامجة", "أدوات و PEI"],
+    badgesFr: ["Espace Formateur", "Pédagogie inclusive", "Outils & adaptations PEI"],
+    badgesAr: ["فضاء المربي", "تربية دامجة", "أدوات وتكييفات PEI"],
     badgeColorClass: "bg-amber-50 text-amber-800 border border-amber-100",
   },
   {
@@ -131,13 +130,13 @@ export const PROFILE_DEFINITIONS: ProfileTypeItem[] = [
     category: "AVS",
     subRole: "Accompagnant de Vie Scolaire",
     icon: ShieldCheck,
-    image: "/media/persona-avs.webp",
+    image: "/images/onboarding/roles/role-avs.svg",
     titleFr: "Accompagnant de Vie Scolaire (AVS)",
     titleAr: "مرافق حياة مدرسية (AVS)",
-    descriptionFr: "Accompagner les élèves en milieu scolaire ou à domicile, valoriser vos interventions et apparaître automatiquement dans l'annuaire certifié /avs.",
-    descriptionAr: "مرافقة التلاميذ في المدارس أو المنازل، توثيق الخبرات والظهور التلقائي في الدليل الرسمي لمرافقي الحياة المدرسية.",
-    badgesFr: ["Espace AVS", "Annuaire officiel /avs", "0% commission présentiel"],
-    badgesAr: ["فضاء AVS", "دليل /avs الرسمي", "0% عمولة حضوري"],
+    descriptionFr: "Accompagner les élèves en milieu scolaire ou à domicile, valoriser vos interventions et apparaître automatiquement dans l'annuaire certifié AVS.",
+    descriptionAr: "مرافقة التلاميذ في المدارس أو المنازل، توثيق الخبرات والظهور التلقائي في الدليل الرسمي لمرافقي الحياة المدرسية AVS.",
+    badgesFr: ["Espace AVS", "Référencement certifié AVS", "0% commission présentiel"],
+    badgesAr: ["فضاء AVS", "ظهور موثق في دليل AVS", "0% عمولة حضوري"],
     badgeColorClass: "bg-blue-50 text-blue-700 border border-blue-100",
   },
   {
@@ -145,13 +144,13 @@ export const PROFILE_DEFINITIONS: ProfileTypeItem[] = [
     category: "SPECIALIST",
     subRole: "Spécialiste & Clinicien",
     icon: Stethoscope,
-    image: "/media/persona-specialist.webp",
+    image: "/images/onboarding/roles/role-specialist.svg",
     titleFr: "Spécialiste & Clinicien",
     titleAr: "أخصائي عيادي وصاحب عيادة",
-    descriptionFr: "Orthophoniste, Psychologue, Psychomotricien, Ergothérapeute — référencer votre cabinet dans /specialistes et recevoir des rendez-vous.",
-    descriptionAr: "أخصائي تخاطب، نفساني، حركي، وظيفي — نشر العيادة في دليل /specialistes وإدارة الحجوزات والاستشارات الحضورية وعن بعد.",
-    badgesFr: ["Espace Spécialiste", "Annuaire /specialistes", "Cabinet & Téléconsultation"],
-    badgesAr: ["فضاء الأخصائي", "دليل /specialistes", "عيادة واستشارات"],
+    descriptionFr: "Orthophoniste, Psychologue, Psychomotricien, Ergothérapeute — référencer votre cabinet dans l'annuaire des spécialistes et recevoir des rendez-vous.",
+    descriptionAr: "أخصائي تخاطب، نفساني، حركي، وظيفي — نشر العيادة في دليل الأخصائيين المعتمد وإدارة الحجوزات والاستشارات.",
+    badgesFr: ["Espace Spécialiste", "Référencement cabinet & praticien", "Cabinet & Téléconsultation"],
+    badgesAr: ["فضاء الأخصائي", "ظهور مهني في دليل الأخصائيين", "عيادة واستشارات"],
     badgeColorClass: "bg-purple-50 text-purple-700 border border-purple-100",
   },
   {
@@ -159,13 +158,13 @@ export const PROFILE_DEFINITIONS: ProfileTypeItem[] = [
     category: "ORGANIZATION",
     subRole: "Établissement & Organisation",
     icon: Building2,
-    image: "/media/persona-institution.webp",
+    image: "/images/onboarding/roles/role-institution.svg",
     titleFr: "Établissement & Organisation",
     titleAr: "مؤسسة تعليمية / منظمة",
     descriptionFr: "Écoles, centres médico-éducatifs, associations et universités — former vos équipes, certifier votre structure et piloter vos cohortes d'inclusion.",
     descriptionAr: "المدارس، المراكز التربوية والجمعيات — تدريب الفرق، اعتماد المؤسسات الدامجة وإدارة المجموعات والشراكات المؤسسية.",
-    badgesFr: ["Espace Organisation", "Formation d'équipes", "Gestion des cohortes"],
-    badgesAr: ["فضاء المؤسسة", "تدريب الفرق", "إدارة المجموعات"],
+    badgesFr: ["Espace Organisation", "Formation d'équipes", "Gestion des équipes & cohortes"],
+    badgesAr: ["فضاء المؤسسة", "تدريب الفرق", "إدارة المجموعات والشراكات"],
     badgeColorClass: "bg-indigo-50 text-indigo-700 border border-indigo-100",
   },
 ];
@@ -763,126 +762,44 @@ export function RegisterWizard({
 
   return (
     <div className="w-full">
-      <AuthWizardProgress
-        currentStep={step}
-        totalSteps={4}
-        stepTitle={stepMeta.title}
-        stepSubtitle={stepMeta.subtitle}
-        locale={locale}
-      />
+      <div className={step === 1 ? "w-full" : "max-w-[580px] w-full mx-auto"}>
+        <AuthWizardProgress
+          currentStep={step}
+          totalSteps={4}
+          stepTitle={stepMeta.title}
+          stepSubtitle={stepMeta.subtitle}
+          locale={locale}
+        />
 
-      {error ? (
-        <div
-          role="alert"
-          className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm flex items-start gap-3"
-        >
-          <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-          <div className="flex-1 font-medium">{error}</div>
-        </div>
-      ) : null}
+        {error ? (
+          <div
+            role="alert"
+            className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm flex items-start gap-3"
+          >
+            <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+            <div className="flex-1 font-medium">{error}</div>
+          </div>
+        ) : null}
+      </div>
 
-      <form onSubmit={handleSubmit} noValidate>
-        {/* ========================================================= */}
-        {/* STEP 1: CATEGORY SELECTION CARDS                          */}
-        {/* ========================================================= */}
-        {step === 1 && (
-          <>
-            {googleConfigured && (
-              <div className="mb-6">
-                <button
-                  type="button"
-                  onClick={handleGoogle}
-                  disabled={loading || googleLoading}
-                  className="w-full h-12 flex items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold transition-all shadow-2xs hover:border-slate-300 disabled:opacity-50 cursor-pointer"
-                >
-                  <GoogleMark size={18} />
-                  <span>
-                    {googleLoading
-                      ? ar
-                        ? "جارٍ الاتصال..."
-                        : "Connexion en cours..."
-                      : ar
-                        ? "التسجيل السريع باستخدام Google"
-                        : "Inscription rapide avec Google"}
-                  </span>
-                </button>
-                <div className="relative my-6 text-center">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-slate-200" />
-                  </div>
-                  <span className="relative bg-white px-3 text-xs text-slate-400 uppercase font-medium">
-                    {ar ? "أو اختيار صفتك والتسجيل المخصص" : "ou choisir votre profil pour vous inscrire"}
-                  </span>
-                </div>
-              </div>
-            )}
-            <div className="space-y-3.5 mb-8" role="radiogroup" aria-label={ar ? "اختر صفتك" : "Choisissez votre profil"}>
-              {PROFILE_DEFINITIONS.map((p) => {
-                const IconCmp = p.icon;
-                const isSelected = profileType === p.id;
-                return (
-                  <div
-                    key={p.id}
-                    onClick={() => handleSelectProfileType(p.id)}
-                    className={`group cursor-pointer p-4 sm:p-5 rounded-2xl border-2 transition-all flex flex-col sm:flex-row items-start sm:items-center gap-4 ${
-                      isSelected
-                        ? "border-[#0A192F] bg-slate-50/80 shadow-xs ring-1 ring-[#0A192F]/10"
-                        : "border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50/30"
-                    }`}
-                  >
-                    <div className="relative w-full sm:w-24 h-24 rounded-xl overflow-hidden shrink-0 bg-slate-100">
-                      <Image
-                        src={p.image}
-                        alt={ar ? p.titleAr : p.titleFr}
-                        fill
-                        className="object-cover"
-                      />
-                      <span className="absolute top-2 start-2 w-8 h-8 rounded-lg bg-[#0A192F]/85 text-white flex items-center justify-center backdrop-blur-xs">
-                        <IconCmp className="w-4 h-4 text-white" />
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <h3 className="text-base font-bold text-[#0A192F]">
-                          {ar ? p.titleAr : p.titleFr}
-                        </h3>
-                        <span
-                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors shrink-0 ${
-                            isSelected
-                              ? "border-[#0A192F] bg-[#0A192F] text-white"
-                              : "border-slate-300"
-                          }`}
-                        >
-                          {isSelected && <CheckCircle2 className="w-3.5 h-3.5" />}
-                        </span>
-                      </div>
-                      <p className="text-xs sm:text-sm text-slate-500 leading-relaxed mb-2.5">
-                        {ar ? p.descriptionAr : p.descriptionFr}
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {(ar ? p.badgesAr : p.badgesFr).map((badge, idx) => (
-                          <span
-                            key={idx}
-                            className={`px-2 py-0.5 rounded-md text-[11px] font-semibold ${
-                              idx === 0 ? p.badgeColorClass : "bg-slate-100 text-slate-600"
-                            }`}
-                          >
-                            {badge}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-        </>
-      )}
-
-        {/* ========================================================= */}
-        {/* STEP 2: COORDINATES & GEOGRAPHIC LOCATION                 */}
-        {/* ========================================================= */}
-        {step === 2 && (
+      {step === 1 ? (
+        <RegisterRoleSelectionStep
+          locale={locale}
+          selectedRole={profileType}
+          onSelectRole={handleSelectProfileType}
+          onContinue={() => setStep(2)}
+          profiles={PROFILE_DEFINITIONS}
+          googleConfigured={googleConfigured}
+          onGoogleSignIn={handleGoogle}
+          googleLoading={googleLoading}
+          loading={loading}
+        />
+      ) : (
+        <form onSubmit={handleSubmit} noValidate className="max-w-[580px] w-full mx-auto">
+          {/* ========================================================= */}
+          {/* STEP 2: COORDINATES & GEOGRAPHIC LOCATION                 */}
+          {/* ========================================================= */}
+          {step === 2 && (
           <div className="space-y-5 mb-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -2132,6 +2049,7 @@ export function RegisterWizard({
           )}
         </div>
       </form>
+      )}
     </div>
   );
 }

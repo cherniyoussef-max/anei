@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { isLocale } from "@/lib/i18n";
 import { resolveOnboardingState, onboardingPathFor } from "@/server/auth/onboarding";
-import { AuthShell } from "@/components/auth/AuthShell";
+import { RegisterAuthShell } from "@/components/auth/RegisterAuthShell";
 import { RegisterWizard } from "@/components/auth/RegisterWizard";
 import { googleAuthConfigured } from "@/server/env";
 
@@ -14,8 +14,8 @@ export default async function RegisterPage({ params }: { params: Promise<{ local
   if (state.state !== "UNAUTHENTICATED") redirect(onboardingPathFor(locale, state));
 
   return (
-    <AuthShell locale={locale} mode="register">
+    <RegisterAuthShell locale={locale}>
       <RegisterWizard locale={locale} googleConfigured={googleAuthConfigured} />
-    </AuthShell>
+    </RegisterAuthShell>
   );
 }

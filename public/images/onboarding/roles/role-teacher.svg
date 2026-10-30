@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="teacher-bg" x1="16" y1="16" x2="144" y2="144" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F8FAFC"/>
+      <stop offset="100%" stop-color="#FFFBEB"/>
+    </linearGradient>
+    <linearGradient id="teacher-amber" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background Base -->
+  <rect x="8" y="8" width="144" height="144" rx="20" fill="url(#teacher-bg)"/>
+  <rect x="8.5" y="8.5" width="143" height="143" rx="19.5" stroke="#E2E8F0"/>
+
+  <!-- Book Open Emblem Badge (Top Right) -->
+  <g transform="translate(108, 22)">
+    <circle cx="16" cy="16" r="16" fill="#0A192F"/>
+    <path d="M9 11C11.5 9.5 13.5 9.5 16 11V21C13.5 19.5 11.5 19.5 9 21V11Z" fill="#C9913F"/>
+    <path d="M23 11C20.5 9.5 18.5 9.5 16 11V21C18.5 19.5 20.5 19.5 23 21V11Z" fill="#DFAC56"/>
+  </g>
+
+  <!-- Classroom Floor Line -->
+  <line x1="22" y1="128" x2="138" y2="128" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Inclusive Blackboard / Teaching Board (Center-Right) -->
+  <g transform="translate(64, 46)">
+    <rect x="0" y="0" width="56" height="42" rx="4" fill="#0A192F" stroke="#C9913F" stroke-width="2"/>
+    <!-- Stand legs -->
+    <line x1="10" y1="42" x2="6" y2="80" stroke="#0A192F" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="46" y1="42" x2="50" y2="80" stroke="#0A192F" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- PEI / Pedagogical Cards on Board -->
+    <rect x="6" y="8" width="18" height="12" rx="2" fill="#0056D2"/>
+    <line x1="9" y1="12" x2="18" y2="12" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round"/>
+    <line x1="9" y1="15" x2="16" y2="15" stroke="#93C5FD" stroke-width="1" stroke-linecap="round"/>
+
+    <rect x="28" y="8" width="22" height="12" rx="2" fill="#FFFFFF" fill-opacity="0.1" stroke="#DFAC56" stroke-width="1"/>
+    <!-- Growth Graph / Inclusive Progress Curve -->
+    <path d="M8 32C16 30 24 33 32 26C38 21 44 23 48 18" stroke="#DFAC56" stroke-width="1.8" stroke-linecap="round"/>
+    <circle cx="48" cy="18" r="2" fill="#DFAC56"/>
+  </g>
+
+  <!-- Teacher / Educator Figure (Left) -->
+  <g id="teacher-figure">
+    <!-- Teacher Torso -->
+    <path d="M30 128V106C30 98 36 92 44 90L50 89V82H60V89L66 90C74 92 80 98 80 106V128" fill="#0A192F"/>
+    <path d="M50 89L55 98L60 89" stroke="#F8FAFC" stroke-width="1.5" stroke-linecap="round"/>
+
+    <!-- Head & Hair -->
+    <circle cx="55" cy="67" r="12" fill="#0A192F"/>
+    <path d="M43 65C43 54 49 51 56 51C63 51 67 54 67 65C64 62 59 61 55 61C50 61 46 63 43 65Z" fill="#D97706"/>
+
+    <!-- Pointer Arm extending to the board -->
+    <path d="M66 94L82 82" stroke="#0A192F" stroke-width="5" stroke-linecap="round"/>
+    <!-- Pointer tool -->
+    <line x1="82" y1="82" x2="98" y2="70" stroke="#C9913F" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="98" cy="70" r="2" fill="#C9913F"/>
+  </g>
+
+  <!-- Stack of Educational Books & Apple / Award (Bottom Left) -->
+  <g transform="translate(24, 114)">
+    <rect x="0" y="8" width="20" height="5" rx="1" fill="#0056D2"/>
+    <rect x="2" y="3" width="16" height="5" rx="1" fill="#C9913F"/>
+    <rect x="4" y="-1" width="12" height="4" rx="1" fill="#0A192F"/>
+  </g>
+</svg>

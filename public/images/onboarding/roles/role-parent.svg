@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="parent-bg" x1="16" y1="16" x2="144" y2="144" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F8FAFC"/>
+      <stop offset="100%" stop-color="#F0FDF4"/>
+    </linearGradient>
+    <linearGradient id="parent-emerald" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#34D399"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background Base -->
+  <rect x="8" y="8" width="144" height="144" rx="20" fill="url(#parent-bg)"/>
+  <rect x="8.5" y="8.5" width="143" height="143" rx="19.5" stroke="#E2E8F0"/>
+
+  <!-- Subtle Ambient Glow -->
+  <circle cx="80" cy="80" r="52" fill="#059669" fill-opacity="0.04"/>
+
+  <!-- Family Heart Emblem Badge (Top Right) -->
+  <g transform="translate(108, 22)">
+    <circle cx="16" cy="16" r="16" fill="#0A192F"/>
+    <path d="M16 23.5L14.5 22.1C9.5 17.6 6 14.4 6 10.5C6 7.4 8.4 5 11.5 5C13.2 5 14.9 5.8 16 7.1C17.1 5.8 18.8 5 20.5 5C23.6 5 26 7.4 26 10.5C26 14.4 22.5 17.6 17.5 22.1L16 23.5Z" fill="#C9913F"/>
+  </g>
+
+  <!-- Desk Line -->
+  <line x1="22" y1="126" x2="138" y2="126" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Parent Figure (Taller, Left-Center) -->
+  <g id="parent-figure">
+    <!-- Parent Torso -->
+    <path d="M40 126V108C40 99 46 93 54 91L60 90V83H70V90L76 91C84 93 90 99 90 108V126" fill="#0A192F"/>
+    <!-- Gentle leaning arm towards child -->
+    <path d="M76 95L96 112" stroke="#0A192F" stroke-width="6" stroke-linecap="round"/>
+
+    <!-- Head & Hair -->
+    <circle cx="65" cy="65" r="13" fill="#0A192F"/>
+    <path d="M52 64C52 53 58 49 66 49C74 49 78 53 78 64C74 61 68 60 64 60C58 60 54 62 52 64Z" fill="#0056D2"/>
+  </g>
+
+  <!-- Child Figure (Seated beside parent, Right-Center) -->
+  <g id="child-figure">
+    <!-- Child Torso -->
+    <path d="M84 126V114C84 107 88 103 95 101L99 100V94H107V100L111 101C118 103 122 107 122 114V126" fill="#059669"/>
+    <!-- Head & Hair -->
+    <circle cx="103" cy="78" r="10" fill="#0A192F"/>
+    <path d="M94 77C94 69 98 66 104 66C110 66 112 69 112 77C109 75 105 74 102 74C98 74 95 76 94 77Z" fill="#C9913F"/>
+  </g>
+
+  <!-- Open Shared Book / Educational Material on Desk -->
+  <g transform="translate(68, 110)">
+    <!-- Book Spine & Pages -->
+    <path d="M4 14C14 11 24 14 24 14C24 14 34 11 44 14V3C34 0 24 3 24 3C24 3 14 0 4 3V14Z" fill="#FFFFFF" stroke="#0A192F" stroke-width="1.5" stroke-linejoin="round"/>
+    <line x1="24" y1="3" x2="24" y2="14" stroke="#CBD5E1" stroke-width="1.5"/>
+    <!-- Lines in book -->
+    <line x1="8" y1="6" x2="20" y2="6" stroke="#059669" stroke-width="1.2" stroke-linecap="round"/>
+    <line x1="8" y1="9" x2="18" y2="9" stroke="#94A3B8" stroke-width="1" stroke-linecap="round"/>
+    <line x1="28" y1="6" x2="40" y2="6" stroke="#0056D2" stroke-width="1.2" stroke-linecap="round"/>
+    <line x1="28" y1="9" x2="38" y2="9" stroke="#94A3B8" stroke-width="1" stroke-linecap="round"/>
+  </g>
+
+  <!-- Supportive Star Icon Floating (Left) -->
+  <g transform="translate(24, 34)">
+    <polygon points="12,2 15,9 22,9 17,14 19,21 12,17 5,21 7,14 2,9 9,9" fill="#C9913F" fill-opacity="0.9"/>
+  </g>
+</svg>
