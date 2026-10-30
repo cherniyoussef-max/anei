@@ -1,8 +1,7 @@
-import { notFound, redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { isLocale } from "@/lib/i18n";
-import { auth } from "@/server/auth";
+import { requireUser } from "@/server/auth/session";
 import { getOrCreatePartnerEstablishment } from "@/server/services/inclusive-ecosystem";
 import { EstablishmentWorkspace } from "@/components/inclusive/EstablishmentWorkspace";
 
@@ -31,10 +30,7 @@ export default async function EstablishmentPage({
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 
-  const session = await auth.api.getSession({ headers: await headers() }).catch(() => null);
-  if (!session?.user) {
-    redirect(`/${locale}/connexion?callbackUrl=/${locale}/dashboard/etablissement`);
-  }
+  const session = await requireUser(locale, `/${locale}/dashboard/etablissement`);
 
   const { establishment, requests, registeredEventIds, newsItems } = await getOrCreatePartnerEstablishment(session.user.id);
 

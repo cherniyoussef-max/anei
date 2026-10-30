@@ -1,8 +1,7 @@
-import { notFound, redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { isLocale } from "@/lib/i18n";
-import { auth } from "@/server/auth";
+import { requireUser } from "@/server/auth/session";
 import { getOrCreateTeacherClassroom } from "@/server/services/inclusive-ecosystem";
 import { TeacherClassroomWorkspace } from "@/components/inclusive/TeacherClassroomWorkspace";
 import type { DifficultyKey, AdaptationKey } from "@/lib/inclusive-taxonomy";
@@ -32,10 +31,7 @@ export default async function TeacherClassroomPage({
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 
-  const session = await auth.api.getSession({ headers: await headers() }).catch(() => null);
-  if (!session?.user) {
-    redirect(`/${locale}/connexion?callbackUrl=/${locale}/dashboard/classe-inclusive`);
-  }
+  const session = await requireUser(locale, `/${locale}/dashboard/classe-inclusive`);
 
   const { classroom, students, tips, evaluation } = await getOrCreateTeacherClassroom(session.user.id);
 
