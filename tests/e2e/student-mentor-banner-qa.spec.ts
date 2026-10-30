@@ -42,57 +42,35 @@ test.describe("Student Mentor Banner & Clean AI Assistant QA", () => {
     await page.waitForLoadState("networkidle");
 
     // 1. Verify Banner structure
-    const banner = page.getByRole("region", { name: "Tuteur pédagogique et aide" });
+    const banner = page.getByRole("region", { name: "Support pédagogique et aide" });
     await banner.scrollIntoViewIfNeeded();
     await expect(banner).toBeVisible();
 
     // Verify badge text
-    await expect(banner.getByText("ANEI AI")).toBeVisible();
+    await expect(banner.getByText("ANEI").first()).toBeVisible();
     await expect(banner.getByText("Accompagnement pédagogique & préparation à l'évaluation finale")).toBeVisible();
-
-    // Verify prompt pills
-    await expect(banner.getByText("Synthétiser les points clés")).toBeVisible();
-    await expect(banner.getByText("Préparer l'évaluation finale")).toBeVisible();
-    await expect(banner.getByText("S'entraîner sur un cas pratique")).toBeVisible();
 
     // Verify NO system emojis in banner text
     const bannerText = (await banner.textContent()) ?? "";
     expect(bannerText).not.toMatch(/[\u{1F300}-\u{1F9FF}]/u);
 
     // Verify action buttons
-    const supportBtn = banner.getByRole("link", { name: "Contacter le support" });
+    const supportBtn = banner.getByRole("link", { name: "Contacter le support pédagogique" });
     await expect(supportBtn).toBeVisible();
 
-    const openAssistantBtn = banner.getByRole("button", { name: "Ouvrir l'assistant" });
-    await expect(openAssistantBtn).toBeVisible();
+    const coursesBtn = banner.getByRole("link", { name: "Consulter mes cours" });
+    await expect(coursesBtn).toBeVisible();
 
     // Check that floating assistant button is NOT rendered on learner dashboard
     const floatingBtn = page.getByRole("button", { name: "Assistant Pédagogique ANEI" });
     await expect(floatingBtn).toHaveCount(0);
 
-    const artifactDir = "/home/youssef/.gemini/antigravity/brain/18b8d17c-7a26-4295-942c-b87387f373b6";
-    await banner.screenshot({ path: `${artifactDir}/student_mentor_banner_desktop.png` });
-    await page.screenshot({ path: `${artifactDir}/student_dashboard_full_desktop.png`, fullPage: true });
-
-    // 2. Click "Ouvrir l'assistant" and verify drawer
-    await openAssistantBtn.click();
-    await page.waitForTimeout(600);
-
+    // Assert public assistant drawer is completely removed from the DOM
     const drawer = page.locator('[data-testid="public-assistant-drawer"]');
-    await expect(drawer).toBeVisible();
-    await expect(drawer.getByText("Tuteur Pédagogique ANEI").first()).toBeVisible();
-
-    // Verify Claude style input
-    const textarea = page.locator(".public-chat-input");
-    await expect(textarea).toBeVisible();
-
-    await drawer.screenshot({ path: `${artifactDir}/student_ai_drawer_open_desktop.png` });
-
-    // Close drawer
-    await drawer.getByRole("button", { name: "Fermer" }).click();
-    await page.waitForTimeout(300);
+    await expect(drawer).toHaveCount(0);
 
     // 3. Mobile verification
+    const artifactDir = process.env.ARTIFACT_DIR || "/tmp";
     await page.setViewportSize({ width: 375, height: 812 });
     await page.waitForTimeout(400);
     await banner.scrollIntoViewIfNeeded();

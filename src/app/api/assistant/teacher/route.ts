@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { and, eq } from "drizzle-orm";
 import { getSession } from "@/server/auth/session";
+import { getUserPersonas } from "@/server/queries/personas";
 import { getHybridRAGEngine } from "@/server/ai/hybrid-rag-engine";
+import { getLearnerCourseAiContext } from "@/server/ai/learner-context";
 import { checkAndConsumeAiQuota, recordAiUsageLog } from "@/server/ai/meter";
 import { consumeRateLimit } from "@/server/security/rate-limit";
 import { isTrustedMutation } from "@/server/security/origin";
 import { readLimitedJson } from "@/server/security/request-body";
+import { db } from "@/server/db";
+import { enrollments } from "@/server/db/schema";
 
 const requestSchema = z.object({
   message: z.string().trim().min(3, "Prompt too short").max(2000, "Prompt exceeds 2000 characters"),
@@ -23,7 +28,7 @@ export async function POST(req: NextRequest) {
     const session = await getSession().catch(() => null);
     if (!session?.user?.id) {
       return NextResponse.json(
-        { error: "Authentication required to access the Teacher Pedagogical Assistant." },
+        { error: "Authentication required to access the Pedagogical Assistant." },
         { status: 401 },
       );
     }
@@ -32,17 +37,37 @@ export async function POST(req: NextRequest) {
     const role = user.role;
     const profileType = (user as { profileType?: string }).profileType;
 
-    const isAuthorizedTeacherOrStaff =
+    let isAuthorized =
       role === "ADMIN" ||
       role === "SUPER_ADMIN" ||
       profileType === "teacher" ||
       profileType === "specialist";
 
-    if (!isAuthorizedTeacherOrStaff) {
+    if (!isAuthorized) {
+      const [memberships, [activeEnrollment]] = await Promise.all([
+        getUserPersonas(user.id).catch(() => []),
+        db
+          .select({ id: enrollments.id })
+          .from(enrollments)
+          .where(and(eq(enrollments.userId, user.id), eq(enrollments.status, "ACTIVE")))
+          .limit(1)
+          .catch(() => []),
+      ]);
+
+      const hasTeacherPersona = memberships.some(
+        (m) => (m.persona === "TEACHER" || m.persona === "SPECIALIST") && m.status === "ACTIVE",
+      );
+
+      if (hasTeacherPersona || activeEnrollment) {
+        isAuthorized = true;
+      }
+    }
+
+    if (!isAuthorized) {
       return NextResponse.json(
         {
           error:
-            "Forbidden: The Teacher Pedagogical Assistant is reserved for educators, specialists, and academic staff.",
+            "Forbidden: The Pedagogical Assistant is reserved for educators, specialists, and learners enrolled in formations.",
         },
         { status: 403 },
       );
@@ -87,12 +112,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. Hybrid Agentic RAG Retrieval & Generation
+    // 3. Hybrid Agentic RAG Retrieval & Generation with Enrolled Courses Context
     const startTime = Date.now();
+    const learnerCourseContext = await getLearnerCourseAiContext(user.id, locale).catch(() => "");
     const ragEngine = getHybridRAGEngine();
-    const ragResult = await ragEngine.generateTeacherResponse(message, locale, {
-      role: profileType === "specialist" ? "specialist" : "teacher",
-    });
+    const ragResult = await ragEngine.generateTeacherResponse(
+      message,
+      locale,
+      {
+        role: profileType === "specialist" ? "specialist" : "teacher",
+      },
+      learnerCourseContext,
+    );
 
     const durationMs = Date.now() - startTime;
     const outputText = ragResult.answer;

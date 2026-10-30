@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -11,15 +11,13 @@ import { Icon } from "@/components/ui/Icon";
 import { authClient, useSession } from "@/lib/auth-client";
 import Image from "next/image";
 
+const emptySubscribe = () => () => {};
+
 export function MobileMenu({ locale }: { locale: Locale }) {
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
   const c = t(locale);
   const { data } = useSession();
   const router = useRouter();

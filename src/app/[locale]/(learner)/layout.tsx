@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import { isLocale } from "@/lib/i18n";
 import { requireUser } from "@/server/auth/session";
 import { StudentShell } from "@/components/student/StudentShell";
-import { PublicAssistantDrawer } from "@/components/ai/PublicAssistantDrawer";
 import { getUnreadNotificationCount } from "@/server/queries/account";
 import { getPointsBalance } from "@/server/services/points";
 import { env } from "@/server/env";
@@ -39,7 +38,6 @@ export default async function LearnerLayout({
       impersonation={impersonation}
     >
       <main id="main-content" tabIndex={-1}>{children}</main>
-      <PublicAssistantDrawer locale={locale as "fr" | "ar"} />
     </StudentShell>
   );
 }

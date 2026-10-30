@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronRight, GraduationCap, Bell } from "lucide-react";
+import { ChevronRight, Bell } from "lucide-react";
 import type { Locale } from "@/types";
 import { LocaleSwitcher } from "@/components/interactive/LocaleSwitcher";
 
@@ -15,7 +15,7 @@ const PAGE_LABELS = {
   notifications: { en: "Notifications", fr: "Notifications", ar: "الإشعارات" },
 };
 
-export function StudentTopbar({ locale, userName, notificationCount = 0, assistantEnabled = false }: {
+export function StudentTopbar({ locale, userName, notificationCount = 0, assistantEnabled: _assistantEnabled = false }: {
   locale: Locale;
   userName: string;
   pointsBalance?: number;
@@ -40,21 +40,6 @@ export function StudentTopbar({ locale, userName, notificationCount = 0, assista
       </div>
 
       <div className="flex flex-none items-center gap-2 md:gap-3">
-        {assistantEnabled ? (
-          <button
-            type="button"
-            onClick={() => {
-              if (typeof window !== "undefined") {
-                window.dispatchEvent(new CustomEvent("anei:open-assistant"));
-              }
-            }}
-            className="hidden items-center gap-1.5 rounded-full border border-[#CBD5E1] bg-white px-3 py-1.5 text-sm font-medium text-[#0A192F] transition-all duration-200 ease-in-out hover:border-[#0056D2] hover:bg-[#F0F6FF] sm:flex shadow-xs"
-          >
-            <GraduationCap className="text-[#0056D2]" size={16} strokeWidth={1.8} />
-            <span>{ar ? "المرشد البيداغوجي" : "Tuteur Pédagogique"}</span>
-          </button>
-        ) : null}
-
         <div className="hidden sm:block">
           <LocaleSwitcher locale={locale} />
         </div>

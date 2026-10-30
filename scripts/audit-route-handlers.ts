@@ -36,7 +36,6 @@ const INTENTIONAL_PUBLIC_MUTATING_ROUTES = [
   "src/app/api/webinars/register/route.ts",
   "src/app/api/payments/mock/complete/route.ts",
   "src/app/api/avs/bookings/route.ts",
-  "src/app/api/assistant/public/route.ts",
   "src/app/api/auth/register-wizard/route.ts",
   "src/app/api/auth/check-availability/route.ts",
 ];

@@ -19,7 +19,6 @@ import {
   ShieldCheck,
   Check,
   Video,
-  FileText,
   ArrowUpRight,
   type LucideIcon,
 } from "lucide-react";
@@ -959,15 +958,15 @@ export function StudentDashboard({
         </section>
       </div>
 
-      {/* 6. ANEI PEDAGOGICAL TUTOR & EXAM REVISION BANNER */}
+      {/* 6. ANEI PEDAGOGICAL SUPPORT & MENTORING */}
       <section
         className="rounded-xl border border-slate-200 bg-white shadow-2xs overflow-hidden border-s-4 border-s-[#0A192F] px-5 py-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
-        aria-label={ar ? "المرشد البيداغوجي والمساعدة" : "Tuteur pédagogique et aide"}
+        aria-label={ar ? "المرافقة البيداغوجية والمساعدة" : "Support pédagogique et aide"}
       >
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="rounded bg-[#F8FAFC] border border-slate-200 px-2 py-0.5 text-[11px] font-semibold text-[#0A192F]">
-              ANEI AI
+              ANEI
             </span>
             <h3 className="text-[14.5px] font-semibold text-[#0A192F] tracking-tight">
               {ar
@@ -977,73 +976,9 @@ export function StudentDashboard({
           </div>
           <p className="text-[13px] text-slate-500 mt-1 leading-relaxed">
             {ar
-              ? "اطرح أسئلتك حول مقرراتك، راجع المفاهيم الأساسية وتدرب قبل الاختبار النهائي للشهادة."
-              : "Posez vos questions sur vos cours, révisez les concepts clés et entraînez-vous avant l'examen final certifiant."}
+              ? "راجع المفاهيم الأساسية، تدرب على التطبيقات العملية وتواصل مع الفريق البيداغوجي للأكاديمية لأي استفسار حول مقرراتك."
+              : "Révisez les concepts clés, entraînez-vous sur les études de cas et contactez l'équipe pédagogique de l'Académie pour tout accompagnement."}
           </p>
-
-          {/* Quick Revision Prompt Chips - Zero Emojis */}
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => {
-                if (typeof window !== "undefined") {
-                  window.dispatchEvent(
-                    new CustomEvent("anei:open-assistant", {
-                      detail: {
-                        prompt: ar
-                          ? "أستعد للتقييم النهائي، هل يمكنك تلخيص المفاهيم الأساسية لدورتي التكوينية ومساعدتي على المراجعة؟"
-                          : "Je prépare mon évaluation certifiante. Peux-tu me faire une synthèse des points clés indispensables de ma formation ?",
-                      },
-                    })
-                  );
-                }
-              }}
-              className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-[#F8FAFC] hover:bg-slate-100 hover:border-slate-300 px-2.5 py-1 text-[12px] font-medium text-slate-700 transition-colors cursor-pointer"
-            >
-              <BookOpen className="h-3 w-3 text-slate-400 shrink-0" />
-              <span>{ar ? "مراجعة النقاط الأساسية لدورتي" : "Synthétiser les points clés"}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (typeof window !== "undefined") {
-                  window.dispatchEvent(
-                    new CustomEvent("anei:open-assistant", {
-                      detail: {
-                        prompt: ar
-                          ? "ما هي المفاهيم الجوهرية والأسئلة الأساسية لاجتياز اختبار الشهادة بنسبة تفوق 80%؟"
-                          : "Quels sont les concepts et questions clés à maîtriser absolument pour réussir l'examen certifiant avec plus de 80% ?",
-                      },
-                    })
-                  );
-                }
-              }}
-              className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-[#F8FAFC] hover:bg-slate-100 hover:border-slate-300 px-2.5 py-1 text-[12px] font-medium text-slate-700 transition-colors cursor-pointer"
-            >
-              <CheckCircle2 className="h-3 w-3 text-slate-400 shrink-0" />
-              <span>{ar ? "الاستعداد للاختبار النهائي" : "Préparer l'évaluation finale"}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (typeof window !== "undefined") {
-                  window.dispatchEvent(
-                    new CustomEvent("anei:open-assistant", {
-                      detail: {
-                        prompt: ar
-                          ? "اطرح عليّ سؤالاً تدريبياً لاختبار فهمي للمنهاج، وقيّم إجابتي بيداغوجياً."
-                          : "Pose-moi une question d'entraînement pour tester ma compréhension de mes leçons et évalue ma réponse.",
-                      },
-                    })
-                  );
-                }
-              }}
-              className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-[#F8FAFC] hover:bg-slate-100 hover:border-slate-300 px-2.5 py-1 text-[12px] font-medium text-slate-700 transition-colors cursor-pointer"
-            >
-              <FileText className="h-3 w-3 text-slate-400 shrink-0" />
-              <span>{ar ? "تدريب بأسئلة تطبيقية" : "S'entraîner sur un cas pratique"}</span>
-            </button>
-          </div>
         </div>
 
         {/* Action Buttons */}
@@ -1052,20 +987,15 @@ export function StudentDashboard({
             href={`/${locale}/contact`}
             className="h-9 px-3.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-[13px] font-medium text-slate-700 transition-colors inline-flex items-center justify-center whitespace-nowrap"
           >
-            {ar ? "التواصل مع الدعم" : "Contacter le support"}
+            {ar ? "التواصل مع الدعم البيداغوجي" : "Contacter le support pédagogique"}
           </Link>
-          <button
-            type="button"
-            onClick={() => {
-              if (typeof window !== "undefined") {
-                window.dispatchEvent(new CustomEvent("anei:open-assistant"));
-              }
-            }}
+          <Link
+            href={`/${locale}/dashboard/formations`}
             className="h-9 px-4 rounded-lg bg-[#0056D2] hover:bg-[#00419e] text-white text-[13px] font-medium transition-colors shadow-2xs inline-flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
           >
-            <span>{ar ? "فتح المرشد البيداغوجي" : "Ouvrir l'assistant"}</span>
+            <span>{ar ? "متابعة دوراتي" : "Consulter mes cours"}</span>
             <ArrowUpRight className="h-3.5 w-3.5 rtl:rotate-[-90deg] shrink-0" />
-          </button>
+          </Link>
         </div>
       </section>
     </div>
