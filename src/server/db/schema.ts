@@ -10,6 +10,7 @@ import {
   jsonb,
   pgTable,
   primaryKey,
+  real,
   text,
   timestamp,
   uniqueIndex,
@@ -3419,3 +3420,223 @@ export type EstablishmentServiceRequestRow = typeof establishmentServiceRequests
 export type ServiceRequestMessageRow = typeof serviceRequestMessages.$inferSelect;
 export type SpecialistClassroomTipRow = typeof specialistClassroomTips.$inferSelect;
 export type AvsCertificationsLogRow = typeof avsCertificationsLog.$inferSelect;
+
+// =============================================================================
+// LEARNING EXPERIENCE UPGRADE (ADDITIVE COGNITIVE SCIENCE & RETRIEVAL ENGINE)
+// =============================================================================
+
+export const lessonChapters = pgTable(
+  "lesson_chapters",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    lessonId: text("lesson_id")
+      .notNull()
+      .references(() => lessons.id, { onDelete: "cascade" }),
+    titleFr: text("title_fr").notNull(),
+    titleAr: text("title_ar").notNull(),
+    startSeconds: integer("start_seconds").notNull().default(0),
+    position: integer("position").notNull().default(1),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("lesson_chapters_lesson_idx").on(table.lessonId, table.startSeconds),
+    check("lesson_chapters_seconds_positive", sql`${table.startSeconds} >= 0`),
+  ]
+);
+
+export const lessonTranscripts = pgTable(
+  "lesson_transcripts",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    lessonId: text("lesson_id")
+      .notNull()
+      .references(() => lessons.id, { onDelete: "cascade" }),
+    language: text("language").notNull().default("fr"),
+    cues: jsonb("cues").$type<{ start: number; end: number; text: string }[]>().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("lesson_transcripts_lesson_lang_unique").on(table.lessonId, table.language),
+  ]
+);
+
+export const lessonTakeaways = pgTable(
+  "lesson_takeaways",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    lessonId: text("lesson_id")
+      .notNull()
+      .references(() => lessons.id, { onDelete: "cascade" }),
+    titleFr: text("title_fr").notNull(),
+    titleAr: text("title_ar").notNull(),
+    summaryFr: text("summary_fr").notNull(),
+    summaryAr: text("summary_ar").notNull(),
+    timestampSeconds: integer("timestamp_seconds").notNull().default(0),
+    position: integer("position").notNull().default(1),
+    isDraft: boolean("is_draft").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("lesson_takeaways_lesson_idx").on(table.lessonId, table.position),
+  ]
+);
+
+export const lessonPersonalNotes = pgTable(
+  "lesson_personal_notes",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    lessonId: text("lesson_id")
+      .notNull()
+      .references(() => lessons.id, { onDelete: "cascade" }),
+    timestampSeconds: integer("timestamp_seconds").notNull().default(0),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("lesson_notes_user_lesson_idx").on(table.userId, table.lessonId),
+  ]
+);
+
+export const lessonFlashcards = pgTable(
+  "lesson_flashcards",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    lessonId: text("lesson_id")
+      .notNull()
+      .references(() => lessons.id, { onDelete: "cascade" }),
+    conceptFr: text("concept_fr").notNull(),
+    conceptAr: text("concept_ar").notNull(),
+    definitionFr: text("definition_fr").notNull(),
+    definitionAr: text("definition_ar").notNull(),
+    contextScenarioFr: text("context_scenario_fr"),
+    contextScenarioAr: text("context_scenario_ar"),
+    position: integer("position").notNull().default(1),
+    isDraft: boolean("is_draft").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("lesson_flashcards_lesson_idx").on(table.lessonId),
+  ]
+);
+
+export const learnerFlashcardReviews = pgTable(
+  "learner_flashcard_reviews",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    cardId: text("card_id")
+      .notNull()
+      .references(() => lessonFlashcards.id, { onDelete: "cascade" }),
+    easeFactor: real("ease_factor").notNull().default(2.5),
+    intervalDays: integer("interval_days").notNull().default(0),
+    repetitionCount: integer("repetition_count").notNull().default(0),
+    nextReviewDate: timestamp("next_review_date", { withTimezone: true }).notNull().$defaultFn(now),
+    lastReviewedAt: timestamp("last_reviewed_at", { withTimezone: true }),
+    lastGrade: integer("last_grade"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("learner_card_unique").on(table.userId, table.cardId),
+    index("learner_reviews_due_idx").on(table.userId, table.nextReviewDate),
+  ]
+);
+
+export const lessonPracticeActions = pgTable(
+  "lesson_practice_actions",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    lessonId: text("lesson_id")
+      .notNull()
+      .references(() => lessons.id, { onDelete: "cascade" }),
+    titleFr: text("title_fr").notNull(),
+    titleAr: text("title_ar").notNull(),
+    instructionsFr: text("instructions_fr").notNull(),
+    instructionsAr: text("instructions_ar").notNull(),
+    isDraft: boolean("is_draft").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("lesson_practice_lesson_idx").on(table.lessonId),
+  ]
+);
+
+export const learnerPracticeLogs = pgTable(
+  "learner_practice_logs",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    practiceActionId: text("practice_action_id")
+      .notNull()
+      .references(() => lessonPracticeActions.id, { onDelete: "cascade" }),
+    triedIt: boolean("tried_it").notNull().default(false),
+    reflectionNote: text("reflection_note"),
+    loggedAt: timestamp("logged_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("learner_practice_unique").on(table.userId, table.practiceActionId),
+  ]
+);
+
+export const lessonQuizQuestions = pgTable(
+  "lesson_quiz_questions",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    lessonId: text("lesson_id")
+      .notNull()
+      .references(() => lessons.id, { onDelete: "cascade" }),
+    promptFr: text("prompt_fr").notNull(),
+    promptAr: text("prompt_ar").notNull(),
+    type: text("type").notNull().default("SINGLE_CHOICE"),
+    options: jsonb("options").$type<{ id: string; textFr: string; textAr: string }[]>().notNull(),
+    correctOptionIds: jsonb("correct_option_ids").$type<string[]>().notNull(),
+    explanationFr: text("explanation_fr").notNull(),
+    explanationAr: text("explanation_ar").notNull(),
+    timestampSeconds: integer("timestamp_seconds"),
+    position: integer("position").notNull().default(1),
+    isDraft: boolean("is_draft").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("lesson_quiz_questions_lesson_idx").on(table.lessonId, table.position),
+  ]
+);
+
+export const learnerQuizAttempts = pgTable(
+  "learner_quiz_attempts",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    lessonId: text("lesson_id")
+      .notNull()
+      .references(() => lessons.id, { onDelete: "cascade" }),
+    scorePercentage: integer("score_percentage").notNull(),
+    passed: boolean("passed").notNull(),
+    answers: jsonb("answers").$type<{ questionId: string; selectedOptionIds: string[]; correct: boolean }[]>().notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("learner_quiz_attempts_user_lesson_idx").on(table.userId, table.lessonId),
+  ]
+);
+
+export type LessonChapterRow = typeof lessonChapters.$inferSelect;
+export type LessonTranscriptRow = typeof lessonTranscripts.$inferSelect;
+export type LessonTakeawayRow = typeof lessonTakeaways.$inferSelect;
+export type LessonPersonalNoteRow = typeof lessonPersonalNotes.$inferSelect;
+export type LessonFlashcardRow = typeof lessonFlashcards.$inferSelect;
+export type LearnerFlashcardReviewRow = typeof learnerFlashcardReviews.$inferSelect;
+export type LessonPracticeActionRow = typeof lessonPracticeActions.$inferSelect;
+export type LearnerPracticeLogRow = typeof learnerPracticeLogs.$inferSelect;
+export type LessonQuizQuestionRow = typeof lessonQuizQuestions.$inferSelect;
+export type LearnerQuizAttemptRow = typeof learnerQuizAttempts.$inferSelect;
+

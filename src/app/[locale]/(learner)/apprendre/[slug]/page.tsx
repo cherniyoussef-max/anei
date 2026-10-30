@@ -25,6 +25,11 @@ import { requireUser } from "@/server/auth/session";
 import { getLearningCourse } from "@/server/queries/account";
 import { getCourseDiscussion } from "@/server/services/course-discussion";
 import { getCheckpointsForLearner } from "@/server/services/video-checkpoints";
+import { getLessonLearningData } from "@/server/queries/learning-experience";
+import { LessonTranscriptViewer } from "@/components/learning/LessonTranscriptViewer";
+import { LessonTakeawaysSection } from "@/components/learning/LessonTakeawaysSection";
+import { LessonNotesDrawer } from "@/components/learning/LessonNotesDrawer";
+import type { Locale } from "@/types";
 import "./course-room.css";
 
 export const dynamic = "force-dynamic";
@@ -187,6 +192,9 @@ export default async function CourseRoomPage({
     isNativeVideoLesson && activeLesson && data.enrollment?.id
       ? await getCheckpointsForLearner(activeLesson.id, data.enrollment.id)
       : [];
+  const learningData = activeLesson
+    ? await getLessonLearningData(activeLesson.id, session.user.id, locale)
+    : null;
   const completedLessonsCount = data.lessons.filter((l) => progress.get(l.id)?.completed).length;
   const progressPercent = data.enrollment?.progressPercent ?? 0;
   const allLessonsDone = data.lessons.length > 0 && completedLessonsCount === data.lessons.length;
@@ -331,6 +339,7 @@ export default async function CourseRoomPage({
                     initiallyCompleted={activeProgress?.completed ?? false}
                     locale={locale}
                     checkpoints={checkpoints}
+                    chapters={learningData?.chapters ?? []}
                     nextLessonHref={nextLesson ? lessonHref(nextLesson.id) : undefined}
                     previousLessonHref={previousLesson ? lessonHref(previousLesson.id) : undefined}
                     assessmentHref={assessmentHref}
@@ -446,6 +455,22 @@ export default async function CourseRoomPage({
           >
             <a href="#overview">{c.overview}</a>
             <a href="#programme" className="course-tab-mobile-only">{c.programme}</a>
+            {learningData && learningData.takeaways.length > 0 && (
+              <a href="#takeaways">
+                {ar ? "النقاط الأساسية" : en ? "Key takeaways" : "L'essentiel"}
+              </a>
+            )}
+            {learningData && learningData.transcript && (
+              <a href="#transcript">
+                {ar ? "التفريغ النصي" : en ? "Transcript" : "Transcription"}
+              </a>
+            )}
+            {learningData && (
+              <a href="#notes">
+                {ar ? "ملاحظاتي" : en ? "My notes" : "Mes notes"}
+                {learningData.notes.length > 0 ? ` (${learningData.notes.length})` : ""}
+              </a>
+            )}
             <a href="#questions">{c.questions}</a>
             {data.assessments.length ? <a href="#assessments">{c.assessments}</a> : null}
           </nav>
@@ -479,6 +504,82 @@ export default async function CourseRoomPage({
               </div>
             </div>
           </section>
+
+          {/* TAB SECTION: KEY TAKEAWAYS (L'ESSENTIEL) */}
+          {learningData && learningData.takeaways.length > 0 && (
+            <section
+              className="course-section-card"
+              id="takeaways"
+              aria-labelledby="course-takeaways-title"
+            >
+              <div className="course-overview-header" style={{ marginBottom: 16 }}>
+                <h2 id="course-takeaways-title">
+                  {ar ? "النقاط الأساسية والمفاهيم المحورية" : "L'essentiel & Points clés de la leçon"}
+                </h2>
+                <p>
+                  {ar
+                    ? "راجع أهم المفاهيم السريرية والميدانية المكتسبة في هذا المقطع مع إمكانية طباعة بطاقة المراجعة الميدانية."
+                    : "Retrouvez les notions clés abordées, repères cliniques et actions recommandées pour votre pratique."}
+                </p>
+              </div>
+              <LessonTakeawaysSection
+                takeaways={learningData.takeaways}
+                locale={locale as Locale}
+                lessonTitle={ar ? activeLesson?.titleAr ?? "" : activeLesson?.titleFr ?? ""}
+              />
+            </section>
+          )}
+
+          {/* TAB SECTION: TRANSCRIPT */}
+          {learningData && learningData.transcript && (
+            <section
+              className="course-section-card"
+              id="transcript"
+              aria-labelledby="course-transcript-title"
+            >
+              <div className="course-overview-header" style={{ marginBottom: 16 }}>
+                <h2 id="course-transcript-title">
+                  {ar ? "التفريغ النصي المتزامن" : "Transcription intégrale synchronisée"}
+                </h2>
+                <p>
+                  {ar
+                    ? "ابحث في النص وتنقّل فورياً إلى أي لحظة في الشرح بنقرة واحدة."
+                    : "Recherchez un mot-clé dans l'explication et synchronisez la lecture vidéo en un clic."}
+                </p>
+              </div>
+              <LessonTranscriptViewer
+                cues={learningData.transcript.cues}
+                locale={locale as Locale}
+                lessonTitle={ar ? activeLesson?.titleAr ?? "" : activeLesson?.titleFr ?? ""}
+              />
+            </section>
+          )}
+
+          {/* TAB SECTION: PERSONAL NOTES */}
+          {learningData && (
+            <section
+              className="course-section-card"
+              id="notes"
+              aria-labelledby="course-notes-title"
+            >
+              <div className="course-overview-header" style={{ marginBottom: 16 }}>
+                <h2 id="course-notes-title">
+                  {ar ? "ملاحظاتي الشخصية والتطبيقية" : "Mes notes personnelles & Réflexions"}
+                </h2>
+                <p>
+                  {ar
+                    ? "سجل أفكارك وتطبيقاتك لصفك مع ربطها بتوقيت الفيديو (اضغط N أثناء المشاهدة)."
+                    : "Consignez vos observations et stratégies pour votre classe, indexées sur le chrono de la vidéo."}
+                </p>
+              </div>
+              <LessonNotesDrawer
+                lessonId={activeLesson?.id ?? ""}
+                initialNotes={learningData.notes}
+                locale={locale as Locale}
+                lessonTitle={ar ? activeLesson?.titleAr ?? "" : activeLesson?.titleFr ?? ""}
+              />
+            </section>
+          )}
 
           {/* TAB SECTION: QUESTIONS & DISCUSSION */}
           <section id="questions">

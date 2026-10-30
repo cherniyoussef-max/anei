@@ -18,6 +18,10 @@ import {
   FastForward,
   CheckCircle2,
   BookOpen,
+  Tv,
+  Keyboard,
+  ListOrdered,
+  Subtitles,
 } from "lucide-react";
 import type { Locale } from "@/types";
 import type { LearnerCheckpoint } from "@/server/services/video-checkpoints";
@@ -31,6 +35,14 @@ function formatTime(seconds: number) {
 
 const PLAYBACK_RATES = [1, 1.25, 1.5, 2, 0.75] as const;
 
+export type PlayerChapter = {
+  id: string;
+  titleFr: string;
+  titleAr: string;
+  startSeconds: number;
+  position: number;
+};
+
 type Props = {
   lessonId: string;
   videoUrl: string;
@@ -39,6 +51,7 @@ type Props = {
   initiallyCompleted: boolean;
   locale: Locale;
   checkpoints?: LearnerCheckpoint[];
+  chapters?: PlayerChapter[];
   nextLessonHref?: string;
   previousLessonHref?: string;
   assessmentHref?: string;
@@ -53,6 +66,7 @@ export function VideoLessonPlayer({
   initiallyCompleted,
   locale,
   checkpoints = [],
+  chapters = [],
   nextLessonHref,
   previousLessonHref,
   assessmentHref,
@@ -67,6 +81,9 @@ export function VideoLessonPlayer({
 
   const [completed, setCompleted] = useState(initiallyCompleted);
   const [saving, setSaving] = useState(false);
+  const [showChaptersMenu, setShowChaptersMenu] = useState(false);
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
+  const [captionsEnabled, setCaptionsEnabled] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -172,7 +189,87 @@ export function VideoLessonPlayer({
     [duration]
   );
 
-  // Free seeking without restriction
+  const togglePiP = useCallback(async () => {
+    if (!video.current) return;
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+      } else if (document.pictureInPictureEnabled) {
+        await video.current.requestPictureInPicture();
+      }
+    } catch {
+      // PiP not supported or blocked
+    }
+  }, []);
+
+  const currentChapter = chapters.length
+    ? [...chapters]
+        .sort((a, b) => b.startSeconds - a.startSeconds)
+        .find((ch) => currentTime >= ch.startSeconds) || chapters[0]
+    : null;
+
+  useEffect(() => {
+    const handleSeekEvent = (event: Event) => {
+      const customEvent = event as CustomEvent<{ seconds: number }>;
+      if (typeof customEvent.detail?.seconds === "number" && video.current) {
+        const target = Math.max(0, Math.min(duration || Infinity, customEvent.detail.seconds));
+        video.current.currentTime = target;
+        setCurrentTime(target);
+        if (video.current.paused) {
+          void video.current.play().catch(() => {});
+        }
+      }
+    };
+    window.addEventListener("anei:seek-video", handleSeekEvent);
+    return () => window.removeEventListener("anei:seek-video", handleSeekEvent);
+  }, [duration]);
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      const activeEl = document.activeElement;
+      if (
+        activeEl &&
+        (activeEl.tagName === "INPUT" ||
+          activeEl.tagName === "TEXTAREA" ||
+          activeEl.getAttribute("contenteditable") === "true")
+      ) {
+        return;
+      }
+
+      if (e.key === " " || e.key === "k" || e.key === "K") {
+        e.preventDefault();
+        togglePlay();
+      } else if (e.key === "j" || e.key === "J" || e.key === "ArrowLeft") {
+        e.preventDefault();
+        skipTime(-10);
+      } else if (e.key === "l" || e.key === "L" || e.key === "ArrowRight") {
+        e.preventDefault();
+        skipTime(10);
+      } else if (e.key === "m" || e.key === "M") {
+        e.preventDefault();
+        toggleMute();
+      } else if (e.key === "f" || e.key === "F") {
+        e.preventDefault();
+        toggleFullscreen();
+      } else if (e.key === "c" || e.key === "C") {
+        e.preventDefault();
+        setCaptionsEnabled((prev) => !prev);
+      } else if (e.key === "n" || e.key === "N") {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent("anei:add-note-shortcut"));
+      } else if (e.key === "?" || (e.shiftKey && e.key === "/")) {
+        e.preventDefault();
+        setShowShortcutsHelp((prev) => !prev);
+      } else if (e.key === "Escape") {
+        setShowShortcutsHelp(false);
+        setShowChaptersMenu(false);
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [skipTime, toggleFullscreen, toggleMute, togglePlay]);
+
   function onSeekBarClick(event: React.MouseEvent<HTMLDivElement>) {
     if (!video.current || !duration) return;
     const rect = event.currentTarget.getBoundingClientRect();
@@ -184,7 +281,9 @@ export function VideoLessonPlayer({
 
   function onTimeUpdate() {
     if (!video.current) return;
-    setCurrentTime(video.current.currentTime);
+    const now = video.current.currentTime;
+    setCurrentTime(now);
+    window.dispatchEvent(new CustomEvent("anei:video-time-update", { detail: { time: now } }));
   }
 
   // Fast-forward & complete video action ("Passer la vidéo")
@@ -495,6 +594,20 @@ export function VideoLessonPlayer({
                       />
                     ))
                   : null}
+
+                {/* Timeline Chapter Ticks */}
+                {duration && chapters.length
+                  ? chapters.map((ch) => (
+                      <span
+                        key={ch.id}
+                        className="absolute top-1/2 h-3.5 w-1 -translate-x-1/2 -translate-y-1/2 rounded-xs bg-white/80 shadow-xs hover:bg-[#C9913F] transition-colors z-10 pointer-events-auto"
+                        style={{
+                          left: `${Math.min(100, (Math.min(ch.startSeconds, duration) / duration) * 100)}%`,
+                        }}
+                        title={`${ar ? ch.titleAr : ch.titleFr} (${formatTime(ch.startSeconds)})`}
+                      />
+                    ))
+                  : null}
               </div>
             </div>
 
@@ -549,10 +662,69 @@ export function VideoLessonPlayer({
                 <span className="text-xs font-mono text-white/90" dir="ltr">
                   {formatTime(currentTime)} / {formatTime(duration)}
                 </span>
+
+                {/* Chapters Dropdown Trigger */}
+                {chapters.length > 0 ? (
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setShowChaptersMenu((prev) => !prev)}
+                      className="hidden sm:inline-flex items-center gap-1.5 rounded-md bg-white/10 px-2.5 py-1 text-xs font-semibold text-white/90 hover:bg-white/20 transition-colors"
+                      title={ar ? "فصول الدرس" : "Chapitres de la leçon"}
+                      aria-expanded={showChaptersMenu}
+                    >
+                      <ListOrdered size={13} className="text-[#C9913F]" />
+                      <span className="max-w-[120px] truncate">
+                        {currentChapter ? (ar ? currentChapter.titleAr : currentChapter.titleFr) : (ar ? "الفصول" : "Chapitres")}
+                      </span>
+                    </button>
+
+                    {showChaptersMenu && (
+                      <div className="absolute bottom-full start-0 mb-2 w-64 rounded-xl border border-white/20 bg-[#082D55]/95 p-2 text-white shadow-xl backdrop-blur-md z-30 space-y-1">
+                        <div className="flex items-center justify-between border-b border-white/10 px-2 pb-1.5 text-[11px] font-bold text-white/70">
+                          <span>{ar ? "فصول الدرس" : "Chapitres"}</span>
+                          <button
+                            type="button"
+                            onClick={() => setShowChaptersMenu(false)}
+                            className="hover:text-white"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                        <div className="max-h-48 overflow-y-auto space-y-0.5 scrollbar-thin">
+                          {chapters.map((ch) => {
+                            const isChActive = currentChapter?.id === ch.id;
+                            return (
+                              <button
+                                key={ch.id}
+                                type="button"
+                                onClick={() => {
+                                  if (video.current) {
+                                    video.current.currentTime = ch.startSeconds;
+                                    setCurrentTime(ch.startSeconds);
+                                  }
+                                  setShowChaptersMenu(false);
+                                }}
+                                className={`w-full flex items-center justify-between gap-2 p-1.5 rounded-lg text-start text-xs transition-colors ${
+                                  isChActive ? "bg-[#C9913F] text-white font-bold" : "hover:bg-white/10 text-white/80"
+                                }`}
+                              >
+                                <span className="truncate">{ar ? ch.titleAr : ch.titleFr}</span>
+                                <span className="font-mono text-[10px] opacity-80" dir="ltr">
+                                  {formatTime(ch.startSeconds)}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
               </div>
 
               {/* Right group */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 {/* Playback speed */}
                 <button
                   type="button"
@@ -561,6 +733,42 @@ export function VideoLessonPlayer({
                   title={ar ? "سرعة التشغيل" : "Vitesse de lecture"}
                 >
                   {currentRate}x
+                </button>
+
+                {/* Picture in Picture */}
+                <button
+                  type="button"
+                  onClick={() => void togglePiP()}
+                  className="grid h-8 w-8 place-items-center rounded-full text-white/80 transition hover:bg-white/15 hover:text-white"
+                  title={ar ? "صورة داخل صورة" : "Incrustation vidéo (PiP)"}
+                  aria-label={ar ? "صورة داخل صورة" : "Incrustation vidéo"}
+                >
+                  <Tv size={15} />
+                </button>
+
+                {/* Subtitles / Captions Toggle */}
+                <button
+                  type="button"
+                  onClick={() => setCaptionsEnabled((prev) => !prev)}
+                  className={`grid h-8 w-8 place-items-center rounded-full transition ${
+                    captionsEnabled ? "bg-[#C9913F] text-white" : "text-white/80 hover:bg-white/15 hover:text-white"
+                  }`}
+                  title={ar ? "الترجمة والنسخ النصي (C)" : "Sous-titres / Transcription (C)"}
+                  aria-label={ar ? "الترجمة" : "Sous-titres"}
+                  aria-pressed={captionsEnabled}
+                >
+                  <Subtitles size={15} />
+                </button>
+
+                {/* Keyboard Shortcuts Help Button */}
+                <button
+                  type="button"
+                  onClick={() => setShowShortcutsHelp(true)}
+                  className="grid h-8 w-8 place-items-center rounded-full text-white/80 transition hover:bg-white/15 hover:text-white"
+                  title={ar ? "اختصارات لوحة المفاتيح (?)" : "Raccourcis clavier (?)"}
+                  aria-label={ar ? "اختصارات لوحة المفاتيح" : "Raccourcis clavier"}
+                >
+                  <Keyboard size={15} />
                 </button>
 
                 {/* Quick Pass button inside HUD */}
@@ -588,6 +796,66 @@ export function VideoLessonPlayer({
             </div>
           </div>
         ) : null}
+
+        {/* Keyboard Shortcuts Modal */}
+        {showShortcutsHelp && (
+          <div
+            className="absolute inset-0 z-40 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="shortcuts-dialog-title"
+            onClick={() => setShowShortcutsHelp(false)}
+          >
+            <div
+              className="w-full max-w-sm rounded-2xl border border-white/20 bg-[#082D55] p-5 text-white shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-white/15 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <Keyboard size={18} className="text-[#C9913F]" />
+                  <h3 id="shortcuts-dialog-title" className="text-sm font-bold">
+                    {ar ? "اختصارات لوحة المفاتيح" : "Raccourcis clavier"}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowShortcutsHelp(false)}
+                  className="text-white/60 hover:text-white"
+                  aria-label={ar ? "إغلاق" : "Fermer"}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="mt-3.5 space-y-2 text-xs">
+                <div className="flex items-center justify-between py-1 border-b border-white/10">
+                  <span className="text-white/75">{ar ? "تشغيل / إيقاف مؤقت" : "Lecture / Pause"}</span>
+                  <kbd className="px-2 py-0.5 bg-white/15 rounded font-mono font-bold text-white">Espace / K</kbd>
+                </div>
+                <div className="flex items-center justify-between py-1 border-b border-white/10">
+                  <span className="text-white/75">{ar ? "تقديم / تأخير 10 ثوانٍ" : "Avancer / Reculer 10s"}</span>
+                  <kbd className="px-2 py-0.5 bg-white/15 rounded font-mono font-bold text-white">J / L ou ← / →</kbd>
+                </div>
+                <div className="flex items-center justify-between py-1 border-b border-white/10">
+                  <span className="text-white/75">{ar ? "كتم / تشغيل الصوت" : "Couper / Activer le son"}</span>
+                  <kbd className="px-2 py-0.5 bg-white/15 rounded font-mono font-bold text-white">M</kbd>
+                </div>
+                <div className="flex items-center justify-between py-1 border-b border-white/10">
+                  <span className="text-white/75">{ar ? "ملء الشاشة" : "Plein écran"}</span>
+                  <kbd className="px-2 py-0.5 bg-white/15 rounded font-mono font-bold text-white">F</kbd>
+                </div>
+                <div className="flex items-center justify-between py-1 border-b border-white/10">
+                  <span className="text-white/75">{ar ? "تدوين ملاحظة عند هذه اللحظة" : "Ajouter une note"}</span>
+                  <kbd className="px-2 py-0.5 bg-white/15 rounded font-mono font-bold text-[#C9913F]">N</kbd>
+                </div>
+                <div className="flex items-center justify-between py-1">
+                  <span className="text-white/75">{ar ? "عرض هذه المساعدة" : "Afficher cette aide"}</span>
+                  <kbd className="px-2 py-0.5 bg-white/15 rounded font-mono font-bold text-white">?</kbd>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Completion Modal */}
