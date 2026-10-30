@@ -89,3 +89,46 @@ test("Database Schema: all 10 additive learning experience tables are registered
   assert.ok(schema.lessonQuizQuestions, "lessonQuizQuestions table exists");
   assert.ok(schema.learnerQuizAttempts, "learnerQuizAttempts table exists");
 });
+
+test("Validation Quiz Scoring: >=80% passes, <80% requires reinforcement", () => {
+  const calculatePass = (correct: number, total: number) => {
+    const score = Math.round((correct / total) * 100);
+    return { score, passed: score >= 80 };
+  };
+
+  const passAttempt = calculatePass(4, 4);
+  assert.equal(passAttempt.score, 100);
+  assert.equal(passAttempt.passed, true);
+
+  const failAttempt = calculatePass(3, 4);
+  assert.equal(failAttempt.score, 75);
+  assert.equal(failAttempt.passed, false);
+
+  const borderlinePass = calculatePass(4, 5);
+  assert.equal(borderlinePass.score, 80);
+  assert.equal(borderlinePass.passed, true);
+});
+
+test("Practice Action schema: requires actionId and boolean triedIt", () => {
+  const practiceSchema = z.object({
+    actionId: z.string().min(1),
+    triedIt: z.boolean(),
+    reflectionNote: z.string().max(5000).optional().nullable(),
+  });
+
+  assert.ok(practiceSchema.safeParse({ actionId: "action-1", triedIt: true, reflectionNote: "Bonne réaction de l'élève." }).success);
+  assert.ok(practiceSchema.safeParse({ actionId: "action-1", triedIt: false }).success);
+  assert.ok(!practiceSchema.safeParse({ actionId: "", triedIt: true }).success);
+});
+
+test("Spaced Repetition Review grade: accepts 1-4, rejects invalid grades", () => {
+  const gradeSchema = z.object({
+    cardId: z.string().min(1),
+    grade: z.number().int().min(1).max(4),
+  });
+
+  assert.ok(gradeSchema.safeParse({ cardId: "card-1", grade: 1 }).success);
+  assert.ok(gradeSchema.safeParse({ cardId: "card-1", grade: 4 }).success);
+  assert.ok(!gradeSchema.safeParse({ cardId: "card-1", grade: 0 }).success);
+  assert.ok(!gradeSchema.safeParse({ cardId: "card-1", grade: 5 }).success);
+});

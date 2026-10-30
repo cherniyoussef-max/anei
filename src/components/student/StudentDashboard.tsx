@@ -20,10 +20,13 @@ import {
   Check,
   Video,
   ArrowUpRight,
+  Brain,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import type { Locale } from "@/types";
 import { getCourseVisual } from "@/lib/visuals";
+import { DailyReviewModal } from "@/components/learning/DailyReviewModal";
 
 export type StudentCourseItem = {
   id: string;
@@ -188,6 +191,7 @@ export function StudentDashboard({
   const completedCourses = courses.filter((c) => c.progress >= 100);
 
   const [activeTab, setActiveTab] = useState<"in_progress" | "completed" | "certificates">("in_progress");
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
 
   // Secondary courses list (if continueItem is featured in Hero, other courses in the tab)
   const displayedCourses = activeTab === "completed" 
@@ -218,6 +222,39 @@ export function StudentDashboard({
           </p>
         </div>
       </header>
+
+      {/* 1.5 DAILY SPACED REPETITION ANCHOR BANNER */}
+      <div className="bg-gradient-to-r from-blue-50/90 via-indigo-50/60 to-blue-50/90 border border-blue-200/80 rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 shadow-2xs">
+        <div className="flex items-center gap-3.5">
+          <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl bg-[#0056D2] text-white flex items-center justify-center shadow-2xs flex-none">
+            <Brain size={22} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#0056D2]">
+                {ar ? "التثبيت الذهني اليومي (SM-2)" : "Ancrage mémoriel quotidien"}
+              </span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                {ar ? "3 دقائق" : "~3 min"}
+              </span>
+            </div>
+            <strong className="text-sm sm:text-base text-[#0A192F] font-bold block mt-0.5">
+              {ar
+                ? "مراجعة المفاهيم السريرية والميدانية المستحقة اليوم"
+                : "Consolidez vos acquis : session de révision active programmée"}
+            </strong>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setReviewModalOpen(true)}
+          className="h-9 px-4 rounded-xl bg-[#0056D2] hover:bg-[#00419e] text-white text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-colors cursor-pointer shadow-2xs self-end sm:self-center"
+        >
+          <Sparkles size={14} />
+          <span>{ar ? "بدء المراجعة السريعة" : "Démarrer la session"}</span>
+        </button>
+      </div>
 
       {/* 2. COURSERA HERO "CONTINUE LEARNING" COCKPIT */}
       <section className="student-hero-section" aria-labelledby="continue-hero-title">
@@ -998,6 +1035,13 @@ export function StudentDashboard({
           </Link>
         </div>
       </section>
+
+      {/* Daily Spaced Repetition Modal */}
+      <DailyReviewModal
+        isOpen={reviewModalOpen}
+        onClose={() => setReviewModalOpen(false)}
+        locale={locale}
+      />
     </div>
   );
 }

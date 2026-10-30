@@ -29,6 +29,8 @@ import { getLessonLearningData } from "@/server/queries/learning-experience";
 import { LessonTranscriptViewer } from "@/components/learning/LessonTranscriptViewer";
 import { LessonTakeawaysSection } from "@/components/learning/LessonTakeawaysSection";
 import { LessonNotesDrawer } from "@/components/learning/LessonNotesDrawer";
+import { LessonPracticeAction } from "@/components/learning/LessonPracticeAction";
+import { LessonValidationQuiz } from "@/components/learning/LessonValidationQuiz";
 import type { Locale } from "@/types";
 import "./course-room.css";
 
@@ -471,6 +473,16 @@ export default async function CourseRoomPage({
                 {learningData.notes.length > 0 ? ` (${learningData.notes.length})` : ""}
               </a>
             )}
+            {learningData && learningData.practiceAction && (
+              <a href="#practice">
+                {ar ? "التطبيق الصفي" : en ? "Classroom practice" : "Mise en pratique"}
+              </a>
+            )}
+            {learningData && learningData.quizQuestions.length > 0 && (
+              <a href="#validation-quiz">
+                {ar ? "اختبار التثبيت" : en ? "Knowledge check" : "Vérification des acquis"}
+              </a>
+            )}
             <a href="#questions">{c.questions}</a>
             {data.assessments.length ? <a href="#assessments">{c.assessments}</a> : null}
           </nav>
@@ -577,6 +589,56 @@ export default async function CourseRoomPage({
                 initialNotes={learningData.notes}
                 locale={locale as Locale}
                 lessonTitle={ar ? activeLesson?.titleAr ?? "" : activeLesson?.titleFr ?? ""}
+              />
+            </section>
+          )}
+
+          {/* TAB SECTION: CLASSROOM PRACTICE ACTION */}
+          {learningData && learningData.practiceAction && (
+            <section
+              className="course-section-card"
+              id="practice"
+              aria-labelledby="course-practice-title"
+            >
+              <div className="course-overview-header" style={{ marginBottom: 16 }}>
+                <h2 id="course-practice-title">
+                  {ar ? "مهمة التطبيق الميداني في القسم" : "Mise en pratique en situation de classe"}
+                </h2>
+                <p>
+                  {ar
+                    ? "انقل المعارف النظرية إلى خطة تطبيقية ملموسة مع التلاميذ وسجل مخرجات التجربة."
+                    : "Passez de la théorie à l'action pédagogique concrète avec vos élèves et consignez vos observations."}
+                </p>
+              </div>
+              <LessonPracticeAction
+                practiceAction={learningData.practiceAction}
+                locale={locale as Locale}
+              />
+            </section>
+          )}
+
+          {/* TAB SECTION: FORMATIVE VALIDATION QUIZ */}
+          {learningData && learningData.quizQuestions.length > 0 && (
+            <section
+              className="course-section-card"
+              id="validation-quiz"
+              aria-labelledby="course-validation-quiz-title"
+            >
+              <div className="course-overview-header" style={{ marginBottom: 16 }}>
+                <h2 id="course-validation-quiz-title">
+                  {ar ? "اختبار التثبيت والتحقق من الفهم" : "Validation formative des connaissances"}
+                </h2>
+                <p>
+                  {ar
+                    ? "تحقق من تمكنك من المفاهيم الأساسية للدرس (عتبة الإتقان: 80%). تُبرمج المفاهيم غير المؤكدة تلقائياً في مراجعاتك اليومية."
+                    : "Vérifiez votre maîtrise des notions fondamentales (seuil : 80%). Les concepts à renforcer sont automatiquement intégrés à vos révisions espacées."}
+                </p>
+              </div>
+              <LessonValidationQuiz
+                lessonId={activeLesson?.id ?? ""}
+                questions={learningData.quizQuestions}
+                bestAttempt={learningData.bestQuizAttempt}
+                locale={locale as Locale}
               />
             </section>
           )}
