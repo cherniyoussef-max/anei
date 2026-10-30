@@ -671,6 +671,7 @@ export function VideoLessonPlayer({
                       onClick={() => setShowChaptersMenu((prev) => !prev)}
                       className="hidden sm:inline-flex items-center gap-1.5 rounded-md bg-white/10 px-2.5 py-1 text-xs font-semibold text-white/90 hover:bg-white/20 transition-colors"
                       title={ar ? "فصول الدرس" : "Chapitres de la leçon"}
+                      aria-label={ar ? "فصول الدرس" : "Chapitres de la leçon"}
                       aria-expanded={showChaptersMenu}
                     >
                       <ListOrdered size={13} className="text-[#C9913F]" />

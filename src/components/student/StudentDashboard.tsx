@@ -232,7 +232,7 @@ export function StudentDashboard({
       </header>
 
       {/* 1.5 DAILY SPACED REPETITION ANCHOR BANNER */}
-      <div className="bg-gradient-to-r from-blue-50/90 via-indigo-50/60 to-blue-50/90 border border-blue-200/80 rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 shadow-2xs">
+      <div className="daily-review-banner bg-gradient-to-r from-blue-50/90 via-indigo-50/60 to-blue-50/90 border border-blue-200/80 rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 shadow-2xs">
         <div className="flex items-center gap-3.5">
           <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl bg-[#0056D2] text-white flex items-center justify-center shadow-2xs flex-none">
             <Brain size={22} />
@@ -240,7 +240,7 @@ export function StudentDashboard({
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-bold uppercase tracking-wider text-[#0056D2]">
-                {ar ? "التثبيت الذهني اليومي (SM-2)" : "Ancrage mémoriel quotidien"}
+                {ar ? "التثبيت الذهني اليومي (SM-2)" : "Ancrage mémoriel quotidien (SM-2)"}
               </span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
                 {dailyReview && dailyReview.dueCount > 0 ? `~${dailyReview.estimatedMinutes} min` : ar ? "مكتمل" : "À jour"}
