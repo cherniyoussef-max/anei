@@ -33,7 +33,7 @@ export function AcademyHome({
   avsProfiles: _avsProfiles = [],
   hasPlayedIntro: _hasPlayedIntro = false,
   initialUser = null,
-  topFeaturedNews = null,
+  topFeaturedNews: _topFeaturedNews = null,
   recentNews = [],
 }: {
   locale: Locale;
@@ -195,13 +195,7 @@ export function AcademyHome({
 
         <div className="wrap">
           <div className="head rv">
-            <small>{ar ? "الفئات المستفيدة" : "POUR QUI ?"}</small>
             <h2>{ar ? "من يستفيد من الأكاديمية؟" : "Qui peut bénéficier de l’Académie ?"}</h2>
-            <p className="sub">
-              {ar
-                ? "الأولياء، المعلمون، مرافقو AVS، الأخصائيون والمؤسسات: مساحة مخصصة لكل فئة."
-                : "Parents, élèves, enseignants, AVS, spécialistes et établissements : un espace pour chacun."}
-            </p>
           </div>
 
           <div className="row rv">
@@ -329,109 +323,7 @@ export function AcademyHome({
       </section>
 
       {/* =====================================================================
-          3. PLATFORM SHOWCASE SECTION (.plat)
-          ===================================================================== */}
-      <section className="plat">
-        <div className="wrap">
-          <div className="head rv">
-            <small>{ar ? "المنصة التعليمية" : "PLATEFORME D’APPRENTISSAGE"}</small>
-            <h2>
-              {ar
-                ? "بيئة تدريب وتواصل متكاملة لخدمة المدرسة الدامجة"
-                : "Un environnement complet au service de l’école inclusive"}
-            </h2>
-          </div>
-
-          <div className="shot rv">
-            <Image
-              src="/media/home-v5/platform-showcase.jpg"
-              alt={ar ? "واجهة منصة ANEI" : "Aperçu de la plateforme ANEI"}
-              width={1280}
-              height={720}
-              unoptimized
-            />
-          </div>
-
-          <div className="cta rv">
-            <Link href={`/${locale}/formations`} className="btn btn-navy big">
-              <span>{ar ? "اكتشف جميع برامج التكوين ←" : "Découvrir tous nos parcours de formation →"}</span>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* =====================================================================
-          4. A LA UNE SECTION (.une) - Dynamic Featured Content or PPS Fallback
-          ===================================================================== */}
-      <section className="wrap">
-        <div className="une rv">
-          <div
-            className="ph"
-            aria-hidden="true"
-            style={
-              topFeaturedNews?.coverImageUrl
-                ? { backgroundImage: `url(${topFeaturedNews.coverImageUrl})` }
-                : undefined
-            }
-          />
-          <div className="tx">
-            <div className="tag">
-              {topFeaturedNews
-                ? ar
-                  ? topFeaturedNews.tagAr || "في الصدارة ⭐"
-                  : topFeaturedNews.tagFr || "À LA UNE ⭐"
-                : ar
-                ? "برنامج مميز"
-                : "PROGRAMME PHARE"}
-            </div>
-            <h2>
-              {topFeaturedNews
-                ? ar
-                  ? topFeaturedNews.titleAr
-                  : topFeaturedNews.titleFr
-                : ar
-                ? "صياغة المشروع الفردي للتعلم (PEI/PPS)"
-                : "Construire le Projet Personnalisé de Scolarisation (PPS)"}
-            </h2>
-            <p>
-              {topFeaturedNews
-                ? ar
-                  ? topFeaturedNews.excerptAr
-                  : topFeaturedNews.excerptFr
-                : ar
-                ? "دليل منهجي متكامل ونماذج قابلة للتحميل لتصميم ومتابعة وتقييم التكييفات البيداغوجية لكل تلميذ ذي احتياجات خاصة."
-                : "Un guide méthodologique complet et des modèles téléchargeables pour concevoir, suivre et évaluer les aménagements pédagogiques de l'élève à besoins spécifiques."}
-            </p>
-            <Link
-              href={
-                topFeaturedNews
-                  ? topFeaturedNews.slug.startsWith("formation-")
-                    ? `/${locale}/formations/${topFeaturedNews.slug.replace(/^formation-/, "")}`
-                    : `/${locale}/actualites/${topFeaturedNews.slug}`
-                  : `/${locale}/formations`
-              }
-              className="btn btn-navy"
-            >
-              <span>
-                {topFeaturedNews
-                  ? topFeaturedNews.slug.startsWith("formation-")
-                    ? ar
-                      ? "اكتشف البرنامج والتسجيل ←"
-                      : "Découvrir la formation →"
-                    : ar
-                    ? "الاطلاع على التفاصيل ←"
-                    : "Consulter le dossier →"
-                  : ar
-                  ? "اكتشف برامج التكوين ←"
-                  : "Découvrir les formations →"}
-              </span>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* =====================================================================
-          6. NEWS & PUBLICATIONS (.news)
+          NEWS & PUBLICATIONS (.news)
           ===================================================================== */}
       <section className="news" id="actualites">
         <div className="wrap">
