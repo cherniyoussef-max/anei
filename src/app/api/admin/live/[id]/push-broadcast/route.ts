@@ -24,9 +24,10 @@ export async function POST(
     );
   }
 
-  // Strict Sudo Mode requirement
+  // Sudo mode is required for standard administrators, but Super Admins can push directly
+  const isSuperAdmin = session.user.role === "SUPER_ADMIN";
   const sudoActive = await isSudoModeActive(request, session.user.id);
-  if (!sudoActive) {
+  if (!sudoActive && !isSuperAdmin) {
     return NextResponse.json(
       {
         error: "SUDO_REQUIRED",

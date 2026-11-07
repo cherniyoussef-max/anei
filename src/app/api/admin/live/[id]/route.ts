@@ -110,8 +110,9 @@ export async function DELETE(
   }
 
   // Mode Sudo Verification
+  const isSuperAdmin = session.user.role === "SUPER_ADMIN";
   const sudoActive = await isSudoModeActive(request, session.user.id);
-  if (!sudoActive) {
+  if (!sudoActive && !isSuperAdmin) {
     return NextResponse.json(
       {
         error: "SUDO_REQUIRED",
