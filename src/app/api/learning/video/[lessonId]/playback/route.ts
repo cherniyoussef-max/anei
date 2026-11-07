@@ -53,12 +53,20 @@ export async function GET(
   if (lesson.mediaProvider === "cloudflare_stream" && lesson.mediaRef) {
     try {
       const tokenResult = await generateSignedPlaybackToken(lesson.mediaRef, userId || "preview-user");
+      const isExternalIframe =
+        tokenResult.provider === "cloudflare_stream" &&
+        Boolean(tokenResult.iframeUrl && tokenResult.iframeUrl.startsWith("https://"));
+
       return NextResponse.json(
         {
-          provider: "cloudflare_stream",
+          provider: tokenResult.provider,
           mediaRef: lesson.mediaRef,
-          iframeUrl: tokenResult.iframeUrl,
+          iframeUrl: isExternalIframe ? tokenResult.iframeUrl : undefined,
           hlsUrl: tokenResult.hlsUrl,
+          videoUrl:
+            lesson.videoUrl ||
+            ("localUrl" in tokenResult ? (tokenResult as { localUrl?: string }).localUrl : null) ||
+            "/demo/video.mp4",
           token: tokenResult.token,
           durationSeconds: lesson.durationSeconds,
           expiresAt: tokenResult.expiresAt,

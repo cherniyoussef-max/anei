@@ -16,10 +16,12 @@ type PlaybackState =
   | { status: "loading" }
   | {
       status: "ready";
-      iframeUrl: string;
+      iframeUrl?: string;
+      videoUrl?: string;
       hlsUrl?: string;
       durationSeconds?: number;
       token?: string;
+      isDirectVideo: boolean;
     }
   | { status: "unauthorized" }
   | { status: "unavailable" };
@@ -48,6 +50,7 @@ export function StreamLessonPlayer({
   const en = locale === "en";
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState<PlaybackState>({ status: "loading" });
   const [completed, setCompleted] = useState(initiallyCompleted);
@@ -82,27 +85,41 @@ export function StreamLessonPlayer({
         const data = (await response.json()) as {
           iframeUrl?: string;
           hlsUrl?: string;
+          videoUrl?: string;
+          localUrl?: string;
           durationSeconds?: number;
           token?: string;
         };
 
-        if (!data.iframeUrl) {
+        const isCloudflare =
+          Boolean(data.iframeUrl) &&
+          (data.iframeUrl!.startsWith("https://customer-") ||
+            data.iframeUrl!.includes("cloudflarestream.com") ||
+            data.iframeUrl!.includes("videodelivery.net"));
+
+        const directVideoUrl =
+          data.videoUrl || data.localUrl || (!isCloudflare ? "/demo/video.mp4" : undefined);
+
+        if (!isCloudflare && !directVideoUrl) {
           return setState({ status: "unavailable" });
         }
 
         let finalUrl = data.iframeUrl;
-        if (initialSeconds > 0) {
+        if (finalUrl && initialSeconds > 0) {
           const sep = finalUrl.includes("?") ? "&" : "?";
           finalUrl = `${finalUrl}${sep}startTime=${Math.floor(initialSeconds)}s`;
         }
 
-        if (data.durationSeconds) setDuration(data.durationSeconds);
+        const dur = data.durationSeconds || 120;
+        setDuration(dur);
         setState({
           status: "ready",
-          iframeUrl: finalUrl,
+          iframeUrl: isCloudflare ? finalUrl : undefined,
+          videoUrl: directVideoUrl,
           hlsUrl: data.hlsUrl,
-          durationSeconds: data.durationSeconds,
+          durationSeconds: dur,
           token: data.token,
+          isDirectVideo: !isCloudflare,
         });
       } catch {
         if (!cancelled) setState({ status: "unavailable" });
@@ -181,14 +198,16 @@ export function StreamLessonPlayer({
     return () => window.removeEventListener("message", handleMessage);
   }, [completed, saveProgress]);
 
-  // Adjust playback rate via postMessage
+  // Adjust playback rate via postMessage or native video element
   function cyclePlaybackRate() {
     const nextIndex = (playbackRateIndex + 1) % PLAYBACK_RATES.length;
     const nextRate = PLAYBACK_RATES[nextIndex];
     setPlaybackRateIndex(nextIndex);
 
-    // Send command to Cloudflare Stream iframe
-    if (iframeRef.current?.contentWindow) {
+    if (state.status === "ready" && state.isDirectVideo && videoRef.current) {
+      videoRef.current.playbackRate = nextRate;
+    } else if (iframeRef.current?.contentWindow) {
+      // Send command to Cloudflare Stream iframe
       iframeRef.current.contentWindow.postMessage(
         JSON.stringify({ method: "playbackRate", value: nextRate }),
         "*",
@@ -254,15 +273,49 @@ export function StreamLessonPlayer({
     <div className="w-full space-y-3" dir={ar ? "rtl" : "ltr"}>
       {/* Stream Video Player Container */}
       <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-black shadow-xl">
-        <iframe
-          ref={iframeRef}
-          className="h-full w-full border-0"
-          src={state.iframeUrl}
-          title={title}
-          loading="eager"
-          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-          allowFullScreen
-        />
+        {state.isDirectVideo ? (
+          <video
+            ref={videoRef}
+            src={state.videoUrl || "/demo/video.mp4"}
+            poster="/demo/video-poster.svg"
+            controls
+            playsInline
+            className="h-full w-full object-contain bg-black"
+            onLoadedMetadata={(e) => {
+              if (initialSeconds > 0 && e.currentTarget.currentTime < initialSeconds) {
+                e.currentTarget.currentTime = initialSeconds;
+              }
+              if (e.currentTarget.duration) {
+                setDuration(e.currentTarget.duration);
+              }
+            }}
+            onTimeUpdate={(e) => {
+              const current = e.currentTarget.currentTime;
+              setWatchedSeconds(current);
+              const dur = e.currentTarget.duration || duration;
+              if (dur && current >= dur * 0.9 && !completed) {
+                setCompleted(true);
+                void saveProgress(current, true);
+              }
+            }}
+            onEnded={() => {
+              if (!completed) {
+                setCompleted(true);
+                void saveProgress(duration || watchedSeconds, true);
+              }
+            }}
+          />
+        ) : (
+          <iframe
+            ref={iframeRef}
+            className="h-full w-full border-0"
+            src={state.iframeUrl}
+            title={title}
+            loading="eager"
+            allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+            allowFullScreen
+          />
+        )}
 
         {/* Floating Top Controls Overlay */}
         <div className="absolute top-3 inset-x-3 flex items-center justify-between pointer-events-none">
@@ -275,7 +328,7 @@ export function StreamLessonPlayer({
             )}
             <span className="inline-flex items-center gap-1 rounded-full border border-blue-400/30 bg-blue-950/70 px-2.5 py-0.5 text-[11px] font-medium text-blue-200 backdrop-blur-md">
               <Sparkles size={11} className="text-blue-400" />
-              <span>Cloudflare Stream HD</span>
+              <span>{state.status === "ready" && state.isDirectVideo ? (ar ? "مشغل الفيديو عالي الدقة" : "Lecteur Vidéo HD") : "Cloudflare Stream HD"}</span>
             </span>
           </div>
 

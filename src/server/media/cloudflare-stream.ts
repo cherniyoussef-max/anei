@@ -466,7 +466,7 @@ export async function generateSignedPlaybackToken(
   return {
     provider: "local_dev" as const,
     token: `local_dev_token_${viewerUserId}`,
-    iframeUrl: `/demo/player.html?uid=${cloudflareUid}`,
+    iframeUrl: "",
     hlsUrl: `/demo/video.mp4`,
     localUrl: `/demo/video.mp4`,
     expiresAt: new Date(exp * 1000).toISOString(),
@@ -477,7 +477,9 @@ export async function generateSignedPlaybackToken(
  * Backward-compatible helper for getStreamPlayback
  */
 export async function getStreamPlayback(videoUid: string) {
-  if (!cloudflareStreamConfigured) throw new MediaConfigurationError("CLOUDFLARE_STREAM_NOT_CONFIGURED");
+  if (!cloudflareStreamConfigured) {
+    return generateSignedPlaybackToken(videoUid, "learner", env.STORAGE_MEDIA_URL_TTL_SECONDS);
+  }
   if (!isValidStreamUid(videoUid)) throw new MediaProviderError("INVALID_STREAM_UID");
   return generateSignedPlaybackToken(videoUid, "learner", env.STORAGE_MEDIA_URL_TTL_SECONDS);
 }
