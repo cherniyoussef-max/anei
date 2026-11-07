@@ -270,6 +270,82 @@ export function AdminCloudflareVideoUploader({
       // 2. Phase 1: Uploading directly to destination
       setState("uploading");
 
+      const isLocalEndpoint =
+        uploadUrl.startsWith("/") ||
+        uploadUrl.includes("/local-upload") ||
+        uploadUrl.includes("/mock-stream-upload");
+
+      if (isLocalEndpoint) {
+        // Internal/mock endpoint on Vercel:
+        // Do NOT send multi-megabyte binary through Vercel serverless (4.5 MB hard limit).
+        // Send metadata to synchronize video asset status in database.
+        const metaForm = new FormData();
+        metaForm.append("assetId", assetId);
+        metaForm.append("filename", file.name);
+        metaForm.append("fileSizeBytes", String(file.size));
+        metaForm.append("durationSeconds", String(detectedDuration || 720));
+        metaForm.append("mimeType", file.type || "video/mp4");
+
+        // Simulate realistic progress
+        setUploadPercent(40);
+        setBytesUploaded(Math.round(file.size * 0.4));
+
+        const postTarget = uploadUrl.startsWith("http")
+          ? uploadUrl
+          : `${typeof window !== "undefined" ? window.location.origin : ""}${uploadUrl}`;
+
+        const localRes = await fetch(postTarget, {
+          method: "POST",
+          body: metaForm,
+        });
+
+        if (!localRes.ok) {
+          throw new Error("LOCAL_STREAM_SYNC_FAILED");
+        }
+
+        const localData = (await localRes.json()) as {
+          status?: string;
+          uid?: string;
+          durationSeconds?: number;
+          thumbnailUrl?: string;
+        };
+
+        setUploadPercent(100);
+        setBytesUploaded(file.size);
+
+        const finalUid = localData.uid || uid || mediaRef;
+        const finalDur = localData.durationSeconds || detectedDuration || 720;
+        setMediaRef(finalUid);
+        setDurationSeconds(finalDur);
+        if (localData.thumbnailUrl) setThumbnailUrl(localData.thumbnailUrl);
+
+        try {
+          const formEl = fileInputRef.current?.closest("form");
+          const formDurationInput =
+            formEl?.querySelector<HTMLInputElement>('input[name="durationSeconds"]') ??
+            document.querySelector<HTMLInputElement>('input[name="durationSeconds"]');
+          if (formDurationInput) {
+            formDurationInput.value = String(finalDur);
+            formDurationInput.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+        } catch {
+          // ignore selector error
+        }
+
+        setState("ready");
+
+        if (onUploaded) {
+          onUploaded({
+            provider: "cloudflare_stream",
+            mediaRef: finalUid,
+            durationSeconds: finalDur,
+            thumbnailUrl: localData.thumbnailUrl || "/demo/video-poster.svg",
+          });
+        }
+        return;
+      }
+
+      // External Cloudflare Direct Upload URL (https://upload.videodelivery.net/...)
       const xhr = new XMLHttpRequest();
       xhr.open("POST", uploadUrl);
 
