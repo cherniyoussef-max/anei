@@ -29,11 +29,14 @@ export function AdminLessonRow({ locale, courseId, lesson, modules = [] }: { loc
     event.preventDefault();
     setState("loading");
     const f = new FormData(event.currentTarget);
-    const rawProvider = String(f.get("mediaProvider") || "");
-    const mediaRef = String(f.get("mediaRef") || "").trim();
-    const mediaProvider = rawProvider === "cloudflare_stream" && !mediaRef ? (lesson.mediaRef ? "cloudflare_stream" : "internal") : rawProvider;
     const videoUrl = String(f.get("videoUrl") || f.get("videoObjectKey") || "").trim();
-    const documentObjectKey = String(f.get("documentObjectKey") || "").trim();
+    const mediaRef = String(f.get("mediaRef") || "").trim();
+    let mediaProvider = String(f.get("mediaProvider") || "").trim();
+    const documentObjectKey = String(f.get("documentObjectKey") || f.get("documentUrl") || "").trim();
+
+    if (videoUrl && !mediaRef) {
+      mediaProvider = "internal";
+    }
 
     const payload: Record<string, unknown> = {
       position: Number(f.get("position")),
@@ -44,13 +47,15 @@ export function AdminLessonRow({ locale, courseId, lesson, modules = [] }: { loc
       durationSeconds: Number(f.get("durationSeconds")),
       preview: f.get("preview") === "on",
       moduleId: String(f.get("moduleId") || "") || null,
+      mediaProvider: mediaProvider || "internal",
     };
 
-    if (mediaProvider) {
-      payload.mediaProvider = mediaProvider;
-      if (mediaRef) payload.mediaRef = mediaRef;
-      if (mediaProvider === "internal" && videoUrl) payload.videoUrl = videoUrl;
-    } else if (videoUrl) {
+    if (mediaProvider === "cloudflare_stream" || mediaProvider === "youtube") {
+      payload.mediaRef = mediaRef || null;
+    } else {
+      payload.mediaRef = null;
+    }
+    if (videoUrl) {
       payload.videoUrl = videoUrl;
     }
     if (documentObjectKey) {

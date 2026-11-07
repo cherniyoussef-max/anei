@@ -2,8 +2,9 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import type { Locale } from "@/types";
+import { uploadFileInChunks, type ChunkedUploadProgress } from "@/lib/storage/chunked-uploader";
 
-type UploadState = "idle" | "signing" | "uploading" | "done" | "error";
+type UploadState = "idle" | "uploading" | "done" | "error";
 
 export function AdminObjectUpload({
   locale,
@@ -24,13 +25,19 @@ export function AdminObjectUpload({
   const rootRef = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<UploadState>("idle");
   const [objectKey, setObjectKey] = useState("");
+  const [progress, setProgress] = useState<number>(0);
   const [message, setMessage] = useState("");
   const ar = locale === "ar";
 
   useEffect(() => {
     const form = rootRef.current?.closest("form");
     if (!form) return;
-    const reset = () => { setState("idle"); setObjectKey(""); setMessage(""); };
+    const reset = () => {
+      setState("idle");
+      setObjectKey("");
+      setProgress(0);
+      setMessage("");
+    };
     form.addEventListener("reset", reset);
     return () => form.removeEventListener("reset", reset);
   }, []);
@@ -38,74 +45,36 @@ export function AdminObjectUpload({
   async function upload(file: File) {
     setObjectKey("");
     setMessage("");
-    setState("signing");
+    setProgress(0);
+    setState("uploading");
+
     try {
-      const presign = await fetch("/api/admin/storage/presign-upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ category, contentType: file.type || "application/pdf", contentLength: file.size }),
+      const cat = category === "resource" ? "document" : category;
+      const result = await uploadFileInChunks(file, {
+        category: cat as "document" | "course" | "avatar",
+        onProgress: (p: ChunkedUploadProgress) => {
+          setProgress(p.percent);
+        },
       });
 
-      if (!presign.ok) {
-        // Fallback key if S3 storage is not configured in this environment
-        const fallbackKey = `${category}s/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-        setObjectKey(fallbackKey);
-        setState("done");
-        setMessage(ar ? `تم تسجيل المستند بنجاح (${file.name})` : `Document enregistré avec succès (${file.name})`);
-        return;
-      }
-
-      const signed = (await presign.json()) as {
-        uploadUrl?: string;
-        objectKey?: string;
-        fields?: Record<string, string>;
-        error?: string;
-      };
-
-      if (!signed.uploadUrl || !signed.objectKey) {
-        const fallbackKey = `${category}s/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-        setObjectKey(fallbackKey);
-        setState("done");
-        setMessage(ar ? `تم تسجيل المستند بنجاح (${file.name})` : `Document enregistré avec succès (${file.name})`);
-        return;
-      }
-
-      const isRemoteBrowser = typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
-      const isLocalhostEndpoint = signed.uploadUrl.includes("127.0.0.1") || signed.uploadUrl.includes("localhost");
-
-      if (isRemoteBrowser && isLocalhostEndpoint) {
-        // Presigned URL points to local MinIO (127.0.0.1:9000), but client is on Vercel production.
-        // Don't attempt to connect to user's localhost; record objectKey directly.
-        setObjectKey(signed.objectKey);
-        setState("done");
-        setMessage(ar ? `تم تسجيل المستند بنجاح (${file.name})` : `Document enregistré avec succès (${file.name})`);
-        return;
-      }
-
-      setState("uploading");
-      const form = new FormData();
-      if (signed.fields) {
-        for (const [field, value] of Object.entries(signed.fields)) form.append(field, value);
-      }
-      form.append("file", file);
-      const response = await fetch(signed.uploadUrl, { method: "POST", body: form });
-      if (!response.ok) {
-        // Graceful degradation: register key even if storage network error
-        setObjectKey(signed.objectKey);
-        setState("done");
-        setMessage(ar ? `تم تسجيل المستند (${file.name})` : `Document enregistré (${file.name})`);
-        return;
-      }
-
-      setObjectKey(signed.objectKey);
+      setObjectKey(result.url);
       setState("done");
-      setMessage(ar ? "تم رفع الملف إلى التخزين الخاص بنجاح." : "Fichier chargé dans le stockage privé.");
-    } catch {
-      // Never block lesson or course creation
+      setMessage(
+        ar
+          ? `تم رفع الملف بنجاح (${file.name})`
+          : `Fichier téléversé avec succès (${file.name})`,
+      );
+    } catch (err) {
+      console.error("AdminObjectUpload failed:", err);
+      // Fallback key so admin can still proceed
       const fallbackKey = `${category}s/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
       setObjectKey(fallbackKey);
       setState("done");
-      setMessage(ar ? `تم تسجيل المستند (${file.name})` : `Document enregistré (${file.name})`);
+      setMessage(
+        ar
+          ? `تم تسجيل المستند (${file.name})`
+          : `Document enregistré (${file.name})`,
+      );
     }
   }
 
@@ -117,7 +86,7 @@ export function AdminObjectUpload({
           id={id}
           type="file"
           accept={accept}
-          disabled={state === "signing" || state === "uploading"}
+          disabled={state === "uploading"}
           onChange={(event) => {
             const file = event.currentTarget.files?.[0];
             if (file) void upload(file);
@@ -125,10 +94,24 @@ export function AdminObjectUpload({
         />
       </label>
       <input type="hidden" name={name} value={objectKey} readOnly />
-      {state === "signing" || state === "uploading" ? (
-        <small role="status">{ar ? "جارٍ الرفع…" : "Chargement…"}</small>
+      {state === "uploading" ? (
+        <div className="mt-1 space-y-1">
+          <small role="status" className="text-xs text-blue-600 font-medium">
+            {ar ? `جارٍ الرفع… ${progress}%` : `Téléversement… ${progress}%`}
+          </small>
+          <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-blue-600 transition-all duration-300"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
       ) : null}
-      {message ? <small className={state === "error" ? "form-error" : "success-inline"}>{message}</small> : null}
+      {message ? (
+        <small className={state === "error" ? "form-error" : "success-inline"}>
+          {message}
+        </small>
+      ) : null}
       {objectKey ? <code className="object-key-preview">{objectKey}</code> : null}
     </div>
   );

@@ -3640,3 +3640,46 @@ export type LearnerPracticeLogRow = typeof learnerPracticeLogs.$inferSelect;
 export type LessonQuizQuestionRow = typeof lessonQuizQuestions.$inferSelect;
 export type LearnerQuizAttemptRow = typeof learnerQuizAttempts.$inferSelect;
 
+export const uploadedFiles = pgTable(
+  "uploaded_files",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    filename: text("filename").notNull(),
+    mimeType: text("mime_type").notNull().default("application/octet-stream"),
+    fileSizeBytes: bigint("file_size_bytes", { mode: "number" }).notNull().default(0),
+    category: text("category").notNull().default("general"),
+    totalChunks: integer("total_chunks").notNull().default(1),
+    uploadedChunks: integer("uploaded_chunks").notNull().default(0),
+    isComplete: boolean("is_complete").notNull().default(false),
+    uploadedByUserId: text("uploaded_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    durationSeconds: integer("duration_seconds").default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    index("uploaded_files_category_idx").on(table.category),
+    index("uploaded_files_created_at_idx").on(table.createdAt),
+  ]
+);
+
+export const uploadedFileChunks = pgTable(
+  "uploaded_file_chunks",
+  {
+    id: text("id").primaryKey().$defaultFn(id),
+    fileId: text("file_id")
+      .notNull()
+      .references(() => uploadedFiles.id, { onDelete: "cascade" }),
+    chunkIndex: integer("chunk_index").notNull(),
+    chunkData: text("chunk_data").notNull(),
+    chunkSizeBytes: integer("chunk_size_bytes").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
+  },
+  (table) => [
+    uniqueIndex("uploaded_file_chunks_file_chunk_idx").on(table.fileId, table.chunkIndex),
+    index("uploaded_file_chunks_file_id_idx").on(table.fileId),
+  ]
+);
+
+export type UploadedFileRow = typeof uploadedFiles.$inferSelect;
+export type UploadedFileChunkRow = typeof uploadedFileChunks.$inferSelect;
+
