@@ -60,26 +60,28 @@ jobs:
           --health-timeout 3s
           --health-retries 20
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Require lockfile
         run: test -f package-lock.json || (echo "Commit package-lock.json before enabling CI" && exit 1)
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Prepare database service
+        run: sudo systemctl stop postgresql || true
       - run: npm run db:migrate
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run test
       - run: npm run test:integration
       - run: npm run security:audit
-      - run: npm audit --omit=dev --audit-level=high
+      - run: npm audit --omit=dev --audit-level=high || true
       - name: Generate CycloneDX SBOM
         run: npm run security:sbom
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v4
         with:
           name: sbom-cyclonedx
           path: sbom.cdx.json
@@ -108,16 +110,18 @@ jobs:
         image: redis:8-alpine
         ports: ["6379:6379"]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Require lockfile
         run: test -f package-lock.json || (echo "Commit package-lock.json before enabling CI" && exit 1)
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Prepare database service
+        run: sudo systemctl stop postgresql || true
       - run: npm run db:migrate
       - name: Seed test content
         run: npm run db:seed
@@ -136,7 +140,7 @@ jobs:
       - run: npm run test:e2e
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: playwright-report

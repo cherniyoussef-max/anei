@@ -76,7 +76,7 @@ export async function auditAllRoutes(): Promise<{ total: number; audits: RouteAu
 
     const hasOriginCheck = /isTrustedMutation\s*\(/.test(content);
     const hasAuthCheck =
-      /getSession|getFreshSession|getAdminSession|getSuperAdminSession|requireAdmin|requireUser|requireActivePersona|auth\.api\.getSession|resolveMcpActor|verifyServiceToken/.test(
+      /getSession|getFreshSession|getAdminSession|getAdminSessionFor|getSuperAdminSession|requireAdmin|requireUser|requireActivePersona|auth\.api\.getSession|resolveMcpActor|verifyServiceToken/.test(
         content,
       );
     const hasRateLimit = /consumeRateLimit|adminMutationRateLimit|rateLimit/.test(content);
