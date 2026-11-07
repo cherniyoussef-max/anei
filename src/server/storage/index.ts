@@ -43,35 +43,56 @@ function safeDispositionFilename(filename: string) {
 
 /** Generate a short-lived entitlement-gated object download URL. */
 export async function signedDownloadUrl(objectKey: string, filename: string) {
-  if (!objectKey || objectKey.startsWith("http://") || objectKey.startsWith("https://")) {
+  if (!objectKey) {
     throw new Error("INVALID_PRIVATE_OBJECT_KEY");
   }
-  return getSignedUrl(
-    client(),
-    new GetObjectCommand({
-      Bucket: env.STORAGE_BUCKET!,
-      Key: objectKey,
-      ResponseContentDisposition: `attachment; filename="${safeDispositionFilename(filename)}"`,
-    }),
-    { expiresIn: env.STORAGE_DOWNLOAD_URL_TTL_SECONDS },
-  );
+  if (objectKey.startsWith("http://") || objectKey.startsWith("https://") || objectKey.startsWith("/")) {
+    return objectKey;
+  }
+  const isLocalEndpoint = !env.STORAGE_ENDPOINT || env.STORAGE_ENDPOINT.includes("127.0.0.1") || env.STORAGE_ENDPOINT.includes("localhost");
+  if (env.STORAGE_PROVIDER !== "s3-compatible" || isLocalEndpoint) {
+    return `/api/storage/files/${objectKey}`;
+  }
+  try {
+    return await getSignedUrl(
+      client(),
+      new GetObjectCommand({
+        Bucket: env.STORAGE_BUCKET!,
+        Key: objectKey,
+        ResponseContentDisposition: `attachment; filename="${safeDispositionFilename(filename)}"`,
+      }),
+      { expiresIn: env.STORAGE_DOWNLOAD_URL_TTL_SECONDS },
+    );
+  } catch {
+    return `/api/storage/files/${objectKey}`;
+  }
 }
-
 
 /** Short-lived inline URL for entitlement-gated course media. */
 export async function signedMediaUrl(objectKey: string) {
-  if (!objectKey || objectKey.startsWith("http://") || objectKey.startsWith("https://") || objectKey.startsWith("/")) {
+  if (!objectKey) {
     throw new Error("INVALID_PRIVATE_OBJECT_KEY");
   }
-  return getSignedUrl(
-    client(),
-    new GetObjectCommand({
-      Bucket: env.STORAGE_BUCKET!,
-      Key: objectKey,
-      ResponseContentDisposition: "inline",
-    }),
-    { expiresIn: env.STORAGE_MEDIA_URL_TTL_SECONDS },
-  );
+  if (objectKey.startsWith("http://") || objectKey.startsWith("https://") || objectKey.startsWith("/")) {
+    return objectKey;
+  }
+  const isLocalEndpoint = !env.STORAGE_ENDPOINT || env.STORAGE_ENDPOINT.includes("127.0.0.1") || env.STORAGE_ENDPOINT.includes("localhost");
+  if (env.STORAGE_PROVIDER !== "s3-compatible" || isLocalEndpoint) {
+    return `/api/storage/files/${objectKey}`;
+  }
+  try {
+    return await getSignedUrl(
+      client(),
+      new GetObjectCommand({
+        Bucket: env.STORAGE_BUCKET!,
+        Key: objectKey,
+        ResponseContentDisposition: "inline",
+      }),
+      { expiresIn: env.STORAGE_MEDIA_URL_TTL_SECONDS },
+    );
+  } catch {
+    return `/api/storage/files/${objectKey}`;
+  }
 }
 
 function maxUploadSizeForContentType(contentType: string): number {

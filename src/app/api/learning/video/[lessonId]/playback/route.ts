@@ -49,31 +49,7 @@ export async function GET(
 
   const lesson = record.lesson;
 
-  // 1. Direct or uploaded video URL takes top precedence when present
-  if (lesson.videoUrl) {
-    return NextResponse.json(
-      {
-        provider: "internal",
-        videoUrl: lesson.videoUrl,
-        durationSeconds: lesson.durationSeconds,
-      },
-      { headers: noStore },
-    );
-  }
-
-  // 2. YouTube video
-  if (lesson.mediaProvider === "youtube" && lesson.mediaRef) {
-    return NextResponse.json(
-      {
-        provider: "youtube",
-        videoId: lesson.mediaRef,
-        durationSeconds: lesson.durationSeconds,
-      },
-      { headers: noStore },
-    );
-  }
-
-  // 3. Cloudflare Stream video
+  // Cloudflare Stream video
   if (lesson.mediaProvider === "cloudflare_stream" && lesson.mediaRef) {
     try {
       const tokenResult = await generateSignedPlaybackToken(lesson.mediaRef, userId || "preview-user");
@@ -105,6 +81,18 @@ export async function GET(
       });
       return NextResponse.json({ error: "PLAYBACK_GENERATION_FAILED" }, { status: 502, headers: noStore });
     }
+  }
+
+  // Standard video url
+  if (lesson.videoUrl) {
+    return NextResponse.json(
+      {
+        provider: "internal",
+        videoUrl: lesson.videoUrl,
+        durationSeconds: lesson.durationSeconds,
+      },
+      { headers: noStore },
+    );
   }
 
   // YouTube preview

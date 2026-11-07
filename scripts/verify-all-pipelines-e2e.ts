@@ -33,7 +33,7 @@ async function main() {
 
   // Step 0: Ensure Super Admin is ready
   const targetEmail = "ycherni496@gmail.com";
-  const [adminUser] = await db.select().from(user).where(eq(user.email, targetEmail)).limit(1);
+  let [adminUser] = await db.select().from(user).where(eq(user.email, targetEmail)).limit(1);
   if (!adminUser) {
     throw new Error(`Super admin ${targetEmail} not found`);
   }

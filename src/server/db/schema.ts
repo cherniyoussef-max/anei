@@ -22,6 +22,12 @@ import type { WebinarFormField } from "@/lib/webinars";
 const now = () => new Date();
 const id = () => crypto.randomUUID();
 
+export const bytea = customType<{ data: Buffer; driverData: Buffer }>({
+  dataType() {
+    return "bytea";
+  },
+});
+
 // -----------------------------------------------------------------------------
 // Better Auth core tables + ANEI-safe user fields.
 // Field names intentionally match Better Auth's public schema contract.
@@ -3640,46 +3646,42 @@ export type LearnerPracticeLogRow = typeof learnerPracticeLogs.$inferSelect;
 export type LessonQuizQuestionRow = typeof lessonQuizQuestions.$inferSelect;
 export type LearnerQuizAttemptRow = typeof learnerQuizAttempts.$inferSelect;
 
-export const uploadedFiles = pgTable(
-  "uploaded_files",
+export const appStorageFiles = pgTable(
+  "app_storage_files",
   {
     id: text("id").primaryKey().$defaultFn(id),
-    filename: text("filename").notNull(),
-    mimeType: text("mime_type").notNull().default("application/octet-stream"),
-    fileSizeBytes: bigint("file_size_bytes", { mode: "number" }).notNull().default(0),
+    objectKey: text("object_key").notNull(),
     category: text("category").notNull().default("general"),
-    totalChunks: integer("total_chunks").notNull().default(1),
-    uploadedChunks: integer("uploaded_chunks").notNull().default(0),
-    isComplete: boolean("is_complete").notNull().default(false),
-    uploadedByUserId: text("uploaded_by_user_id").references(() => user.id, { onDelete: "set null" }),
-    durationSeconds: integer("duration_seconds").default(0),
+    filename: text("filename").notNull(),
+    contentType: text("content_type").notNull().default("application/octet-stream"),
+    fileSize: bigint("file_size", { mode: "number" }).notNull().default(0),
+    data: bytea("data").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().$defaultFn(now),
   },
   (table) => [
-    index("uploaded_files_category_idx").on(table.category),
-    index("uploaded_files_created_at_idx").on(table.createdAt),
+    uniqueIndex("app_storage_files_object_key_unique").on(table.objectKey),
+    index("app_storage_files_category_idx").on(table.category),
+    index("app_storage_files_created_at_idx").on(table.createdAt),
   ]
 );
 
-export const uploadedFileChunks = pgTable(
-  "uploaded_file_chunks",
+export const appStorageChunks = pgTable(
+  "app_storage_chunks",
   {
     id: text("id").primaryKey().$defaultFn(id),
-    fileId: text("file_id")
-      .notNull()
-      .references(() => uploadedFiles.id, { onDelete: "cascade" }),
+    uploadId: text("upload_id").notNull(),
     chunkIndex: integer("chunk_index").notNull(),
-    chunkData: text("chunk_data").notNull(),
-    chunkSizeBytes: integer("chunk_size_bytes").notNull(),
+    totalChunks: integer("total_chunks").notNull(),
+    data: bytea("data").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().$defaultFn(now),
   },
   (table) => [
-    uniqueIndex("uploaded_file_chunks_file_chunk_idx").on(table.fileId, table.chunkIndex),
-    index("uploaded_file_chunks_file_id_idx").on(table.fileId),
+    index("app_storage_chunks_upload_idx").on(table.uploadId, table.chunkIndex),
   ]
 );
 
-export type UploadedFileRow = typeof uploadedFiles.$inferSelect;
-export type UploadedFileChunkRow = typeof uploadedFileChunks.$inferSelect;
+export type AppStorageFileRow = typeof appStorageFiles.$inferSelect;
+export type AppStorageChunkRow = typeof appStorageChunks.$inferSelect;
+
 

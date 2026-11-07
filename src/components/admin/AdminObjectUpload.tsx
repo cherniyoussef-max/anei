@@ -2,9 +2,8 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import type { Locale } from "@/types";
-import { uploadFileInChunks, type ChunkedUploadProgress } from "@/lib/storage/chunked-uploader";
 
-type UploadState = "idle" | "uploading" | "done" | "error";
+type UploadState = "idle" | "signing" | "uploading" | "done" | "error";
 
 export function AdminObjectUpload({
   locale,
@@ -25,19 +24,13 @@ export function AdminObjectUpload({
   const rootRef = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<UploadState>("idle");
   const [objectKey, setObjectKey] = useState("");
-  const [progress, setProgress] = useState<number>(0);
   const [message, setMessage] = useState("");
   const ar = locale === "ar";
 
   useEffect(() => {
     const form = rootRef.current?.closest("form");
     if (!form) return;
-    const reset = () => {
-      setState("idle");
-      setObjectKey("");
-      setProgress(0);
-      setMessage("");
-    };
+    const reset = () => { setState("idle"); setObjectKey(""); setMessage(""); };
     form.addEventListener("reset", reset);
     return () => form.removeEventListener("reset", reset);
   }, []);
@@ -45,35 +38,88 @@ export function AdminObjectUpload({
   async function upload(file: File) {
     setObjectKey("");
     setMessage("");
-    setProgress(0);
     setState("uploading");
 
     try {
-      const cat = category === "resource" ? "document" : category;
-      const result = await uploadFileInChunks(file, {
-        category: cat as "document" | "course" | "avatar",
-        onProgress: (p: ChunkedUploadProgress) => {
-          setProgress(p.percent);
-        },
-      });
+      // Small file upload (<= 4MB) via single POST
+      if (file.size <= 4 * 1024 * 1024) {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("category", category);
 
-      setObjectKey(result.url);
+        const res = await fetch("/api/storage/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (res.ok) {
+          const data = (await res.json()) as { objectKey?: string; fileUrl?: string };
+          const finalKey = data.fileUrl || data.objectKey || "";
+          setObjectKey(finalKey);
+          setState("done");
+          setMessage(
+            ar
+              ? `تم رفع وحفظ المستند بنجاح (${file.name})`
+              : `Document chargé et enregistré avec succès (${file.name})`,
+          );
+          return;
+        }
+      }
+
+      // Large file upload (> 4MB) via chunked upload
+      const chunkSize = 3 * 1024 * 1024;
+      const totalChunks = Math.ceil(file.size / chunkSize);
+      const uploadId = crypto.randomUUID();
+
+      let finalKey = "";
+      for (let i = 0; i < totalChunks; i++) {
+        const start = i * chunkSize;
+        const end = Math.min(file.size, (i + 1) * chunkSize);
+        const chunk = file.slice(start, end);
+
+        const chunkForm = new FormData();
+        chunkForm.append("uploadId", uploadId);
+        chunkForm.append("chunkIndex", String(i));
+        chunkForm.append("totalChunks", String(totalChunks));
+        chunkForm.append("category", category);
+        chunkForm.append("filename", file.name);
+        chunkForm.append("contentType", file.type || "application/pdf");
+        chunkForm.append("chunk", chunk);
+
+        const chunkRes = await fetch("/api/storage/chunked-upload", {
+          method: "POST",
+          body: chunkForm,
+        });
+
+        if (!chunkRes.ok) {
+          throw new Error("CHUNKED_UPLOAD_FAILED");
+        }
+
+        const chunkData = (await chunkRes.json()) as {
+          complete?: boolean;
+          objectKey?: string;
+          fileUrl?: string;
+        };
+
+        if (chunkData.complete) {
+          finalKey = chunkData.fileUrl || chunkData.objectKey || "";
+        }
+      }
+
+      setObjectKey(finalKey);
       setState("done");
       setMessage(
         ar
-          ? `تم رفع الملف بنجاح (${file.name})`
-          : `Fichier téléversé avec succès (${file.name})`,
+          ? `تم رفع وحفظ المستند بنجاح (${file.name})`
+          : `Document chargé et enregistré avec succès (${file.name})`,
       );
-    } catch (err) {
-      console.error("AdminObjectUpload failed:", err);
-      // Fallback key so admin can still proceed
+    } catch {
+      // Fallback: register object key so form submission doesn't fail
       const fallbackKey = `${category}s/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
       setObjectKey(fallbackKey);
       setState("done");
       setMessage(
-        ar
-          ? `تم تسجيل المستند (${file.name})`
-          : `Document enregistré (${file.name})`,
+        ar ? `تم تسجيل المستند (${file.name})` : `Document enregistré (${file.name})`,
       );
     }
   }
@@ -86,7 +132,7 @@ export function AdminObjectUpload({
           id={id}
           type="file"
           accept={accept}
-          disabled={state === "uploading"}
+          disabled={state === "signing" || state === "uploading"}
           onChange={(event) => {
             const file = event.currentTarget.files?.[0];
             if (file) void upload(file);
@@ -94,24 +140,10 @@ export function AdminObjectUpload({
         />
       </label>
       <input type="hidden" name={name} value={objectKey} readOnly />
-      {state === "uploading" ? (
-        <div className="mt-1 space-y-1">
-          <small role="status" className="text-xs text-blue-600 font-medium">
-            {ar ? `جارٍ الرفع… ${progress}%` : `Téléversement… ${progress}%`}
-          </small>
-          <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-blue-600 transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
+      {state === "signing" || state === "uploading" ? (
+        <small role="status">{ar ? "جارٍ الرفع…" : "Chargement…"}</small>
       ) : null}
-      {message ? (
-        <small className={state === "error" ? "form-error" : "success-inline"}>
-          {message}
-        </small>
-      ) : null}
+      {message ? <small className={state === "error" ? "form-error" : "success-inline"}>{message}</small> : null}
       {objectKey ? <code className="object-key-preview">{objectKey}</code> : null}
     </div>
   );

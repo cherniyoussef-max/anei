@@ -53,17 +53,15 @@ export function AdminModuleForm({ locale, courses }: { locale: Locale; courses: 
 
 export function AdminLessonForm({ locale, courses, modules = [] }: { locale: Locale; courses: Array<{ id: string; title: string }>; modules?: Array<{ id: string; courseId: string; title: string }> }) {
   const { state, send } = useAdminSubmit("/api/admin/lessons"); const ar = locale === "ar";
+  const isDevelopment = process.env.NODE_ENV === "development";
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
     const f = new FormData(form);
     const rawProvider = String(f.get("mediaProvider") || "internal");
     const mediaRef = String(f.get("mediaRef") || "").trim() || null;
+    const mediaProvider = rawProvider === "cloudflare_stream" && !mediaRef ? "internal" : rawProvider;
     const videoUrl = String(f.get("videoUrl") || f.get("videoObjectKey") || "").trim() || null;
-    let mediaProvider = rawProvider;
-    if (videoUrl && !mediaRef) {
-      mediaProvider = "internal";
-    }
 
     await send({
       courseId: String(f.get("courseId")),
@@ -74,11 +72,11 @@ export function AdminLessonForm({ locale, courses, modules = [] }: { locale: Loc
       descriptionFr: String(f.get("descriptionFr") || ""),
       descriptionAr: String(f.get("descriptionAr") || ""),
       durationSeconds: Number(f.get("durationSeconds")),
-      videoUrl: videoUrl,
+      videoUrl: videoUrl || null,
       documentUrl: String(f.get("documentObjectKey") || f.get("documentUrl") || "") || null,
       preview: f.get("preview") === "on",
-      mediaProvider: mediaProvider || "internal",
-      mediaRef: (mediaProvider === "cloudflare_stream" || mediaProvider === "youtube") ? mediaRef : null,
+      mediaProvider: videoUrl ? "internal" : mediaProvider,
+      mediaRef,
     }, form);
   }
   return <form className="admin-course-form" onSubmit={submit}>{courses.length === 1 ? <input type="hidden" name="courseId" value={courses[0].id}/> : <label><span>{ar ? "الدورة" : "Formation"}</span><select name="courseId" required defaultValue=""><option value="" disabled>{ar ? "اختر دورة" : "Choisir une formation"}</option>{courses.map(course => <option value={course.id} key={course.id}>{course.title}</option>)}</select></label>}<div className="field-row"><label><span>{ar ? "الوحدة (اختياري)" : "Module (optionnel)"}</span><select name="moduleId" defaultValue=""><option value="">{ar ? "بدون وحدة" : "Sans module"}</option>{modules.map(module => <option value={module.id} key={module.id}>{module.title}</option>)}</select></label><label><span>{ar ? "الترتيب" : "Position"}</span><input name="position" type="number" min="1" required/></label></div><div className="field-row"><label><span>{ar ? "المدة بالثواني" : "Durée (secondes)"}</span><input name="durationSeconds" type="number" min="0" defaultValue="300" required/></label><label className="checkbox-row"><input name="preview" type="checkbox"/><span>{ar ? "معاينة عامة" : "Leçon en aperçu public"}</span></label></div><div className="field-row"><label><span>Titre FR</span><input name="titleFr" required/></label><label><span>العنوان AR</span><input name="titleAr" dir="rtl" required/></label></div><div className="field-row"><label><span>Description FR</span><textarea name="descriptionFr"/></label><label><span>الوصف AR</span><textarea name="descriptionAr" dir="rtl"/></label></div><div className="field-row admin-media-fields"><AdminStreamVideoUploader locale={locale}/><AdminObjectUpload locale={locale} name="documentObjectKey" category="course" accept="application/pdf,text/vtt" labelFr="Importer un document ou des sous-titres" labelAr="رفع وثيقة أو ترجمة"/></div><details className="admin-development-fields mt-2"><summary className="text-xs text-slate-500 cursor-pointer">{ar ? "رابط أو مسار المستند / الملحق (اختياري)" : "Lien direct du document ou support (optionnel)"}</summary><div className="field-row mt-1.5"><label><span>{ar ? "رابط أو مسار المستند" : "Lien ou chemin du document"}</span><input name="documentUrl" placeholder="https://... ou /demo/support.pdf"/></label></div></details><button className="btn btn-primary" disabled={state === "loading"}>{ar ? "إضافة الدرس" : "Ajouter la leçon"}</button><Feedback state={state} locale={locale}/></form>;

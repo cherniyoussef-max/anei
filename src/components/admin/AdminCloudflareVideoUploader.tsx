@@ -3,7 +3,6 @@
 import { useId, useRef, useState, useEffect, type DragEvent } from "react";
 import type { Locale } from "@/types";
 import { Icon } from "@/components/ui/Icon";
-import { uploadFileInChunks } from "@/lib/storage/chunked-uploader";
 
 type UploaderState = "idle" | "preparing" | "uploading" | "processing" | "ready" | "error";
 
@@ -87,27 +86,31 @@ export function AdminCloudflareVideoUploader({
 
   const ar = locale === "ar";
 
-  const initialHasVideo = Boolean(
-    (initialMediaRef && (initialMediaProvider === "cloudflare_stream" || initialMediaProvider === "youtube")) ||
-    initialVideoUrl,
-  );
-
   const [provider, setProvider] = useState<string>(
-    initialVideoUrl ? "internal" : initialMediaProvider || "cloudflare_stream",
+    initialMediaProvider || "cloudflare_stream",
   );
   const [mediaRef, setMediaRef] = useState<string>(initialMediaRef || "");
   const [videoUrl, setVideoUrl] = useState<string>(initialVideoUrl || "");
   const [durationSeconds, setDurationSeconds] = useState<number>(initialDurationSeconds || 0);
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
 
-  const [state, setState] = useState<UploaderState>(initialHasVideo ? "ready" : "idle");
-  const [uploadPercent, setUploadPercent] = useState<number>(initialHasVideo ? 100 : 0);
+  const isInitiallyReady = Boolean(
+    (initialMediaRef && initialMediaProvider === "cloudflare_stream") ||
+    initialVideoUrl ||
+    (initialMediaProvider === "youtube" && initialMediaRef),
+  );
+
+  const [state, setState] = useState<UploaderState>(isInitiallyReady ? "ready" : "idle");
+  const [uploadPercent, setUploadPercent] = useState<number>(isInitiallyReady ? 100 : 0);
   const [bytesUploaded, setBytesUploaded] = useState<number>(0);
   const [totalBytes, setTotalBytes] = useState<number>(0);
   const [encodingProgress, setEncodingProgress] = useState<number>(0);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isDragOver, setIsDragOver] = useState(false);
   const [_currentAssetId, setCurrentAssetId] = useState<string | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(
+    initialMediaProvider === "youtube" || initialMediaProvider === "internal",
+  );
   const [youtubeInput, setYoutubeInput] = useState<string>(
     initialMediaProvider === "youtube" ? initialMediaRef || "" : "",
   );
@@ -275,27 +278,62 @@ export function AdminCloudflareVideoUploader({
         uploadUrl.includes("/mock-stream-upload");
 
       if (isLocalEndpoint) {
-        // Universal Chunked Upload to Persistent Cloud Storage:
-        // Slices the real video file into 2.5 MB chunks.
-        // Works for files of any size (up to 500 MB+) with zero Vercel body limits.
-        const chunkResult = await uploadFileInChunks(file, {
-          category: "video",
-          durationSeconds: detectedDuration || undefined,
-          onProgress: (p) => {
-            setUploadPercent(p.percent);
-            setBytesUploaded(p.loadedBytes);
-            setTotalBytes(p.totalBytes);
-          },
-        });
+        // Upload the REAL video binary to persistent native storage using 3.5MB chunks (bypasses Vercel 4.5MB limit)
+        const chunkSize = 3.5 * 1024 * 1024;
+        const totalChunks = Math.ceil(file.size / chunkSize);
+        const uploadId = uid || crypto.randomUUID();
 
-        const finalDur = detectedDuration || 720;
-        setVideoUrl(chunkResult.streamUrl);
-        setProvider("internal");
-        setMediaRef("");
-        setDurationSeconds(finalDur);
-        setThumbnailUrl("/demo/video-poster.svg");
+        let finalFileUrl = "";
+        for (let i = 0; i < totalChunks; i++) {
+          const start = i * chunkSize;
+          const end = Math.min(file.size, (i + 1) * chunkSize);
+          const chunkBlob = file.slice(start, end);
+
+          const chunkForm = new FormData();
+          chunkForm.append("uploadId", uploadId);
+          chunkForm.append("chunkIndex", String(i));
+          chunkForm.append("totalChunks", String(totalChunks));
+          chunkForm.append("category", "video");
+          chunkForm.append("filename", file.name);
+          chunkForm.append("contentType", file.type || "video/mp4");
+          if (lessonId) chunkForm.append("lessonId", lessonId);
+          if (courseId) chunkForm.append("courseId", courseId);
+          if (detectedDuration) chunkForm.append("durationSeconds", String(detectedDuration));
+          chunkForm.append("chunk", chunkBlob);
+
+          const chunkRes = await fetch("/api/storage/chunked-upload", {
+            method: "POST",
+            body: chunkForm,
+          });
+
+          if (!chunkRes.ok) {
+            throw new Error("CHUNKED_VIDEO_UPLOAD_FAILED");
+          }
+
+          const chunkData = (await chunkRes.json()) as {
+            complete?: boolean;
+            fileUrl?: string;
+            uid?: string;
+            durationSeconds?: number;
+          };
+
+          const pct = Math.min(99, Math.round(((i + 1) / totalChunks) * 100));
+          setUploadPercent(pct);
+          setBytesUploaded(end);
+
+          if (chunkData.complete) {
+            finalFileUrl = chunkData.fileUrl || `/api/storage/files/video/${uploadId}.mp4`;
+          }
+        }
+
         setUploadPercent(100);
         setBytesUploaded(file.size);
+
+        const finalUid = uploadId.replace(/-/g, "").slice(0, 32);
+        const finalDur = detectedDuration || 720;
+        setMediaRef(finalUid);
+        setVideoUrl(finalFileUrl);
+        setDurationSeconds(finalDur);
 
         try {
           const formEl = fileInputRef.current?.closest("form");
@@ -315,7 +353,7 @@ export function AdminCloudflareVideoUploader({
         if (onUploaded) {
           onUploaded({
             provider: "internal",
-            mediaRef: chunkResult.streamUrl,
+            mediaRef: finalUid,
             durationSeconds: finalDur,
             thumbnailUrl: "/demo/video-poster.svg",
           });
@@ -404,12 +442,11 @@ export function AdminCloudflareVideoUploader({
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
-  const effectiveProvider =
-    provider === "youtube"
-      ? "youtube"
-      : provider === "cloudflare_stream" && mediaRef
-      ? "cloudflare_stream"
-      : "internal";
+  const effectiveProvider = videoUrl
+    ? "internal"
+    : provider === "cloudflare_stream" && !mediaRef
+    ? "internal"
+    : provider;
 
   return (
     <div className="w-full space-y-3 font-[family-name:var(--font-sans)]" dir={ar ? "rtl" : "ltr"}>
@@ -423,72 +460,65 @@ export function AdminCloudflareVideoUploader({
             ? youtubeInput
             : effectiveProvider === "cloudflare_stream"
             ? mediaRef
-            : ""
+            : (mediaRef || "")
         }
       />
       <input
         type="hidden"
         name="videoUrl"
-        value={effectiveProvider === "internal" ? (videoUrl || "") : (videoUrl || "")}
+        value={videoUrl}
       />
 
-      {/* Header bar with title */}
+      {/* Header bar and Provider Tabs */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <label className="text-sm font-semibold text-slate-900 flex items-center gap-2">
           <span>{ar ? "فيديو الدرس" : "Vidéo de la leçon"}</span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-medium text-blue-700 border border-blue-200">
+          <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700 border border-blue-200">
             <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse" />
-            Stockage Vidéo Haute Définition
+            {ar ? "مشغل فائق الدقة" : "Lecteur HD Multi-Sources"}
           </span>
         </label>
+
+        {/* Tab switcher */}
+        <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg text-xs">
+          <button
+            type="button"
+            className={`px-3 py-1 rounded-md font-medium transition cursor-pointer ${
+              provider === "cloudflare_stream"
+                ? "bg-white text-slate-900 shadow-xs border border-slate-200 font-semibold"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+            onClick={() => setProvider("cloudflare_stream")}
+          >
+            {ar ? "رفع ملف فيديو" : "Téléverser un fichier"}
+          </button>
+          <button
+            type="button"
+            className={`px-3 py-1 rounded-md font-medium transition cursor-pointer ${
+              provider === "internal"
+                ? "bg-white text-slate-900 shadow-xs border border-slate-200 font-semibold"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+            onClick={() => setProvider("internal")}
+          >
+            {ar ? "رابط فيديو مباشر" : "URL vidéo directe"}
+          </button>
+          <button
+            type="button"
+            className={`px-3 py-1 rounded-md font-medium transition cursor-pointer ${
+              provider === "youtube"
+                ? "bg-white text-slate-900 shadow-xs border border-slate-200 font-semibold"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+            onClick={() => setProvider("youtube")}
+          >
+            YouTube
+          </button>
+        </div>
       </div>
 
-      {/* Provider Selector Tabs */}
-      <div className="flex items-center gap-2 p-1.5 bg-slate-100 rounded-lg text-xs">
-        <button
-          type="button"
-          className={`px-3 py-1.5 rounded-md font-medium transition cursor-pointer ${
-            provider === "cloudflare_stream" || (provider === "internal" && !videoUrl.startsWith("http"))
-              ? "bg-white text-slate-900 shadow-xs border border-slate-200"
-              : "text-slate-600 hover:text-slate-900"
-          }`}
-          onClick={() => {
-            setProvider("cloudflare_stream");
-            if (!mediaRef && !videoUrl) setState("idle");
-          }}
-        >
-          {ar ? "📁 رفع ملف فيديو (أي حجم)" : "📁 Téléverser un fichier (sans limite)"}
-        </button>
-        <button
-          type="button"
-          className={`px-3 py-1.5 rounded-md font-medium transition cursor-pointer ${
-            provider === "youtube"
-              ? "bg-white text-slate-900 shadow-xs border border-slate-200"
-              : "text-slate-600 hover:text-slate-900"
-          }`}
-          onClick={() => {
-            setProvider("youtube");
-          }}
-        >
-          {ar ? "📺 رابط YouTube" : "📺 Lien YouTube"}
-        </button>
-        <button
-          type="button"
-          className={`px-3 py-1.5 rounded-md font-medium transition cursor-pointer ${
-            provider === "internal" && videoUrl.startsWith("http")
-              ? "bg-white text-slate-900 shadow-xs border border-slate-200"
-              : "text-slate-600 hover:text-slate-900"
-          }`}
-          onClick={() => {
-            setProvider("internal");
-          }}
-        >
-          {ar ? "🔗 رابط فيديو مباشر" : "🔗 Lien vidéo direct"}
-        </button>
-      </div>
-
-      {/* MAIN VIDEO UPLOAD EXPERIENCE */}
-      {(provider === "cloudflare_stream" || (provider === "internal" && !videoUrl.startsWith("http"))) && (
+      {/* MAIN CLOUDFLARE ZERO-TOUCH EXPERIENCE */}
+      {provider === "cloudflare_stream" && (
         <div className="w-full">
           {/* STATE 0: IDLE (Drag & Drop Zone) */}
           {state === "idle" && (
@@ -625,9 +655,17 @@ export function AdminCloudflareVideoUploader({
           {state === "ready" && (
             <div className="p-5 rounded-xl border border-emerald-200 bg-emerald-50/50 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                {/* Thumbnail or Video Icon */}
-                <div className="relative h-16 w-28 rounded-lg overflow-hidden bg-slate-900 border border-slate-200 flex-none flex items-center justify-center">
-                  {thumbnailUrl ? (
+                {/* Playable Video Preview or Thumbnail */}
+                <div className="relative h-20 w-32 rounded-lg overflow-hidden bg-black border border-slate-700 flex-none flex items-center justify-center">
+                  {videoUrl ? (
+                    <video
+                      src={videoUrl}
+                      controls
+                      playsInline
+                      preload="metadata"
+                      className="h-full w-full object-contain"
+                    />
+                  ) : thumbnailUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={thumbnailUrl}
@@ -639,7 +677,7 @@ export function AdminCloudflareVideoUploader({
                       <Icon name="play" size={20} />
                     </div>
                   )}
-                  {durationSeconds > 0 && (
+                  {durationSeconds > 0 && !videoUrl && (
                     <span className="absolute bottom-1 right-1 rounded bg-black/80 px-1.5 py-0.5 text-[10px] font-mono font-semibold text-white">
                       {formatDuration(durationSeconds)}
                     </span>
@@ -654,9 +692,7 @@ export function AdminCloudflareVideoUploader({
                       {ar ? "الفيديو جاهز ومحمي" : "Vidéo prête & protégée"}
                     </span>
                     <span className="rounded-full bg-emerald-100 border border-emerald-300 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">
-                      {mediaRef
-                        ? (ar ? "بث مشفر HLS" : "HLS Adaptatif Cloudflare")
-                        : (ar ? "تخزين سحابي مباشر (Range Stream)" : "Streaming Sécurisé Haute Définition")}
+                      {ar ? "بث مشفر HLS" : "HLS Adaptatif Cloudflare"}
                     </span>
                   </div>
 
@@ -666,15 +702,9 @@ export function AdminCloudflareVideoUploader({
                       : `Durée calculée automatiquement (${formatDuration(durationSeconds)}) et liée à la leçon.`}
                   </p>
 
-                  {mediaRef ? (
-                    <div className="font-mono text-[11px] text-slate-500">
-                      UID: <span className="text-slate-700 font-semibold">{mediaRef}</span>
-                    </div>
-                  ) : videoUrl ? (
-                    <div className="font-mono text-[11px] text-slate-500 max-w-sm truncate">
-                      Source: <span className="text-slate-700 font-semibold">{videoUrl}</span>
-                    </div>
-                  ) : null}
+                  <div className="font-mono text-[11px] text-slate-500">
+                    UID: <span className="text-slate-700 font-semibold">{mediaRef}</span>
+                  </div>
                 </div>
               </div>
 
@@ -718,22 +748,8 @@ export function AdminCloudflareVideoUploader({
           <input
             type="text"
             value={youtubeInput}
-            placeholder="e.g. https://www.youtube.com/watch?v=... ou identifiant"
-            onChange={(e) => {
-              const val = e.target.value;
-              setYoutubeInput(val);
-              setVideoUrl("");
-              const match = val.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
-              const extracted = match ? match[1] : val;
-              setMediaRef(extracted);
-              if (onUploaded) {
-                onUploaded({
-                  provider: "youtube",
-                  mediaRef: extracted,
-                  durationSeconds,
-                });
-              }
-            }}
+            placeholder="e.g. https://www.youtube.com/watch?v=..."
+            onChange={(e) => setYoutubeInput(e.target.value)}
             className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:outline-blue-600"
           />
           <p className="text-[11px] text-slate-500">
@@ -748,31 +764,15 @@ export function AdminCloudflareVideoUploader({
       {provider === "internal" && (
         <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
           <label className="block text-xs font-semibold text-slate-700">
-            {ar ? "رابط مباشر أو مفتاح التخزين" : "URL directe de la vidéo (MP4, CDN, S3, etc.)"}
+            {ar ? "رابط مباشر أو مفتاح التخزين" : "Chemin local ou clé de stockage privé"}
           </label>
           <input
             type="text"
             value={videoUrl}
-            placeholder="https://.../video.mp4 ou /api/storage/stream/..."
-            onChange={(e) => {
-              const val = e.target.value;
-              setVideoUrl(val);
-              setMediaRef("");
-              if (onUploaded) {
-                onUploaded({
-                  provider: "internal",
-                  mediaRef: val,
-                  durationSeconds,
-                });
-              }
-            }}
+            placeholder="/demo/video.mp4"
+            onChange={(e) => setVideoUrl(e.target.value)}
             className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:outline-blue-600"
           />
-          <p className="text-[11px] text-slate-500">
-            {ar
-              ? "يمكنك إدخال رابط مباشر لملف فيديو MP4 مستضاف خارجياً أو مسار محلي."
-              : "Vous pouvez spécifier une URL directe vers un fichier MP4 externe ou un flux hébergé."}
-          </p>
         </div>
       )}
     </div>

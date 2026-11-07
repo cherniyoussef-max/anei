@@ -318,8 +318,8 @@ export async function syncVideoAssetStatus(identifier: { assetId?: string; cloud
   // LOCAL DEV ENGINE: Auto-transition to READY
   if (asset.provider === "LOCAL_DEV") {
     const mockDuration = asset.durationSeconds > 0 ? asset.durationSeconds : 720; // 12 minutes default
-    const mockThumbnail = "/demo/video-poster.svg";
-    const mockHls = "/demo/video.mp4";
+    const mockThumbnail = asset.thumbnailUrl || "/demo/video-poster.svg";
+    const mockHls = asset.playbackHlsUrl || "/demo/video.mp4";
 
     const [updatedAsset] = await db
       .update(videoAssets)
@@ -461,14 +461,28 @@ export async function generateSignedPlaybackToken(
     };
   }
 
-  // Local Dev Fallback Engine
+  // Local Dev Fallback Engine: resolve asset from database if present
   const exp = Math.floor(Date.now() / 1000) + expiresInSeconds;
+  let resolvedUrl = "/demo/video.mp4";
+  try {
+    const [asset] = await db
+      .select({ playbackHlsUrl: videoAssets.playbackHlsUrl })
+      .from(videoAssets)
+      .where(eq(videoAssets.cloudflareUid, cloudflareUid))
+      .limit(1);
+    if (asset?.playbackHlsUrl && asset.playbackHlsUrl.trim()) {
+      resolvedUrl = asset.playbackHlsUrl;
+    }
+  } catch {
+    // ignore lookup error
+  }
+
   return {
     provider: "local_dev" as const,
     token: `local_dev_token_${viewerUserId}`,
     iframeUrl: "",
-    hlsUrl: `/demo/video.mp4`,
-    localUrl: `/demo/video.mp4`,
+    hlsUrl: resolvedUrl,
+    localUrl: resolvedUrl,
     expiresAt: new Date(exp * 1000).toISOString(),
   };
 }
