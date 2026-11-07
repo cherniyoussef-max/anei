@@ -12,6 +12,7 @@ import {
 import { isTrustedMutation } from "@/server/security/origin";
 import { readLimitedJson } from "@/server/security/request-body";
 import { syncCourseToActualites } from "@/server/services/auto-news-syndication";
+import { logger } from "@/server/security/logger";
 
 export const finalAssessmentQuestionSchema = z
   .object({
@@ -210,7 +211,16 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ course }, { status: 201 });
-  } catch {
+  } catch (error) {
+    logger.error("courses.create_failed", { error: String(error) });
+    const errMsg = String(error);
+    if (
+      errMsg.includes("courses_slug_unique") ||
+      errMsg.includes("duplicate key value") ||
+      (typeof error === "object" && error !== null && (error as { code?: string }).code === "23505")
+    ) {
+      return NextResponse.json({ error: "SLUG_EXISTS" }, { status: 409 });
+    }
     return NextResponse.json({ error: "CREATE_FAILED" }, { status: 409 });
   }
 }

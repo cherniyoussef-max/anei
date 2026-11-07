@@ -29,11 +29,16 @@ export async function POST(request: Request) {
   const url = new URL(request.url);
   let assetId = url.searchParams.get("assetId");
 
+  let requestedDuration = 0;
   try {
     const formData = await request.formData();
     if (!assetId) {
       const fromForm = formData.get("assetId");
       if (typeof fromForm === "string") assetId = fromForm;
+    }
+    const fromDur = Number(formData.get("durationSeconds"));
+    if (Number.isFinite(fromDur) && fromDur > 0) {
+      requestedDuration = Math.round(fromDur);
     }
   } catch {
     // If not multipart form, might be raw upload
@@ -48,7 +53,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "ASSET_NOT_FOUND" }, { status: 404, headers: noStore });
   }
 
-  const mockDuration = asset.durationSeconds > 0 ? asset.durationSeconds : 720;
+  const mockDuration = requestedDuration > 0 ? requestedDuration : (asset.durationSeconds > 0 ? asset.durationSeconds : 720);
   const mockThumbnail = "/demo/video-poster.svg";
   const mockHls = "/demo/video.mp4";
 

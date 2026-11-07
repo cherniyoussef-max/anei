@@ -29,8 +29,9 @@ export function AdminLessonRow({ locale, courseId, lesson, modules = [] }: { loc
     event.preventDefault();
     setState("loading");
     const f = new FormData(event.currentTarget);
-    const mediaProvider = String(f.get("mediaProvider") || "");
+    const rawProvider = String(f.get("mediaProvider") || "");
     const mediaRef = String(f.get("mediaRef") || "").trim();
+    const mediaProvider = rawProvider === "cloudflare_stream" && !mediaRef ? (lesson.mediaRef ? "cloudflare_stream" : "internal") : rawProvider;
     const videoUrl = String(f.get("videoUrl") || f.get("videoObjectKey") || "").trim();
     const documentObjectKey = String(f.get("documentObjectKey") || "").trim();
 

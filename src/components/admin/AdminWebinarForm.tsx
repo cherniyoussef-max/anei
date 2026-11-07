@@ -178,7 +178,7 @@ export function AdminWebinarForm({ locale }: { locale: Locale }) {
           <input
             name="slug"
             required
-            pattern="[a-z0-9-]+"
+            pattern="[a-z0-9\-]+"
             placeholder="webinaire-inclusion"
             value={slug}
             onChange={(e) => {

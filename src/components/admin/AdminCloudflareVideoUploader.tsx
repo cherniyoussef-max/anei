@@ -30,11 +30,44 @@ function formatBytes(bytes: number): string {
 
 function formatDuration(seconds: number): string {
   if (!seconds || seconds <= 0) return "0 min";
-  const m = Math.floor(seconds / 60);
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
   const s = seconds % 60;
+  if (h > 0) {
+    if (m === 0 && s === 0) return `${h}h`;
+    if (s === 0) return `${h}h ${m} min`;
+    return `${h}h ${m} min ${s}s`;
+  }
   if (m === 0) return `${s}s`;
   if (s === 0) return `${m} min`;
   return `${m} min ${s}s`;
+}
+
+function inspectVideoDuration(file: File): Promise<number | null> {
+  return new Promise((resolve) => {
+    try {
+      if (typeof window === "undefined" || !window.URL) return resolve(null);
+      const url = URL.createObjectURL(file);
+      const video = document.createElement("video");
+      video.preload = "metadata";
+      video.onloadedmetadata = () => {
+        URL.revokeObjectURL(url);
+        const dur = Math.round(video.duration);
+        resolve(Number.isFinite(dur) && dur > 0 ? dur : null);
+      };
+      video.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(null);
+      };
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+        resolve(null);
+      }, 2500);
+      video.src = url;
+    } catch {
+      resolve(null);
+    }
+  });
 }
 
 export function AdminCloudflareVideoUploader({
@@ -121,9 +154,10 @@ export function AdminCloudflareVideoUploader({
 
           // Auto-populate duration in parent form if input[name="durationSeconds"] exists
           try {
-            const formDurationInput = document.querySelector<HTMLInputElement>(
-              'input[name="durationSeconds"]',
-            );
+            const formEl = fileInputRef.current?.closest("form");
+            const formDurationInput =
+              formEl?.querySelector<HTMLInputElement>('input[name="durationSeconds"]') ??
+              document.querySelector<HTMLInputElement>('input[name="durationSeconds"]');
             if (formDurationInput) {
               formDurationInput.value = String(dur);
               formDurationInput.dispatchEvent(new Event("change", { bubbles: true }));
@@ -185,6 +219,24 @@ export function AdminCloudflareVideoUploader({
     setState("preparing");
 
     try {
+      // 0. Detect video duration if browser can parse metadata
+      const detectedDuration = await inspectVideoDuration(file);
+      if (detectedDuration && detectedDuration > 0) {
+        setDurationSeconds(detectedDuration);
+        try {
+          const formEl = fileInputRef.current?.closest("form");
+          const formDurationInput =
+            formEl?.querySelector<HTMLInputElement>('input[name="durationSeconds"]') ??
+            document.querySelector<HTMLInputElement>('input[name="durationSeconds"]');
+          if (formDurationInput) {
+            formDurationInput.value = String(detectedDuration);
+            formDurationInput.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+        } catch {
+          // ignore selector error
+        }
+      }
+
       // 1. Request direct upload session from ANEI API
       const sessionRes = await fetch("/api/admin/media/video/upload-url", {
         method: "POST",
@@ -193,6 +245,7 @@ export function AdminCloudflareVideoUploader({
           filename: file.name,
           fileSizeBytes: file.size,
           mimeType: file.type || "video/mp4",
+          durationSeconds: detectedDuration || undefined,
           lessonId: lessonId || null,
           courseId: courseId || null,
         }),
@@ -258,6 +311,9 @@ export function AdminCloudflareVideoUploader({
       const formData = new FormData();
       formData.append("file", file);
       if (assetId) formData.append("assetId", assetId);
+      if (detectedDuration && detectedDuration > 0) {
+        formData.append("durationSeconds", String(detectedDuration));
+      }
       xhr.send(formData);
     } catch (err) {
       setState("error");
@@ -294,19 +350,27 @@ export function AdminCloudflareVideoUploader({
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
+  const effectiveProvider = provider === "cloudflare_stream" && !mediaRef ? "internal" : provider;
+
   return (
     <div className="w-full space-y-3 font-[family-name:var(--font-sans)]" dir={ar ? "rtl" : "ltr"}>
       {/* Hidden inputs submitted with the parent HTML form */}
-      <input type="hidden" name="mediaProvider" value={provider} />
+      <input type="hidden" name="mediaProvider" value={effectiveProvider} />
       <input
         type="hidden"
         name="mediaRef"
-        value={provider === "youtube" ? youtubeInput : mediaRef}
+        value={
+          effectiveProvider === "youtube"
+            ? youtubeInput
+            : effectiveProvider === "cloudflare_stream"
+            ? mediaRef
+            : ""
+        }
       />
       <input
         type="hidden"
         name="videoUrl"
-        value={provider === "internal" ? videoUrl : ""}
+        value={effectiveProvider === "internal" ? videoUrl : ""}
       />
 
       {/* Header bar with title and toggle for advanced formats */}
@@ -414,8 +478,8 @@ export function AdminCloudflareVideoUploader({
               </h4>
               <p className="text-xs text-slate-500 max-w-md mb-4 leading-relaxed">
                 {ar
-                  ? "يدعم صيغ MP4, MOV, WebM, MKV. يتم التشفير التلقائي عالي الدقة بدون أي إعدادات فنية."
-                  : "Prend en charge MP4, MOV, WebM, MKV jusqu'à 4 heures. Encodage multi-débit automatique sans configuration."}
+                  ? "يدعم صيغ MP4, MOV, WebM, MKV للفيديوهات الطويلة حتى 8 ساعات. تشفير تلقائي عالي الدقة بدون إعدادات معقدة."
+                  : "Prend en charge MP4, MOV, WebM, MKV pour les vidéos longues (jusqu'à 8h). Encodage multi-débit automatique sans configuration."}
               </p>
 
               <button

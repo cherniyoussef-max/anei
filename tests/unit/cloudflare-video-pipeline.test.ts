@@ -88,3 +88,25 @@ test("Learner video playback route validates entitlement, rate limits, and issue
   assert.ok(route.includes("generateSignedPlaybackToken"), "Must issue signed token");
   assert.ok(route.includes("iframeUrl"), "Must return secure iframeUrl");
 });
+
+test("PDF upload allows up to 100MB and rejects oversized documents", async () => {
+  const { validateUpload } = await import("@/server/storage");
+
+  // Valid 50MB and 99MB PDF documents
+  assert.doesNotThrow(() => validateUpload({ contentType: "application/pdf", contentLength: 50 * 1024 * 1024 }));
+  assert.doesNotThrow(() => validateUpload({ contentType: "application/pdf", contentLength: 100 * 1024 * 1024 }));
+
+  // Rejects > 100MB PDF
+  assert.throws(() => validateUpload({ contentType: "application/pdf", contentLength: 101 * 1024 * 1024 }), /INVALID_FILE_SIZE/);
+
+  // Still enforces 25MB on standard images
+  assert.throws(() => validateUpload({ contentType: "image/png", contentLength: 26 * 1024 * 1024 }), /INVALID_FILE_SIZE/);
+  assert.doesNotThrow(() => validateUpload({ contentType: "image/png", contentLength: 5 * 1024 * 1024 }));
+});
+
+test("Direct upload session accommodates long video durations (up to 8h-24h)", async () => {
+  const fileContent = await readFile("src/server/media/cloudflare-stream.ts", "utf8");
+  assert.ok(fileContent.includes("durationSeconds?: number"), "Must define durationSeconds in DirectUploadSessionOptions");
+  assert.ok(fileContent.includes("28800"), "Must support 28800 seconds (8 hours) default max duration");
+});
+

@@ -480,7 +480,7 @@ export function AdminResourceForm({ locale }: { locale: Locale }) {
             <input
               name="slug"
               required
-              pattern="[a-z0-9-]+"
+              pattern="[a-z0-9\-]+"
               placeholder="guide-adaptation-classe-inclusive"
               value={slug}
               onChange={(e) => {

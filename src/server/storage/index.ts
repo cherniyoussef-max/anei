@@ -74,9 +74,15 @@ export async function signedMediaUrl(objectKey: string) {
   );
 }
 
+function maxUploadSizeForContentType(contentType: string): number {
+  if (contentType === "video/mp4") return 500 * 1024 * 1024; // 500 MB
+  if (contentType === "application/pdf") return 100 * 1024 * 1024; // 100 MB for educational manuals & slide decks
+  return 25 * 1024 * 1024; // 25 MB for images / vtt
+}
+
 export function validateUpload(input: { contentType: string; contentLength: number }) {
   if (!ALLOWED_UPLOAD_TYPES.has(input.contentType)) throw new Error("UNSUPPORTED_MEDIA_TYPE");
-  const max = input.contentType === "video/mp4" ? 500 * 1024 * 1024 : 25 * 1024 * 1024;
+  const max = maxUploadSizeForContentType(input.contentType);
   if (!Number.isSafeInteger(input.contentLength) || input.contentLength <= 0 || input.contentLength > max) {
     throw new Error("INVALID_FILE_SIZE");
   }
@@ -95,7 +101,7 @@ export async function signedUploadUrl(input: {
   validateUpload(input);
   const ext = EXTENSIONS[input.contentType];
   const key = `${input.category}/${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}.${ext}`;
-  const max = input.contentType === "video/mp4" ? 500 * 1024 * 1024 : 25 * 1024 * 1024;
+  const max = maxUploadSizeForContentType(input.contentType);
   const signed = await createPresignedPost(client(), {
     Bucket: env.STORAGE_BUCKET!,
     Key: key,

@@ -731,7 +731,7 @@ export function AdminCourseForm({ locale }: { locale: Locale }) {
               <input
                 name="slug"
                 required
-                pattern="[a-z0-9-]+"
+                pattern="[a-z0-9\-]+"
                 placeholder="les-fondamentaux-de-linclusion-scolaire"
                 value={slug}
                 onChange={(e) => {

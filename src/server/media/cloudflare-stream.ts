@@ -19,6 +19,7 @@ export interface DirectUploadSessionOptions {
   filename?: string;
   fileSizeBytes?: number;
   mimeType?: string;
+  durationSeconds?: number;
   maxDurationSeconds?: number;
   expiryMinutes?: number;
   lessonId?: string | null;
@@ -44,7 +45,11 @@ export interface DirectUploadSessionResult {
 export async function createDirectUploadSession(
   options: DirectUploadSessionOptions = {},
 ): Promise<DirectUploadSessionResult> {
-  const maxDurationSeconds = options.maxDurationSeconds ?? 14400; // 4 hours max
+  const requestedDuration = Math.round(options.durationSeconds ?? 0);
+  const maxDurationSeconds = Math.max(
+    options.maxDurationSeconds ?? 28800, // 8 hours default (up to 24h supported)
+    requestedDuration > 0 ? requestedDuration + 3600 : 28800,
+  );
   const expiryMinutes = options.expiryMinutes ?? 60;
   const expiry = new Date(Date.now() + expiryMinutes * 60 * 1000).toISOString();
   const filename = (options.filename || "video.mp4").trim();
@@ -110,6 +115,7 @@ export async function createDirectUploadSession(
         originalFilename: filename,
         fileSizeBytes,
         mimeType,
+        durationSeconds: requestedDuration,
         status: "UPLOADING",
         encodingProgressPercent: 0,
         requireSignedUrls: true,
@@ -138,6 +144,7 @@ export async function createDirectUploadSession(
       originalFilename: filename,
       fileSizeBytes,
       mimeType,
+      durationSeconds: requestedDuration,
       status: "UPLOADING",
       encodingProgressPercent: 0,
       requireSignedUrls: false,

@@ -12,6 +12,8 @@ const uploadPayloadSchema = z.object({
   filename: z.string().max(255).optional(),
   fileSizeBytes: z.number().int().nonnegative().optional(),
   mimeType: z.string().max(100).optional(),
+  durationSeconds: z.number().int().nonnegative().max(86400).optional(),
+  maxDurationSeconds: z.number().int().nonnegative().max(86400).optional(),
   lessonId: z.string().uuid().optional().nullable(),
   courseId: z.string().uuid().optional().nullable(),
 });
@@ -49,6 +51,8 @@ export async function POST(request: Request) {
       filename: data.filename,
       fileSizeBytes: data.fileSizeBytes,
       mimeType: data.mimeType,
+      durationSeconds: data.durationSeconds,
+      maxDurationSeconds: data.maxDurationSeconds,
       lessonId: data.lessonId,
       courseId: data.courseId,
       adminId: session.user.id,

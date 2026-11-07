@@ -46,7 +46,13 @@ interface LearningCacheEntry<T> {
   data: T;
   expiresAt: number;
 }
-const memoryCache = new Map<string, LearningCacheEntry<unknown>>();
+type GlobalLearningCache = typeof globalThis & {
+  __aneiLearningMemoryCache?: Map<string, LearningCacheEntry<unknown>>;
+};
+const globalCache = globalThis as GlobalLearningCache;
+const memoryCache =
+  globalCache.__aneiLearningMemoryCache ??
+  (globalCache.__aneiLearningMemoryCache = new Map<string, LearningCacheEntry<unknown>>());
 const LEARNING_CACHE_TTL_MS = 60_000;
 
 function pruneMemoryCache() {

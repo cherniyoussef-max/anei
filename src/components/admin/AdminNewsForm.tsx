@@ -128,7 +128,7 @@ export function AdminNewsForm({ locale, initialPost, onSuccess }: AdminNewsFormP
             name="slug"
             defaultValue={initialPost?.slug || ""}
             required
-            pattern="[a-z0-9-]+"
+            pattern="[a-z0-9\-]+"
             placeholder="nouvelle-actualite-inclusive"
             className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-[#0056D2] focus:ring-1 focus:ring-[#0056D2]"
           />
