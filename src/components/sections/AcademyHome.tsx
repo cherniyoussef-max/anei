@@ -108,17 +108,6 @@ export function AcademyHome({
         {/* Masked Hero Photograph */}
         <div className="top-photo" aria-hidden="true" />
 
-
-        <div className="glass g2">
-          <i>
-            <span className="live" aria-hidden="true" />
-          </i>
-          <div>
-            <b>{ar ? "مباشر وتفاعلي" : "Directs & Masterclasses"}</b>
-            <span>{ar ? "لقاءات أسبوعية مع الخبراء" : "Échanges et replays ouverts"}</span>
-          </div>
-        </div>
-
         {/* Main Content */}
         <div className="wrap top-in">
           <div className="top-txt">
